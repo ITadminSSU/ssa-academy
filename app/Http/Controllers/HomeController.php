@@ -22,7 +22,19 @@ class HomeController extends Controller
 
    public function index(Request $request)
    {
-      // Redirect all users to /courses/all directly
+      // Check if user has visited /courses/all (session flag)
+      // Also check referer as backup
+      $referer = $request->header('referer');
+      $sessionFlag = $request->session()->get('visited_courses_all', false);
+      $refererHasCoursesAll = $referer && str_contains($referer, '/courses/all');
+      
+      if ($sessionFlag || $refererHasCoursesAll) {
+         // If user is trying to go back to root from /courses/all, redirect to external site
+         $request->session()->forget('visited_courses_all'); // Clear the flag
+         return redirect('https://smartsourcingusa.com');
+      }
+      
+      // Otherwise, redirect to /courses/all
       return redirect()->route('category.courses', ['category' => 'all']);
    }
 

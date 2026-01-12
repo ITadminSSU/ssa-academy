@@ -47,6 +47,11 @@ class CourseController extends Controller
 
     public function category_courses(Request $request, string $category, ?string $category_child = null)
     {
+        // Set session flag when user visits /courses/all
+        if ($category === 'all') {
+            $request->session()->put('visited_courses_all', true);
+        }
+        
         $user = Auth::user() ? Auth::user() : null;
         $query = [...$request->all(), 'per_page' => 12, 'category' => $category, 'category_child' => $category_child, 'status' => 'approved'];
 
