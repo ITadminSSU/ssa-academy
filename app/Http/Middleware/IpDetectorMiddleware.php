@@ -35,7 +35,7 @@ class IpDetectorMiddleware
                 }
             } else {
                 Session::flash('error', 'Max device limit reached.');
-                return redirect()->route('home');
+                return redirect()->route('category.courses', ['category' => 'all']);
             }
         }
         return $next($request);

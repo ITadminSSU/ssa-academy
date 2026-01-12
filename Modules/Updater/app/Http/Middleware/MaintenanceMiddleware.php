@@ -20,7 +20,7 @@ class MaintenanceMiddleware
 
         // Check if user is not an admin
         if (!isAdmin()) {
-            return redirect('/');
+            return redirect()->route('category.courses', ['category' => 'all']);
         }
 
         return $next($request);

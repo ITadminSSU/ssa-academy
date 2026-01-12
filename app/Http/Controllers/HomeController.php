@@ -22,13 +22,8 @@ class HomeController extends Controller
 
    public function index(Request $request)
    {
-      $page = app('intro_page');
-      $sections = $this->pageService->getPageSections($request->all(), $page);
-
-      return Inertia::render('intro/' . $page->slug, [
-         'type' => 'intro',
-         ...$sections,
-      ]);
+      // Redirect all users to /courses/all directly
+      return redirect()->route('category.courses', ['category' => 'all']);
    }
 
    public function demo(Request $request, string $slug)
