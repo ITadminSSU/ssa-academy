@@ -36,8 +36,8 @@ class CourseEnrollmentService extends MediaService
             });
          })
          ->when(array_key_exists('instructor_id', $data), function ($query) use ($data) {
-            return $query->whereHas('course.instructor.user', function ($user) use ($data) {
-               $user->where('id', $data['instructor_id']);
+            return $query->whereHas('course', function ($course) use ($data) {
+               $course->where('instructor_id', $data['instructor_id']);
             });
          })
          ->when(array_key_exists('user_id', $data), function ($query) use ($data) {
