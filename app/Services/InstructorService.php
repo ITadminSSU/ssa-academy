@@ -153,6 +153,8 @@ class InstructorService extends MediaService
          ]));
       } else {
          $instructor->update(['status' => 'approved']);
+         // Update user role to instructor when admin approves during creation
+         $user->update(['role' => 'instructor']);
       }
 
       return $instructor;
