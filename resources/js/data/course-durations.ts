@@ -1,0 +1,28 @@
+const courseDurations = [
+   { label: '1 Month', value: '1 month' },
+   { label: '2 Months', value: '2 months' },
+   { label: '3 Months', value: '3 months' },
+   { label: '4 Months', value: '4 months' },
+   { label: '5 Months', value: '5 months' },
+   { label: '6 Months', value: '6 months' },
+   { label: '7 Months', value: '7 months' },
+   { label: '8 Months', value: '8 months' },
+   { label: '9 Months', value: '9 months' },
+   { label: '10 Months', value: '10 months' },
+   { label: '11 Months', value: '11 months' },
+   { label: '12 Months', value: '12 months' },
+   { label: '1 Year', value: '1 year' },
+   { label: '2 Years', value: '2 years' },
+   { label: '3 Years', value: '3 years' },
+   { label: '4 Years', value: '4 years' },
+   { label: '5 Years', value: '5 years' },
+   { label: '6 Years', value: '6 years' },
+   { label: '7 Years', value: '7 years' },
+   { label: '8 Years', value: '8 years' },
+   { label: '9 Years', value: '9 years' },
+   { label: '10 Years', value: '10 years' },
+   { label: '11 Years', value: '11 years' },
+   { label: '12 Years', value: '12 years' },
+];
+
+export default courseDurations;
