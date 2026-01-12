@@ -27,7 +27,9 @@ class CourseApprovalNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        // COMMENTED OUT FOR DEVELOPMENT - SMTP sending is disabled
+        // return ['mail', 'database'];
+        return ['database'];
     }
 
     /**

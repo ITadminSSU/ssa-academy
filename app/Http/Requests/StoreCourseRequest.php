@@ -10,11 +10,14 @@ class StoreCourseRequest extends FormRequest
 {
     protected function prepareForValidation()
     {
+        $pricingType = request('pricing_type');
+        $isFree = $pricingType === CoursePricingType::FREE->value;
+        
         // Convert numeric fields
         $this->merge([
-            'price' => request('price') ? (float) request('price') : null,
+            'price' => $isFree ? null : (request('price') ? (float) request('price') : null),
             'discount' => filter_var(request('discount'), FILTER_VALIDATE_BOOLEAN),
-            'discount_price' => request('discount_price') ? (float) request('discount_price') : null,
+            'discount_price' => $isFree ? null : (request('discount_price') ? (float) request('discount_price') : null),
             'drip_content' => filter_var(request('drip_content'), FILTER_VALIDATE_BOOLEAN),
             'instructor_id' => (int) request('instructor_id'),
             'course_category_id' => (int) request('course_category_id'),

@@ -18,20 +18,21 @@ class SmtpConfigCheck
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // COMMENTED OUT FOR DEVELOPMENT - SMTP sending is disabled
         // Check SMTP configuration from config
-        if (config('mail.default') === 'smtp') {
-            // Check if required SMTP credentials exist in config
-            if (
-                empty(config('mail.mailers.smtp.host')) ||
-                empty(config('mail.mailers.smtp.port')) ||
-                empty(config('mail.mailers.smtp.username')) ||
-                empty(config('mail.mailers.smtp.password'))
-            ) {
-                return back()->with('error', 'SMTP configuration is incomplete. Email sending feature is not work right now.');
-            }
-        } else {
-            return back()->with('error', 'SMTP is not set as the mailer. Please check your configuration.');
-        }
+        // if (config('mail.default') === 'smtp') {
+        //     // Check if required SMTP credentials exist in config
+        //     if (
+        //         empty(config('mail.mailers.smtp.host')) ||
+        //         empty(config('mail.mailers.smtp.port')) ||
+        //         empty(config('mail.mailers.smtp.username')) ||
+        //         empty(config('mail.mailers.smtp.password'))
+        //     ) {
+        //         return back()->with('error', 'SMTP configuration is incomplete. Email sending feature is not work right now.');
+        //     }
+        // } else {
+        //     return back()->with('error', 'SMTP is not set as the mailer. Please check your configuration.');
+        // }
 
         return $next($request);
     }

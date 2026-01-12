@@ -10,11 +10,15 @@ class UpdateCourseRequest extends FormRequest
 {
     protected function prepareForValidation()
     {
+        $pricingType = request('pricing_type');
+        $isFree = $pricingType && $pricingType === CoursePricingType::FREE->value;
+        
         // Convert numeric fields
         $this->merge([
-            'price' => request('price') ? (float) request('price') : null,
+            'price' => $isFree ? null : (request('price') ? (float) request('price') : null),
             'discount' => filter_var(request('discount'), FILTER_VALIDATE_BOOLEAN),
-            'discount_price' => request('discount_price') ? (float) request('discount_price') : null,
+            'discount_price' => $isFree ? null : (request('discount_price') ? (float) request('discount_price') : null),
+            'instructor_id' => request('instructor_id') ? (int) request('instructor_id') : null,
             'course_category_id' => (int) request('course_category_id', 0),
             'course_category_child_id' => request('course_category_child_id') ? (int) request('course_category_child_id') : null,
         ]);
@@ -72,6 +76,7 @@ class UpdateCourseRequest extends FormRequest
             'level' => 'required|string',
             'language' => 'required|string|max:255',
             'drip_content' => 'required|boolean',
+            'instructor_id' => 'nullable|exists:instructors,id',
             'course_category_id' => 'required|exists:course_categories,id',
             'course_category_child_id' => 'nullable|exists:course_category_children,id',
         ];

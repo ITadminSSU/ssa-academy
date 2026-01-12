@@ -41,13 +41,14 @@ function testSmtpConnection(array $config)
    setSmtpConfig($config);
 
    // Send a test email to the admin email
-   $subject = 'SMTP Test Email';
-   $body = 'This is a test email to verify your SMTP settings. If you received this email, your SMTP configuration is working correctly.';
-   $recipient = $config['mail_from_address'];
+   // COMMENTED OUT FOR DEVELOPMENT - SMTP sending is disabled
+   // $subject = 'SMTP Test Email';
+   // $body = 'This is a test email to verify your SMTP settings. If you received this email, your SMTP configuration is working correctly.';
+   // $recipient = $config['mail_from_address'];
 
-   Mail::raw($body, function ($message) use ($recipient, $subject) {
-      $message->to($recipient)->subject($subject);
-   });
+   // Mail::raw($body, function ($message) use ($recipient, $subject) {
+   //    $message->to($recipient)->subject($subject);
+   // });
 
    // Reset config
    config(['mail' => $previousConfig]);
