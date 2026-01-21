@@ -118,6 +118,14 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
 
                {/* Desktop Navigation */}
                <div className="hidden gap-4 md:flex md:items-center">
+                  <a
+                     href="https://smartsourcingusa.com"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="text-sm font-normal"
+                  >
+                     Home
+                  </a>
                   {sortedItems.map((item) => (
                      <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                   ))}
@@ -138,6 +146,14 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
             {isMenuOpen && (
                <ScrollArea className="bg-background h-[calc(100vh-72px)] border-t md:hidden">
                   <div className="flex flex-col space-y-4 px-6 py-4">
+                     <a
+                        href="https://smartsourcingusa.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-normal"
+                     >
+                        Home
+                     </a>
                      {sortedItems.map((item) => (
                         <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                      ))}

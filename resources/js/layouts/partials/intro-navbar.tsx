@@ -63,6 +63,14 @@ const IntroNavbar = () => {
                {/* Desktop Auth Buttons */}
                <div className="flex items-center space-x-3">
                   <div className="hidden items-center gap-3 md:flex">
+                     <a
+                        href="https://smartsourcingusa.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-normal"
+                     >
+                        Home
+                     </a>
                      {navbar &&
                         navbar.properties.array.map((item) => {
                            // Redirect "About Us" to smartsourcingusa.com/#about
@@ -165,6 +173,15 @@ const IntroNavbar = () => {
                         className="[&>input]:h-10"
                         onChangeValue={(value) => router.get(route('category.courses', { category: 'all', search: value }))}
                      />
+
+                     <a
+                        href="https://smartsourcingusa.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-normal"
+                     >
+                        Home
+                     </a>
 
                      {navbar &&
                         navbar.properties.array.map((item) => {

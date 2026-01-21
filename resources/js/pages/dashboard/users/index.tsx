@@ -31,7 +31,7 @@ const Index = (props: Props) => {
       <Card>
          <TableFilter
             data={props.users}
-            title="User List"
+            title="Students List"
             globalSearch={true}
             tablePageSizes={[10, 15, 20, 25]}
             routeName="users.index"

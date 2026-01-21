@@ -47,10 +47,8 @@ class CourseController extends Controller
 
     public function category_courses(Request $request, string $category, ?string $category_child = null)
     {
-        // Set session flag when user visits /courses/all
-        if ($category === 'all') {
-            $request->session()->put('visited_courses_all', true);
-        }
+        // Save original category slug before it gets overwritten
+        $originalCategorySlug = $category;
         
         $user = Auth::user() ? Auth::user() : null;
         $query = [...$request->all(), 'per_page' => 12, 'category' => $category, 'category_child' => $category_child, 'status' => 'approved'];
@@ -114,7 +112,7 @@ class CourseController extends Controller
         // Prioritize first course image over category image, then fallback to system banner
         $ogImage = $firstCourseImage ?? $categoryImage ?? $system->fields['banner'] ?? '';
 
-        return Inertia::render('courses/index', compact(
+        $response = Inertia::render('courses/index', compact(
             'levels',
             'prices',
             'courses',
@@ -136,6 +134,13 @@ class CourseController extends Controller
             'twitterDescription' => $pageDescription,
             'twitterImage' => $ogImage,
         ]);
+
+        // Set session flag when user visits /courses/all
+        if ($originalCategorySlug === 'all') {
+            $request->session()->put('visited_courses_all', true);
+        }
+
+        return $response;
     }
 
     public function create()

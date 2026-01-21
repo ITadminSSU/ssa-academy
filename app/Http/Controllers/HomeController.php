@@ -23,10 +23,15 @@ class HomeController extends Controller
    public function index(Request $request)
    {
       // Check if user has visited /courses/all (session flag)
-      // Also check referer as backup
-      $referer = $request->header('referer');
       $sessionFlag = $request->session()->get('visited_courses_all', false);
-      $refererHasCoursesAll = $referer && str_contains($referer, '/courses/all');
+      
+      // Also check referer as backup - but be careful to avoid redirect loops
+      $referer = $request->header('referer');
+      $refererHasCoursesAll = false;
+      if ($referer) {
+         // Only check referer if it contains /courses/all and is not from a server redirect
+         $refererHasCoursesAll = str_contains($referer, '/courses/all');
+      }
       
       if ($sessionFlag || $refererHasCoursesAll) {
          // If user is trying to go back to root from /courses/all, redirect to external site

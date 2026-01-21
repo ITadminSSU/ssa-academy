@@ -193,12 +193,12 @@ const dashboardRoutes: DashboardRoute[] = [
                   path: route('payment-reports.online.index'),
                   access: ['admin', 'collaborative', 'administrative'],
                },
-               {
-                  name: 'Offline Payments',
-                  slug: routeLastSegment(route('payment-reports.offline.index')),
-                  path: route('payment-reports.offline.index'),
-                  access: ['admin', 'collaborative', 'administrative'],
-               },
+               // {
+               //    name: 'Offline Payments',
+               //    slug: routeLastSegment(route('payment-reports.offline.index')),
+               //    path: route('payment-reports.offline.index'),
+               //    access: ['admin', 'collaborative', 'administrative'],
+               // },
             ],
          },
          {
@@ -223,34 +223,34 @@ const dashboardRoutes: DashboardRoute[] = [
                },
             ],
          },
-         {
-            Icon: Book,
-            name: 'Blogs',
-            path: '',
-            slug: 'blogs',
-            active: true,
-            access: ['admin', 'instructor', 'collaborative', 'administrative'],
-            children: [
-               {
-                  name: 'Categories',
-                  slug: routeLastSegment(route('blogs.categories.index')),
-                  path: route('blogs.categories.index'),
-                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
-               },
-               {
-                  name: 'Create Blog',
-                  slug: routeLastSegment(route('blogs.create')),
-                  path: route('blogs.create'),
-                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
-               },
-               {
-                  name: 'Manage Blog',
-                  slug: routeLastSegment(route('blogs.index')),
-                  path: route('blogs.index'),
-                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
-               },
-            ],
-         },
+         // {
+         //    Icon: Book,
+         //    name: 'Blogs',
+         //    path: '',
+         //    slug: 'blogs',
+         //    active: true,
+         //    access: ['admin', 'instructor', 'collaborative', 'administrative'],
+         //    children: [
+         //       {
+         //          name: 'Categories',
+         //          slug: routeLastSegment(route('blogs.categories.index')),
+         //          path: route('blogs.categories.index'),
+         //          access: ['admin', 'instructor', 'collaborative', 'administrative'],
+         //       },
+         //       {
+         //          name: 'Create Blog',
+         //          slug: routeLastSegment(route('blogs.create')),
+         //          path: route('blogs.create'),
+         //          access: ['admin', 'instructor', 'collaborative', 'administrative'],
+         //       },
+         //       {
+         //          name: 'Manage Blog',
+         //          slug: routeLastSegment(route('blogs.index')),
+         //          path: route('blogs.index'),
+         //          access: ['admin', 'instructor', 'collaborative', 'administrative'],
+         //       },
+         //    ],
+         // },
          {
             Icon: Newspaper,
             name: 'Newsletters',
@@ -262,7 +262,7 @@ const dashboardRoutes: DashboardRoute[] = [
          },
          {
             Icon: Users,
-            name: 'All Users',
+            name: 'Users List',
             path: route('users.index'),
             slug: routeLastSegment(route('users.index')),
             active: true,
@@ -341,12 +341,12 @@ const dashboardRoutes: DashboardRoute[] = [
                   path: route('settings.auth0'),
                   access: ['admin', 'collaborative', 'administrative'],
                },
-               {
-                  name: 'Live Class',
-                  slug: routeLastSegment(route('settings.live-class')),
-                  path: route('settings.live-class'),
-                  access: ['admin', 'collaborative', 'administrative'],
-               },
+               // {
+               //    name: 'Live Class',
+               //    slug: routeLastSegment(route('settings.live-class')),
+               //    path: route('settings.live-class'),
+               //    access: ['admin', 'collaborative', 'administrative'],
+               // },
                {
                   name: 'Translation',
                   slug: routeLastSegment(route('language.index')),

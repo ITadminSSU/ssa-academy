@@ -1,5 +1,5 @@
 import Mollie from '@/components/gateways/mollie';
-import Offline from '@/components/gateways/offline';
+// import Offline from '@/components/gateways/offline';
 import Paypal from '@/components/gateways/paypal';
 import Paystack from '@/components/gateways/paystack';
 import Razorpay from '@/components/gateways/razorpay';
@@ -20,48 +20,50 @@ const Payment = ({ payments }: Props) => {
    const page = usePage();
    const params = getQueryParams(page.url);
 
-   const tabs = payments.map((payment) => {
-      let Component;
+   const tabs = payments
+      .filter((payment) => payment.sub_type !== 'offline') // Filter out offline payments
+      .map((payment) => {
+         let Component;
 
-      switch (payment.sub_type) {
-         case 'paypal':
-            Component = Paypal;
-            break;
+         switch (payment.sub_type) {
+            case 'paypal':
+               Component = Paypal;
+               break;
 
-         case 'stripe':
-            Component = Stripe;
-            break;
+            case 'stripe':
+               Component = Stripe;
+               break;
 
-         case 'mollie':
-            Component = Mollie;
-            break;
+            case 'mollie':
+               Component = Mollie;
+               break;
 
-         case 'paystack':
-            Component = Paystack;
-            break;
+            case 'paystack':
+               Component = Paystack;
+               break;
 
-         case 'sslcommerz':
-            Component = SSLCommerz;
-            break;
+            case 'sslcommerz':
+               Component = SSLCommerz;
+               break;
 
-         case 'razorpay':
-            Component = Razorpay;
-            break;
+            case 'razorpay':
+               Component = Razorpay;
+               break;
 
-         case 'offline':
-            Component = Offline;
-            break;
+            // case 'offline':
+            //    Component = Offline;
+            //    break;
 
-         default:
-            Component = ({ payment }: { payment: any }) => <div>No component found</div>;
-            break;
-      }
+            default:
+               Component = ({ payment }: { payment: any }) => <div>No component found</div>;
+               break;
+         }
 
-      return {
-         ...payment,
-         Component,
-      };
-   });
+         return {
+            ...payment,
+            Component,
+         };
+      });
 
    return (
       <section className="md:px-3">

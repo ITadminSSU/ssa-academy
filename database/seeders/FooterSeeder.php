@@ -65,17 +65,17 @@ class FooterSeeder extends Seeder
                     ['title' => 'LinkedIn', 'url' => 'https://www.linkedin.com/', 'icon' => 'linkedin'],
                 ],
             ],
-            [
-                'type' => 'payment_methods',
-                'slug' => 'payment_methods',
-                'title' => 'We support multiple payment gateways.',
-                'items' => [
-                    ['image' => '/assets/payment/stripe.png'],
-                    ['image' => '/assets/payment/paypal.png'],
-                    ['image' => '/assets/payment/mollie.png'],
-                    ['image' => '/assets/payment/paystack.png'],
-                ],
-            ],
+            // [
+            //     'type' => 'payment_methods',
+            //     'slug' => 'payment_methods',
+            //     'title' => 'We support multiple payment gateways.',
+            //     'items' => [
+            //         ['image' => '/assets/payment/stripe.png'],
+            //         ['image' => '/assets/payment/paypal.png'],
+            //         ['image' => '/assets/payment/mollie.png'],
+            //         ['image' => '/assets/payment/paystack.png'],
+            //     ],
+            // ],
             [
                 'type' => 'copyright',
                 'slug' => 'copyright',
