@@ -12,7 +12,7 @@ const Curriculum = ({ course }: { course: Course }) => {
 
    return (
       <>
-         <h6 className="mb-4 text-xl font-semibold">{frontend.course_curriculum}</h6>
+         <h6 className="mb-4 text-xl font-semibold">Modules</h6>
 
          <Separator className="my-6" />
 

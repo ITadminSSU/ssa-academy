@@ -39,7 +39,7 @@ const Offline = ({ payment, routePath }: OfflineProps) => {
          <div className="mb-6 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">Offline Payment Settings</h2>
-               <p className="text-gray-500">Configure manual payment options for your students</p>
+               <p className="text-muted-foreground">Configure manual payment options for your students</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -65,7 +65,7 @@ const Offline = ({ payment, routePath }: OfflineProps) => {
                   onContentChange={(value) => setData('payment_instructions', value as string)}
                />
                <InputError message={errors.payment_instructions} />
-               <p className="mt-1 text-sm text-gray-500">These instructions will be shown to students when they select offline payment</p>
+               <p className="mt-1 text-sm text-muted-foreground">These instructions will be shown to students when they select offline payment</p>
             </div>
 
             {/* Bank Details Section */}
@@ -84,10 +84,10 @@ const Offline = ({ payment, routePath }: OfflineProps) => {
                   onContentChange={(value) => setData('payment_details', value as string)}
                />
                <InputError message={errors.payment_details} />
-               <p className="mt-1 text-sm text-gray-500">These payment/bank details will be displayed to students for making offline payments</p>
+               <p className="mt-1 text-sm text-muted-foreground">These payment/bank details will be displayed to students for making offline payments</p>
             </div>
 
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
                <div className="flex">
                   <svg className="mr-2 h-5 w-5 shrink-0 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
                      <path

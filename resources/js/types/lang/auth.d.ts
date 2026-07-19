@@ -12,6 +12,16 @@ interface AuthLang {
    // Login Page
    login_title: string;
    login_description: string;
+   login_audiences_heading: string;
+   login_audience_admin: string;
+   login_audience_admin_hint: string;
+   login_audience_trainer: string;
+   login_audience_trainer_hint: string;
+   login_audience_internal: string;
+   login_audience_internal_hint: string;
+   login_audience_external: string;
+   login_audience_external_hint: string;
+   login_external_register_note: string;
    remember_me: string;
    forgot_password: string;
    continue_with: string;
@@ -22,6 +32,8 @@ interface AuthLang {
    register_title: string;
    register_description: string;
    have_account: string;
+   register_learner_type_note: string;
+   register_required_fields_note: string;
 
    // Forgot Password
    forgot_description: string;

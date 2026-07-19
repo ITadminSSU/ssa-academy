@@ -161,7 +161,7 @@ const Media = () => {
                   />
                )}
                <InputError message={errors.preview} />
-               <p className="text-xs text-gray-500">
+               <p className="text-xs text-muted-foreground">
                   {data.preview_type === 'video_url' ? 'Supported URL: youtube or vimeo' : 'Supported Video file: .mp4 or .webm or .ogg'}
                </p>
 

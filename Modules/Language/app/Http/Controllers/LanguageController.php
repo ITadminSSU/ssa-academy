@@ -69,13 +69,6 @@ class LanguageController extends Controller
         return back()->with('success', $property->name . ' translation successfully updated');
     }
 
-    public function change_direction(Request $request)
-    {
-        $cookie = Cookie::forever('direction', $request->direction);
-
-        return back()->withCookie($cookie);
-    }
-
     public function change_lang(Request $request)
     {
         Cache::forget($this->languageService->cacheKey);

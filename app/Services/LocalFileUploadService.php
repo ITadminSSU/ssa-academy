@@ -60,12 +60,24 @@ class LocalFileUploadService
    public function completeUpload($upload, array $parts): bool
    {
       try {
+         if (empty($parts)) {
+            throw new \RuntimeException('Upload failed: no video chunks were received.');
+         }
+
          // Sort parts by part number
          usort($parts, fn($a, $b) => $a['PartNumber'] <=> $b['PartNumber']);
 
          // Combine all chunks
          $finalPath = $upload->key;
-         $finalHandle = fopen(Storage::disk($this->disk)->path($finalPath), 'ab');
+         $finalDiskPath = Storage::disk($this->disk)->path($finalPath);
+         $finalHandle = fopen($finalDiskPath, 'wb');
+
+         if ($finalHandle === false) {
+            throw new \RuntimeException('Upload failed: could not create the video file.');
+         }
+
+         $mergedBytes = 0;
+         $missingChunks = 0;
 
          foreach ($parts as $part) {
             // Handle both cases: when chunk_path is provided or needs to be constructed
@@ -73,18 +85,32 @@ class LocalFileUploadService
 
             if (!Storage::disk($this->disk)->exists($chunkPath)) {
                Log::error("Chunk file not found: " . $chunkPath);
+               $missingChunks++;
                continue;
             }
 
             $chunkContent = Storage::disk($this->disk)->get($chunkPath);
             fwrite($finalHandle, $chunkContent);
+            $mergedBytes += strlen($chunkContent);
             Storage::disk($this->disk)->delete($chunkPath);
          }
 
          fclose($finalHandle);
 
+         if ($missingChunks > 0 || $mergedBytes === 0 || !Storage::disk($this->disk)->exists($finalPath)) {
+            Storage::disk($this->disk)->delete($finalPath);
+            throw new \RuntimeException('Upload failed: the video file could not be assembled. Please try uploading again.');
+         }
+
+         $actualSize = Storage::disk($this->disk)->size($finalPath);
+
+         if ($upload->size > 0 && $actualSize < (int) floor($upload->size * 0.9)) {
+            Storage::disk($this->disk)->delete($finalPath);
+            throw new \RuntimeException('Upload failed: the saved video file is incomplete. Please try uploading again.');
+         }
+
          // Generate the local file URL
-         $fileUrl = asset('storage/' . $upload->key);
+         $fileUrl = public_asset_url(asset('storage/' . $upload->key));
 
          $upload->update([
             'status' => 'completed',

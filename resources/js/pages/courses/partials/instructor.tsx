@@ -30,7 +30,7 @@ const Instructor = ({ course }: { course: Course }) => {
             <Link href={route('instructors.show', instructor.id)}>
                <div className="group">
                   <h3 className="text-xl font-semibold group-hover:underline">{user.name}</h3>
-                  <p className="text-gray-500">{user.email}</p>
+                  <p className="text-muted-foreground">{user.email}</p>
                </div>
             </Link>
 
@@ -39,21 +39,21 @@ const Instructor = ({ course }: { course: Course }) => {
                   {instructor.total_average_rating ? Number(instructor.total_average_rating).toFixed(1) : 0}
                </span>
 
-               <RatingStars rating={instructor.total_average_rating} starClass="w-4 h-5" />
+               <RatingStars rating={instructor.total_average_rating || 0} starClass="h-4 w-4" />
             </div>
          </div>
 
          <div className="mt-6 flex gap-8">
             <div className="flex items-center gap-2">
-               <Users className="h-5 w-5 text-gray-500" />
+               <Users className="h-5 w-5 text-muted-foreground" />
                <span>{enrollmentsCount} {frontend.students}</span>
             </div>
             <div className="flex items-center gap-2">
-               <Book className="h-5 w-5 text-gray-500" />
+               <Book className="h-5 w-5 text-muted-foreground" />
                <span>{courses.length} Courses</span>
             </div>
             <div className="flex items-center gap-2">
-               <Star className="h-5 w-5 text-gray-500" />
+               <Star className="h-5 w-5 text-muted-foreground" />
                <span>{instructor.total_reviews_count} Reviews</span>
             </div>
          </div>

@@ -109,7 +109,7 @@ return [
     'blog_list_alt' => 'Blog List',
     'blog_page_description' => 'Read :total+ articles and tutorials from our instructors and team. Stay updated with insights, news, and how‑to guides.',
     'blog_page_keywords' => 'blogs, articles, tutorials, news, posts, learning, education',
-    'default_site_name' => 'Mentor Learning Management System',
+    'default_site_name' => 'Smart Sourcing Academy',
 
     // Zoom Live Class
     'loading_zoom_sdk' => 'Loading Zoom SDK...',
@@ -138,7 +138,7 @@ return [
     'pdf_certificate_saved' => 'Your PDF certificate has been saved to your downloads folder.',
 
     // Quiz Viewer
-    'summery' => 'Summery',
+    'summery' => 'Summary',
     'duration' => 'Duration',
     'total_questions' => 'Total Questions',
     'total_marks' => 'Total Marks',
@@ -172,8 +172,8 @@ return [
 
     // Course Details
     'learn_comprehensive_course' => 'Learn with our comprehensive course',
-    'online_course_learning_lms' => 'online course, learning, LMS',
-    'default_author' => 'UiLib',
+    'online_course_learning_lms' => 'online course, professional training, SSU Academy',
+    'default_author' => 'Smart Sourcing USA',
     'course_certificate' => 'Course Certificate',
     'enrolled_students' => 'Enrolled Students',
     'student_reviews' => 'Student Reviews',

@@ -57,11 +57,10 @@ const AttemptNavbar = ({ attempt, questionIndex }: NavbarProps) => {
                )}
             >
                <div className="container flex items-center justify-between">
-                  <div className="flex h-[72px] items-center gap-2">
-                     {/* Logo */}
-                     <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer">
-                        <AppLogo className="h-12" />
-                     </a>
+                  <div className="flex h-16 items-center gap-2">
+                     <Link href={route('category.courses', { category: 'all' })}>
+                        <AppLogo className="ssu-nav-logo" />
+                     </Link>
                   </div>
 
                   {screen > 768 && <h1 className="text-xl font-bold">{attempt.exam.title}</h1>}
@@ -75,7 +74,7 @@ const AttemptNavbar = ({ attempt, questionIndex }: NavbarProps) => {
             </div>
          </div>
 
-         {heightCover && <div className="relative z-20 h-[72px] bg-transparent" />}
+         {heightCover && <div className="relative z-20 h-16 bg-transparent" />}
       </>
    );
 };

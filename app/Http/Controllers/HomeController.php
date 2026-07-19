@@ -22,42 +22,32 @@ class HomeController extends Controller
 
    public function index(Request $request)
    {
-      // Check if user has visited /courses/all (session flag)
-      $sessionFlag = $request->session()->get('visited_courses_all', false);
-      
-      // Also check referer as backup - but be careful to avoid redirect loops
-      $referer = $request->header('referer');
-      $refererHasCoursesAll = false;
-      if ($referer) {
-         // Only check referer if it contains /courses/all and is not from a server redirect
-         $refererHasCoursesAll = str_contains($referer, '/courses/all');
+      $page = app('intro_page');
+
+      if (!$page || $page->slug !== 'ssu-home') {
+         $page = Page::where('slug', 'ssu-home')
+            ->with(['sections' => function ($query) {
+               $query->orderBy('sort', 'asc');
+            }])
+            ->first();
       }
-      
-      if ($sessionFlag || $refererHasCoursesAll) {
-         // If user is trying to go back to root from /courses/all, redirect to external site
-         $request->session()->forget('visited_courses_all'); // Clear the flag
-         return redirect('https://smartsourcingusa.com');
+
+      if (!$page) {
+         return redirect()->route('category.courses', ['category' => 'all']);
       }
-      
-      // Otherwise, redirect to /courses/all
-      return redirect()->route('category.courses', ['category' => 'all']);
+
+      $sections = $this->pageService->getPageSections($request->all(), $page);
+
+      return Inertia::render('intro/ssu-home', [
+         'page' => $page,
+         'type' => 'intro',
+         ...$sections,
+      ]);
    }
 
    public function demo(Request $request, string $slug)
    {
-      $page = Page::where('slug', $slug)
-         ->with(['sections' => function ($query) {
-            $query->orderBy('sort', 'asc');
-         }])
-         ->first();
-
-      $sections = $this->pageService->getPageSections($request->all(), $page);
-
-      return Inertia::render('intro/' . $page->slug, [
-         'page' => $page,
-         'type' => 'demo',
-         ...$sections,
-      ]);
+      return redirect()->route('home');
    }
 
    /**
@@ -83,6 +73,10 @@ class HomeController extends Controller
 
    public function inner_page(Request $request)
    {
+      if ($request->slug === 'contact-us') {
+         return redirect()->away('https://smartsourcingusa.com/contact');
+      }
+
       $innerPages = Page::where('type', 'inner_page')
          ->where('active', true)
          ->select(['slug'])

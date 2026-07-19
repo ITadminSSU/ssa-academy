@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\LegalAgreementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
@@ -31,7 +32,7 @@ Route::middleware(['guest', 'authConfig'])->group(function () {
 
     Route::post('register', [RegisteredUserController::class, 'store']);
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
+    Route::get('login', fn () => redirect()->route('home'))
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
@@ -41,6 +42,9 @@ Route::middleware(['guest', 'authConfig'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('legal/agreement', [LegalAgreementController::class, 'show'])->name('legal.agreement.show');
+    Route::post('legal/agreement', [LegalAgreementController::class, 'store'])->name('legal.agreement.store');
+
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 

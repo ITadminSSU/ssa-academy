@@ -85,7 +85,7 @@ const ListeningQuestion = ({ question, answer, onAnswerChange }: Props) => {
 
    return (
       <div className="space-y-4">
-         <p className="text-sm text-gray-600">Listen to the audio carefully and select the correct answer:</p>
+         <p className="text-sm text-muted-foreground">Listen to the audio carefully and select the correct answer:</p>
 
          {/* Audio Player */}
          <div className="from-primary/10 to-primary/5 rounded-lg border bg-gradient-to-br p-6">
@@ -111,14 +111,14 @@ const ListeningQuestion = ({ question, answer, onAnswerChange }: Props) => {
             </div>
 
             {/* Time Display */}
-            <div className="mb-4 flex justify-between text-sm text-gray-600">
+            <div className="mb-4 flex justify-between text-sm text-muted-foreground">
                <span>{formatTime(currentTime)}</span>
                <span>{formatTime(duration)}</span>
             </div>
 
             {/* Volume Control */}
             <div className="flex items-center gap-3">
-               <Volume2 className="h-4 w-4 text-gray-600" />
+               <Volume2 className="h-4 w-4 text-muted-foreground" />
                <Slider value={[volume]} max={1} step={0.1} onValueChange={(values) => setVolume(values[0])} className="w-24" />
             </div>
          </div>
@@ -126,7 +126,7 @@ const ListeningQuestion = ({ question, answer, onAnswerChange }: Props) => {
          {/* Question Options */}
          <div>
             <div className="mb-3 flex items-start justify-between">
-               <p className="text-sm font-semibold text-gray-700">Select your answer:</p>
+               <p className="text-sm font-semibold text-muted-foreground">Select your answer:</p>
                {selectedOption && (
                   <Button variant="ghost" size="sm" onClick={handleClear}>
                      <X className="mr-2 h-4 w-4" />
@@ -141,7 +141,7 @@ const ListeningQuestion = ({ question, answer, onAnswerChange }: Props) => {
                      <div
                         key={option.id}
                         className={`flex items-start space-x-3 rounded-lg border-2 p-4 transition-colors ${
-                           selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
+                           selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-border hover:border-border'
                         }`}
                      >
                         <RadioGroupItem value={option.id.toString()} id={`option-${option.id}`} className="mt-0.5" />
@@ -155,7 +155,7 @@ const ListeningQuestion = ({ question, answer, onAnswerChange }: Props) => {
          </div>
 
          {!audioUrl && (
-            <div className="rounded-lg bg-yellow-50 p-3">
+            <div className="rounded-lg bg-yellow-500/10 p-3">
                <p className="text-sm text-yellow-800">
                   <span className="font-semibold">Note:</span> Audio file is not available for this question.
                </p>

@@ -8,6 +8,7 @@ use App\Models\Instructor;
 use App\Models\User;
 use App\Notifications\CourseApprovalNotification;
 use App\Services\MediaService;
+use App\Support\Database\SsuAcademyTableRegistry;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,10 @@ use Illuminate\Support\Str;
 
 class CourseService extends MediaService
 {
+   public function __construct(
+      private CourseFinalExamService $courseFinalExamService,
+   ) {}
+
    function getCheckoutCourse(string $id): Course
    {
       return Course::where('id', $id)->first();
@@ -44,6 +49,11 @@ class CourseService extends MediaService
 
       switch ($data['tab']) {
          case 'basic':
+            $this->courseFinalExamService->assertValidFinalExamLink(
+               $data['final_exam_id'] ?? null,
+               $course,
+            );
+
             $course->update([
                ...$data,
                'slug' => Str::slug($data['title']),
@@ -51,7 +61,16 @@ class CourseService extends MediaService
             break;
 
          case 'pricing':
-            $course->update($data);
+            $course->update(collect($data)->only([
+               'pricing_type',
+               'billing_model',
+               'price',
+               'discount',
+               'discount_price',
+               'subscription_price',
+               'expiry_type',
+               'expiry_duration',
+            ])->toArray());
             break;
 
          case 'info':
@@ -137,6 +156,9 @@ class CourseService extends MediaService
          ->when($user && $user->role === 'instructor', function ($query) use ($user) {
             return $query->where('instructor_id', $user->instructor_id);
          })
+         ->when(!empty($data['catalog']), function ($query) use ($user) {
+            return $query->visibleInCatalog($user);
+         })
          ->orderBy('created_at', 'desc');
 
       if ($paginate) {
@@ -153,6 +175,7 @@ class CourseService extends MediaService
          'outcomes',
          'requirements',
          'instructor.user',
+         'final_exam:id,title,slug',
          'live_classes',
          'assignments.submissions',
          'enrollments:id',
@@ -211,15 +234,23 @@ class CourseService extends MediaService
                   }
                ])
                   ->withCount(['courses'])
-                  ->selectRaw('(SELECT COUNT(*) FROM course_reviews 
-                     INNER JOIN courses ON course_reviews.course_id = courses.id 
-                     WHERE courses.instructor_id = instructors.id) as total_reviews_count')
-                  ->selectRaw('(SELECT AVG(rating) FROM course_reviews 
-                     INNER JOIN courses ON course_reviews.course_id = courses.id 
-                     WHERE courses.instructor_id = instructors.id) as total_average_rating')
-                  ->selectRaw('(SELECT COUNT(DISTINCT user_id) FROM course_enrollments
-                     INNER JOIN courses ON course_enrollments.course_id = courses.id
-                     WHERE courses.instructor_id = instructors.id) as total_enrollments_count');
+                  ->tap(function ($query) {
+                     $instructors = SsuAcademyTableRegistry::table('instructors');
+                     $courseReviews = SsuAcademyTableRegistry::table('course_reviews');
+                     $courses = SsuAcademyTableRegistry::table('courses');
+                     $courseEnrollments = SsuAcademyTableRegistry::table('course_enrollments');
+
+                     $query
+                        ->selectRaw("(SELECT COUNT(*) FROM {$courseReviews}
+                           INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id
+                           WHERE {$courses}.instructor_id = {$instructors}.id) as total_reviews_count")
+                        ->selectRaw("(SELECT AVG(rating) FROM {$courseReviews}
+                           INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id
+                           WHERE {$courses}.instructor_id = {$instructors}.id) as total_average_rating")
+                        ->selectRaw("(SELECT COUNT(DISTINCT user_id) FROM {$courseEnrollments}
+                           INNER JOIN {$courses} ON {$courseEnrollments}.course_id = {$courses}.id
+                           WHERE {$courses}.instructor_id = {$instructors}.id) as total_enrollments_count");
+                  });
             },
          ])->first();
 
@@ -289,39 +320,15 @@ class CourseService extends MediaService
          $totalContent = $sectionsCount + $lessonsCount;
       }
 
-      // Define minimum requirements for approval
-      $minSections = 1;
-      $minLessons = 1;
-      $minTotalContent = 2; // At least 2 content items (lessons + quizzes)
-
-      // Check if content meets minimum requirements
-      $hasMinSections = $sectionsCount >= $minSections;
-      $hasMinLessons = $lessonsCount >= $minLessons;
-      $hasMinContent = $totalContent >= $minTotalContent;
-
-      // Check if course has outcomes and requirements
+      // Pre-publish content requirements have been removed: a course can be
+      // published/approved at any time regardless of sections, lessons,
+      // outcomes, requirements, or thumbnail. Counts are still returned so the
+      // content summary can be displayed for reference.
       $hasOutcomes = $course->outcomes && $course->outcomes->count() > 0;
       $hasRequirements = $course->requirements && $course->requirements->count() > 0;
 
-      // Determine if the course is ready for approval
-      $isReadyForApproval =
-         $hasThumbnail &&
-         $hasMinSections &&
-         $hasMinContent &&
-         $hasOutcomes &&
-         $hasRequirements;
-
-      // Build validation result
-      $validationMessages = [];
-      if (!$hasThumbnail) $validationMessages[] = 'Course thumbnail is missing';
-      if (!$hasMinSections) $validationMessages[] = "Course needs at least {$minSections} section";
-      if (!$hasMinLessons) $validationMessages[] = "Course needs at least {$minLessons} lesson";
-      if (!$hasMinContent) $validationMessages[] = "Course needs at least {$minTotalContent} content items (sections + section_lessons)";
-      if (!$hasOutcomes) $validationMessages[] = 'Course outcomes are missing';
-      if (!$hasRequirements) $validationMessages[] = 'Course requirements are missing';
-
       return [
-         'approve_able' => $isReadyForApproval,
+         'approve_able' => true,
          'counts' => [
             'sections_count' => $sectionsCount,
             'lessons_count' => $lessonsCount,
@@ -330,13 +337,13 @@ class CourseService extends MediaService
          ],
          'has_requirements' => [
             'thumbnail' => $hasThumbnail,
-            'min_sections' => $hasMinSections,
-            'min_lessons' => $hasMinLessons,
-            'min_content' => $hasMinContent,
+            'min_sections' => $sectionsCount >= 1,
+            'min_lessons' => $lessonsCount >= 1,
+            'min_content' => $totalContent >= 1,
             'outcomes' => $hasOutcomes,
             'requirements' => $hasRequirements
          ],
-         'validation_messages' => $validationMessages
+         'validation_messages' => []
       ];
    }
 }

@@ -1,3 +1,4 @@
+import { resolveAuthor } from '@/lib/branding';
 import Tabs from '@/components/tabs';
 import { Separator } from '@/components/ui/separator';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,7 +43,7 @@ const Show = ({ tab, exam, system, translate }: ExamPreviewProps) => {
    // Generate meta information for the exam
    const pageTitle = exam.meta_title || `${exam.title} | ${system.fields?.name}`;
    const pageDescription = exam.meta_description || exam.short_description || exam.description || 'Professional certification exam';
-   const pageKeywords = exam.meta_keywords || `${exam.title}, certification exam, professional test, ${system.fields?.keywords || 'LMS'}`;
+   const pageKeywords = exam.meta_keywords || `${exam.title}, certification exam, professional test, ${system.fields?.keywords || 'SSU Academy'}`;
    const ogTitle = exam.og_title || exam.title;
    const ogDescription = exam.og_description || pageDescription;
    const examImage = exam.thumbnail || exam.banner || '';
@@ -57,7 +58,7 @@ const Show = ({ tab, exam, system, translate }: ExamPreviewProps) => {
             <title>{pageTitle}</title>
             <meta name="description" content={pageDescription} />
             <meta name="keywords" content={pageKeywords} />
-            <meta name="author" content={system.fields?.author || 'UiLib'} />
+            <meta name="author" content={resolveAuthor(system.fields?.author)} />
 
             {/* Open Graph Tags */}
             <meta property="og:type" content="article" />

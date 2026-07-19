@@ -83,7 +83,7 @@ class ExamEnrollmentService extends MediaService
             'user_id' => $data['user_id'],
             'exam_id' => $examId,
             'enrollment_type' => $enrollmentType,
-            'entry_date' => $expiryDate,
+            'entry_date' => Carbon::now()->format('Y-m-d H:i:s'),
             'expiry_date' => $expiryDate,
          ]);
       }, 5);

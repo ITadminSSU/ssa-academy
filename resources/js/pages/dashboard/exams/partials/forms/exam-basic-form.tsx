@@ -12,11 +12,10 @@ interface Props {
    data: any;
    setData: (key: string, value: any) => void;
    errors: any;
-   categories: ExamCategory[];
    isEdit?: boolean;
 }
 
-const ExamBasicForm = ({ data, setData, errors, categories, isEdit = false }: Props) => {
+const ExamBasicForm = ({ data, setData, errors, isEdit = false }: Props) => {
    // Auto-generate slug from title
    useEffect(() => {
       if (!isEdit && data.title) {
@@ -40,27 +39,6 @@ const ExamBasicForm = ({ data, setData, errors, categories, isEdit = false }: Pr
             <Label htmlFor="slug">Slug *</Label>
             <Input id="slug" name="slug" value={data.slug} onChange={(e) => onHandleChange(e, setData)} placeholder="exam-slug" required />
             <InputError message={errors.slug} />
-         </div>
-
-         <div>
-            <Label htmlFor="exam_category_id">Category *</Label>
-            <Select
-               name="exam_category_id"
-               value={data.exam_category_id?.toString()}
-               onValueChange={(value) => setData('exam_category_id', parseInt(value))}
-            >
-               <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-               </SelectTrigger>
-               <SelectContent>
-                  {categories.map((category) => (
-                     <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.title}
-                     </SelectItem>
-                  ))}
-               </SelectContent>
-            </Select>
-            <InputError message={errors.exam_category_id} />
          </div>
 
          <div>

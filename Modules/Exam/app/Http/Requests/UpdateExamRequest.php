@@ -13,7 +13,6 @@ class UpdateExamRequest extends FormRequest
          'price' => request('price') ? (float) request('price') : null,
          'discount' => filter_var(request('discount'), FILTER_VALIDATE_BOOLEAN),
          'discount_price' => request('discount_price') ? (float) request('discount_price') : null,
-         'exam_category_id' => request('exam_category_id') ? (int) request('exam_category_id') : null,
          'instructor_id' => request('instructor_id') ? (int) request('instructor_id') : null,
          'duration_hours' => request('duration_hours') ? (int) request('duration_hours') : 0,
          'duration_minutes' => request('duration_minutes') ? (int) request('duration_minutes') : 0,
@@ -73,7 +72,7 @@ class UpdateExamRequest extends FormRequest
          'description' => 'nullable|string',
          'status' => 'nullable|string|in:draft,published,archived',
          'level' => 'nullable|string|in:beginner,intermediate,advanced',
-         'exam_category_id' => 'required|exists:exam_categories,id',
+         'exam_mode' => 'nullable|string|in:standard,quantity_takeoff',
          'instructor_id' => 'required|exists:instructors,id',
       ];
    }

@@ -4,12 +4,18 @@ namespace Modules\Exam\Services;
 
 use App\Models\User;
 use Modules\Exam\Models\Exam;
+use App\Support\ReferenceNumberService;
 use Modules\Exam\Models\ExamAttempt;
 use Modules\Exam\Models\ExamAttemptAnswer;
 use Illuminate\Support\Facades\DB;
 
 class ExamAttemptService
 {
+   public function __construct(
+      private ReferenceNumberService $referenceNumbers,
+      private QuantityTakeoffGradingService $quantityTakeoffGrading,
+   ) {}
+
    /**
     * Start a new exam attempt
     */
@@ -31,11 +37,12 @@ class ExamAttemptService
          'start_time' => now(),
          'total_marks' => $exam->total_marks,
          'status' => 'in_progress',
+         'tracking_reference' => $this->referenceNumbers->generateExamTrackingReference(),
       ]);
    }
 
    /**
-    * Submit exam answers without grading (for manual review)
+    * Submit exam answers and auto-grade objective questions immediately.
     */
    public function submitAttempt(ExamAttempt $attempt, array $answers): ExamAttempt
    {
@@ -48,28 +55,52 @@ class ExamAttemptService
                continue;
             }
 
-            // Save the answer without grading
             ExamAttemptAnswer::create([
                'exam_attempt_id' => $attempt->id,
                'exam_question_id' => $question->id,
                'answer_data' => $answer['answer_data'],
-               'is_correct' => null, // Will be graded during review
-               'marks_obtained' => 0, // Will be assigned during review
+               'is_correct' => null,
+               'marks_obtained' => 0,
             ]);
          }
 
-         // Update attempt status to submitted (pending review)
          $attempt->update([
             'end_time' => now(),
-            'status' => 'submitted', // Changed from 'completed' to 'submitted'
          ]);
 
+         $attempt = $this->finalizeAttemptGrades($attempt->fresh());
+
          DB::commit();
-         return $attempt->fresh();
+         return $attempt;
       } catch (\Exception $e) {
          DB::rollBack();
          throw $e;
       }
+   }
+
+   /**
+    * Grade a previously submitted attempt that was never finalized.
+    */
+   public function finalizeSubmittedAttempt(ExamAttempt $attempt): ExamAttempt
+   {
+      if ($attempt->status !== 'submitted') {
+         return $attempt;
+      }
+
+      DB::beginTransaction();
+      try {
+         $attempt = $this->finalizeAttemptGrades($attempt);
+         DB::commit();
+         return $attempt;
+      } catch (\Exception $e) {
+         DB::rollBack();
+         throw $e;
+      }
+   }
+
+   private function requiresManualGrading(string $questionType): bool
+   {
+      return in_array($questionType, ['short_answer', 'file_submission'], true);
    }
 
    /**
@@ -108,13 +139,47 @@ class ExamAttemptService
             break;
 
          case 'short_answer':
-            // Short answers need manual grading
+         case 'file_submission':
             $result['is_correct'] = null;
             $result['marks_obtained'] = 0;
+            break;
+
+         case 'quantity_takeoff':
+            $result = $this->gradeQuantityTakeoff($question, $answerData);
             break;
       }
 
       return $result;
+   }
+
+   private function gradeQuantityTakeoff($question, $answerData): array
+   {
+      $exam = Exam::find($question->exam_id);
+      $answerKeyLines = $exam?->takeoff_config['line_items'] ?? [];
+
+      if (empty($answerKeyLines)) {
+         return [
+            'is_correct' => false,
+            'marks_obtained' => 0,
+         ];
+      }
+
+      $grading = $this->quantityTakeoffGrading->grade(
+         $answerKeyLines,
+         is_array($answerData) ? $answerData : [],
+         (float) $question->marks,
+      );
+
+      return [
+         'is_correct' => $grading['is_correct'],
+         'marks_obtained' => $grading['marks_obtained'],
+         'grading_meta' => [
+            'lines_correct' => $grading['lines_correct'],
+            'lines_total' => $grading['lines_total'],
+            'lines_percent' => $grading['lines_percent'],
+            'grading_breakdown' => $grading['grading_breakdown'],
+         ],
+      ];
    }
 
    /**
@@ -126,7 +191,7 @@ class ExamAttemptService
          ->where('is_correct', true)
          ->first();
 
-      $isCorrect = $correctOption && $correctOption->id == $answerData['selected_option_id'];
+      $isCorrect = $correctOption && (int) $correctOption->id === (int) ($answerData['selected_option_id'] ?? 0);
 
       return [
          'is_correct' => $isCorrect,
@@ -329,11 +394,37 @@ class ExamAttemptService
 
    public function getBestExamAttempt(string $exam_id, string $user_id)
    {
-      return ExamAttempt::where('exam_id', $exam_id)
+      $attempt = ExamAttempt::where('exam_id', $exam_id)
          ->where('user_id', $user_id)
          ->where('status', 'completed')
          ->orderBy('obtained_marks', 'desc')
          ->first();
+
+      return $attempt ? $this->ensureCertificateId($this->ensureTrackingReference($attempt)) : null;
+   }
+
+   public function ensureTrackingReference(ExamAttempt $attempt): ExamAttempt
+   {
+      if (!empty($attempt->tracking_reference)) {
+         return $attempt;
+      }
+
+      $attempt->update([
+         'tracking_reference' => $this->referenceNumbers->generateExamTrackingReference(),
+      ]);
+
+      return $attempt->fresh();
+   }
+
+   public function ensureCertificateId(ExamAttempt $attempt): ExamAttempt
+   {
+      if ($attempt->is_passed && empty($attempt->certificate_id)) {
+         $attempt->update([
+            'certificate_id' => $this->referenceNumbers->generateCertificateId(),
+         ]);
+      }
+
+      return $attempt->fresh();
    }
 
    public function getAttemptResult(string $exam_id, string $attempt_id): ExamAttempt
@@ -364,97 +455,155 @@ class ExamAttemptService
    {
       DB::beginTransaction();
       try {
-         $totalObtainedMarks = 0;
-         $correctAnswers = 0;
-         $incorrectAnswers = 0;
-
-         // Load attempt with answers and questions
-         $attempt->load(['attempt_answers.exam_question']);
-
-         foreach ($attempt->attempt_answers as $attemptAnswer) {
-            $question = $attemptAnswer->exam_question;
-
-            if (!$question) {
-               continue;
-            }
-
-            // Check if this question has manual grading
-            $questionId = $question->id;
-            if (isset($manualGrades[$questionId])) {
-               // Use manual grade
-               $marksObtained = floatval($manualGrades[$questionId]);
-               $isCorrect = $marksObtained >= $question->marks;
-
-               $attemptAnswer->update([
-                  'is_correct' => $isCorrect,
-                  'marks_obtained' => $marksObtained,
-               ]);
-            } else {
-               // Auto-grade based on question type
-               $result = $this->gradeAnswer($question, $attemptAnswer->answer_data);
-
-               $attemptAnswer->update([
-                  'is_correct' => $result['is_correct'],
-                  'marks_obtained' => $result['marks_obtained'],
-               ]);
-            }
-
-            // Refresh to get updated values
-            $attemptAnswer->refresh();
-
-            // Update is_correct flag based on marks obtained
-            $questionMarks = floatval($question->marks);
-            $obtainedMarks = floatval($attemptAnswer->marks_obtained);
-
-            // If student got full marks, mark as correct
-            if ($obtainedMarks >= $questionMarks) {
-               if ($attemptAnswer->is_correct !== true) {
-                  $attemptAnswer->update(['is_correct' => true]);
-                  $attemptAnswer->refresh();
-               }
-               $correctAnswers++;
-            } elseif ($obtainedMarks > 0) {
-               // Partial marks - still incorrect
-               if ($attemptAnswer->is_correct !== false) {
-                  $attemptAnswer->update(['is_correct' => false]);
-                  $attemptAnswer->refresh();
-               }
-               $incorrectAnswers++;
-            } else {
-               // Zero marks - incorrect
-               if ($attemptAnswer->is_correct !== false) {
-                  $attemptAnswer->update(['is_correct' => false]);
-                  $attemptAnswer->refresh();
-               }
-               $incorrectAnswers++;
-            }
-
-            $totalObtainedMarks += $attemptAnswer->marks_obtained;
-         }
-
-         // Calculate percentage and pass/fail
-         $percentage = $attempt->total_marks > 0
-            ? round(($totalObtainedMarks / $attempt->total_marks) * 100, 2)
-            : 0;
-
-         $isPassed = $totalObtainedMarks >= $attempt->exam->pass_mark;
-
-         // Update attempt with grading results
-         $attempt->update([
-            'obtained_marks' => $totalObtainedMarks,
-            'percentage' => $percentage,
-            'correct_answers' => $correctAnswers,
-            'incorrect_answers' => $incorrectAnswers,
-            'is_passed' => $isPassed,
-            'status' => 'completed',
-         ]);
-
+         $attempt = $this->finalizeAttemptGrades($attempt, $manualGrades);
          DB::commit();
-         return $attempt->fresh();
+         return $attempt;
       } catch (\Exception $e) {
          DB::rollBack();
          throw $e;
       }
+   }
+
+   /**
+    * Apply trainer overrides to quantity take-off line results and recalculate the attempt score.
+    *
+    * @param array<string, bool> $lineOverrides
+    */
+   public function applyTakeoffLineOverrides(ExamAttempt $attempt, array $lineOverrides): ExamAttempt
+   {
+      DB::beginTransaction();
+      try {
+         $attempt->load(['attempt_answers.exam_question', 'exam']);
+         $answer = $attempt->attempt_answers->first(
+            fn ($attemptAnswer) => $attemptAnswer->exam_question?->question_type === 'quantity_takeoff'
+         );
+
+         if (!$answer || !$attempt->exam?->isQuantityTakeoff()) {
+            DB::commit();
+            return $attempt;
+         }
+
+         $answerData = is_array($answer->answer_data) ? $answer->answer_data : [];
+         $answerData['line_overrides'] = $lineOverrides;
+
+         $answerKeyLines = $attempt->exam->takeoff_config['line_items'] ?? [];
+         $grading = $this->quantityTakeoffGrading->grade(
+            $answerKeyLines,
+            $answerData,
+            (float) $answer->exam_question->marks,
+         );
+
+         $answerData = array_merge($answerData, [
+            'lines_correct' => $grading['lines_correct'],
+            'lines_total' => $grading['lines_total'],
+            'lines_percent' => $grading['lines_percent'],
+            'grading_breakdown' => $grading['grading_breakdown'],
+         ]);
+
+         $answer->update([
+            'answer_data' => $answerData,
+            'marks_obtained' => $grading['marks_obtained'],
+            'is_correct' => $grading['is_correct'],
+         ]);
+
+         $attempt = $this->finalizeAttemptGrades($attempt->fresh());
+         DB::commit();
+
+         return $attempt;
+      } catch (\Exception $e) {
+         DB::rollBack();
+         throw $e;
+      }
+   }
+
+   private function finalizeAttemptGrades(ExamAttempt $attempt, array $manualGrades = []): ExamAttempt
+   {
+      $attempt->load(['attempt_answers.exam_question', 'exam']);
+
+      $totalObtainedMarks = 0;
+      $correctAnswers = 0;
+      $incorrectAnswers = 0;
+      $pendingAnswers = 0;
+
+      foreach ($attempt->attempt_answers as $attemptAnswer) {
+         $question = $attemptAnswer->exam_question;
+
+         if (!$question) {
+            continue;
+         }
+
+         $questionId = $question->id;
+
+         if (isset($manualGrades[$questionId])) {
+            $marksObtained = floatval($manualGrades[$questionId]);
+            $isCorrect = $marksObtained >= floatval($question->marks);
+
+            $attemptAnswer->update([
+               'is_correct' => $isCorrect,
+               'marks_obtained' => $marksObtained,
+            ]);
+         } elseif ($this->requiresManualGrading($question->question_type)) {
+            // Leave short-answer questions for trainer review unless manually graded.
+            if ($attemptAnswer->is_correct === null) {
+               $pendingAnswers++;
+               continue;
+            }
+         } else {
+            $result = $this->gradeAnswer($question, $attemptAnswer->answer_data);
+
+            $answerData = $attemptAnswer->answer_data;
+            if (isset($result['grading_meta']) && is_array($answerData)) {
+               $answerData = array_merge($answerData, $result['grading_meta']);
+            }
+
+            $attemptAnswer->update([
+               'answer_data' => $answerData,
+               'is_correct' => $result['is_correct'],
+               'marks_obtained' => $result['marks_obtained'],
+            ]);
+         }
+
+         $attemptAnswer->refresh();
+
+         if ($attemptAnswer->is_correct === null) {
+            $pendingAnswers++;
+            continue;
+         }
+
+         $questionMarks = floatval($question->marks);
+         $obtainedMarks = floatval($attemptAnswer->marks_obtained);
+         $totalObtainedMarks += $obtainedMarks;
+
+         if ($obtainedMarks >= $questionMarks) {
+            if ($attemptAnswer->is_correct !== true) {
+               $attemptAnswer->update(['is_correct' => true]);
+            }
+            $correctAnswers++;
+         } else {
+            if ($attemptAnswer->is_correct !== false) {
+               $attemptAnswer->update(['is_correct' => false]);
+            }
+            $incorrectAnswers++;
+         }
+      }
+
+      $percentage = $attempt->total_marks > 0
+         ? round(($totalObtainedMarks / $attempt->total_marks) * 100, 2)
+         : 0;
+
+      $isCompleted = $pendingAnswers === 0;
+      $isPassed = $isCompleted && $percentage >= floatval($attempt->exam->pass_mark);
+
+      $attempt->update([
+         'obtained_marks' => $totalObtainedMarks,
+         'percentage' => $percentage,
+         'correct_answers' => $correctAnswers,
+         'incorrect_answers' => $incorrectAnswers,
+         'is_passed' => $isPassed,
+         'status' => $isCompleted ? 'completed' : 'submitted',
+      ]);
+
+      return $attempt->fresh();
    }
 
    /**
@@ -475,7 +624,7 @@ class ExamAttemptService
             }
 
             // Skip manual grading questions (listening, short_answer)
-            if (in_array($question->question_type, ['listening', 'short_answer'])) {
+            if (in_array($question->question_type, ['listening', 'short_answer', 'file_submission'])) {
                continue;
             }
 

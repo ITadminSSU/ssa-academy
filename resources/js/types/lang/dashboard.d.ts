@@ -1,4 +1,7 @@
 interface DashboardLang {
+   welcome: string;
+   welcome_subtitle: string;
+
    // Common Management
    user_management: string;
    course_management: string;
@@ -19,6 +22,30 @@ interface DashboardLang {
    visitor_analytics: string;
    course_analytics: string;
    enrollment_statistics: string;
+   student_progress: string;
+   student_progress_description: string;
+   student_progress_course_description: string;
+   enrolled_students: string;
+   enrollment_list: string;
+   student: string;
+   completion: string;
+   certificate: string;
+   certificate_ready: string;
+   in_progress: string;
+   details: string;
+   submitted: string;
+   passed_label: string;
+   attempts: string;
+   standalone_exams: string;
+   no_standalone_exams: string;
+   course_score: string;
+   best_quiz_score: string;
+   sort_students_by: string;
+   sort_by_name: string;
+   sort_by_completion: string;
+   sort_by_overall_score: string;
+   sort_by_best_quiz: string;
+   no_score_yet: string;
    revenue_statistics: string;
    course_statistics: string;
    sales_report: string;
@@ -237,6 +264,7 @@ interface DashboardLang {
    user_preferences: string;
    update_user: string;
    select_approval_status: string;
+   select_user_type: string;
 
    // Course Progress
    course_progress: string;

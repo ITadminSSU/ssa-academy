@@ -5,13 +5,17 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateEmailRequest;
 use App\Services\AccountService;
+use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EmailVerificationNotificationController extends Controller
 {
-    public function __construct(private AccountService $accountService) {}
+    public function __construct(
+        private AccountService $accountService,
+        private AuthService $authService,
+    ) {}
 
     /**
      * Send a new email verification notification.
@@ -19,7 +23,7 @@ class EmailVerificationNotificationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false));
+            return redirect()->intended($this->authService->homeUrlFor($request->user()));
         }
 
         $request->user()->sendEmailVerificationNotification();
@@ -48,7 +52,7 @@ class EmailVerificationNotificationController extends Controller
         $message = $saved ? "New email successfully changed." : "Verification token didn't match or expire.";
 
         if ($user->role == 'student') {
-            return redirect()->route('student.index', ['tab' => 'settings'])
+            return redirect()->to($this->authService->homeUrlFor($user, ['tab' => 'settings']))
                 ->with($flash, $message);
         }
 

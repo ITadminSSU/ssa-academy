@@ -19,11 +19,13 @@ class WatchHistory extends Model
         'next_watching_id',
         'next_watching_type',
         'completed_watching',
+        'lesson_watch_progress',
         'completion_date',
     ];
 
     protected $casts = [
-        'completed_watching' => 'array'
+        'completed_watching' => 'array',
+        'lesson_watch_progress' => 'array',
     ];
 
     public function user()

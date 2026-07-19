@@ -79,6 +79,8 @@ const AssignmentGradeForm = ({ isGraded, isLate, totalMarks, submission }: Props
                   <SelectContent>
                      <SelectItem value="pending">Pending</SelectItem>
                      <SelectItem value="graded">Graded</SelectItem>
+                     <SelectItem value="passed">Passed</SelectItem>
+                     <SelectItem value="approved">Approved</SelectItem>
                      <SelectItem value="resubmitted">Resubmitted</SelectItem>
                   </SelectContent>
                </Select>

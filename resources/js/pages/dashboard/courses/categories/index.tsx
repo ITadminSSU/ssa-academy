@@ -3,7 +3,6 @@ import DeleteModal from '@/components/inertia/delete-modal';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/hooks/use-auth';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
@@ -20,7 +19,6 @@ interface Props extends SharedData {
 }
 
 const Index = (props: Props) => {
-   const { isAdmin } = useAuth();
    const { categories, lastPosition, lastChildPosition, translate } = props;
    const { button, frontend, dashboard } = translate;
 
@@ -61,7 +59,7 @@ const Index = (props: Props) => {
          </div>
 
          {categories.length > 0 ? (
-            <div className="mt-6 grid grid-cols-1 gap-6 border-t border-gray-300 py-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-1 gap-6 border-t border-border py-6 md:grid-cols-2 lg:grid-cols-4">
                {defaultCategory && (
                   <Card key={defaultCategory.id} className="p-6">
                      <div className="flex items-center gap-2">
@@ -98,17 +96,15 @@ const Index = (props: Props) => {
                               }
                            />
 
-                           {isAdmin && (
-                              <DeleteModal
-                                 message={frontend.delete_warning}
-                                 routePath={route('categories.destroy', category.id)}
-                                 actionComponent={
-                                    <Button size="icon" variant="ghost" className="bg-destructive/8 hover:bg-destructive/6 h-8 w-8 rounded-full p-0">
-                                       <Trash2 className="text-destructive text-sm" />
-                                    </Button>
-                                 }
-                              />
-                           )}
+                           <DeleteModal
+                              message={frontend.delete_warning}
+                              routePath={route('categories.destroy', category.id)}
+                              actionComponent={
+                                 <Button size="icon" variant="ghost" className="bg-destructive/8 hover:bg-destructive/6 h-8 w-8 rounded-full p-0">
+                                    <Trash2 className="text-destructive text-sm" />
+                                 </Button>
+                              }
+                           />
                         </div>
                      </div>
 
@@ -135,19 +131,17 @@ const Index = (props: Props) => {
                                     lastChildPosition={lastChildPosition}
                                  />
 
-                                 {isAdmin && (
-                                    <div>
-                                       <DeleteModal
-                                          message={frontend.delete_warning}
-                                          routePath={route('category-child.destroy', child.id)}
-                                          actionComponent={
-                                             <Button size="icon" variant="ghost" className="hover:bg-destructive/6 h-8 w-8">
-                                                <Trash2 className="text-destructive text-sm" />
-                                             </Button>
-                                          }
-                                       />
-                                    </div>
-                                 )}
+                                 <div>
+                                    <DeleteModal
+                                       message={frontend.delete_warning}
+                                       routePath={route('category-child.destroy', child.id)}
+                                       actionComponent={
+                                          <Button size="icon" variant="ghost" className="hover:bg-destructive/6 h-8 w-8">
+                                             <Trash2 className="text-destructive text-sm" />
+                                          </Button>
+                                       }
+                                    />
+                                 </div>
                               </div>
                            </div>
                         ))}
@@ -198,7 +192,7 @@ const Index = (props: Props) => {
                ))}
             </div>
          ) : (
-            <Card className="mt-6 border-t border-gray-300 p-6">
+            <Card className="mt-6 border-t border-border p-6">
                <h2 className="text-center">{dashboard.no_results}</h2>
             </Card>
          )}

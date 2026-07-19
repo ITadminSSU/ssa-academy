@@ -20,9 +20,10 @@ const System = () => {
 
    return (
       <div className="grid grid-cols-1 md:px-3">
-         <div className="mb-6">
-            <h1 className="text-2xl font-bold">{settings.system_settings}</h1>
-            <p className="text-gray-500">{settings.system_settings_description}</p>
+         <div className="border-border/60 bg-card mb-6 rounded-2xl border p-6 shadow-sm">
+            <p className="text-primary mb-2 text-xs font-semibold tracking-[0.18em] uppercase">Platform</p>
+            <h1 className="text-2xl font-semibold tracking-tight">{settings.system_settings}</h1>
+            <p className="text-muted-foreground mt-2 text-sm">{settings.system_settings_description}</p>
          </div>
 
          <Tabs defaultValue="website">

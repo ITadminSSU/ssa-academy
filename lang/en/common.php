@@ -40,6 +40,8 @@ return [
 
    // Common Status
    'active' => 'Active',
+   'employee' => 'Employee',
+   'external' => 'External',
    'inactive' => 'Inactive',
    'published' => 'Published',
    'draft' => 'Draft',

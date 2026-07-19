@@ -39,13 +39,13 @@ const SearchInput = (props: SearchInputProps) => {
             onChange={searchHandler}
             placeholder={placeholder}
             className={cn(
-               'focus:border-input border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border py-[15px] text-sm font-normal text-gray-500 focus:ring-0 focus:outline-0 focus-visible:ring-[3px]',
+               'focus:border-input border-input focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border py-[15px] text-sm font-normal text-muted-foreground focus:ring-0 focus:outline-0 focus-visible:ring-[3px]',
                iconPosition === 'left' ? 'pr-4 pl-12' : 'pr-12 pl-4',
             )}
             defaultValue={params['search'] ?? ''}
          />
 
-         <Search className={cn('absolute top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-gray-700', iconPosition === 'left' ? 'left-4' : 'right-4')} />
+         <Search className={cn('absolute top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground', iconPosition === 'left' ? 'left-4' : 'right-4')} />
       </div>
    );
 };

@@ -93,7 +93,7 @@ const OrderingQuestion = ({ question, answer, onAnswerChange }: Props) => {
    return (
       <div className="space-y-4">
          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">Arrange the following items in the correct order:</p>
+            <p className="text-sm text-muted-foreground">Arrange the following items in the correct order:</p>
             <Button variant="ghost" size="sm" onClick={shuffleItems}>
                Shuffle
             </Button>
@@ -104,7 +104,7 @@ const OrderingQuestion = ({ question, answer, onAnswerChange }: Props) => {
                <Card key={item.id} className="p-4">
                   <div className="flex items-center gap-3">
                      <div className="flex items-center gap-2">
-                        <GripVertical className="h-5 w-5 text-gray-400" />
+                        <GripVertical className="h-5 w-5 text-muted-foreground/70" />
                         <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-white">
                            {index + 1}
                         </div>
@@ -127,7 +127,7 @@ const OrderingQuestion = ({ question, answer, onAnswerChange }: Props) => {
             ))}
          </div>
 
-         <p className="text-sm text-gray-600">
+         <p className="text-sm text-muted-foreground">
             <span className="font-semibold">Tip:</span> Use the arrow buttons to move items up or down.
          </p>
       </div>

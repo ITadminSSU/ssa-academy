@@ -68,7 +68,7 @@ const ExamSettings = () => {
                      max="100"
                   />
                   <InputError message={errors.pass_mark} />
-                  <p className="mt-1 text-xs text-gray-500">Students must score this percentage to pass</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Students must score this percentage to pass</p>
                </div>
 
                <div>
@@ -82,7 +82,7 @@ const ExamSettings = () => {
                      min="1"
                   />
                   <InputError message={errors.max_attempts} />
-                  <p className="mt-1 text-xs text-gray-500">Maximum number of attempts allowed per student</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Maximum number of attempts allowed per student</p>
                </div>
 
                <div>
@@ -96,7 +96,7 @@ const ExamSettings = () => {
                      min="1"
                   />
                   <InputError message={errors.total_marks} />
-                  <p className="mt-1 text-xs text-gray-500">Total marks for the entire exam</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Total marks for the entire exam</p>
                </div>
             </div>
 

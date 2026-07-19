@@ -1,9 +1,9 @@
 {
     "GoogleAuth": true,
     "Installer": true,
-    "Updater": true,
+    "Updater": false,
     "PaymentGateways": true,
-    "Blog": true,
+    "Blog": false,
     "Language": true,
     "Certificate": true,
     "Exam": true

@@ -11,7 +11,12 @@ class LessonResource extends Model
         'title',
         'type',
         'resource',
+        'is_downloadable',
         'section_lesson_id',
+    ];
+
+    protected $casts = [
+        'is_downloadable' => 'boolean',
     ];
 
     public function section_lesson()

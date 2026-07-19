@@ -31,12 +31,12 @@ const RatingDisplay = ({ rating, reviewCount, showCount = true, size = 'md', cla
             {[1, 2, 3, 4, 5].map((star) => (
                <Star
                   key={star}
-                  className={cn(sizeClasses[size], star <= normalizedRating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200')}
+                  className={cn(sizeClasses[size], star <= normalizedRating ? 'fill-yellow-400 text-yellow-400' : 'fill-muted-foreground/30 text-muted-foreground/30')}
                />
             ))}
          </div>
-         <span className={cn('font-medium text-gray-700', textSizeClasses[size])}>{isValidRating ? normalizedRating.toFixed(1) : '—'}</span>
-         {showCount && reviewCount !== undefined && <span className={cn('text-gray-500', textSizeClasses[size])}>({reviewCount})</span>}
+         <span className={cn('font-medium text-muted-foreground', textSizeClasses[size])}>{isValidRating ? normalizedRating.toFixed(1) : '—'}</span>
+         {showCount && reviewCount !== undefined && <span className={cn('text-muted-foreground', textSizeClasses[size])}>({reviewCount})</span>}
       </div>
    );
 };

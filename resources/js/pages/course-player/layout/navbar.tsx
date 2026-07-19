@@ -3,43 +3,65 @@ import Appearance from '@/components/appearance';
 import Notification from '@/components/notification';
 import ProfileToggle from '@/components/profile-toggle';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useSidebar } from '@/components/ui/sidebar';
 import useScreen from '@/hooks/use-screen';
+import { getCompletedContents, getCourseCompletion } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
-import { Expand, GraduationCap, Heart, Menu, Minimize, SettingsIcon, UserCircle } from 'lucide-react';
-import { nanoid } from 'nanoid';
+import { ArrowLeft, ListTree, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 const Navbar = () => {
    const { screen } = useScreen();
    const { open, toggleSidebar } = useSidebar();
    const { props } = usePage<CoursePlayerProps>();
-   const { translate } = props;
-   const { button } = translate;
-   const user = props.auth.user;
+   const { course, watchHistory } = props;
+
+   const completed = getCompletedContents(watchHistory);
+   const completion = getCourseCompletion(course, completed);
 
    return (
-      <header className="bg-primary dark:bg-primary-dark text-primary-foreground dark:text-primary sticky top-0 z-50 h-[60px]">
-         <div className="flex h-full items-center justify-between gap-3 px-4 md:px-8">
-            <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer">
-               <AppLogo theme="light" className="h-[80px]" />
-            </a>
+      <header className="ssu-player-header sticky top-0 z-50 overflow-hidden">
+         <div className="flex h-16 items-center gap-3 px-4 md:gap-4 md:px-6">
+            <div className="flex min-w-0 items-center gap-3 md:gap-4">
+               <Link href={route('home')} className="flex shrink-0 items-center">
+                  <AppLogo theme="dark" className="ssu-nav-logo" />
+               </Link>
 
-            <p className="hidden font-semibold sm:block">{props.course.title}</p>
+               <div className="hidden h-8 w-px bg-card/20 sm:block" />
 
-            <div className="mr-0 flex items-center gap-2">
+               <Link
+                  href={route('course.details', { slug: course.slug, id: course.id })}
+                  className="hidden items-center gap-1.5 text-sm font-medium text-white/85 transition-colors hover:text-white sm:inline-flex"
+               >
+                  <ArrowLeft className="h-4 w-4" />
+                  Course details
+               </Link>
+            </div>
+
+            <div className="min-w-0 flex-1 px-1 md:px-4">
+               <p className="mb-0.5 hidden text-[10px] font-semibold tracking-[0.14em] text-white/70 uppercase md:block">Now learning</p>
+               <p className="font-display truncate text-sm font-semibold text-white md:text-base">{course.title}</p>
+               <div className="mt-1.5 hidden max-w-md items-center gap-2 md:flex">
+                  <Progress value={Number(completion.percentage)} className="ssu-player-progress h-1.5 flex-1" />
+                  <span className="shrink-0 text-xs tabular-nums text-white/90">{completion.percentage}%</span>
+               </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
                <Appearance />
 
                <Notification />
 
                {screen > 768 && (
                   <Button
-                     size="icon"
+                     size="default"
                      variant="secondary"
                      onClick={() => toggleSidebar()}
-                     className="border-secondary-light text-secondary-foreground hover:text-secondary-foreground rounded-full"
+                     className="hidden rounded-full border-white/30 bg-card/15 text-white hover:bg-card/25 hover:text-white sm:inline-flex"
                   >
-                     {open ? <Expand /> : <Minimize />}
+                     {open ? <PanelRightClose className="mr-1.5 h-4 w-4" /> : <PanelRightOpen className="mr-1.5 h-4 w-4" />}
+                     Curriculum
                   </Button>
                )}
 
@@ -50,9 +72,9 @@ const Navbar = () => {
                      size="icon"
                      variant="secondary"
                      onClick={() => toggleSidebar()}
-                     className="border-secondary-light text-secondary-foreground hover:text-secondary-foreground rounded-full"
+                     className="rounded-full border-white/30 bg-card/15 text-white hover:bg-card/25 hover:text-white"
                   >
-                     <Menu />
+                     <ListTree className="h-4 w-4" />
                   </Button>
                )}
             </div>
@@ -60,32 +82,5 @@ const Navbar = () => {
       </header>
    );
 };
-
-const getStudentMenuItems = (button: any) => [
-   {
-      id: nanoid(),
-      name: button.my_courses,
-      slug: 'courses',
-      Icon: GraduationCap,
-   },
-   {
-      id: nanoid(),
-      name: button.wishlist,
-      slug: 'wishlist',
-      Icon: Heart,
-   },
-   {
-      id: nanoid(),
-      name: button.profile,
-      slug: 'profile',
-      Icon: UserCircle,
-   },
-   {
-      id: nanoid(),
-      name: button.settings,
-      slug: 'settings',
-      Icon: SettingsIcon,
-   },
-];
 
 export default Navbar;

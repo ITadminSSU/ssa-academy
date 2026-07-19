@@ -24,6 +24,8 @@ class ExamAttempt extends Model
       'incorrect_answers',
       'is_passed',
       'status',
+      'tracking_reference',
+      'certificate_id',
    ];
 
    protected $casts = [

@@ -11,6 +11,8 @@ enum ExamQuestionType: string
    case ORDERING = 'ordering';
    case SHORT_ANSWER = 'short_answer';
    case LISTENING = 'listening';
+   case FILE_SUBMISSION = 'file_submission';
+   case QUANTITY_TAKEOFF = 'quantity_takeoff';
 
    public function getLabel(): string
    {
@@ -22,6 +24,8 @@ enum ExamQuestionType: string
          self::ORDERING => 'Ordering',
          self::SHORT_ANSWER => 'Short Answer',
          self::LISTENING => 'Listening',
+         self::FILE_SUBMISSION => 'File Submission',
+         self::QUANTITY_TAKEOFF => 'Quantity Take-Off',
       };
    }
 
@@ -33,8 +37,10 @@ enum ExamQuestionType: string
          self::MATCHING,
          self::FILL_BLANK,
          self::ORDERING,
-         self::LISTENING => true,
-         self::SHORT_ANSWER => false,
+         self::LISTENING,
+         self::QUANTITY_TAKEOFF => true,
+         self::SHORT_ANSWER,
+         self::FILE_SUBMISSION => false,
       };
    }
 }

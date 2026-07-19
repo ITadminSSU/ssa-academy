@@ -24,7 +24,12 @@ class ChunkInitiateRequest extends FormRequest
         $fileMimeTypes = [
             'audio' => ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/mp3', 'audio/x-wav'],
             'video' => ['video/mp4', 'video/avi', 'video/mpeg', 'video/ogg', 'video/webm', 'video/3gpp'],
-            'document' => ['text/plain', 'application/pdf'],
+            'document' => [
+                'text/plain',
+                'application/pdf',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+            ],
             'image' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
             'zip' => ['application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed'],
             // 'assets' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/avi', 'video/mpeg', 'video/ogg', 'video/webm', 'video/3gpp', 'text/plain', 'application/pdf', 'application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed'],

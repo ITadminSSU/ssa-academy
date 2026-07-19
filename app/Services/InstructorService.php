@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Instructor;
 use App\Notifications\InstructorApprovalNotification;
 use App\Services\MediaService;
+use App\Support\Database\SsuAcademyTableRegistry;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -57,25 +58,7 @@ class InstructorService extends MediaService
             },
          ])
          ->withCount(['courses', 'exams'])
-         ->selectRaw('(SELECT COUNT(*) FROM course_reviews 
-            INNER JOIN courses ON course_reviews.course_id = courses.id 
-            WHERE courses.instructor_id = instructors.id) as total_reviews_count')
-         ->selectRaw('(SELECT AVG(rating) FROM course_reviews 
-            INNER JOIN courses ON course_reviews.course_id = courses.id 
-            WHERE courses.instructor_id = instructors.id) as total_average_rating')
-         ->selectRaw('(SELECT COUNT(DISTINCT user_id) FROM course_enrollments
-            INNER JOIN courses ON course_enrollments.course_id = courses.id
-            WHERE courses.instructor_id = instructors.id) as total_enrollments_count')
-         ->selectRaw('(SELECT COUNT(*) FROM exams WHERE exams.instructor_id = instructors.id) as total_exam_count')
-         ->selectRaw('(SELECT COUNT(DISTINCT exam_enrollments.user_id) FROM exam_enrollments
-            INNER JOIN exams ON exam_enrollments.exam_id = exams.id
-            WHERE exams.instructor_id = instructors.id) as total_exam_students_count')
-         ->selectRaw('(SELECT COUNT(*) FROM exam_reviews
-            INNER JOIN exams ON exam_reviews.exam_id = exams.id
-            WHERE exams.instructor_id = instructors.id) as total_exam_reviews_count')
-         ->selectRaw('(SELECT AVG(rating) FROM exam_reviews
-            INNER JOIN exams ON exam_reviews.exam_id = exams.id
-            WHERE exams.instructor_id = instructors.id) as total_exam_average_rating')
+         ->tap(fn ($query) => $this->applyInstructorAggregateSelects($query, 'total_exam_students_count'))
          ->first();
    }
 
@@ -84,26 +67,40 @@ class InstructorService extends MediaService
       return Instructor::where('id', $id)
          ->with(['user'])
          ->withCount(['courses', 'exams'])
-         ->selectRaw('(SELECT COUNT(*) FROM course_reviews 
-            INNER JOIN courses ON course_reviews.course_id = courses.id 
-            WHERE courses.instructor_id = instructors.id) as total_reviews_count')
-         ->selectRaw('(SELECT AVG(rating) FROM course_reviews 
-            INNER JOIN courses ON course_reviews.course_id = courses.id 
-            WHERE courses.instructor_id = instructors.id) as total_average_rating')
-         ->selectRaw('(SELECT COUNT(DISTINCT user_id) FROM course_enrollments
-            INNER JOIN courses ON course_enrollments.course_id = courses.id
-            WHERE courses.instructor_id = instructors.id) as total_enrollments_count')
-         ->selectRaw('(SELECT COUNT(*) FROM exams WHERE exams.instructor_id = instructors.id) as total_exam_count')
-         ->selectRaw('(SELECT COUNT(DISTINCT exam_enrollments.user_id) FROM exam_enrollments
-            INNER JOIN exams ON exam_enrollments.exam_id = exams.id
-            WHERE exams.instructor_id = instructors.id) as total_exam_instructors_count')
-         ->selectRaw('(SELECT COUNT(*) FROM exam_reviews
-            INNER JOIN exams ON exam_reviews.exam_id = exams.id
-            WHERE exams.instructor_id = instructors.id) as total_exam_reviews_count')
-         ->selectRaw('(SELECT AVG(rating) FROM exam_reviews
-            INNER JOIN exams ON exam_reviews.exam_id = exams.id
-            WHERE exams.instructor_id = instructors.id) as total_exam_average_rating')
+         ->tap(fn ($query) => $this->applyInstructorAggregateSelects($query, 'total_exam_instructors_count'))
          ->first();
+   }
+
+   private function applyInstructorAggregateSelects($query, string $examEnrollmentAlias): void
+   {
+      $instructors = SsuAcademyTableRegistry::table('instructors');
+      $courseReviews = SsuAcademyTableRegistry::table('course_reviews');
+      $courses = SsuAcademyTableRegistry::table('courses');
+      $courseEnrollments = SsuAcademyTableRegistry::table('course_enrollments');
+      $exams = SsuAcademyTableRegistry::table('exams');
+      $examEnrollments = SsuAcademyTableRegistry::table('exam_enrollments');
+      $examReviews = SsuAcademyTableRegistry::table('exam_reviews');
+
+      $query
+         ->selectRaw("(SELECT COUNT(*) FROM {$courseReviews}
+            INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id
+            WHERE {$courses}.instructor_id = {$instructors}.id) as total_reviews_count")
+         ->selectRaw("(SELECT AVG(rating) FROM {$courseReviews}
+            INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id
+            WHERE {$courses}.instructor_id = {$instructors}.id) as total_average_rating")
+         ->selectRaw("(SELECT COUNT(DISTINCT user_id) FROM {$courseEnrollments}
+            INNER JOIN {$courses} ON {$courseEnrollments}.course_id = {$courses}.id
+            WHERE {$courses}.instructor_id = {$instructors}.id) as total_enrollments_count")
+         ->selectRaw("(SELECT COUNT(*) FROM {$exams} WHERE {$exams}.instructor_id = {$instructors}.id) as total_exam_count")
+         ->selectRaw("(SELECT COUNT(DISTINCT {$examEnrollments}.user_id) FROM {$examEnrollments}
+            INNER JOIN {$exams} ON {$examEnrollments}.exam_id = {$exams}.id
+            WHERE {$exams}.instructor_id = {$instructors}.id) as {$examEnrollmentAlias}")
+         ->selectRaw("(SELECT COUNT(*) FROM {$examReviews}
+            INNER JOIN {$exams} ON {$examReviews}.exam_id = {$exams}.id
+            WHERE {$exams}.instructor_id = {$instructors}.id) as total_exam_reviews_count")
+         ->selectRaw("(SELECT AVG(rating) FROM {$examReviews}
+            INNER JOIN {$exams} ON {$examReviews}.exam_id = {$exams}.id
+            WHERE {$exams}.instructor_id = {$instructors}.id) as total_exam_average_rating");
    }
 
    function getInstructors(array $params, bool $paginate = true): LengthAwarePaginator|Collection

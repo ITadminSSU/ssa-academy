@@ -93,3 +93,96 @@ function apiResponse(array $data = [], array $flash = [], int $status = 200)
       'flash' => $flash,
    ], $status);
 }
+
+/**
+ * Rewrite localhost / 127.0.0.1 media URLs to the current APP_URL (e.g. ngrok)
+ * and normalise the public storage path segment (see normalize_public_storage_url).
+ */
+function public_asset_url(?string $url): ?string
+{
+   if ($url === null || trim($url) === '') {
+      return $url;
+   }
+
+   $url = trim($url);
+   $appUrl = rtrim((string) config('app.url'), '/');
+
+   if ($appUrl === '') {
+      return tidy_public_url(normalize_public_storage_url($url));
+   }
+
+   if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+      return tidy_public_url(normalize_public_storage_url($appUrl . $url));
+   }
+
+   // A protocol-relative "//storage/..." path makes the browser treat the first
+   // segment as a hostname (404). Treat it as a root-relative app path instead.
+   if (str_starts_with($url, '//')) {
+      return tidy_public_url(normalize_public_storage_url($appUrl . '/' . ltrim($url, '/')));
+   }
+
+   $parsed = parse_url($url);
+
+   if (!isset($parsed['host'])) {
+      return tidy_public_url(normalize_public_storage_url($url));
+   }
+
+   $localHosts = ['localhost', '127.0.0.1', '::1'];
+   $appHost = parse_url($appUrl, PHP_URL_HOST);
+
+   if (!in_array($parsed['host'], $localHosts, true) && $parsed['host'] !== $appHost) {
+      return tidy_public_url($url);
+   }
+
+   $path = $parsed['path'] ?? '';
+   $query = isset($parsed['query']) ? '?' . $parsed['query'] : '';
+
+   return tidy_public_url(normalize_public_storage_url($appUrl . $path . $query));
+}
+
+/**
+ * Collapse redundant slashes in a URL while preserving the scheme separator
+ * (e.g. "https://"). Fixes malformed paths such as "//storage/app/public/x.jpg"
+ * or "https://host//storage/x.jpg" that would otherwise 404.
+ */
+function tidy_public_url(string $url): string
+{
+   if (preg_match('#^([a-zA-Z][a-zA-Z0-9+.-]*://)(.*)$#', $url, $matches)) {
+      return $matches[1] . (string) preg_replace('#/{2,}#', '/', $matches[2]);
+   }
+
+   return (string) preg_replace('#/{2,}#', '/', $url);
+}
+
+/**
+ * Insert the configured public storage path segment (e.g. "app/public") into a
+ * "/storage/..." URL when the host serves public files from that deeper path.
+ *
+ * Controlled by config('filesystems.public_storage_path'). When empty (default,
+ * including local dev) the URL is returned unchanged. The operation is idempotent:
+ * URLs that already contain the segment are left as-is.
+ */
+function normalize_public_storage_url(string $url): string
+{
+   $segment = trim((string) config('filesystems.public_storage_path', ''), '/');
+
+   if ($segment === '') {
+      return $url;
+   }
+
+   $needle = '/storage/';
+   $pos = strpos($url, $needle);
+
+   if ($pos === false) {
+      return $url;
+   }
+
+   $replacement = '/storage/' . $segment . '/';
+
+   // Already normalised.
+   if (str_starts_with(substr($url, $pos), $replacement)) {
+      return $url;
+   }
+
+   return substr($url, 0, $pos) . $replacement . substr($url, $pos + strlen($needle));
+}

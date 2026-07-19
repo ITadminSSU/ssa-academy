@@ -11,6 +11,12 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 
+interface TestAccount {
+   role: string;
+   email: string;
+   password: string;
+}
+
 interface LoginProps {
    status?: string;
    canResetPassword: boolean;
@@ -20,9 +26,10 @@ interface LoginProps {
       siteKey: string;
       secretKey: string;
    };
+   testAccounts?: TestAccount[] | null;
 }
 
-export default function Login({ status, recaptcha, canResetPassword, googleLogIn }: LoginProps) {
+export default function Login({ status, recaptcha, canResetPassword, googleLogIn, testAccounts }: LoginProps) {
    const { props } = usePage<SharedData>();
    const { auth, input, button } = props.translate;
    const recaptchaRef = useRef<ReCAPTCHA | null>(null);
@@ -51,6 +58,34 @@ export default function Login({ status, recaptcha, canResetPassword, googleLogIn
    return (
       <AuthLayout title={auth.login_title} description={auth.login_description}>
          <Head title={auth.login_title} />
+
+         {testAccounts && testAccounts.length > 0 && (
+            <div className="border-amber-500/30 bg-amber-500/10 rounded-xl border p-4 text-sm">
+               <p className="mb-2 font-semibold text-amber-900 dark:text-amber-100">Test accounts (UAT)</p>
+               <ul className="space-y-2 text-amber-950/90 dark:text-amber-50/90">
+                  {testAccounts.map((account) => (
+                     <li key={account.email} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <span>
+                           <span className="font-medium">{account.role}:</span> {account.email} / {account.password}
+                        </span>
+                        <Button
+                           type="button"
+                           size="sm"
+                           variant="outline"
+                           className="border-amber-500/40 h-8"
+                           onClick={() => {
+                              setData('email', account.email);
+                              setData('password', account.password);
+                           }}
+                        >
+                           Use this account
+                        </Button>
+                     </li>
+                  ))}
+               </ul>
+            </div>
+         )}
+
          <form className="flex flex-col gap-6" onSubmit={submit}>
             <div className="grid gap-6">
                <div className="grid gap-2">
@@ -121,15 +156,15 @@ export default function Login({ status, recaptcha, canResetPassword, googleLogIn
                   </>
                )}
             </div>
-            <div className="text-center text-sm">
-               {auth.no_account}{' '}
-               <Link href={route('register')} className="underline underline-offset-4">
+            <div className="text-muted-foreground text-center text-sm">
+               {auth.login_external_register_note}{' '}
+               <Link href={route('register')} className="text-foreground font-medium underline underline-offset-4">
                   {button.sign_up}
                </Link>
             </div>
          </form>
 
-         {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
+         {status && <div className="text-primary text-center text-sm font-medium">{status}</div>}
       </AuthLayout>
    );
 }

@@ -8,14 +8,16 @@ use App\Http\Requests\UpdateLessonResourceRequest;
 use App\Models\ChunkedUpload;
 use App\Models\Course\LessonResource;
 use App\Services\Course\LessonResourceService;
+use App\Services\Course\ProtectedMediaService;
+use Illuminate\Support\Facades\Auth;
 
 class LessonResourceController extends Controller
 {
-    public function __construct(private LessonResourceService $service) {}
+    public function __construct(
+        private LessonResourceService $service,
+        private ProtectedMediaService $protectedMedia,
+    ) {}
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreLessonResourceRequest $request)
     {
         $this->service->resourceStore($request->validated());
@@ -23,9 +25,6 @@ class LessonResourceController extends Controller
         return back()->with('success', 'Resource created successfully');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateLessonResourceRequest $request, string $id)
     {
         $lessonResource = LessonResource::findOrFail($id);
@@ -35,9 +34,6 @@ class LessonResourceController extends Controller
         return back()->with('success', 'Resource updated successfully');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $lessonResource = LessonResource::findOrFail($id);
@@ -47,26 +43,49 @@ class LessonResourceController extends Controller
         return back()->with('success', 'Resource deleted successfully');
     }
 
-    /**
-     * Download the specified resource.
-     */
+    public function view(string $id)
+    {
+        $lessonResource = LessonResource::findOrFail($id);
+        $this->protectedMedia->authorizeResourceAccess(Auth::user(), $lessonResource);
+
+        if ($lessonResource->type === 'link') {
+            return redirect()->away($lessonResource->resource);
+        }
+
+        $filePath = $this->protectedMedia->resolveResourcePath($lessonResource);
+
+        if (!$filePath || !is_file($filePath)) {
+            abort(404, 'File not found');
+        }
+
+        $mimeType = $this->protectedMedia->resolveMimeType($lessonResource->resource);
+
+        return response()->file($filePath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store, max-age=0',
+        ]);
+    }
+
     public function download(string $id)
     {
         $lessonResource = LessonResource::findOrFail($id);
+        $this->protectedMedia->authorizeResourceDownload(Auth::user(), $lessonResource);
+
         $resourceUrl = $lessonResource->resource;
         $chunkedUpload = ChunkedUpload::where('file_url', $resourceUrl)->first();
-        $mimeType = $chunkedUpload->mime_type;
-        $extension = pathinfo($chunkedUpload->original_filename, PATHINFO_EXTENSION);
-        $filename = $lessonResource->title ? $lessonResource->title . '.' . $extension : $chunkedUpload->filename;
+        $mimeType = $chunkedUpload?->mime_type ?? $this->protectedMedia->resolveMimeType($resourceUrl);
+        $extension = $chunkedUpload
+            ? pathinfo($chunkedUpload->original_filename, PATHINFO_EXTENSION)
+            : pathinfo($resourceUrl, PATHINFO_EXTENSION);
+        $filename = $lessonResource->title
+            ? $lessonResource->title . ($extension ? '.' . $extension : '')
+            : ($chunkedUpload?->filename ?? 'resource');
 
-        // Convert URL to relative path (remove domain and /storage prefix)
-        $relativePath = str_replace([url('/storage/'), url('storage/')], '', $resourceUrl);
+        $filePath = $this->protectedMedia->resolveResourcePath($lessonResource);
 
-        // Get the full file path
-        $filePath = storage_path('app/public/' . $relativePath);
-
-        // Check if file exists
-        if (!file_exists($filePath)) {
+        if (!$filePath || !is_file($filePath)) {
             abort(404, 'File not found');
         }
 
@@ -79,7 +98,7 @@ class LessonResourceController extends Controller
             $filename,
             [
                 'Content-Type' => $mimeType,
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             ]
         );
     }

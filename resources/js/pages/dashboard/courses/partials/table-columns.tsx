@@ -59,6 +59,11 @@ const TableColumn = (): ColumnDef<Course>[] => {
          cell: ({ row }) => <div className="py-1 text-center capitalize">{row.getValue('status')}</div>,
       },
       {
+         accessorKey: 'audience',
+         header: () => <div className="text-center">{table.audience}</div>,
+         cell: ({ row }) => <div className="py-1 text-center capitalize">{row.getValue('audience')}</div>,
+      },
+      {
          accessorKey: 'category',
          header: ({ column }) => {
             return (

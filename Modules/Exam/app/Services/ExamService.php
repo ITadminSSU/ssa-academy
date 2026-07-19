@@ -5,20 +5,20 @@ namespace Modules\Exam\Services;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Services\MediaService;
-use Illuminate\Support\Str;
 use Modules\Exam\Models\Exam;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
-use Modules\Exam\Models\ExamCategory;
 use Modules\Exam\Notifications\ExamApprovalNotification;
 use Modules\Exam\Services\ExamAttemptService;
+use Modules\Exam\Services\ExamQuestionService;
+use Illuminate\Support\Facades\DB;
 
 class ExamService extends MediaService
 {
    public function __construct(
-      protected ExamCategoryService $examCategory,
       protected ExamAttemptService $examAttempt,
+      protected ExamQuestionService $examQuestions,
    ) {}
 
    /**
@@ -30,7 +30,6 @@ class ExamService extends MediaService
 
       $query = Exam::with([
          'instructor.user',
-         'exam_category',
       ])
          ->withCount('enrollments')
          ->withAvg('reviews as average_rating', 'rating')
@@ -40,11 +39,6 @@ class ExamService extends MediaService
          })
          ->when(array_key_exists('status', $data), function ($query) use ($data) {
             return $query->where('status', $data['status']);
-         })
-         ->when(array_key_exists('category', $data) && $data['category'] !== 'all', function ($query) use ($data) {
-            return $query->whereHas('exam_category', function ($category) use ($data) {
-               $category->where('slug', $data['category']);
-            });
          })
          ->when(array_key_exists('level', $data) && $data['level'] !== 'all', function ($query) use ($data) {
             return $query->where('level', $data['level']);
@@ -71,7 +65,6 @@ class ExamService extends MediaService
    {
       $exam = Exam::create([
          ...$data,
-         'slug' => Str::slug($data['title']),
          'user_id' => Auth::id(),
       ]);
 
@@ -85,11 +78,27 @@ class ExamService extends MediaService
    }
 
    /**
+    * Create a new exam together with an optional batch of questions in one
+    * transaction, mirroring the quiz single-window builder.
+    */
+   public function createExamWithQuestions(array $data, array $questions = []): Exam
+   {
+      return DB::transaction(function () use ($data, $questions) {
+         $exam = $this->createExam($data);
+
+         if (!empty($questions)) {
+            $this->examQuestions->bulkImportQuestions($exam, $questions);
+         }
+
+         return $exam;
+      });
+   }
+
+   /**
     * Update an exam
     */
    public function updateExam(Exam $exam, array $data): Exam
    {
-      // Handle tab-based updates
       switch ($data['tab'] ?? 'basic') {
          case 'attempts':
             $exam->update($data);
@@ -155,7 +164,7 @@ class ExamService extends MediaService
     */
    public function getExamById(string $id): ?Exam
    {
-      return Exam::with(['instructor.user', 'exam_category', 'questions', 'reviews.user'])
+      return Exam::with(['instructor.user', 'questions', 'reviews.user'])
          ->where('id', $id)
          ->first();
    }
@@ -198,16 +207,14 @@ class ExamService extends MediaService
     */
    public function getExamPreviewMetadata(Exam $exam): array
    {
-      // Generate meta tags for SEO and social sharing
       $system = app('system_settings');
-      $siteName = $system->fields['name'] ?? 'Mentor Learning Management System';
+      $siteName = \App\Support\Branding::resolveSiteName($system->fields['name'] ?? null);
       $pageTitle = $exam->meta_title ?? ($exam->title . ' | ' . $siteName);
       $pageDescription = $exam->meta_description ?? $exam->short_description ?? $exam->description ?? 'Professional certification exam';
       $pageKeywords = $exam->meta_keywords ?? ($exam->title . ', certification exam, professional test, ' . ($system->fields['keywords'] ?? 'LMS'));
       $ogTitle = $exam->og_title ?? $exam->title;
       $ogDescription = $exam->og_description ?? $pageDescription;
 
-      // Prioritize exam images: thumbnail > banner > system banner
       $examImage = $exam->thumbnail ?? $exam->banner ?? $system->fields['banner'] ?? '';
       $siteUrl = request()->url();
 
@@ -228,16 +235,14 @@ class ExamService extends MediaService
    }
 
    /**
-    * Get category exams metadata
+    * Get browse exams metadata
     */
-   public function getCategoryExamsMetadata(?ExamCategory $category, LengthAwarePaginator|Collection $exams): array
+   public function getExamsBrowseMetadata(LengthAwarePaginator|Collection $exams): array
    {
-      // Generate meta tags for SEO and social sharing
       $system = app('system_settings');
-      $siteName = $system->fields['name'] ?? 'Mentor Learning Management System';
+      $siteName = \App\Support\Branding::resolveSiteName($system->fields['name'] ?? null);
       $siteUrl = request()->url();
 
-      // Get exam count with proper fallback
       $totalExams = 0;
       if (isset($exams->total)) {
          $totalExams = $exams->total;
@@ -245,7 +250,6 @@ class ExamService extends MediaService
          $totalExams = count($exams->data);
       }
 
-      // Get first exam thumbnail (prioritize over category image)
       $firstExamImage = null;
       if (!empty($exams->data) && is_array($exams->data) && count($exams->data) > 0) {
          $firstExam = $exams->data[0];
@@ -255,25 +259,11 @@ class ExamService extends MediaService
       $pageTitle = 'All Exams';
       $pageDescription = $totalExams > 0
          ? "Browse $totalExams+ professional certification exams from expert instructors. Test your skills with our comprehensive exam catalog."
-         : "Browse professional certification exams from expert instructors. Test your skills with our comprehensive exam catalog.";
+         : 'Browse professional certification exams from expert instructors. Test your skills with our comprehensive exam catalog.';
       $pageKeywords = 'online exams, certification exams, professional tests, skills assessment, exam preparation';
       $ogTitle = 'Professional Exams';
-      $categoryImage = null;
-
-      if ($category) {
-         $pageTitle = $category->title . ' Exams';
-         $ogTitle = $category->title . ' Exams';
-         $pageDescription = $totalExams > 0
-            ? "Explore $totalExams " . strtolower($category->title) . " certification exams. Test your expertise in " . strtolower($category->title) . " with industry-standard assessments."
-            : "Explore " . strtolower($category->title) . " certification exams. Test your expertise in " . strtolower($category->title) . " with industry-standard assessments.";
-         $pageKeywords = strtolower($category->title) . ', exams, certification, assessment, ' . $category->title . ' test, professional certification';
-         $categoryImage = $category->thumbnail ?? null;
-      }
-
       $fullTitle = $pageTitle . ' | ' . $siteName;
-
-      // Prioritize first exam image over category image, then fallback to system banner
-      $ogImage = $firstExamImage ?? $categoryImage ?? $system->fields['banner'] ?? '';
+      $ogImage = $firstExamImage ?? $system->fields['banner'] ?? '';
 
       return [
          'metaTitle' => $fullTitle,

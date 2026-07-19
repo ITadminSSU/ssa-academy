@@ -1,17 +1,16 @@
 import { Accordion } from '@/components/ui/accordion';
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
 import { getRouteSegments } from '@/lib/route';
-import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
-import { GitCompareArrows } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import NavMainItem from './nav-main-item';
-import routes from './routes';
+import { getDashboardRoutes } from './routes';
 
 export function NavMain() {
    const page = usePage<SharedData>();
-   const { auth, system } = page.props;
+   const { auth, system, features } = page.props;
+   const routes = getDashboardRoutes(auth.dashboardUrl ?? route('dashboard'), features);
    const [openAccordions, setOpenAccordions] = useState<string>('');
 
    // Set initial accordion state based on URL
@@ -28,11 +27,11 @@ export function NavMain() {
          <Accordion type="single" collapsible value={openAccordions} defaultValue={openAccordions} onValueChange={setOpenAccordions}>
             {routes.map(({ title, pages }, key) => (
                <SidebarMenu key={key} className="space-y-1">
-                  <SidebarGroupLabel>{title}</SidebarGroupLabel>
+                  <SidebarGroupLabel className="text-sidebar-foreground/60 text-[11px] tracking-[0.14em] uppercase">{title}</SidebarGroupLabel>
 
                   {pages.map((page) => {
-                     const role = page.access.includes(auth.user.role || 'admin');
-                     const subType = page.access.includes(system.sub_type || 'collaborative');
+                     const role = page.access.includes(auth.user?.role || 'admin');
+                     const subType = page.access.includes(system?.sub_type || 'collaborative');
 
                      if (role && subType) {
                         return (
@@ -42,17 +41,6 @@ export function NavMain() {
                         );
                      }
                   })}
-
-                  {auth.user.role === 'admin' && (
-                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild className={cn('h-9')}>
-                           <a target="_blank" href={route('system.maintenance')}>
-                              <GitCompareArrows className="h-4 w-4" />
-                              <span>Maintenance</span>
-                           </a>
-                        </SidebarMenuButton>
-                     </SidebarMenuItem>
-                  )}
                </SidebarMenu>
             ))}
          </Accordion>

@@ -26,19 +26,21 @@ const StudentFeedback = ({ totalReviews }: StudentFeedbackProps) => {
 
    const averageRating = calculateAverageRating();
 
-   const renderStars = (rating: number, filled: boolean = true): JSX.Element[] => {
-      return Array.from({ length: 5 }, (_, index) => (
-         <Star
-            key={index}
-            className={`h-4 w-4 ${
-               filled && index < rating - 1
-                  ? 'fill-amber-400 text-amber-400'
-                  : filled && index < Math.floor(rating - 1) + 0.5
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'text-gray-300'
-            }`}
-         />
-      ));
+   const renderStars = (rating: number): JSX.Element[] => {
+      const fullStars = Math.floor(rating);
+      const hasHalf = rating - fullStars >= 0.5;
+
+      return Array.from({ length: 5 }, (_, index) => {
+         const isFilled = index < fullStars || (index === fullStars && hasHalf);
+         return (
+            <Star
+               key={index}
+               className={`h-4 w-4 ${
+                  isFilled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40'
+               }`}
+            />
+         );
+      });
    };
 
    return (
@@ -54,7 +56,7 @@ const StudentFeedback = ({ totalReviews }: StudentFeedbackProps) => {
             {/* Overall Rating */}
             <div className="flex min-w-[100px] flex-col items-center sm:min-w-[120px]">
                <div className="mb-2 text-6xl font-bold text-amber-600">{averageRating}</div>
-               <div className="mb-2 flex gap-1">{renderStars(1 + averageRating)}</div>
+               <div className="mb-2 flex gap-1">{renderStars(averageRating)}</div>
                <div className="text-sm font-medium text-amber-600">{common.rating}</div>
             </div>
 

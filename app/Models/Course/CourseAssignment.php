@@ -15,6 +15,8 @@ class CourseAssignment extends Model
         'pass_mark',
         'retake',
         'summary',
+        'sample_project_type',
+        'sample_project_path',
         'deadline',
         'late_submission',
         'late_total_mark',
@@ -37,5 +39,10 @@ class CourseAssignment extends Model
     public function submissions()
     {
         return $this->hasMany(AssignmentSubmission::class);
+    }
+
+    public function sampleDownloads()
+    {
+        return $this->hasMany(AssignmentSampleDownload::class, 'course_assignment_id');
     }
 }

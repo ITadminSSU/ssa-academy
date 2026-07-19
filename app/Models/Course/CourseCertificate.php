@@ -14,6 +14,8 @@ class CourseCertificate extends Model
         'user_id',
         'course_id',
         'identifier',
+        'certificate_id',
+        'verification_reference',
     ];
 
     public function user()

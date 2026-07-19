@@ -27,6 +27,10 @@ class NotificationController extends Controller
     {
         $notification = $this->notificationService->markAsRead($id);
 
+        if ($notification && !empty($notification->data['url'])) {
+            return redirect($notification->data['url']);
+        }
+
         return Inertia::render('notification/show', compact('notification'));
     }
 

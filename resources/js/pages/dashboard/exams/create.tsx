@@ -18,15 +18,16 @@ import { useForm } from '@inertiajs/react';
 import { ReactNode, useMemo } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
+import ExamQuestionComposer from './partials/exam-question-composer';
+import { QuestionFormData } from './partials/question-dialog';
 
 interface Props extends SharedData {
-   categories: ExamCategory[];
    instructors: Instructor[];
 }
 
 const CreateExam = (props: Props) => {
    const { user } = useAuth();
-   const { categories, instructors, system, translate } = props;
+   const { instructors, system, translate } = props;
    const { input } = translate;
 
    const { data, setData, post, errors, processing } = useForm({
@@ -48,21 +49,27 @@ const CreateExam = (props: Props) => {
       expiry_duration: '',
       thumbnail: null as File | null,
       instructor_id: user.role === 'admin' && system.sub_type === 'collaborative' ? '' : user.instructor_id,
-      exam_category_id: '',
+      exam_mode: 'standard' as 'standard' | 'quantity_takeoff',
+      questions: [] as QuestionFormData[],
    });
+
+   // Lifted setter so ExamQuestionComposer can mutate the draft questions list
+   // kept inside the form state (posted together with the exam fields).
+   const setQuestions: React.Dispatch<React.SetStateAction<QuestionFormData[]>> = (updater) => {
+      setData((prev) => ({
+         ...prev,
+         questions:
+            typeof updater === 'function'
+               ? (updater as (prev: QuestionFormData[]) => QuestionFormData[])(prev.questions)
+               : updater,
+      }));
+   };
 
    // Handle form submission
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       post(route('exams.store'));
    };
-
-   const transformedCategories = useMemo(() => {
-      return categories.map((category) => ({
-         label: category.title,
-         value: category.id.toString(),
-      }));
-   }, [categories]);
 
    const transformedInstructors = useMemo(() => {
       return instructors.map((instructor) => ({
@@ -139,15 +146,27 @@ const CreateExam = (props: Props) => {
 
                   <div className="grid gap-6 md:grid-cols-2">
                      <div>
-                        <Label htmlFor="exam_category_id">Category *</Label>
-                        <Combobox
-                           data={transformedCategories}
-                           placeholder="Select category"
-                           onSelect={(selected) => {
-                              setData('exam_category_id', selected.value as string);
+                        <Label htmlFor="exam_mode">Exam Type *</Label>
+                        <Select
+                           value={data.exam_mode}
+                           onValueChange={(value: 'standard' | 'quantity_takeoff') => {
+                              setData((prev) => ({
+                                 ...prev,
+                                 exam_mode: value,
+                                 pass_mark: value === 'quantity_takeoff' ? 85 : prev.pass_mark,
+                                 total_marks: value === 'quantity_takeoff' ? 100 : prev.total_marks,
+                              }));
                            }}
-                        />
-                        <InputError message={errors.exam_category_id} />
+                        >
+                           <SelectTrigger>
+                              <SelectValue placeholder="Select exam type" />
+                           </SelectTrigger>
+                           <SelectContent>
+                              <SelectItem value="standard">Standard question exam</SelectItem>
+                              <SelectItem value="quantity_takeoff">Quantity take-off exam</SelectItem>
+                           </SelectContent>
+                        </Select>
+                        <InputError message={errors.exam_mode} />
                      </div>
 
                      <div>
@@ -358,7 +377,23 @@ const CreateExam = (props: Props) => {
                </div>
             </div>
 
-            <div className="col-span-2 mt-6 text-right">
+            {data.exam_mode === 'standard' ? (
+               <ExamQuestionComposer questions={data.questions} setQuestions={setQuestions} />
+            ) : (
+               <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                  After creating this exam, upload the Excel answer key on the Quantity Take-Off tab and add reference drawings under
+                  Resources.
+               </div>
+            )}
+
+            <div className="col-span-2 mt-2 flex items-center justify-between gap-4">
+               <p className="text-muted-foreground text-sm">
+                  {data.exam_mode === 'quantity_takeoff'
+                     ? 'Quantity take-off exams are graded automatically from your uploaded answer key.'
+                     : data.questions.length > 0
+                       ? `${data.questions.length} question${data.questions.length === 1 ? '' : 's'} will be created with this exam.`
+                       : 'You can create the exam now and add questions later on the Questions tab.'}
+               </p>
                <LoadingButton loading={processing}>Create Exam</LoadingButton>
             </div>
          </form>

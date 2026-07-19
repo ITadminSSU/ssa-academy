@@ -29,7 +29,7 @@ const CouponTableColumns = ({ exams }: CouponTableColumnsProps): ColumnDef<ExamC
          header: () => <p className="pl-4">Coupon Code</p>,
          cell: ({ row }) => (
             <div className="flex items-center gap-2 pl-4">
-               <code className="rounded bg-gray-100 px-2 py-1 font-bold">{row.original.code}</code>
+               <code className="rounded bg-muted px-2 py-1 font-bold">{row.original.code}</code>
                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyCouponCode(row.original.code)}>
                   <Copy className="h-3 w-3" />
                </Button>

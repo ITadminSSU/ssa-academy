@@ -87,7 +87,7 @@ class SettingsDataSeeder extends Seeder
         }
 
         if ($system && !array_key_exists('theme', $system->fields)) {
-            $system->fields = array_merge($system->fields, ['theme' => 'system']);
+            $system->fields = array_merge($system->fields, ['theme' => 'light']);
             $system->save();
         }
 

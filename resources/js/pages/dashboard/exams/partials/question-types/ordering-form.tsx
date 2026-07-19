@@ -75,7 +75,7 @@ const OrderingForm = ({ data, setData, errors }: Props) => {
                         size="sm"
                         onClick={() => moveItem(index, 'up')}
                         disabled={index === 0}
-                        className="h-5 w-8 p-0 text-gray-400 hover:text-gray-600"
+                        className="h-5 w-8 p-0 text-muted-foreground/70 hover:text-muted-foreground"
                      >
                         ▲
                      </Button>
@@ -85,15 +85,15 @@ const OrderingForm = ({ data, setData, errors }: Props) => {
                         size="sm"
                         onClick={() => moveItem(index, 'down')}
                         disabled={index === items.length - 1}
-                        className="h-5 w-8 p-0 text-gray-400 hover:text-gray-600"
+                        className="h-5 w-8 p-0 text-muted-foreground/70 hover:text-muted-foreground"
                      >
                         ▼
                      </Button>
                   </div>
 
-                  <GripVertical className="h-5 w-5 text-gray-400" />
+                  <GripVertical className="h-5 w-5 text-muted-foreground/70" />
 
-                  <span className="text-sm font-medium text-gray-500 w-8">{index + 1}.</span>
+                  <span className="text-sm font-medium text-muted-foreground w-8">{index + 1}.</span>
 
                   <div className="flex-1">
                      <Input placeholder={`Item ${index + 1}`} value={item} onChange={(e) => updateItem(index, e.target.value)} />

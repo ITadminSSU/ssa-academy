@@ -11,10 +11,6 @@ class ExamDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            ExamCategorySeeder::class,
-        ]);
-
         // php artisan module:seed Exam --class=ExamDatabaseSeeder
     }
 }

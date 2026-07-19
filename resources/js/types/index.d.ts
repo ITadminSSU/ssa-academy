@@ -1,6 +1,10 @@
 // Ensure this file is treated as a module
 interface Auth {
-   user: User;
+   user: User | null;
+   dashboardUrl?: string | null;
+   dashboardRoute?: string | null;
+   legalAgreementRequired?: boolean;
+   legalAgreementUrl?: string;
 }
 
 interface BreadcrumbItem {
@@ -15,6 +19,7 @@ interface User extends TableCommon {
    status: number | null;
    social_links: { host: string; profile_link: string }[] | null;
    role: string;
+   user_type: 'employee' | 'external';
    about: string | null;
    photo: string | null;
    email_verified_at: string | null;
@@ -26,6 +31,12 @@ interface User extends TableCommon {
    professional_type?: ProfessionalType;
    cv_resume_url?: string | null;
    cv_resume_name?: string | null;
+   has_cv?: boolean;
+   candidate_status?: 'new' | 'in_review' | 'shortlisted' | 'hired' | 'rejected' | null;
+   candidate_notes?: string | null;
+   candidate_status_updated_at?: string | null;
+   paid_course_count?: number;
+   paid_exam_count?: number;
 }
 
 interface ProfessionalType {

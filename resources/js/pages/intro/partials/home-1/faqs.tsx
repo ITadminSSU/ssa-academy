@@ -22,7 +22,9 @@ const FAQs = () => {
                </div>
 
                <Accordion type="single" collapsible defaultValue="faq-0" className="w-full">
-                  {getPropertyArray(faqsCoursesSection).map((faq, index) => (
+                  {getPropertyArray(faqsCoursesSection)
+                     .filter((faq) => (faq.title || '').trim())
+                     .map((faq, index) => (
                      <AccordionItem
                         key={`faq-${index}`}
                         value={`faq-${index}`}

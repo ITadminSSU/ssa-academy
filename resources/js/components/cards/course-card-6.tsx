@@ -58,7 +58,7 @@ const CourseCard6 = ({ course, type = 'grid', className, wishlists }: Props) => 
                   <TooltipProvider delayDuration={0}>
                      <Tooltip>
                         <TooltipTrigger className="absolute top-2 right-2 z-10">
-                           <Button size="icon" variant="ghost" className="bg-white/80 hover:bg-white" onClick={handleWishlist}>
+                           <Button size="icon" variant="ghost" className="bg-card/80 hover:bg-card" onClick={handleWishlist}>
                               <Heart className={cn('h-4 w-4', isWishlisted && 'text-red-500')} />
                            </Button>
                         </TooltipTrigger>

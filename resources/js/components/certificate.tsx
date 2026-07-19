@@ -208,7 +208,7 @@ const Certificate = ({ course, watchHistory }: { course: Course; watchHistory: W
    return (
       <div className="mx-auto max-w-[800px] space-y-8">
          <div className="text-center">
-            <h1 className="mb-4 text-4xl font-bold text-gray-800">{frontend.course_certificate_download}</h1>
+            <h1 className="mb-4 text-4xl font-bold text-foreground">{frontend.course_certificate_download}</h1>
             <p className="text-muted-foreground text-lg">{frontend.download_official_certificate}</p>
          </div>
 
@@ -223,11 +223,11 @@ const Certificate = ({ course, watchHistory }: { course: Course; watchHistory: W
                <div className="relative z-10">
                   <div className="mb-6">
                      <Award className="mx-auto mb-3 h-12 w-12 text-amber-600" />
-                     <h2 className="mb-2 font-serif text-2xl font-bold text-gray-800">{frontend.certificate_of_completion}</h2>
+                     <h2 className="mb-2 font-serif text-2xl font-bold text-foreground">{frontend.certificate_of_completion}</h2>
                      <div className="mx-auto h-0.5 w-32 bg-amber-400"></div>
                   </div>
 
-                  <div className="space-y-4 text-gray-700">
+                  <div className="space-y-4 text-muted-foreground">
                      <p className="font-serif text-lg">{frontend.certificate_description}</p>
                      <div className="relative">
                         <p className="mx-8 pb-2 font-serif text-2xl font-bold text-indigo-800">{studentName || 'Student Name'}</p>
@@ -242,7 +242,7 @@ const Certificate = ({ course, watchHistory }: { course: Course; watchHistory: W
                   </div>
 
                   <div className="mt-6 border-t border-amber-400 pt-4">
-                     <p className="font-serif text-sm text-gray-500">{frontend.authorized_certificate}</p>
+                     <p className="font-serif text-sm text-muted-foreground">{frontend.authorized_certificate}</p>
                   </div>
                </div>
             </div>

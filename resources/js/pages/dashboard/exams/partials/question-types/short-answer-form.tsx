@@ -34,7 +34,7 @@ const ShortAnswerForm = ({ data, setData, errors }: Props) => {
                   })
                }
             />
-            <p className="mt-1 text-xs text-gray-500">This will help you or other graders evaluate student responses consistently</p>
+            <p className="mt-1 text-xs text-muted-foreground">This will help you or other graders evaluate student responses consistently</p>
             <InputError message={errors.options} />
          </div>
       </div>

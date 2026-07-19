@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Instructor;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCategory;
+use App\Support\Database\SsuAcademyTableRegistry;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Blog\Models\Blog;
@@ -71,6 +73,7 @@ class PageSectionService extends MediaService
          })
          ->with(['courses' => function ($query) use ($limit) {
             $query->where('status', 'approved')
+               ->visibleInCatalog(Auth::user())
                ->with([
                   'sections' => function ($query) {
                      $query->select('id', 'course_id')
@@ -126,6 +129,7 @@ class PageSectionService extends MediaService
          ])
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->visibleInCatalog(Auth::user())
          ->orderBy('created_at', 'desc')
          ->limit($limit)
          ->get();
@@ -137,6 +141,7 @@ class PageSectionService extends MediaService
          ->select('id', 'title', 'slug', 'thumbnail', 'price', 'short_description', 'course_category_id')
          ->whereIn('id', $courseIds)
          ->where('status', 'approved')
+         ->visibleInCatalog(Auth::user())
          ->with(['course_category' => function ($query) {
             $query->select('id', 'title');
          }])
@@ -160,6 +165,7 @@ class PageSectionService extends MediaService
          })
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->visibleInCatalog(Auth::user())
          ->orderBy('created_at', 'desc')
          ->paginate($per_page);
 
@@ -189,6 +195,7 @@ class PageSectionService extends MediaService
          ])
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->visibleInCatalog(Auth::user())
          ->orderBy('enrollments_count', 'desc')
          ->orderBy('created_at', 'desc')
          ->get()
@@ -222,6 +229,7 @@ class PageSectionService extends MediaService
          ])
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->visibleInCatalog(Auth::user())
          ->orderBy('created_at', 'desc')
          ->limit($limit)
          ->get()
@@ -271,15 +279,23 @@ class PageSectionService extends MediaService
          })
          ->where('instructors.status', 'approved')
          ->withCount('courses')
-         ->selectRaw('(SELECT COUNT(*) FROM course_reviews 
-            INNER JOIN courses ON course_reviews.course_id = courses.id 
-            WHERE courses.instructor_id = instructors.id) as total_reviews_count')
-         ->selectRaw('(SELECT AVG(rating) FROM course_reviews 
-            INNER JOIN courses ON course_reviews.course_id = courses.id 
-            WHERE courses.instructor_id = instructors.id) as total_average_rating')
-         ->selectRaw('(SELECT COUNT(DISTINCT user_id) FROM course_enrollments
-            INNER JOIN courses ON course_enrollments.course_id = courses.id
-            WHERE courses.instructor_id = instructors.id) as total_enrollments_count')
+         ->tap(function ($query) {
+            $instructors = SsuAcademyTableRegistry::table('instructors');
+            $courseReviews = SsuAcademyTableRegistry::table('course_reviews');
+            $courses = SsuAcademyTableRegistry::table('courses');
+            $courseEnrollments = SsuAcademyTableRegistry::table('course_enrollments');
+
+            $query
+               ->selectRaw("(SELECT COUNT(*) FROM {$courseReviews}
+                  INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id
+                  WHERE {$courses}.instructor_id = {$instructors}.id) as total_reviews_count")
+               ->selectRaw("(SELECT AVG(rating) FROM {$courseReviews}
+                  INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id
+                  WHERE {$courses}.instructor_id = {$instructors}.id) as total_average_rating")
+               ->selectRaw("(SELECT COUNT(DISTINCT user_id) FROM {$courseEnrollments}
+                  INNER JOIN {$courses} ON {$courseEnrollments}.course_id = {$courses}.id
+                  WHERE {$courses}.instructor_id = {$instructors}.id) as total_enrollments_count");
+         })
          ->orderBy('total_enrollments_count', 'desc')
          ->orderBy('created_at', 'desc')
          ->paginate($per_page, ['*'], 'page', $page);
@@ -314,7 +330,7 @@ class PageSectionService extends MediaService
          ->addSelect([
             'total_enrollments' => DB::table('courses')
                ->select(DB::raw('COALESCE(SUM(enrollments_count), 0)'))
-               ->whereColumn('instructor_id', 'instructors.id')
+               ->whereColumn('instructor_id', SsuAcademyTableRegistry::table('instructors') . '.id')
                ->where('status', 'approved')
          ])
          ->where('instructors.status', 'approved')

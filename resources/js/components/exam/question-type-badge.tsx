@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
+import { ssuBadgeTone } from '@/lib/ssu-theme';
 import { cn } from '@/lib/utils';
-import { CheckCircle, CheckSquare, FileText, Headphones, Link2, ListOrdered, Type } from 'lucide-react';
+import { CheckCircle, CheckSquare, FileText, Headphones, Link2, ListOrdered, Type, Upload } from 'lucide-react';
 
 interface Props {
    type: ExamQuestionType;
@@ -12,44 +13,18 @@ const questionTypeConfig: Record<
    {
       label: string;
       icon: React.ComponentType<{ className?: string }>;
-      color: string;
+      toneIndex: number;
    }
 > = {
-   multiple_choice: {
-      label: 'Multiple Choice',
-      icon: CheckCircle,
-      color: 'bg-blue-100 text-blue-800 hover:bg-blue-100',
-   },
-   multiple_select: {
-      label: 'Multiple Select',
-      icon: CheckSquare,
-      color: 'bg-purple-100 text-purple-800 hover:bg-purple-100',
-   },
-   matching: {
-      label: 'Matching',
-      icon: Link2,
-      color: 'bg-green-100 text-green-800 hover:bg-green-100',
-   },
-   fill_blank: {
-      label: 'Fill Blank',
-      icon: Type,
-      color: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100',
-   },
-   ordering: {
-      label: 'Ordering',
-      icon: ListOrdered,
-      color: 'bg-orange-100 text-orange-800 hover:bg-orange-100',
-   },
-   short_answer: {
-      label: 'Short Answer',
-      icon: FileText,
-      color: 'bg-red-100 text-red-800 hover:bg-red-100',
-   },
-   listening: {
-      label: 'Listening',
-      icon: Headphones,
-      color: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100',
-   },
+   multiple_choice: { label: 'Multiple Choice', icon: CheckCircle, toneIndex: 0 },
+   multiple_select: { label: 'Multiple Select', icon: CheckSquare, toneIndex: 1 },
+   matching: { label: 'Matching', icon: Link2, toneIndex: 2 },
+   fill_blank: { label: 'Fill Blank', icon: Type, toneIndex: 0 },
+   ordering: { label: 'Ordering', icon: ListOrdered, toneIndex: 1 },
+   short_answer: { label: 'Short Answer', icon: FileText, toneIndex: 2 },
+   file_submission: { label: 'File Submission', icon: Upload, toneIndex: 1 },
+   quantity_takeoff: { label: 'Quantity Take-Off', icon: FileText, toneIndex: 2 },
+   listening: { label: 'Listening', icon: Headphones, toneIndex: 0 },
 };
 
 const QuestionTypeBadge = ({ type, className }: Props) => {
@@ -57,7 +32,7 @@ const QuestionTypeBadge = ({ type, className }: Props) => {
    const Icon = config.icon;
 
    return (
-      <Badge variant="secondary" className={cn('gap-1.5', config.color, className)}>
+      <Badge variant="outline" className={cn('gap-1.5 border', ssuBadgeTone(config.toneIndex), className)}>
          <Icon className="h-3 w-3" />
          <span className="text-xs font-medium">{config.label}</span>
       </Badge>

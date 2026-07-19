@@ -34,7 +34,7 @@ const SSLCommerz = ({ payment, routePath }: SSLCommerzProps) => {
          <div className="mb-6 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">{settings.sslcommerz_settings}</h2>
-               <p className="text-gray-500">{settings.configure_payment_gateway.replace(':gateway', 'SSLCommerz')}</p>
+               <p className="text-muted-foreground">{settings.configure_payment_gateway.replace(':gateway', 'SSLCommerz')}</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -65,7 +65,7 @@ const SSLCommerz = ({ payment, routePath }: SSLCommerzProps) => {
                <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">{settings.test_mode}:</span>
                   <Switch id="status" checked={data.test_mode} onCheckedChange={(checked) => setData('test_mode', checked)} />
-                  <Label htmlFor="status" className="text-gray-500">
+                  <Label htmlFor="status" className="text-muted-foreground">
                      {data.test_mode ? settings.using_test_environment : settings.using_live_environment}
                   </Label>
                </div>
@@ -84,7 +84,7 @@ const SSLCommerz = ({ payment, routePath }: SSLCommerzProps) => {
                         placeholder="Enter the store ID"
                      />
                      <InputError message={errors.store_id} />
-                     <p className="mt-1 text-sm text-gray-500">
+                     <p className="mt-1 text-sm text-muted-foreground">
                         {data.test_mode
                            ? settings.use_test_mode_key.replace(':key', 'store ID')
                            : settings.use_live_mode_key.replace(':key', 'store ID')}
@@ -101,7 +101,7 @@ const SSLCommerz = ({ payment, routePath }: SSLCommerzProps) => {
                         type="password"
                      />
                      <InputError message={errors.store_password} />
-                     <p className="mt-1 text-sm text-gray-500">
+                     <p className="mt-1 text-sm text-muted-foreground">
                         {data.test_mode
                            ? settings.use_test_mode_key.replace(':key', 'store password')
                            : settings.use_live_mode_key.replace(':key', 'store password')}

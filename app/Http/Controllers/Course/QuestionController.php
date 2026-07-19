@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Course;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BulkStoreQuestionRequest;
 use App\Http\Requests\StoreQuestionRequest;
 use App\Http\Requests\UpdateQuestionRequest;
 use App\Services\Course\QuizQuestionService;
@@ -19,6 +20,16 @@ class QuestionController extends Controller
         $this->questionService->createQuestion($request->validated());
 
         return back()->with('success', 'Question has been added.');
+    }
+
+    public function bulkStore(BulkStoreQuestionRequest $request)
+    {
+        $count = $this->questionService->bulkCreateQuestions(
+            $request->input('section_quiz_id'),
+            $request->input('questions', []),
+        );
+
+        return back()->with('success', $count . ' question' . ($count === 1 ? '' : 's') . ' added.');
     }
 
     public function update(UpdateQuestionRequest $request, $id)

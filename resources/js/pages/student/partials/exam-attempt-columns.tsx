@@ -66,7 +66,7 @@ const ExamAttemptColumn = (examId: number | string, bestAttemptId?: number | str
                   <DropdownMenuTrigger className="flex items-center justify-center">
                      <Button variant="ghost" className="text-muted-foreground capitalize">
                         <span>{urlParams['status'] ?? 'Status'}</span>
-                        <ChevronsUpDown className="h-3 w-3 text-gray-700" />
+                        <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                      </Button>
                   </DropdownMenuTrigger>
 
@@ -83,7 +83,7 @@ const ExamAttemptColumn = (examId: number | string, bestAttemptId?: number | str
                                  }),
                               )
                            }
-                           className={cn('cursor-pointer text-center capitalize', urlParams['status'] === status && 'bg-gray-100')}
+                           className={cn('cursor-pointer text-center capitalize', urlParams['status'] === status && 'bg-muted')}
                         >
                            {status.replace('_', ' ')}
                         </DropdownMenuItem>

@@ -18,7 +18,7 @@ use Modules\Installer\Http\Middleware\InstallerRoutes;
  */
 
 // Only override session driver if application is not installed
-if (!Storage::disk('public')->exists('installed') || !env('MENTOR_INSTALLED')) {
+if (!Storage::disk('public')->exists('installed') || (!env('SSU_ACADEMY_INSTALLED') && !env('MENTOR_INSTALLED'))) {
     config(['session.driver' => 'file']);
 }
 
@@ -39,8 +39,8 @@ Route::middleware(InstallerRoutes::class)->group(function () {
 
     Route::get('install/finish', [InstallerController::class, 'finish'])->name('install.finish');
 
+    Route::get('install/refresh', [InstallerController::class, 'refresh'])->name('install.refresh');
+
     Route::post('install/check-database', [InstallerDBController::class, 'databaseChecker'])->name('check-database');
     Route::get('install/generate-app-key', [InstallerController::class, 'generateAppKey'])->name('generate-app-key');
 });
-
-Route::get('install/refresh', [InstallerController::class, 'refresh'])->name('install.refresh');

@@ -19,9 +19,14 @@ class CoursePlayerService
       return $watching_type === 'lesson' ?
          SectionLesson::with([
             'resources',
+            'activity_submissions' => function ($query) use ($user) {
+               $query->where('user_id', $user->id)->orderByDesc('attempt_number');
+            },
             'forums' => function ($query) {
                $query->with([
                   'user',
+                  'resolvedBy:id,name',
+                  'pinnedReply.user:id,name,photo',
                   'replies' => function ($replies) {
                      $replies->with(['user']);
                   },
@@ -118,59 +123,6 @@ class CoursePlayerService
       }
 
       if ($watchHistory) {
-         $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
-         $previousItemId = $watchHistory->current_watching_id;
-         $previousItemType = $watchHistory->current_watching_type;
-
-         // Mark previous item as completed when moving to a new item
-         if ($previousItemId && $previousItemId != $watching_id) {
-            $previousItemToComplete = [
-               'id' => $previousItemId,
-               'type' => $previousItemType,
-            ];
-
-            // Check if item is not already in completed items using array_filter
-            $isDuplicate = array_filter($completedItems, function ($item) use ($previousItemToComplete) {
-               return (string)$item['id'] === (string)$previousItemToComplete['id'] && $item['type'] === $previousItemToComplete['type'];
-            });
-
-            if (empty($isDuplicate)) {
-               $completedItems[] = $previousItemToComplete;
-            }
-         }
-
-         // Also mark all items before the current item as completed (for sequential progression)
-         $currentItemIndex = -1;
-         for ($i = 0; $i < count($allItems); $i++) {
-            if ((string)$allItems[$i]['id'] === (string)$watching_id && $allItems[$i]['type'] === $watching_type) {
-               $currentItemIndex = $i;
-               break;
-            }
-         }
-
-         // Mark all previous items in sequence as completed
-         if ($currentItemIndex > 0) {
-            for ($i = 0; $i < $currentItemIndex; $i++) {
-               $itemToComplete = [
-                  'id' => $allItems[$i]['id'],
-                  'type' => $allItems[$i]['type'],
-               ];
-
-               // Check if item is not already completed
-               $isDuplicate = array_filter($completedItems, function ($item) use ($itemToComplete) {
-                  return (string)$item['id'] === (string)$itemToComplete['id'] && $item['type'] === $itemToComplete['type'];
-               });
-
-               if (empty($isDuplicate)) {
-                  $completedItems[] = $itemToComplete;
-               }
-            }
-         }
-
-         // Clean up duplicates and ensure consistent data types
-         $completedItems = $this->cleanupCompletedItems($completedItems);
-
-         $watchHistory->completed_watching = json_encode($completedItems);
          $watchHistory->prev_watching_id = $prevItem ? $prevItem['id'] : null;
          $watchHistory->prev_watching_type = $prevItem ? $prevItem['type'] : null;
          $watchHistory->current_watching_id = $watching_id;
@@ -228,9 +180,25 @@ class CoursePlayerService
       return $watchHistory;
    }
 
-   public function calculateCompletion(Course $course, WatchHistory $watchHistory): array
+   public function calculateCompletion(Course $course, ?WatchHistory $watchHistory): array
    {
-      $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
+      if (!$watchHistory) {
+         $totalItems = 0;
+         foreach ($course->sections as $section) {
+            $totalItems += count($section->section_lessons) + count($section->section_quizzes);
+         }
+
+         return [
+            'total_items' => $totalItems,
+            'completed_items' => 0,
+            'completion' => 0,
+         ];
+      }
+
+      $completedWatching = $watchHistory->completed_watching;
+      $completedItems = is_array($completedWatching)
+         ? $completedWatching
+         : (json_decode($completedWatching, true) ?: []);
 
       // Count the total number of items (lessons + quizzes) across all sections
       $totalItems = 0;
@@ -270,6 +238,28 @@ class CoursePlayerService
          'completed_items' => $completedCount,
          'completion' => $completion,
       ];
+   }
+
+   public function markItemComplete(WatchHistory $watchHistory, string|int $itemId, string $itemType): WatchHistory
+   {
+      $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
+      $itemToComplete = [
+         'id' => (string) $itemId,
+         'type' => $itemType,
+      ];
+
+      $isDuplicate = array_filter($completedItems, function ($item) use ($itemToComplete) {
+         return (string) $item['id'] === $itemToComplete['id'] && $item['type'] === $itemToComplete['type'];
+      });
+
+      if (empty($isDuplicate)) {
+         $completedItems[] = $itemToComplete;
+      }
+
+      $watchHistory->completed_watching = json_encode($this->cleanupCompletedItems($completedItems));
+      $watchHistory->save();
+
+      return $watchHistory;
    }
 
    /**

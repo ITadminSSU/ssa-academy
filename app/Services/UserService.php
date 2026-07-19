@@ -52,4 +52,17 @@ class UserService
             User::find($id)->update($data);
         }, 5);
     }
+
+    public function deleteUser(int | string $id): void
+    {
+        DB::transaction(function () use ($id) {
+            $user = User::findOrFail($id);
+
+            if ($user->role === 'admin') {
+                throw new \InvalidArgumentException('Admin accounts cannot be deleted.');
+            }
+
+            $user->delete();
+        }, 5);
+    }
 }

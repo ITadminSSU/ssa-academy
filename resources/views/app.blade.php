@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="ltr">
 
 <head>
    <meta charset="utf-8">
@@ -22,13 +22,14 @@
          background-color: oklch(0.145 0 0);
       }
 
-      /* Hide specific navbar menu items */
-      a[href*="/our-team"],
-      a[href*="/careers"],
-      a[href*="/blogs"] {
-         display: none !important;
-      }
    </style>
+
+   <script>
+      (function () {
+         // Light mode only. Dark mode is disabled to avoid unreadable text.
+         document.documentElement.classList.remove('dark');
+      })();
+   </script>
 
    @if (app('system_settings'))
       <title inertia>
@@ -47,30 +48,22 @@
          content="{{ app('system_settings')->fields['author'] }}"
       >
 
-      {{-- Direct favicon injection for php artisan serve --}}
-      <link
-         rel="icon"
-         href="{{ asset('assets/images/symbol-color.png') }}"
-         type="image/png"
-      >
-
       @if (!empty(app('system_settings')->fields['favicon']))
          <link
             rel="icon"
-            href="{{ app('system_settings')->fields['favicon'] }}"
+            href="{{ public_asset_url(app('system_settings')->fields['favicon']) }}"
             type="image/png"
          >
       @elseif (!empty(app('system_settings')->fields['logo_light']))
          <link
             rel="icon"
-            href="{{ app('system_settings')->fields['logo_light'] }}"
+            href="{{ public_asset_url(app('system_settings')->fields['logo_light']) }}"
             type="image/png"
          >
       @else
-         {{-- Fallback to symbol-color.png --}}
          <link
             rel="icon"
-            href="{{ asset('assets/images/symbol-color.png') }}"
+            href="{{ asset('favicon.png') }}"
             type="image/png"
          >
       @endif
@@ -162,7 +155,7 @@
       href="https://fonts.bunny.net"
    >
    <link
-      href="https://fonts.bunny.net/css?family=inter:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i"
+      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700"
       rel="stylesheet"
    />
 
@@ -185,46 +178,6 @@
          {!! $globalStyle !!}
       </style>
    @endif
-
-   {{-- Hide navbar menu items: Our Team, Blogs, Careers --}}
-   <script>
-      (function() {
-         const itemsToHide = ['Our Team', 'Blogs', 'Careers', 'Exams'];
-         
-         function hideNavbarItems() {
-            // Find all links in navbars/headers
-            const navLinks = document.querySelectorAll('header a, nav a, div[class*="navbar"] a, div[class*="container"] a');
-            
-            navLinks.forEach(function(link) {
-               const linkText = link.textContent.trim();
-               const href = link.getAttribute('href') || '';
-               
-               // Hide if text matches or href contains the paths
-               if (itemsToHide.includes(linkText) || 
-                   href.includes('/our-team') || 
-                   href.includes('/careers') || 
-                   href.includes('/blogs')) {
-                  link.style.display = 'none';
-               }
-            });
-         }
-         
-         // Run on load and mutations
-         if (document.body) {
-            hideNavbarItems();
-            const observer = new MutationObserver(hideNavbarItems);
-            observer.observe(document.body, {
-               childList: true,
-               subtree: true
-            });
-         }
-         
-         // Also run after delays to catch dynamically loaded content
-         setTimeout(hideNavbarItems, 100);
-         setTimeout(hideNavbarItems, 500);
-         setTimeout(hideNavbarItems, 1000);
-      })();
-   </script>
 
    {{-- Redirect "About Us" to smartsourcingusa.com/#about --}}
    <script>

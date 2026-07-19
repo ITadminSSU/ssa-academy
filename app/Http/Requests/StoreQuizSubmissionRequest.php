@@ -2,10 +2,20 @@
 
 namespace App\Http\Requests;
 
+use App\Support\AuthenticatedUser;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreQuizSubmissionRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'user_id' => AuthenticatedUser::resolve(
+                $this->input('user_id') ? (int) $this->input('user_id') : null,
+            ),
+        ]);
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

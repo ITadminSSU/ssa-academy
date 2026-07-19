@@ -1,7 +1,9 @@
 import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
 import TableHeader from '@/components/table/table-header';
+import SsuStatCard from '@/components/ssu-stat-card';
 import { Card } from '@/components/ui/card';
+import { CheckCircle2, CircleDashed, Percent, Target } from 'lucide-react';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { usePage } from '@inertiajs/react';
 import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
@@ -28,46 +30,40 @@ const Attempts = () => {
       <div className="space-y-4">
          {/* Exam Attempts Summary */}
          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="p-4">
-               <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Total Attempts</p>
-                  <p className="text-2xl font-bold">{attempts.total}</p>
-               </div>
-            </Card>
-            <Card className="p-4">
-               <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{attempts.data.filter((a) => a.status === 'completed').length}</p>
-               </div>
-            </Card>
-            <Card className="p-4">
-               <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">In Progress</p>
-                  <p className="text-2xl font-bold text-blue-600">{attempts.data.filter((a) => a.status === 'in_progress').length}</p>
-               </div>
-            </Card>
-            <Card className="p-4">
-               <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Pass Rate</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                     {attempts.data.length > 0
-                        ? (
-                             (attempts.data.filter((a) => a.is_passed && a.status === 'completed').length /
-                                attempts.data.filter((a) => a.status === 'completed').length) *
-                                100 || 0
-                          ).toFixed(1)
-                        : 0}
-                     %
-                  </p>
-               </div>
-            </Card>
+            <SsuStatCard title="Total Attempts" value={attempts.total} toneIndex={0} icon={<Target className="h-6 w-6" />} />
+            <SsuStatCard
+               title="Completed"
+               value={attempts.data.filter((a) => a.status === 'completed').length}
+               toneIndex={1}
+               icon={<CheckCircle2 className="h-6 w-6" />}
+            />
+            <SsuStatCard
+               title="In Progress"
+               value={attempts.data.filter((a) => a.status === 'in_progress').length}
+               toneIndex={2}
+               icon={<CircleDashed className="h-6 w-6" />}
+            />
+            <SsuStatCard
+               title="Pass Rate"
+               value={`${
+                  attempts.data.length > 0
+                     ? (
+                          (attempts.data.filter((a) => a.is_passed && a.status === 'completed').length /
+                             attempts.data.filter((a) => a.status === 'completed').length) *
+                             100 || 0
+                       ).toFixed(1)
+                     : 0
+               }%`}
+               toneIndex={0}
+               icon={<Percent className="h-6 w-6" />}
+            />
          </div>
 
          {/* Attempts Table */}
          {attempt ? (
             <ExamAttemptReview attempt={attempt} />
          ) : (
-            <Card>
+            <Card className="ssu-table-shell">
                <TableFilter
                   data={attempts}
                   title="Exam Attempts"

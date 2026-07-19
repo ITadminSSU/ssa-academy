@@ -28,6 +28,27 @@ export interface UploadedFileData {
    file_size: number;
 }
 
+const FILETYPE_MAX_BYTES: Record<string, number> = {
+   audio: 100 * 1024 * 1024,
+   video: 1024 * 1024 * 1024,
+   document: 20 * 1024 * 1024,
+   image: 2 * 1024 * 1024,
+   zip: 256 * 1024 * 1024,
+};
+
+const mimeTypeFromFilename = (filename: string): string => {
+   const extension = filename.split('.').pop()?.toLowerCase();
+
+   return (
+      {
+         xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+         xls: 'application/vnd.ms-excel',
+         pdf: 'application/pdf',
+         txt: 'text/plain',
+      }[extension ?? ''] ?? ''
+   );
+};
+
 const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    storage,
    isSubmit,
@@ -48,8 +69,9 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const [uploadStatus, setUploadStatus] = useState<'idle' | 'initializing' | 'uploading' | 'completing' | 'completed' | 'error'>('idle');
 
    const fileInputRef = useRef<HTMLInputElement>(null);
+   const fileRef = useRef<File | null>(null);
    const abortControllerRef = useRef<AbortController | null>(null);
-   const maxFileSize = 1024 * 1024 * 1024;
+   const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
    const chunkSize = 5 * 1024 * 1024;
 
    // Configure axios to automatically handle CSRF tokens
@@ -74,10 +96,10 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       }
    }, []);
 
-   // Start upload automatically if external file is provided and delayUpload is false
+   // Start upload when parent signals submit (delayed-upload flow).
    useEffect(() => {
-      if (isSubmit) {
-         initiateUpload();
+      if (isSubmit && fileRef.current) {
+         initiateUpload(fileRef.current);
       }
    }, [isSubmit]);
 
@@ -85,60 +107,59 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       if (event.target.files && event.target.files.length > 0) {
          const selectedFile = event.target.files[0];
 
-         // Validate file size
          if (selectedFile.size > maxFileSize) {
-            setErrorMessage(`File is too large. Maximum file size is ${maxFileSize / (1024 * 1024)} MB`);
+            setErrorMessage(`File is too large. Maximum file size is ${(maxFileSize / (1024 * 1024)).toFixed(0)} MB`);
             return;
          }
 
+         fileRef.current = selectedFile;
          setFile(selectedFile);
          setErrorMessage('');
          setUploadStatus('idle');
          setUploadProgress(0);
+         onFileSelected?.(selectedFile);
 
-         // If using delayed upload, notify parent but don't upload yet
-         if (delayUpload) {
-            if (onFileSelected) {
-               onFileSelected(selectedFile);
-            }
-         } else {
-            // Upload immediately if not using delayed upload
-            initiateUpload();
+         if (!delayUpload) {
+            initiateUpload(selectedFile);
          }
       }
    };
 
-   const initiateUpload = async () => {
-      if (!file) return;
+   const initiateUpload = async (uploadFile?: File) => {
+      const activeFile = uploadFile ?? fileRef.current ?? file;
+
+      if (!activeFile) {
+         return;
+      }
 
       setUploadStatus('initializing');
       setErrorMessage('');
 
-      try {
-         // Calculate total chunks
-         const totalChunks = Math.ceil(file.size / chunkSize);
+      const mimetype = activeFile.type || mimeTypeFromFilename(activeFile.name);
 
-         // Initiate upload on the server
+      try {
+         const totalChunks = Math.ceil(activeFile.size / chunkSize);
+
          const response = await axios.post(
             '/dashboard/uploads/chunked/initialize',
             {
                storage: storage,
-               filename: file.name,
-               mimetype: file.type,
-               filesize: (file.size || 0) / 1024,
+               filename: activeFile.name,
+               mimetype,
+               filesize: (activeFile.size || 0) / 1024,
                filetype: filetype,
                total_chunks: totalChunks,
                course_id: courseId,
                course_section_id: sectionId,
             },
             {
-               timeout: 120000, // 2 minutes timeout for initialization request
+               timeout: 120000,
             },
          );
 
          if (response.data.success) {
             setUploadId(response.data.upload_id);
-            await uploadChunks(response.data.upload_id, totalChunks);
+            await uploadChunks(response.data.upload_id, totalChunks, activeFile);
          } else {
             throw new Error(response.data.message || 'Failed to initialize upload');
          }
@@ -149,10 +170,11 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       }
    };
 
-   const uploadChunks = async (uploadId: number, totalChunks: number) => {
-      if (!file) return;
+   const uploadChunks = async (uploadId: number, totalChunks: number, activeFile: File) => {
 
       setUploadStatus('uploading');
+
+      const mimetype = activeFile.type || mimeTypeFromFilename(activeFile.name);
 
       // Create a new AbortController for this upload
       abortControllerRef.current = new AbortController();
@@ -165,8 +187,8 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
          // Process chunks sequentially to avoid overwhelming the server
          for (let chunkIndex = 0; chunkIndex < totalChunks && !signal.aborted; chunkIndex++) {
             const start = chunkIndex * chunkSize;
-            const end = Math.min(start + chunkSize, file.size);
-            const chunk = file.slice(start, end);
+            const end = Math.min(start + chunkSize, activeFile.size);
+            const chunk = activeFile.slice(start, end);
 
             // Convert chunk to base64 string instead of sending as file
             const reader = new FileReader();
@@ -191,8 +213,8 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
                   storage: storage,
                   chunk_data: base64data,
                   part_number: chunkIndex + 1,
-                  filename: file.name,
-                  mimetype: file.type,
+                  filename: activeFile.name,
+                  mimetype,
                },
                {
                   signal: signal,
@@ -266,6 +288,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
             // Reset the uploader state for potential future uploads
             setTimeout(() => {
                if (fileInputRef.current) fileInputRef.current.value = '';
+               fileRef.current = null;
                setFile(null);
                setUploadId(null);
                setUploadProgress(0);
@@ -301,6 +324,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
          setUploadStatus('idle');
          setUploadProgress(0);
          if (fileInputRef.current) fileInputRef.current.value = '';
+         fileRef.current = null;
          setFile(null);
       }
    };
@@ -350,23 +374,11 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    return (
       <div>
          <div className="relative overflow-hidden rounded-sm">
-            <Input
-               type="file"
-               name="file"
-               onChange={(e) => {
-                  handleFileChange(e);
-                  const file = e.target.files?.[0];
+            <Input ref={fileInputRef} type="file" name="file" onChange={handleFileChange} />
 
-                  if (file) {
-                     setFile(file);
-                     onFileSelected?.(file);
-                  }
-               }}
-            />
-
-            {uploadStatus === 'uploading' && file && (
+            {file && uploadStatus !== 'idle' && uploadStatus !== 'error' && (
                <div className="absolute top-0 left-0 z-10 flex h-full w-full items-center justify-between">
-                  <div className="relative h-full w-full overflow-hidden bg-gray-200">
+                  <div className="relative h-full w-full overflow-hidden bg-muted">
                      <div
                         className="bg-secondary absolute top-0 left-0 h-full transition-all duration-300 ease-in-out"
                         style={{ width: `${uploadProgress}%` }}
@@ -374,11 +386,11 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
                      <div className="relative z-10 flex h-full items-center justify-between gap-2 px-2 text-xs">
                         <span>{uploadProgress}%</span>
                         {renderStatus()}
-                        <span className="text-gray-800">Size: ({(file ? file.size / (1024 * 1024) : 0).toFixed(2)} MB)</span>
+                        <span className="text-foreground">Size: ({(file ? file.size / (1024 * 1024) : 0).toFixed(2)} MB)</span>
                      </div>
                   </div>
 
-                  <div className="bg-gray-200">
+                  <div className="bg-muted">
                      <Button type="button" variant="destructive" onClick={cancelUpload} className="text-xs">
                         Cancel
                      </Button>

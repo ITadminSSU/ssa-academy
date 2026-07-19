@@ -24,7 +24,7 @@ class UpdateAssignmentSubmissionRequest extends FormRequest
         return [
             'marks_obtained' => 'required|numeric|min:0',
             'instructor_feedback' => 'nullable|string',
-            'status' => 'required|in:pending,graded,late,resubmitted',
+            'status' => 'required|in:pending,graded,late,resubmitted,passed,approved',
         ];
     }
 }

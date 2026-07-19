@@ -18,6 +18,7 @@ class CertificateTemplate extends Model implements HasMedia
         'type',
         'name',
         'logo_path',
+        'background_image_path',
         'template_data',
         'is_active',
         'is_default',

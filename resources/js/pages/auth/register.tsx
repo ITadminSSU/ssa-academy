@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import LegalAgreementFields, { LegalDocumentPayload } from '@/components/legal-agreement-fields';
 import AuthLayout from '@/layouts/auth-layout';
 import { SharedData } from '@/types/global';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -26,9 +27,10 @@ interface RegisterProps {
       secretKey: string;
    };
    professionalTypes: ProfessionalType[];
+   legalDocument: LegalDocumentPayload;
 }
 
-export default function Register({ googleLogIn, recaptcha, professionalTypes }: RegisterProps) {
+export default function Register({ googleLogIn, recaptcha, professionalTypes, legalDocument }: RegisterProps) {
    const { props } = usePage<SharedData>();
    const { auth, input, button } = props.translate;
    const recaptchaRef = useRef<ReCAPTCHA | null>(null);
@@ -43,21 +45,35 @@ export default function Register({ googleLogIn, recaptcha, professionalTypes }: 
       professional_type_id: '',
       professional_type_other: '',
       cv_resume: null as File | null,
+      accept_terms: false,
+      accept_nda: false,
    });
 
    const selectedProfessionalType = professionalTypes.find((type) => type.id.toString() === data.professional_type_id);
    const isOtherSelected = selectedProfessionalType?.name === 'Other';
 
+   const isFormComplete =
+      Boolean(data.name.trim()) &&
+      Boolean(data.email.trim()) &&
+      Boolean(data.password) &&
+      Boolean(data.password_confirmation) &&
+      Boolean(data.professional_type_id) &&
+      (!isOtherSelected || Boolean(data.professional_type_other.trim())) &&
+      Boolean(data.cv_resume) &&
+      data.accept_terms &&
+      data.accept_nda &&
+      (!recaptcha.status || Boolean(data.recaptcha));
+
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
       post(route('register'), {
          forceFormData: true,
-         onFinish: () => reset('password', 'password_confirmation', 'cv_resume'),
+         onSuccess: () => reset('password', 'password_confirmation', 'cv_resume'),
          onError: () => {
-            // Reset reCAPTCHA when there's an error
             if (recaptchaRef.current) {
                recaptchaRef.current.reset();
             }
+            setData('recaptcha', '');
          },
       });
    };
@@ -133,9 +149,12 @@ export default function Register({ googleLogIn, recaptcha, professionalTypes }: 
                </div>
 
                <div className="grid gap-2">
-                  <Label htmlFor="professional_type_id">Professional Type</Label>
+                  <Label htmlFor="professional_type_id">
+                     Professional Type <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                      value={data.professional_type_id}
+                     required
                      onValueChange={(value) => {
                         setData('professional_type_id', value);
                         if (value && professionalTypes.find((t) => t.id.toString() === value)?.name !== 'Other') {
@@ -160,7 +179,9 @@ export default function Register({ googleLogIn, recaptcha, professionalTypes }: 
 
                {isOtherSelected && (
                   <div className="grid gap-2">
-                     <Label htmlFor="professional_type_other">Please specify your professional type</Label>
+                     <Label htmlFor="professional_type_other">
+                        Please specify your professional type <span className="text-destructive">*</span>
+                     </Label>
                      <Input
                         id="professional_type_other"
                         type="text"
@@ -176,11 +197,14 @@ export default function Register({ googleLogIn, recaptcha, professionalTypes }: 
                )}
 
                <div className="grid gap-2">
-                  <Label htmlFor="cv_resume">CV / Resume (Optional)</Label>
+                  <Label htmlFor="cv_resume">
+                     CV / Resume <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                      id="cv_resume"
                      type="file"
                      accept=".pdf,.doc,.docx"
+                     required
                      tabIndex={6}
                      onChange={(e) => {
                         const file = e.target.files?.[0] || null;
@@ -189,8 +213,24 @@ export default function Register({ googleLogIn, recaptcha, professionalTypes }: 
                      disabled={processing}
                   />
                   <p className="text-muted-foreground text-xs">Accepted formats: PDF, DOC, DOCX (Max 10MB)</p>
+                  {data.cv_resume && (
+                     <p className="text-muted-foreground text-xs">
+                        Selected file: <span className="text-foreground font-medium">{data.cv_resume.name}</span>
+                     </p>
+                  )}
                   <InputError message={errors.cv_resume} />
                </div>
+
+               <LegalAgreementFields
+                  document={legalDocument}
+                  acceptTerms={data.accept_terms}
+                  acceptNda={data.accept_nda}
+                  onAcceptTermsChange={(value) => setData('accept_terms', value)}
+                  onAcceptNdaChange={(value) => setData('accept_nda', value)}
+                  disabled={processing}
+                  termsError={errors.accept_terms}
+                  ndaError={errors.accept_nda}
+               />
 
                {recaptcha.status && (
                   <div>
@@ -199,7 +239,9 @@ export default function Register({ googleLogIn, recaptcha, professionalTypes }: 
                   </div>
                )}
 
-               <LoadingButton className="mt-2 w-full" tabIndex={7} loading={processing}>
+               <p className="text-muted-foreground text-xs">{auth.register_required_fields_note}</p>
+
+               <LoadingButton className="mt-2 w-full" tabIndex={7} loading={processing} disabled={!isFormComplete}>
                   {button.create}
                </LoadingButton>
             </div>

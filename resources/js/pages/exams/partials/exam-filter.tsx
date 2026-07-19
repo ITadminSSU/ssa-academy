@@ -11,19 +11,17 @@ interface ExamFilterProps {
 const ExamFilter = ({ setOpen }: ExamFilterProps) => {
    const page = usePage<ExamsIndexProps>();
    const urlParams = getQueryParams(page.url);
-   const { levels, prices, categories, category, categoryChild, translate } = page.props;
-   const { frontend, common } = translate;
+   const { levels, prices, translate } = page.props;
+   const { frontend } = translate;
 
-   const getQueryRoute = (newParams: Record<string, string>, category: string, category_child?: string) => {
+   const getQueryRoute = (newParams: Record<string, string>) => {
       const updatedParams = { ...urlParams };
 
       if ('search' in updatedParams) {
          delete updatedParams.search;
       }
 
-      return route('category.exams', {
-         category,
-         category_child,
+      return route('exams.browse', {
          ...updatedParams,
          ...newParams,
       });
@@ -31,67 +29,12 @@ const ExamFilter = ({ setOpen }: ExamFilterProps) => {
 
    return (
       <div className="space-y-6">
-         <SearchInput onChangeValue={(value) => router.get(route('category.exams', { category: 'all', search: value }))} />
+         <SearchInput onChangeValue={(value) => router.get(route('exams.browse', { search: value }))} />
 
-         {/* Categories Section */}
          <div>
-            <h3 className="mb-3 font-semibold">{common.categories}</h3>
-            <RadioGroup value={categoryChild ? categoryChild?.slug : category?.slug || 'all'}>
-               <Link className="flex items-center" href={getQueryRoute({}, 'all')}>
-                  <RadioGroupItem className="cursor-pointer" id="category" value="all" />
-                  <label htmlFor="category" className="cursor-pointer pl-2">
-                     {frontend.all}
-                  </label>
-               </Link>
-
-               {categories.map((category, ind) => {
-                  const key = `category${ind}`;
-                  if (category.slug === 'default') return null;
-
-                  return (
-                     <div key={key} className="capitalize">
-                        <Link
-                           className="flex items-center"
-                           href={getQueryRoute({}, category.slug)}
-                           onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-                        >
-                           <RadioGroupItem className="cursor-pointer" id={key} value={category.slug} />
-                           <label htmlFor={key} className="cursor-pointer pl-2">
-                              {category.title}
-                           </label>
-                        </Link>
-
-                        {category.category_children?.map((child, ind) => {
-                           const key = `category_child${ind}`;
-                           return (
-                              <Link
-                                 key={key}
-                                 className="mt-2 flex items-center pl-3"
-                                 href={getQueryRoute({}, category.slug, child.slug)}
-                                 onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-                              >
-                                 <RadioGroupItem className="cursor-pointer" id={key} value={child.slug} />
-                                 <label htmlFor={key} className="cursor-pointer pl-2">
-                                    {child.title}
-                                 </label>
-                              </Link>
-                           );
-                        })}
-                     </div>
-                  );
-               })}
-            </RadioGroup>
-         </div>
-
-         {/* Price Section */}
-         <div>
-            <h3 className="mb-3 font-semibold">{common.price}</h3>
+            <h3 className="mb-3 font-semibold">{translate.common.price}</h3>
             <RadioGroup value={urlParams['pricing_type'] || 'all'}>
-               <Link
-                  className="flex items-center"
-                  href={getQueryRoute({ pricing_type: 'all' }, category?.slug || 'all', categoryChild?.slug)}
-                  onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-               >
+               <Link className="flex items-center" href={getQueryRoute({ pricing_type: 'all' })}>
                   <RadioGroupItem className="cursor-pointer" id="price" value="all" />
                   <label htmlFor="price" className="cursor-pointer pl-2">
                      {frontend.all}
@@ -102,7 +45,7 @@ const ExamFilter = ({ setOpen }: ExamFilterProps) => {
                   <Link
                      key={price}
                      className="flex items-center capitalize"
-                     href={getQueryRoute({ pricing_type: price }, category?.slug || 'all', categoryChild?.slug)}
+                     href={getQueryRoute({ pricing_type: price })}
                      onFinish={() => !urlParams.search && setOpen && setOpen(false)}
                   >
                      <RadioGroupItem className="cursor-pointer" value={price} id={price} />
@@ -114,13 +57,12 @@ const ExamFilter = ({ setOpen }: ExamFilterProps) => {
             </RadioGroup>
          </div>
 
-         {/* Label Section */}
          <div>
-            <h3 className="mb-3 font-semibold">{common.level}</h3>
+            <h3 className="mb-3 font-semibold">{translate.common.level}</h3>
             <RadioGroup value={urlParams['level'] || 'all'}>
                <Link
                   className="flex items-center"
-                  href={getQueryRoute({ level: 'all' }, category?.slug || 'all', categoryChild?.slug)}
+                  href={getQueryRoute({ level: 'all' })}
                   onFinish={() => !urlParams.search && setOpen && setOpen(false)}
                >
                   <RadioGroupItem className="cursor-pointer" id="level" value="all" />
@@ -132,7 +74,7 @@ const ExamFilter = ({ setOpen }: ExamFilterProps) => {
                   <Link
                      key={level}
                      className="flex items-center capitalize"
-                     href={getQueryRoute({ level }, category?.slug || 'all', categoryChild?.slug)}
+                     href={getQueryRoute({ level })}
                      onFinish={() => !urlParams.search && setOpen && setOpen(false)}
                   >
                      <RadioGroupItem className="cursor-pointer" value={level} id={level} />

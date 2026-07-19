@@ -73,7 +73,7 @@ const AssignmentSubmission = ({ assignment, submissions = [] }: Props) => {
             );
          default:
             return (
-               <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">{status}</span>
+               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{status}</span>
             );
       }
    };
@@ -201,14 +201,14 @@ const AssignmentSubmission = ({ assignment, submissions = [] }: Props) => {
                         <div className="mt-2">
                            <label
                               htmlFor="attachment"
-                              className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-8 hover:border-gray-400 hover:bg-gray-100"
+                              className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted px-6 py-8 hover:border-muted-foreground/50 hover:bg-muted"
                            >
                               <div className="space-y-2 text-center">
-                                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                                 <div className="text-sm text-gray-600">
+                                 <Upload className="mx-auto h-12 w-12 text-muted-foreground/70" />
+                                 <div className="text-sm text-muted-foreground">
                                     <span className="font-semibold">Click to upload</span> or drag and drop
                                  </div>
-                                 <p className="text-xs text-gray-500">PDF, DOC, DOCX, TXT, ZIP, JPG, PNG (MAX 10MB)</p>
+                                 <p className="text-xs text-muted-foreground">PDF, DOC, DOCX, TXT, ZIP, JPG, PNG (MAX 10MB)</p>
                               </div>
                               <input
                                  id="attachment"

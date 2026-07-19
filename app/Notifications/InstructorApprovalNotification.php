@@ -51,10 +51,11 @@ class InstructorApprovalNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $authService = app(\App\Services\AuthService::class);
         $url = $notifiable->role !== 'admin'
             ? ($this->data['status'] === 'approved'
-                ? route('dashboard')
-                : route('student.index', ['tab' => 'instructor']))
+                ? $authService->homeUrlFor($notifiable)
+                : $authService->homeUrlFor($notifiable, ['tab' => 'profile']))
             : route('instructors.applications');
 
         $feedback = $notifiable->role === 'student' || $notifiable->role === 'instructor'

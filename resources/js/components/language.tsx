@@ -3,17 +3,10 @@ import { SharedData } from '@/types/global';
 import { router, usePage } from '@inertiajs/react';
 import { Check, Globe } from 'lucide-react';
 import { Button } from './ui/button';
-import { Separator } from './ui/separator';
 
 const Language = () => {
    const { props } = usePage<SharedData>();
-   const { system, direction, langs, locale } = props;
-
-   const directionHandler = () => {
-      router.post(route('change.direction'), {
-         direction: direction === 'ltr' ? 'rtl' : 'ltr',
-      });
-   };
+   const { langs, locale } = props;
 
    const langHandler = (lang: string) => {
       router.post(route('change.lang'), { locale: lang });
@@ -28,16 +21,6 @@ const Language = () => {
          </DropdownMenuTrigger>
 
          <DropdownMenuContent align="end" className="w-[160px]">
-            {system.fields.direction === 'none' && (
-               <>
-                  <DropdownMenuItem className="cursor-pointer justify-center px-3 uppercase" onClick={directionHandler}>
-                     {direction === 'ltr' ? 'RTL' : 'LTR'}
-                  </DropdownMenuItem>
-
-                  <Separator className="my-1" />
-               </>
-            )}
-
             {langs
                .filter((lang) => lang.is_active)
                .map((lang) => (

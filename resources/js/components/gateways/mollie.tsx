@@ -35,7 +35,7 @@ const Mollie = ({ payment, routePath }: MollieProps) => {
          <div className="mb-6 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">{settings.mollie_settings}</h2>
-               <p className="text-gray-500">{settings.configure_payment_gateway.replace(':gateway', 'Mollie')}</p>
+               <p className="text-muted-foreground">{settings.configure_payment_gateway.replace(':gateway', 'Mollie')}</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -66,7 +66,7 @@ const Mollie = ({ payment, routePath }: MollieProps) => {
                <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">{settings.test_mode}:</span>
                   <Switch id="status" checked={data.test_mode} onCheckedChange={(checked) => setData('test_mode', checked)} />
-                  <Label htmlFor="status" className="text-gray-500">
+                  <Label htmlFor="status" className="text-muted-foreground">
                      {data.test_mode ? settings.using_test_environment : settings.using_live_environment}
                   </Label>
                </div>
@@ -85,7 +85,7 @@ const Mollie = ({ payment, routePath }: MollieProps) => {
                         placeholder={input.test_api_key_placeholder}
                      />
                      <InputError message={errors.test_api_key} />
-                     <p className="mt-1 text-sm text-gray-500">
+                     <p className="mt-1 text-sm text-muted-foreground">
                         {data.test_mode
                            ? settings.use_test_mode_key.replace(':key', 'api key')
                            : settings.use_live_mode_key.replace(':key', 'api key')}
@@ -101,7 +101,7 @@ const Mollie = ({ payment, routePath }: MollieProps) => {
                         placeholder={input.live_api_key_placeholder}
                      />
                      <InputError message={errors.live_api_key} />
-                     <p className="mt-1 text-sm text-gray-500">{data.test_mode ? 'Use your test mode api key' : 'Use your live mode api key'}</p>
+                     <p className="mt-1 text-sm text-muted-foreground">{data.test_mode ? 'Use your test mode api key' : 'Use your live mode api key'}</p>
                   </div>
                </div>
             </div>

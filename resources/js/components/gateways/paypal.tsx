@@ -35,7 +35,7 @@ const Paypal = ({ payment, routePath }: PaypalProps) => {
          <div className="mb-6 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">{settings.paypal_settings}</h2>
-               <p className="text-gray-500">{settings.configure_payment_gateway.replace(':gateway', 'PayPal')}</p>
+               <p className="text-muted-foreground">{settings.configure_payment_gateway.replace(':gateway', 'PayPal')}</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -66,7 +66,7 @@ const Paypal = ({ payment, routePath }: PaypalProps) => {
                <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">{settings.test_mode}:</span>
                   <Switch id="status" checked={data.test_mode} onCheckedChange={(checked) => setData('test_mode', checked)} />
-                  <Label htmlFor="status" className="text-gray-500">
+                  <Label htmlFor="status" className="text-muted-foreground">
                      {data.test_mode ? settings.using_sandbox_environment : settings.using_production_environment}
                   </Label>
                </div>

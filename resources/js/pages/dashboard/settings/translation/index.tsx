@@ -36,7 +36,7 @@ const Index = () => {
 
          <Card className="mx-auto w-full max-w-[1000px] space-y-6 p-6">
             <div className="flex items-center justify-between border-b border-b-gray-200 pb-6">
-               <p className="text-lg font-bold text-gray-900">{settings.language_settings}</p>
+               <p className="text-lg font-bold text-foreground">{settings.language_settings}</p>
                <AddLanguage />
             </div>
 
@@ -51,7 +51,7 @@ const Index = () => {
             <div className="flex flex-col gap-5">
                {props.langs.map((lang) =>
                   lang.is_default ? (
-                     <div key={lang.code} className="mb-5 flex items-center justify-between rounded-md border border-gray-300 p-5">
+                     <div key={lang.code} className="mb-5 flex items-center justify-between rounded-md border border-border p-5">
                         <h6 className="text-xl">
                            {lang.name} ({lang.nativeName})
                         </h6>
@@ -67,7 +67,7 @@ const Index = () => {
                         </div>
                      </div>
                   ) : (
-                     <div key={lang.code} className="flex items-center justify-between rounded-md border border-gray-300 p-5">
+                     <div key={lang.code} className="flex items-center justify-between rounded-md border border-border p-5">
                         <h6 className="text-xl">
                            {lang.name} ({lang.nativeName})
                         </h6>

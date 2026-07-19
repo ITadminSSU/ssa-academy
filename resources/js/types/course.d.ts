@@ -6,6 +6,7 @@ interface CourseCategory extends TableCommon {
    logo: string;
    sort: number;
    status: number;
+   show_in_nav?: boolean;
    keywords?: string;
    description?: string;
    thumbnail?: string;
@@ -36,6 +37,11 @@ interface Course extends TableCommon {
    level: string;
    language?: string;
    pricing_type: string;
+   billing_model?: 'one_time' | 'subscription';
+   subscription_price?: number | null;
+   stripe_product_id?: string | null;
+   stripe_price_id?: string | null;
+   audience: 'internal' | 'public' | 'both';
    price: number;
    discount?: number;
    discount_price?: number;
@@ -52,6 +58,7 @@ interface Course extends TableCommon {
    average_rating?: number;
    expiry_type?: 'lifetime' | 'limited_time';
    expiry_duration?: string;
+   training_hours?: string | null;
    description?: string;
    requirements?: CourseRequirement[];
    outcomes?: CourseOutcome[];
@@ -69,6 +76,8 @@ interface Course extends TableCommon {
    course_category_child?: CourseCategoryChild;
    course_category_id: number | string;
    course_category_child_id: number | string;
+   final_exam_id?: number | string | null;
+   final_exam?: Pick<Exam, 'id' | 'title' | 'slug'> | null;
    [key: string]: any;
 }
 
@@ -83,12 +92,35 @@ interface CourseSection extends TableCommon {
 }
 
 // section_lessons.ts
+interface LessonActivitySubmission extends TableCommon {
+   attachment_type: 'url' | 'file';
+   attachment_path: string;
+   comment?: string;
+   submitted_at: string;
+   marks_obtained?: number | null;
+   instructor_feedback?: string | null;
+   status: string;
+   attempt_number: number;
+   section_lesson_id: number;
+   user_id: number;
+   grader_id?: number | null;
+   lesson?: SectionLesson;
+   student?: User;
+   grader?: User;
+}
+
 interface SectionLesson extends TableCommon {
    title: string;
    sort: number;
    status: boolean;
    lesson_type: string;
+   requires_submission?: boolean;
+   activity_total_mark?: number | null;
+   activity_pass_mark?: number | null;
+   activity_retake?: number;
+   activity_submissions?: LessonActivitySubmission[];
    lesson_src?: string;
+   stream_protected?: boolean;
    lesson_provider?: string;
    embed_source?: string;
    thumbnail?: string;
@@ -109,6 +141,7 @@ interface LessonResource extends TableCommon {
    title: string;
    type: string;
    resource: string;
+   is_downloadable?: boolean;
    section_lesson_id: number;
 }
 
@@ -119,6 +152,9 @@ interface CourseAssignment extends TableCommon {
    pass_mark: number;
    retake: number;
    summary?: string;
+   sample_project_type?: 'url' | 'file' | null;
+   sample_project_path?: string | null;
+   sample_downloaded?: boolean;
    deadline: string;
    late_submission: boolean;
    late_total_mark: number;
@@ -207,6 +243,11 @@ interface CourseForum extends TableCommon {
    user_id: number;
    course_id: number;
    section_lesson_id: number;
+   resolved_at?: string | null;
+   resolved_by?: number | null;
+   pinned_reply_id?: number | null;
+   pinnedReply?: CourseForumReply | null;
+   resolvedBy?: User | null;
 }
 
 // course_forum_replies.ts
@@ -301,6 +342,7 @@ interface CourseCart extends TableCommon {
 // enrollments.ts
 interface CourseEnrollment extends TableCommon {
    enrollment_type: string;
+   access_status?: EnrollmentAccessStatus;
    entry_date: string;
    expiry_date?: string;
    user_id: number;
@@ -315,6 +357,8 @@ interface CourseEnrollment extends TableCommon {
 // course_certificates.ts
 interface CourseCertificate extends TableCommon {
    identifier: string;
+   certificate_id?: string | null;
+   verification_reference?: string | null;
    user_id: number;
    course_id: number;
 }
@@ -357,6 +401,21 @@ interface PaymentHistory extends TableCommon {
    purchase: Course | Exam;
    meta: Record<string, unknown>;
    media: any[];
+   refund_status?: 'paid' | 'refund_pending' | 'refunded';
+   refund_notes?: string | null;
+   audit_logs?: PaymentRefundAuditLog[];
+}
+
+interface PaymentRefundAuditLog {
+   id: number;
+   payment_history_id: number;
+   changed_by_user_id: number;
+   previous_status: string | null;
+   new_status: string;
+   previous_notes: string | null;
+   new_notes: string | null;
+   created_at: string;
+   changed_by?: Pick<User, 'id' | 'name' | 'email'>;
 }
 
 interface VideoDetails {

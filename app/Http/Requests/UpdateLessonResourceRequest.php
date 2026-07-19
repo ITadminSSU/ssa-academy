@@ -26,6 +26,7 @@ class UpdateLessonResourceRequest extends FormRequest
             'type' => 'required|string|max:255',
             'resource' => 'nullable|string|max:255',
             'resource_url' => 'nullable|string|max:255',
+            'is_downloadable' => 'sometimes|boolean',
         ];
     }
 }

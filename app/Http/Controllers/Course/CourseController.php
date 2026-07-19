@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Course;
 
 use Illuminate\Http\Request;
+use App\Enums\CourseAudience;
+use App\Enums\CourseBillingModel;
 use App\Enums\CourseLevelType;
 use App\Enums\CoursePricingType;
 use App\Enums\CourseStatusType;
@@ -13,13 +15,19 @@ use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Requests\UpdateCourseStatusRequest;
 use App\Services\Course\AssignmentSubmissionService;
+use App\Services\Course\LessonActivitySubmissionService;
 use App\Services\Course\CourseCategoryService;
+use App\Services\Course\CourseFinalExamService;
 use App\Services\Course\CourseService;
 use App\Services\Course\CourseSectionService;
 use App\Services\Course\CoursePlayerService;
 use App\Services\Course\CourseWishlistService;
 use App\Services\Course\CourseReviewService;
+use App\Models\Course\Course;
 use App\Services\LiveClass\ZoomLiveService;
+use App\Services\Payment\CourseStripeSyncService;
+use App\Services\Payment\StripeCustomerService;
+use App\Services\Payment\SubscriptionAccessService;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -35,6 +43,11 @@ class CourseController extends Controller
         protected CourseWishlistService $wishlistService,
         protected CourseReviewService $reviewService,
         protected AssignmentSubmissionService $submissionService,
+        protected LessonActivitySubmissionService $activitySubmissionService,
+        protected CourseFinalExamService $courseFinalExamService,
+        protected SubscriptionAccessService $subscriptionAccess,
+        protected StripeCustomerService $stripeCustomer,
+        protected CourseStripeSyncService $courseStripeSync,
     ) {}
 
     public function index(Request $request)
@@ -49,9 +62,17 @@ class CourseController extends Controller
     {
         // Save original category slug before it gets overwritten
         $originalCategorySlug = $category;
+
+        if (Auth::check()) {
+            $query = array_filter([
+                ...$request->query(),
+            ]);
+
+            return redirect()->route('student.category.courses', array_merge(['category' => $originalCategorySlug], $query));
+        }
         
         $user = Auth::user() ? Auth::user() : null;
-        $query = [...$request->all(), 'per_page' => 12, 'category' => $category, 'category_child' => $category_child, 'status' => 'approved'];
+        $query = [...$request->all(), 'per_page' => 12, 'category' => $category, 'category_child' => $category_child, 'status' => 'approved', 'catalog' => true];
 
         $levels = CourseLevelType::cases();
         $prices = CoursePricingType::cases();
@@ -59,11 +80,11 @@ class CourseController extends Controller
         $categoryChild = $this->categoryService->getCategoryChildBySlug($category_child);
         $categories = $this->categoryService->getCategories()['categories'];
         $wishlists = $this->wishlistService->getWishlists(['user_id' => $user ? $user->id : null]);
-        $courses = $this->courseService->getCourses($query, null, true);
+        $courses = $this->courseService->getCourses($query, $user, true);
 
         // Generate meta tags for SEO and social sharing
         $system = app('system_settings');
-        $siteName = $system->fields['name'] ?? 'Mentor Learning Management System';
+        $siteName = \App\Support\Branding::resolveSiteName($system->fields['name'] ?? null);
         $siteUrl = request()->url();
 
         // Get course count with proper fallback
@@ -135,11 +156,6 @@ class CourseController extends Controller
             'twitterImage' => $ogImage,
         ]);
 
-        // Set session flag when user visits /courses/all
-        if ($originalCategorySlug === 'all') {
-            $request->session()->put('visited_courses_all', true);
-        }
-
         return $response;
     }
 
@@ -147,6 +163,7 @@ class CourseController extends Controller
     {
         $labels = CourseLevelType::cases();
         $prices = CoursePricingType::cases();
+        $audiences = CourseAudience::cases();
         $expiries = ExpiryLimitType::cases();
         $categories = $this->categoryService->getCategories()['categories'];
         $instructors = $this->instructorService->getInstructors(['status' => 'approved'], false);
@@ -154,6 +171,7 @@ class CourseController extends Controller
         return Inertia::render('dashboard/courses/create', compact(
             'labels',
             'prices',
+            'audiences',
             'expiries',
             'categories',
             'instructors'
@@ -178,17 +196,25 @@ class CourseController extends Controller
 
         // course details
         $course = $this->courseService->getGuestCourseById($id);
+
+        if (!$course || !$course->isVisibleToUser($user)) {
+            abort(404);
+        }
+
         $enrollment = $this->courseService->getCourseEnroll($course->id);
         $wishlists = $this->wishlistService->getWishlists(['user_id' => $user ? $user->id : null]);
         $watchHistory = $this->coursePlayerService->getWatchHistory($course->id, Auth::user() ? Auth::user()->id : null);
         $approvalStatus = $this->courseService->validateCourseForApproval($course);
         $reviews = $this->reviewService->getReviews(['course_id' => $course->id, ...$request->all()], true);
         $totalReviews = $this->reviewService->totalReviews($course->id);
+        $subscriptionAccess = $user
+            ? $this->subscriptionAccess->toFrontendPayload($user, $course, $enrollment)
+            : null;
 
         if ($course->exists()) {
             // Generate meta tags for SEO and social sharing
             $system = app('system_settings');
-            $siteName = $system->fields['name'] ?? 'Mentor Learning Management System';
+            $siteName = \App\Support\Branding::resolveSiteName($system->fields['name'] ?? null);
             $pageTitle = $course->meta_title ?? ($course->title . ' | ' . $siteName);
             $pageDescription = $course->meta_description ?? $course->short_description ?? $course->description ?? 'Learn with our comprehensive course';
             $pageKeywords = $course->meta_keywords ?? ($course->title . ', online course, learning, ' . ($system->fields['keywords'] ?? 'LMS'));
@@ -209,6 +235,7 @@ class CourseController extends Controller
                     'wishlists' => $wishlists,
                     'reviews' => $reviews,
                     'totalReviews' => $totalReviews,
+                    'subscriptionAccess' => $subscriptionAccess,
                 ]
             )->withViewData([
                 'metaTitle' => $pageTitle,
@@ -239,6 +266,7 @@ class CourseController extends Controller
         $statuses = CourseStatusType::cases();
         $labels = CourseLevelType::cases();
         $prices = CoursePricingType::cases();
+        $audiences = CourseAudience::cases();
         $expiries = ExpiryLimitType::cases();
         $course = $this->courseService->getUserCourseById($id, $user);
         $watchHistory = $this->coursePlayerService->getWatchHistory($course->id, $user->id);
@@ -248,6 +276,7 @@ class CourseController extends Controller
         $categories = $categories['categories'];
         $zoomConfig = $this->zoomLiveService->zoomConfig;
         $instructors = isAdmin() ? $this->instructorService->getInstructors(['status' => 'approved'], false) : null;
+        $instructorExams = $this->courseFinalExamService->getSelectableExams($user, $course);
 
         $totalSubmissions = $course->assignments->sum(function ($assignment) {
             return $assignment->submissions->count();
@@ -259,6 +288,10 @@ class CourseController extends Controller
             $submissions = $this->submissionService->getSubmissions($assignment, $request->all());
         }
 
+        $activitySubmissions = $tab === 'activity-reviews'
+            ? $this->activitySubmissionService->getSubmissionsForCourse((int) $course->id, $request->all())
+            : null;
+
         return Inertia::render(
             'dashboard/courses/update',
             [
@@ -266,18 +299,29 @@ class CourseController extends Controller
                 'tab' => $tab,
                 'assignment' => $assignment,
                 'prices' => $prices,
+                'audiences' => $audiences,
                 'course' => $course,
                 'statuses' => $statuses,
                 'labels' => $labels,
                 'expiries' => $expiries,
                 'categories' => $categories,
                 'submissions' => $submissions,
+                'activitySubmissions' => $activitySubmissions,
                 'watchHistory' => $watchHistory,
                 'approvalStatus' => $approvalStatus,
                 'zoomConfig' => $zoomConfig,
                 'instructors' => $instructors,
+                'instructorExams' => $instructorExams,
                 'totalSubmissions' => $totalSubmissions,
                 'totalEnrollments' => $totalEnrollments,
+                'billingModels' => collect(CourseBillingModel::cases())
+                    ->map(fn (CourseBillingModel $model) => [
+                        'value' => $model->value,
+                        'label' => $model->getLabel(),
+                    ])
+                    ->values(),
+                'stripeActive' => $this->stripeCustomer->isStripeActive(),
+                'stripeSynced' => $this->courseStripeSync->isSynced($course),
             ]
         );
     }
@@ -291,7 +335,11 @@ class CourseController extends Controller
 
     public function status(UpdateCourseStatusRequest $request, $id)
     {
-        $this->courseService->updateCourse($id, [...$request->validated(), 'tab' => 'status']);
+        $validated = $request->validated();
+
+        // Trainers and admins can publish/approve a course directly. There is no
+        // separate admin-approval step and no pre-publish content requirement.
+        $this->courseService->updateCourse($id, [...$validated, 'tab' => 'status']);
 
         return back()->with('success', 'Course status changed successfully');
     }

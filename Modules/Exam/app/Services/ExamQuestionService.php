@@ -37,9 +37,9 @@ class ExamQuestionService extends BaseService
       $questionOptions = $data['question_options'] ?? [];
       unset($data['question_options']);
 
-      if (
-         array_key_exists('new_audio_url', $data['options'])
-      ) {
+      $data['options'] = $this->normalizeUploadedPlanFile($data['options'] ?? []);
+
+      if (array_key_exists('new_audio_url', $data['options'])) {
          $data['options']['audio_url'] = $data['options']['new_audio_url'];
          unset($data['options']['new_audio_url']);
       }
@@ -74,6 +74,15 @@ class ExamQuestionService extends BaseService
       // Extract question options if present
       $questionOptions = $data['question_options'] ?? null;
       unset($data['question_options']);
+
+      $options = $data['options'] ?? [];
+
+      if (array_key_exists('new_plan_file_url', $options) && !empty($question->options['plan_file_url'])) {
+         $chunkedUpload = ChunkedUpload::where('file_url', $question->options['plan_file_url'])->first();
+         $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
+      }
+
+      $data['options'] = $this->normalizeUploadedPlanFile($options);
 
       if (
          array_key_exists('new_audio_url', $data['options']) &&
@@ -174,6 +183,24 @@ class ExamQuestionService extends BaseService
             ->where('exam_id', $exam->id)
             ->update(['sort' => $index]);
       }
+   }
+
+   /**
+    * Map chunked upload fields to persisted plan file options.
+    */
+   private function normalizeUploadedPlanFile(array $options): array
+   {
+      if (array_key_exists('new_plan_file_url', $options)) {
+         $options['plan_file_url'] = $options['new_plan_file_url'];
+         unset($options['new_plan_file_url']);
+
+         if (array_key_exists('new_plan_file_name', $options)) {
+            $options['plan_file_name'] = $options['new_plan_file_name'];
+            unset($options['new_plan_file_name']);
+         }
+      }
+
+      return $options;
    }
 
    /**

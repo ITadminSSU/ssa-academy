@@ -129,7 +129,7 @@ const ExamPricingForm = ({ data, setData, errors }: Props) => {
                   min="1"
                   required
                />
-               <p className="mt-1 text-sm text-gray-500">Students will have access for this many days after enrollment</p>
+               <p className="mt-1 text-sm text-muted-foreground">Students will have access for this many days after enrollment</p>
                <InputError message={errors.expiry_duration} />
             </div>
          )}

@@ -33,6 +33,8 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
       pass_mark: assignment?.pass_mark || '',
       retake: assignment?.retake || 1,
       summary: assignment?.summary || '',
+      sample_project_type: assignment?.sample_project_type || 'url',
+      sample_project_path: assignment?.sample_project_path || '',
       deadline: assignment?.deadline ? new Date(assignment.deadline) : new Date(),
       late_submission: assignment?.late_submission || false,
       late_total_mark: assignment?.late_total_mark || 0,
@@ -112,6 +114,29 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
                            onChange={(e) => onHandleChange(e, setData)}
                         />
                         <InputError message={errors.retake} />
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <Label>Sample Project Type</Label>
+                        <Input
+                           type="text"
+                           value={data.sample_project_type}
+                           onChange={(e) => setData('sample_project_type', e.target.value as 'url' | 'file')}
+                           placeholder="url or file"
+                        />
+                        <InputError message={errors.sample_project_type} />
+                     </div>
+                     <div>
+                        <Label>Sample Project URL / Path</Label>
+                        <Input
+                           type="text"
+                           value={data.sample_project_path}
+                           onChange={(e) => setData('sample_project_path', e.target.value)}
+                           placeholder="https://... or storage path"
+                        />
+                        <InputError message={errors.sample_project_path} />
                      </div>
                   </div>
 

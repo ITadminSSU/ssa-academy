@@ -18,6 +18,12 @@ class CertificateService extends MediaService
          ]);
       }
 
+      if (array_key_exists('background_image', $data) && $data['background_image']) {
+         $template->update([
+            'background_image_path' => $this->addNewDeletePrev($template, $data['background_image'], 'certificates_background')
+         ]);
+      }
+
       return $template;
    }
 
@@ -25,9 +31,21 @@ class CertificateService extends MediaService
    {
       $template = CertificateTemplate::findOrFail($id);
 
+      $template->update([
+         'name' => $data['name'] ?? $template->name,
+         'type' => $data['type'] ?? $template->type,
+         'template_data' => $data['template_data'] ?? $template->template_data,
+      ]);
+
       if (array_key_exists('logo', $data) && $data['logo']) {
          $template->update([
             'logo_path' => $this->addNewDeletePrev($template, $data['logo'], 'certificates_logo')
+         ]);
+      }
+
+      if (array_key_exists('background_image', $data) && $data['background_image']) {
+         $template->update([
+            'background_image_path' => $this->addNewDeletePrev($template, $data['background_image'], 'certificates_background')
          ]);
       }
 
@@ -61,6 +79,7 @@ class CertificateService extends MediaService
             'id' => 0,
             'name' => 'Default Template',
             'logo_path' => null,
+            'background_image_path' => null,
             'template_data' => [
                'primaryColor' => '#3730a3',
                'secondaryColor' => '#4b5563',

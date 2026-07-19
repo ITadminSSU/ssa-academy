@@ -22,7 +22,7 @@ const EnrollmentStatus = ({ enrollment, showDate = true, className }: Props) => 
          </Badge>
 
          {showDate && enrollment.enrollment_type === 'limited' && expiryDate && (
-            <div className="flex items-center gap-1 text-sm text-gray-600">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
                <Calendar className="h-3.5 w-3.5" />
                {isActive && daysRemaining !== null && daysRemaining > 0 ? (
                   <span>

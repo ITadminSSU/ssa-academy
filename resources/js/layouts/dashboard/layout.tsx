@@ -4,27 +4,29 @@ import { Head } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import Main from '../main';
 import DashboardHeader from './header';
+import LearnerSidebar from './learner-sidebar';
 import DashboardSidebar from './sidebar';
 
 interface Props {
    headTitle?: string;
    breadcrumbs?: BreadcrumbItem[];
+   variant?: 'admin' | 'learner';
 }
 
 const DashboardLayout = (props: PropsWithChildren<Props>) => {
-   const { children, headTitle, breadcrumbs = [] } = props;
+   const { children, headTitle, breadcrumbs = [], variant = 'admin' } = props;
 
    return (
       <Main>
          <AppShell variant="sidebar">
-            <DashboardSidebar />
+            {variant === 'learner' ? <LearnerSidebar /> : <DashboardSidebar />}
 
             <AppContent variant="sidebar">
                {headTitle && <Head title={headTitle} />}
 
                <DashboardHeader breadcrumbs={breadcrumbs} />
 
-               <div className="container py-6">{children}</div>
+               <div className="ssu-page-shell container py-6">{children}</div>
             </AppContent>
          </AppShell>
       </Main>

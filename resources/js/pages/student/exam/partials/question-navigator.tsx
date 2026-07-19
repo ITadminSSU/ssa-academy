@@ -45,19 +45,19 @@ const QuestionNavigator = ({ questions, currentQuestionIndex, answeredQuestions,
                   <Badge variant="secondary" className="h-6 w-6 p-0">
                      <Check className="h-3 w-3" />
                   </Badge>
-                  <span className="text-gray-600">Answered ({answeredQuestions.size})</span>
+                  <span className="text-muted-foreground">Answered ({answeredQuestions.size})</span>
                </div>
                <div className="flex items-center gap-2">
                   <Badge variant="outline" className="h-6 w-6 p-0">
                      <Flag className="h-3 w-3" />
                   </Badge>
-                  <span className="text-gray-600">Marked ({markedQuestions.size})</span>
+                  <span className="text-muted-foreground">Marked ({markedQuestions.size})</span>
                </div>
                <div className="flex items-center gap-2">
                   <Badge variant="ghost" className="h-6 w-6 p-0">
                      <Circle className="h-3 w-3" />
                   </Badge>
-                  <span className="text-gray-600">Not Answered ({questions.length - answeredQuestions.size})</span>
+                  <span className="text-muted-foreground">Not Answered ({questions.length - answeredQuestions.size})</span>
                </div>
             </div>
 
@@ -78,9 +78,9 @@ const QuestionNavigator = ({ questions, currentQuestionIndex, answeredQuestions,
             </div>
 
             {/* Summary */}
-            <div className="rounded-lg bg-gray-50 p-3">
-               <p className="text-sm font-semibold text-gray-700">Progress Summary</p>
-               <div className="mt-2 space-y-1 text-sm text-gray-600">
+            <div className="rounded-lg bg-muted p-3">
+               <p className="text-sm font-semibold text-muted-foreground">Progress Summary</p>
+               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                   <p>
                      Total Questions: <span className="font-semibold">{questions.length}</span>
                   </p>

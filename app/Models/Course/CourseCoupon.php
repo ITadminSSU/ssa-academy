@@ -12,7 +12,7 @@ class CourseCoupon extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'created_by',
         'course_id',
         'code',
         'discount_type',

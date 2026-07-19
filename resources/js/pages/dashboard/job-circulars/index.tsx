@@ -3,7 +3,8 @@ import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import SsuStatCard from '@/components/ssu-stat-card';
+import { Card, CardContent } from '@/components/ui/card';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -84,61 +85,16 @@ const JobCircularsIndex = () => {
                </Button>
             </div>
 
-            {/* Statistics Cards */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-5">
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.total_jobs}</CardTitle>
-                     <Briefcase className="text-muted-foreground h-4 w-4" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold">{statistics.total}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{common.active}</CardTitle>
-                     <PlayCircle className="h-4 w-4 text-green-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-green-600">{statistics.active}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{common.draft}</CardTitle>
-                     <Edit className="h-4 w-4 text-yellow-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-yellow-600">{statistics.draft}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{common.closed}</CardTitle>
-                     <Clock className="h-4 w-4 text-orange-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-orange-600">{statistics.closed}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{common.expired}</CardTitle>
-                     <Clock className="h-4 w-4 text-red-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-red-600">{statistics.expired}</div>
-                  </CardContent>
-               </Card>
+               <SsuStatCard title={dashboard.total_jobs} value={statistics.total} toneIndex={0} icon={<Briefcase className="h-6 w-6" />} />
+               <SsuStatCard title={common.active} value={statistics.active} toneIndex={1} icon={<PlayCircle className="h-6 w-6" />} />
+               <SsuStatCard title={common.draft} value={statistics.draft} toneIndex={2} icon={<Edit className="h-6 w-6" />} />
+               <SsuStatCard title={common.closed} value={statistics.closed} toneIndex={0} icon={<Clock className="h-6 w-6" />} />
+               <SsuStatCard title={common.expired} value={statistics.expired} toneIndex={1} icon={<Clock className="h-6 w-6" />} />
             </div>
 
             {/* Job Circulars List */}
-            <Card>
+            <Card className="ssu-table-shell">
                <TableFilter
                   data={jobCirculars}
                   title="Job Circulars"

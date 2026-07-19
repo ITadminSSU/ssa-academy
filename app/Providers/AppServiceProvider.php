@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Payment\PaymentGatewaySyncService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
@@ -66,9 +67,8 @@ class AppServiceProvider extends ServiceProvider
             return env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . $user->email;
         });
 
-        // Trust proxies when running behind a reverse proxy (e.g., Docker, nginx)
-        // This allows Laravel to correctly detect HTTPS when behind a proxy
-        if (config('app.env') !== 'local' || request()->hasHeader('X-Forwarded-Proto')) {
+        // Trust proxies when behind ngrok, Docker, or nginx so URLs/schemes resolve correctly.
+        if (app()->environment('local') || request()->hasHeader('X-Forwarded-Proto')) {
             request()->setTrustedProxies(
                 ['*'],
                 \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
@@ -79,10 +79,23 @@ class AppServiceProvider extends ServiceProvider
             );
         }
 
-        // Force HTTPS scheme for URLs when accessed via HTTPS
-        // This ensures assets load with the correct protocol
-        if (request()->header('X-Forwarded-Proto') === 'https' || request()->secure()) {
+        if (str_starts_with((string) config('app.url'), 'https://')
+            || request()->header('X-Forwarded-Proto') === 'https'
+            || request()->secure()) {
             URL::forceScheme('https');
+        }
+
+        if (app()->environment('local') && !app()->runningInConsole() && request()->getHost()) {
+            // Match asset/script URLs to the host the browser actually uses (localhost vs 127.0.0.1).
+            URL::forceRootUrl(request()->getSchemeAndHttpHost());
+        } elseif (config('app.url')) {
+            URL::forceRootUrl(config('app.url'));
+        }
+
+        try {
+            app(PaymentGatewaySyncService::class)->syncStripeFromEnvironment();
+        } catch (\Throwable $th) {
+            // Ignore during install or when the database is unavailable.
         }
     }
 }

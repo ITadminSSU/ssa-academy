@@ -7,18 +7,18 @@ use App\Enums\CoursePricingType;
 use App\Http\Controllers\Controller;
 use App\Services\InstructorService;
 use Modules\Exam\Models\Exam;
-use Modules\Exam\Http\Requests\ExamRequest;
+use Modules\Exam\Http\Requests\StoreExamWithQuestionsRequest;
 use Modules\Exam\Http\Requests\UpdateExamRequest;
 use Modules\Exam\Services\ExamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Modules\Exam\Services\ExamCategoryService;
 use Illuminate\Http\RedirectResponse;
 use Modules\Exam\Services\ExamEnrollmentService;
 use Modules\Exam\Services\ExamReviewService;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Exam\Services\ExamAttemptService;
+use Modules\Exam\Services\ExamQuantityTakeoffService;
 use Modules\Exam\Services\ExamWishlistService;
 
 class ExamController extends Controller
@@ -26,7 +26,6 @@ class ExamController extends Controller
     public function __construct(
         protected ExamService $exam,
         protected ExamReviewService $examReview,
-        protected ExamCategoryService $examCategory,
         protected ExamEnrollmentService $examEnrollment,
         protected ExamWishlistService $examWishlist,
         protected ExamAttemptService $examAttempt,
@@ -44,25 +43,21 @@ class ExamController extends Controller
     }
 
     /**
-     * Display exams by category (public page, similar to courses)
+     * Display published exams for browsing
      */
-    public function category_exams(Request $request, string $slug): Response
+    public function browse_exams(Request $request): Response
     {
         $levels = CourseLevelType::cases();
         $prices = CoursePricingType::cases();
-        $query = [...$request->all(), 'per_page' => 12, 'category' => $slug, 'status' => 'published'];
+        $query = [...$request->all(), 'per_page' => 12, 'status' => 'published'];
 
-        $category = $slug !== 'all' ? $this->examCategory->getCategoryBySlug($slug) : null;
-        $categories = $this->examCategory->getCategories();
         $exams = $this->exam->getAllExams($query, null, true);
-        $metadata = $this->exam->getCategoryExamsMetadata($category, $exams);
+        $metadata = $this->exam->getExamsBrowseMetadata($exams);
 
         return Inertia::render('exams/index', [
             'levels' => $levels,
             'prices' => $prices,
             'exams' => $exams,
-            'category' => $category,
-            'categories' => $categories,
         ])->withViewData($metadata);
     }
 
@@ -71,21 +66,26 @@ class ExamController extends Controller
      */
     public function create(): Response
     {
-        $categories = $this->examCategory->getCategories();
         $instructors = $this->instructor->getInstructors(['status' => 'approved'], false);
 
-        return Inertia::render('dashboard/exams/create', compact('categories', 'instructors'));
+        return Inertia::render('dashboard/exams/create', compact('instructors'));
     }
 
     /**
      * Store a newly created exam
      */
-    public function store(ExamRequest $request)
+    public function store(StoreExamWithQuestionsRequest $request)
     {
-        $this->exam->createExam($request->validated());
+        $validated = $request->validated();
+        $questions = $validated['questions'] ?? [];
+        unset($validated['questions']);
+
+        $exam = $this->exam->createExamWithQuestions($validated, $questions);
+
+        $tab = $exam->isQuantityTakeoff() ? 'quantity-takeoff' : 'questions';
 
         return redirect()
-            ->route('exams.index')
+            ->route('exams.edit', ['exam' => $exam->id, 'tab' => $tab])
             ->with('success', 'Exam created successfully.');
     }
 
@@ -96,7 +96,6 @@ class ExamController extends Controller
     {
         $user = Auth::user() ? Auth::user()->id : null;
 
-        // Get exam details
         $tab = $request->tab ?? 'overview';
         $exam = $this->exam->getExamPreview($id, $tab);
         $enrollment = $this->examEnrollment->getEnrollmentByExamId($exam->id, $user);
@@ -125,11 +124,8 @@ class ExamController extends Controller
     public function edit(Request $request, Exam $exam): Response
     {
         $tab = $request->tab;
-        $user = Auth::user();
 
-        // Load exam with relationships
         $exam->load([
-            'exam_category',
             'questions.question_options',
             'instructor.user',
             'enrollments',
@@ -140,11 +136,8 @@ class ExamController extends Controller
             'resources'
         ]);
 
-        // Get categories and instructors
-        $categories = $this->examCategory->getCategories();
         $instructors = isAdmin() ? $this->instructor->getInstructors(['status' => 'approved'], false) : null;
 
-        // Get attempts with pagination if on attempts tab
         $attempt = null;
         $attempts = null;
         if ($request->tab == 'attempts') {
@@ -152,24 +145,20 @@ class ExamController extends Controller
             $attempts = $this->examAttempt->getExamAttempts($data, true);
             if ($request->review) {
                 $attempt = $this->examAttempt->getExamAttempt((int) $request->review);
-
-                // // Auto-grade the attempt if it's in submitted status
-                // if ($request->review && $attempt->status === 'submitted') {
-                //     // Auto-grade only the auto-gradable questions (not listening/short_answer)
-                //     // $this->examAttempt->autoGradeAttempt($attempt);
-                //     // Refresh the attempt to get updated data
-                //     $attempt = $this->examAttempt->getExamAttempt((int) $request->review);
-                // }
             }
         }
+
+        $takeoffAnalytics = $exam->isQuantityTakeoff()
+            ? app(ExamQuantityTakeoffService::class)->lineMissAnalytics($exam)
+            : null;
 
         return Inertia::render('dashboard/exams/update', [
             'tab' => $tab,
             'exam' => $exam,
             'attempt' => $attempt,
             'attempts' => $attempts,
-            'categories' => $categories,
             'instructors' => $instructors,
+            'takeoffAnalytics' => $takeoffAnalytics,
         ]);
     }
 

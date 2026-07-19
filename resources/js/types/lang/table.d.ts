@@ -17,6 +17,9 @@ interface TableLang {
    name: string;
    email: string;
    role: string;
+   user_type: string;
+   audience: string;
+   instructor: string;
    slug: string;
    title: string;
    use_case: string;

@@ -10,6 +10,7 @@ import { useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
+import FileSubmissionForm from './question-types/file-submission-form';
 import FillBlankForm from './question-types/fill-blank-form';
 import ListeningForm from './question-types/listening-form';
 import MatchingForm from './question-types/matching-form';
@@ -18,12 +19,16 @@ import OrderingForm from './question-types/ordering-form';
 import ShortAnswerForm from './question-types/short-answer-form';
 
 interface Props {
-   exam: Exam;
+   exam?: Exam;
    question?: ExamQuestion;
    handler: React.ReactNode;
+   /** When provided, the dialog collects a draft question and calls this instead of POSTing. */
+   onAddDraft?: (data: QuestionFormData) => void;
+   dialogTitle?: string;
+   submitLabel?: string;
 }
 
-type QuestionFormData = {
+export type QuestionFormData = {
    exam_id: number | string;
    title: string;
    description: string;
@@ -38,6 +43,11 @@ type QuestionFormData = {
       audio_file?: File;
       audio_source?: 'url' | 'upload';
       instructions?: string;
+      plan_file_url?: string;
+      plan_file_name?: string;
+      new_plan_file_url?: string;
+      new_plan_file_name?: string;
+      grading_rubric?: string;
       [key: string]: any;
    };
    question_options: Array<{
@@ -50,24 +60,25 @@ type QuestionFormData = {
    exam_question_id: number | null;
 };
 
-const questionTypes: { value: ExamQuestionType; label: string }[] = [
+export const questionTypes: { value: ExamQuestionType; label: string }[] = [
    { value: 'multiple_choice', label: 'Multiple Choice' },
    { value: 'multiple_select', label: 'Multiple Select' },
    { value: 'matching', label: 'Matching' },
    { value: 'fill_blank', label: 'Fill in the Blank' },
    { value: 'ordering', label: 'Ordering' },
    { value: 'short_answer', label: 'Short Answer' },
+   { value: 'file_submission', label: 'File Submission' },
    { value: 'listening', label: 'Listening' },
 ];
 
-const QuestionDialog = ({ exam, question, handler }: Props) => {
+const QuestionDialog = ({ exam, question, handler, onAddDraft, dialogTitle, submitLabel }: Props) => {
    const [open, setOpen] = useState(false);
    const [isSubmit, setIsSubmit] = useState(false);
    const [isFileSelected, setIsFileSelected] = useState(false);
    const [isFileUploaded, setIsFileUploaded] = useState(false);
 
    const initialFormData: QuestionFormData = {
-      exam_id: exam.id,
+      exam_id: exam?.id ?? 0,
       title: question?.title || '',
       description: question?.description || '',
       marks: question?.marks || 1,
@@ -98,12 +109,35 @@ const QuestionDialog = ({ exam, question, handler }: Props) => {
          }
       }
 
+      // For file submission questions — plan file required on create or when replacing
+      if (data.question_type === 'file_submission') {
+         const hasPlan = Boolean(data.options?.plan_file_url || data.options?.new_plan_file_url);
+         if (!question && !hasPlan && !isFileUploaded) {
+            setIsSubmit(true);
+            return;
+         }
+         if (question && isFileSelected && !isFileUploaded) {
+            setIsSubmit(true);
+            return;
+         }
+      }
+
       // Otherwise submit the form immediately
       submitForm();
    };
 
    const submitForm = () => {
       clearErrors();
+
+      if (onAddDraft) {
+         onAddDraft(data);
+         setOpen(false);
+         reset();
+         setIsSubmit(false);
+         setIsFileSelected(false);
+         setIsFileUploaded(false);
+         return;
+      }
 
       if (question) {
          put(route('exam-questions.update', question.id), {
@@ -163,6 +197,16 @@ const QuestionDialog = ({ exam, question, handler }: Props) => {
             return <OrderingForm {...props} />;
          case 'short_answer':
             return <ShortAnswerForm {...props} />;
+         case 'file_submission':
+            return (
+               <FileSubmissionForm
+                  {...props}
+                  isSubmit={isSubmit}
+                  setIsSubmit={setIsSubmit}
+                  setIsFileSelected={setIsFileSelected}
+                  setIsFileUploaded={setIsFileUploaded}
+               />
+            );
          case 'listening':
             return (
                <ListeningForm
@@ -182,9 +226,9 @@ const QuestionDialog = ({ exam, question, handler }: Props) => {
       <Dialog open={open} onOpenChange={setOpen}>
          <DialogTrigger>{handler}</DialogTrigger>
          <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-            <DialogHeader>
-               <DialogTitle>{question ? 'Edit Question' : 'Create Question'}</DialogTitle>
-            </DialogHeader>
+               <DialogHeader>
+                  <DialogTitle>{dialogTitle ?? (question ? 'Edit Question' : 'Create Question')}</DialogTitle>
+               </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                <div className="grid gap-6 md:grid-cols-2">
@@ -259,7 +303,7 @@ const QuestionDialog = ({ exam, question, handler }: Props) => {
                      Cancel
                   </Button>
                   <LoadingButton loading={processing || isSubmit} disabled={processing || isSubmit}>
-                     {question ? 'Update Question' : 'Create Question'}
+                     {submitLabel ?? (question ? 'Update Question' : 'Create Question')}
                   </LoadingButton>
                </div>
             </form>

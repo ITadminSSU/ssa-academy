@@ -1,5 +1,6 @@
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { ssuBadgeTone } from '@/lib/ssu-theme';
 import { StudentExamProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { FileQuestion, CheckCircle2, XCircle } from 'lucide-react';
@@ -8,19 +9,19 @@ const ExamQuestions = () => {
    const { props } = usePage<StudentExamProps>();
    const { questions } = props;
 
-   const getQuestionTypeBadge = (type: string) => {
-      const colors: Record<string, string> = {
-         multiple_choice: 'bg-blue-600',
-         multiple_select: 'bg-purple-600',
-         matching: 'bg-green-600',
-         fill_blank: 'bg-yellow-600',
-         ordering: 'bg-orange-600',
-         short_answer: 'bg-red-600',
-         listening: 'bg-pink-600',
-      };
+   const typeToneIndex: Record<string, number> = {
+      multiple_choice: 0,
+      multiple_select: 1,
+      matching: 2,
+      fill_blank: 0,
+      ordering: 1,
+      short_answer: 2,
+      listening: 0,
+   };
 
+   const getQuestionTypeBadge = (type: string) => {
       return (
-         <Badge className={colors[type] || 'bg-gray-600'} variant="default">
+         <Badge variant="outline" className={ssuBadgeTone(typeToneIndex[type] ?? 0)}>
             {type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
          </Badge>
       );

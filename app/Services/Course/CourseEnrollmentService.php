@@ -29,7 +29,7 @@ class CourseEnrollmentService extends MediaService
    {
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
 
-      $enrollments = CourseEnrollment::with(['user', 'course.instructor.user'])
+      $enrollments = CourseEnrollment::with(['user', 'course.instructor.user', 'course.final_exam:id,title,slug'])
          ->when(array_key_exists('search', $data), function ($query) use ($data) {
             return $query->whereHas('user', function ($user) use ($data) {
                $user->where('name', 'LIKE', '%' . $data['search'] . '%');

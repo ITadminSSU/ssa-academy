@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\UserService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -90,9 +91,18 @@ class UsersController extends Controller
     public function destroy(Request $request, string $id): RedirectResponse
     {
         if (isAdmin()) {
-            User::find($id)->delete();
+            try {
+                $this->userService->deleteUser($id);
 
-            return redirect()->back()->with('success', 'User account deleted successfully');
+                return redirect()->back()->with('success', 'User account deleted successfully');
+            } catch (\InvalidArgumentException $exception) {
+                return redirect()->back()->with('error', $exception->getMessage());
+            } catch (QueryException $exception) {
+                return redirect()->back()->with(
+                    'error',
+                    'This user could not be deleted because they still have related course activity. Remove or reassign their enrollments and forum posts, then try again.'
+                );
+            }
         }
 
         $request->validate([

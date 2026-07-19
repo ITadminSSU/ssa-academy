@@ -56,18 +56,18 @@ const MatchingForm = ({ data, setData, errors }: Props) => {
             </Button>
          </div>
 
-         <p className="text-sm text-gray-600">Students will match items from the left column with items on the right</p>
+         <p className="text-sm text-muted-foreground">Students will match items from the left column with items on the right</p>
 
          <div className="space-y-3">
             {matches.map((match, index) => (
                <div key={match.id} className="grid grid-cols-2 gap-3 items-start">
                   <div>
-                     {index === 0 && <Label className="text-xs text-gray-500 mb-1">Question/Item</Label>}
+                     {index === 0 && <Label className="text-xs text-muted-foreground mb-1">Question/Item</Label>}
                      <Input placeholder={`Item ${index + 1}`} value={match.question} onChange={(e) => updateMatch(match.id, 'question', e.target.value)} />
                   </div>
                   <div className="flex gap-2">
                      <div className="flex-1">
-                        {index === 0 && <Label className="text-xs text-gray-500 mb-1">Correct Match</Label>}
+                        {index === 0 && <Label className="text-xs text-muted-foreground mb-1">Correct Match</Label>}
                         <Input placeholder={`Match ${index + 1}`} value={match.answer} onChange={(e) => updateMatch(match.id, 'answer', e.target.value)} />
                      </div>
                      {matches.length > 2 && (

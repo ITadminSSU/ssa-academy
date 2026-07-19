@@ -62,7 +62,7 @@ const ReviewEdit = ({ review }: { review: CourseReview }) => {
                            <Star
                               className={cn(
                                  'h-8 w-8 cursor-pointer transition-colors',
-                                 star <= (hoverRating || data.rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 hover:text-amber-200',
+                                 star <= (hoverRating || data.rating) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40 hover:text-amber-200',
                               )}
                            />
                         </button>
@@ -78,7 +78,7 @@ const ReviewEdit = ({ review }: { review: CourseReview }) => {
 
                {/* Comment Field */}
                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">{input.review} *</Label>
+                  <Label className="text-sm font-medium text-muted-foreground">{input.review} *</Label>
                   <Textarea
                      required
                      value={data.review}

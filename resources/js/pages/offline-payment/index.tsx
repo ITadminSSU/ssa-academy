@@ -49,7 +49,7 @@ const Index = () => {
       <>
          <Head title="Offline Payment" />
 
-         <div className="flex min-h-screen items-center justify-center bg-gray-50 py-8">
+         <div className="flex min-h-screen items-center justify-center bg-muted py-8">
             <div className="mx-auto w-full max-w-[900px] p-6">
                <Card className="overflow-hidden shadow-sm">
                   {/* Header */}
@@ -60,21 +60,21 @@ const Index = () => {
 
                   <CardContent className="space-y-6 p-6">
                      {/* Order Summary */}
-                     <Card className="border bg-gray-50">
+                     <Card className="border bg-muted">
                         <CardHeader>
                            <CardTitle className="text-lg">Order Summary</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                            <div className="flex items-center justify-between">
-                              <span className="text-gray-600">Item:</span>
-                              <span className="font-medium text-gray-900">{item.title}</span>
+                              <span className="text-muted-foreground">Item:</span>
+                              <span className="font-medium text-foreground">{item.title}</span>
                            </div>
                            <div className="flex items-center justify-between">
-                              <span className="text-gray-600">Customer:</span>
-                              <span className="font-medium text-gray-900">{user.name}</span>
+                              <span className="text-muted-foreground">Customer:</span>
+                              <span className="font-medium text-foreground">{user.name}</span>
                            </div>
                            <div className="flex items-center justify-between border-t pt-3">
-                              <span className="text-lg font-semibold text-gray-800">Total Amount:</span>
+                              <span className="text-lg font-semibold text-foreground">Total Amount:</span>
                               <span className="text-2xl font-bold text-blue-600">
                                  {currency} {Number(amount).toFixed(2)}
                               </span>
@@ -84,11 +84,11 @@ const Index = () => {
 
                      {/* Payment Instructions */}
                      {payment_instructions && (
-                        <Alert className="border-yellow-200 bg-yellow-50">
+                        <Alert className="border-yellow-500/30 bg-yellow-500/10">
                            <Info className="h-5 w-5 text-yellow-600" />
                            <AlertDescription>
-                              <h2 className="mb-3 text-lg font-semibold text-gray-800">Payment Instructions</h2>
-                              <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: payment_instructions }} />
+                              <h2 className="mb-3 text-lg font-semibold text-foreground">Payment Instructions</h2>
+                              <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: payment_instructions }} />
                            </AlertDescription>
                         </Alert>
                      )}
@@ -98,8 +98,8 @@ const Index = () => {
                         <Alert className="border-blue-200 bg-blue-50">
                            <CreditCard className="h-5 w-5 text-blue-600" />
                            <AlertDescription>
-                              <h2 className="mb-4 text-lg font-semibold text-gray-800">Payment Details</h2>
-                              <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: payment_details }} />
+                              <h2 className="mb-4 text-lg font-semibold text-foreground">Payment Details</h2>
+                              <div className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: payment_details }} />
                            </AlertDescription>
                         </Alert>
                      )}

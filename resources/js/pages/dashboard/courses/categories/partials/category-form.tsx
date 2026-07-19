@@ -1,4 +1,3 @@
-import IconPicker from '@/components/icon-picker';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useLang } from '@/hooks/use-lang';
 import { onHandleChange } from '@/lib/inertia';
@@ -22,14 +22,13 @@ interface Props {
 
 const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
    const [open, setOpen] = useState(false);
-   const [openIcon, setOpenIcon] = useState(false);
-   const { dashboard, input, button } = useLang();
+   const { input, button } = useLang();
 
    const { data, setData, post, errors, processing, reset } = useForm({
       title: category ? category.title : '',
-      icon: category ? category.icon : '',
       sort: category ? category.sort : lastPosition + 1,
       status: category ? category.status : 1,
+      show_in_nav: category ? !!category.show_in_nav : true,
       description: category ? category.description : '',
       thumbnail: null,
    });
@@ -75,36 +74,6 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
                      <InputError message={errors.title} />
                   </div>
                   <div>
-                     <Label>{input.category_icon}</Label>
-                     <Input
-                        required
-                        readOnly
-                        type="text"
-                        name="icon"
-                        value={data.icon}
-                        placeholder={input.icon_placeholder}
-                        onClick={() => setOpenIcon(true)}
-                     />
-                     <InputError message={errors.icon} />
-
-                     <Dialog open={openIcon} onOpenChange={setOpenIcon}>
-                        <DialogContent className="p-0">
-                           <ScrollArea className="max-h-[90vh] p-6">
-                              <DialogHeader className="mb-6">
-                                 <DialogTitle>{dashboard.icon_picker}</DialogTitle>
-                              </DialogHeader>
-
-                              <IconPicker
-                                 onSelect={(icon) => {
-                                    setData('icon', icon);
-                                    setOpenIcon(false);
-                                 }}
-                              />
-                           </ScrollArea>
-                        </DialogContent>
-                     </Dialog>
-                  </div>
-                  <div>
                      <Label>{input.category_status}</Label>
                      <Select value={data.status.toString()} onValueChange={(value) => setData('status', Number(value))}>
                         <SelectTrigger>
@@ -115,6 +84,13 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
                            <SelectItem value="0">Inactive</SelectItem>
                         </SelectContent>
                      </Select>
+                  </div>
+                  <div className="flex items-center justify-between rounded-md border p-3">
+                     <div className="space-y-0.5">
+                        <Label>Show in learner sidebar</Label>
+                        <p className="text-xs text-muted-foreground">Display this category as a direct link in the learner dashboard navigation.</p>
+                     </div>
+                     <Switch checked={data.show_in_nav} onCheckedChange={(checked) => setData('show_in_nav', checked)} />
                   </div>
                   <div>
                      <Label>{input.description}</Label>

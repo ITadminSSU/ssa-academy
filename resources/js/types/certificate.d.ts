@@ -6,6 +6,7 @@ interface CertificateTemplate extends TableCommon {
    type: 'course' | 'exam';
    name: string;
    logo_path: string | null;
+   background_image_path: string | null;
    template_data: CertificateTemplateData;
    is_active: boolean;
 }

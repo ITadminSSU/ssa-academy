@@ -1,6 +1,7 @@
 import Combobox from '@/components/combobox';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,9 +9,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import courseLanguages from '@/data/course-languages';
+import { courseAudienceFieldLabel, courseAudienceOptionLabel } from '@/lib/course-audience-labels';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { onHandleChange } from '@/lib/inertia';
-import { useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { ReactNode, useMemo } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
@@ -18,7 +20,7 @@ import { CourseUpdateProps } from '../update';
 
 const Basic = () => {
    const { props } = usePage<CourseUpdateProps>();
-   const { auth, system, tab, labels, categories, course, instructors, translate } = props;
+   const { auth, system, tab, labels, audiences, categories, course, instructors, instructorExams = [], translate } = props;
    const { input, button, common } = translate;
 
    const { data, setData, post, errors, processing } = useForm({
@@ -30,9 +32,11 @@ const Basic = () => {
       level: course.level,
       language: course.language,
       instructor_id: course.instructor_id,
-      drip_content: Boolean(course.drip_content),
       course_category_id: course.course_category_id,
       course_category_child_id: course.course_category_child_id,
+      audience: course.audience || 'public',
+      final_exam_id: course.final_exam_id ?? '',
+      training_hours: course.training_hours ?? '',
    });
 
    // Handle form submission
@@ -70,20 +74,21 @@ const Basic = () => {
       value: instructor.id as string,
    }));
 
+   const selectedFinalExamId = data.final_exam_id || course.final_exam_id;
+   const selectedFinalExamTitle =
+      instructorExams.find((exam) => exam.id === Number(selectedFinalExamId))?.title ?? course.final_exam?.title;
+
+   // Resolve the currently-selected category/child from the LIVE form values
+   // (not the original course values) so the Combobox reflects edits immediately.
    let selectedCategory: any;
-   categories.map((category) => {
-      if (course.course_category_child_id) {
-         category.category_children?.map((child) => {
-            if (child.id === data.course_category_child_id) {
-               selectedCategory = child;
-               return;
-            }
-         });
-      } else {
-         if (category.id === data.course_category_id) {
-            selectedCategory = category;
-            return;
+   categories.forEach((category) => {
+      if (data.course_category_child_id) {
+         const child = category.category_children?.find((c) => c.id === data.course_category_child_id);
+         if (child) {
+            selectedCategory = child;
          }
+      } else if (category.id === data.course_category_id) {
+         selectedCategory = category;
       }
    });
 
@@ -186,23 +191,70 @@ const Basic = () => {
                   <InputError message={errors.language} />
                </div>
 
-               <div>
-                  <Label>{input.enable_drip_content} *</Label>
-                  <RadioGroup
-                     defaultValue={data.drip_content ? 'on' : 'off'}
-                     className="flex items-center space-x-4 pt-2 pb-1"
-                     onValueChange={(value) => setData('drip_content', value == 'on' ? true : false)}
+               <div className="md:col-span-2">
+                  <Label>Final exam (optional)</Label>
+                  <Select
+                     value={data.final_exam_id ? data.final_exam_id.toString() : 'none'}
+                     onValueChange={(value) => setData('final_exam_id', value === 'none' ? '' : parseInt(value))}
                   >
-                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem className="cursor-pointer" id="off" value="off" />
-                        <Label htmlFor="off">{common.off}</Label>
+                     <SelectTrigger>
+                        <SelectValue placeholder="Select a final exam" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="none">No final exam</SelectItem>
+                        {instructorExams.map((exam) => (
+                           <SelectItem key={exam.id} value={exam.id.toString()}>
+                              {exam.title}
+                           </SelectItem>
+                        ))}
+                     </SelectContent>
+                  </Select>
+                  <p className="text-muted-foreground mt-1 text-xs">
+                     When the learner completes this course, they can take this exam from their course card.
+                  </p>
+                  {selectedFinalExamId ? (
+                     <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <Button asChild variant="outline" size="sm">
+                           <Link href={route('exams.edit', { exam: selectedFinalExamId, tab: 'attempts' })}>
+                              View final exam attempts
+                           </Link>
+                        </Button>
+                        {selectedFinalExamTitle ? (
+                           <span className="text-muted-foreground text-xs">{selectedFinalExamTitle}</span>
+                        ) : null}
                      </div>
-                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem className="cursor-pointer" id="on" value="on" />
-                        <Label htmlFor="on">{common.on}</Label>
-                     </div>
+                  ) : null}
+                  <InputError message={errors.final_exam_id} />
+               </div>
+
+               <div className="md:col-span-2">
+                  <Label>Training Hours (optional)</Label>
+                  <Input
+                     value={(data.training_hours as string) ?? ''}
+                     onChange={(e) => setData('training_hours', e.target.value)}
+                     placeholder="e.g. 40 Hours"
+                  />
+                  <p className="text-muted-foreground mt-1 text-xs">Shown on the completion certificate. Free text, e.g. "40 Hours".</p>
+                  {errors.training_hours && <InputError message={errors.training_hours} />}
+               </div>
+
+               <div className="md:col-span-2">
+                  <Label>{courseAudienceFieldLabel(input)} *</Label>
+                  <RadioGroup
+                     value={data.audience as string}
+                     className="flex flex-col gap-2 pt-2 pb-1"
+                     onValueChange={(value) => setData('audience', value)}
+                  >
+                     {audiences.map((audience) => (
+                        <div key={audience} className="flex items-center space-x-2">
+                           <RadioGroupItem value={audience} id={`edit-audience-${audience}`} />
+                           <Label htmlFor={`edit-audience-${audience}`} className="font-normal">
+                              {courseAudienceOptionLabel(input, audience)}
+                           </Label>
+                        </div>
+                     ))}
                   </RadioGroup>
-                  <InputError message={errors.drip_content} />
+                  <InputError message={errors.audience} />
                </div>
             </div>
 

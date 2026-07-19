@@ -39,7 +39,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({ open, onOpenChange, children 
 const AlertDialogContent: React.FC<AlertDialogContentProps> = ({ className, children, ...props }) => (
   <div
     className={cn(
-      "w-full max-w-lg bg-white border rounded-lg shadow-lg p-6 space-y-4",
+      "w-full max-w-lg bg-card border rounded-lg shadow-lg p-6 space-y-4",
       className
     )}
     {...props}
@@ -93,7 +93,7 @@ const AlertDialogDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement
   ...props 
 }) => (
   <p
-    className={cn("text-sm text-gray-600", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   >
     {children}

@@ -1,4 +1,5 @@
-import AppLogo from '@/components/app-logo';
+import DashboardLogoLink from '@/components/dashboard-logo-link';
+import { getDashboardUrl, getStudentDashboardUrl } from '@/lib/dashboard';
 import Appearance from '@/components/appearance';
 import AppearanceToggleTab from '@/components/appearance-tabs';
 import Notification from '@/components/notification';
@@ -7,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { resolveNavbarItemHref } from '@/lib/navbar';
 import { getPageSection } from '@/lib/page';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -17,7 +19,7 @@ import { useEffect, useState } from 'react';
 
 const IntroNavbar = () => {
    const { props } = usePage<SharedData>();
-   const { page, auth, customize } = props;
+   const { page, auth } = props;
    const navbar = getPageSection(page, 'navbar');
 
    const user = auth.user;
@@ -43,13 +45,11 @@ const IntroNavbar = () => {
 
    return (
       <header className={cn('bg-background sticky top-0 z-50 border-b', isSticky && 'shadow-card')}>
-         <div className={cn('relative container', customize && 'section-edit')}>
+         <div className="relative container">
             <div className="flex min-h-[72px] items-center justify-between py-2">
                {/* Logo */}
                <div className="flex items-center gap-0 sm:gap-4">
-                  <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
-                     <AppLogo className="h-[100px]" />
-                  </a>
+                  <DashboardLogoLink className="ssu-nav-logo" />
                </div>
 
                {/* Desktop Navigation */}
@@ -63,14 +63,9 @@ const IntroNavbar = () => {
                {/* Desktop Auth Buttons */}
                <div className="flex items-center space-x-3">
                   <div className="hidden items-center gap-3 md:flex">
-                     <a
-                        href="https://smartsourcingusa.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-normal"
-                     >
+                     <Link href={route('home')} className="text-sm font-normal">
                         Home
-                     </a>
+                     </Link>
                      {navbar &&
                         navbar.properties.array.map((item) => {
                            // Redirect "About Us" to smartsourcingusa.com/#about
@@ -87,8 +82,21 @@ const IntroNavbar = () => {
                                  </a>
                               );
                            }
+                           if (item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact')) {
+                              return (
+                                 <a
+                                    key={item.url}
+                                    href="https://smartsourcingusa.com/contact"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-normal"
+                                 >
+                                    {item.title}
+                                 </a>
+                              );
+                           }
                            return (
-                              <Link key={item.url} href={item.url} className="text-sm font-normal">
+                              <Link key={item.url} href={resolveNavbarItemHref(item)} className="text-sm font-normal">
                                  {item.title}
                               </Link>
                            );
@@ -99,12 +107,6 @@ const IntroNavbar = () => {
 
                   {user ? (
                      <div className="mr-0 flex items-center space-x-2">
-                        {user.role === 'admin' && (
-                           <Button asChild variant="outline" className="hidden text-sm font-normal sm:block">
-                              <Link href={props.customize ? '/' : '?customize=true'}>{props.customize ? 'Back' : 'Customize'}</Link>
-                           </Button>
-                        )}
-
                         {user && <Appearance />}
 
                         <Notification />
@@ -122,7 +124,7 @@ const IntroNavbar = () => {
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="hidden w-[160px] md:block">
                               {(user.role === 'admin' || user.role === 'instructor') && (
-                                 <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.get(route('dashboard'))}>
+                                 <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.get(getDashboardUrl(auth))}>
                                     <LayoutDashboard className="mr-1 h-4 w-4" />
                                     <span>Dashboard</span>
                                  </DropdownMenuItem>
@@ -133,14 +135,14 @@ const IntroNavbar = () => {
                                     <DropdownMenuItem
                                        key={id}
                                        className="cursor-pointer px-3"
-                                       onClick={() => router.get(route('student.index', { tab: slug }))}
+                                       onClick={() => router.get(getStudentDashboardUrl(user, slug))}
                                     >
                                        <Icon className="mr-1 h-4 w-4" />
                                        <span>{name}</span>
                                     </DropdownMenuItem>
                                  ))}
 
-                              <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.post('/logout')}>
+                              <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.post(route('logout'))}>
                                  <LogOut className="mr-1 h-4 w-4" />
                                  <span>Log Out</span>
                               </DropdownMenuItem>
@@ -174,14 +176,9 @@ const IntroNavbar = () => {
                         onChangeValue={(value) => router.get(route('category.courses', { category: 'all', search: value }))}
                      />
 
-                     <a
-                        href="https://smartsourcingusa.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-normal"
-                     >
+                     <Link href={route('home')} className="text-sm font-normal">
                         Home
-                     </a>
+                     </Link>
 
                      {navbar &&
                         navbar.properties.array.map((item) => {
@@ -199,8 +196,21 @@ const IntroNavbar = () => {
                                  </a>
                               );
                            }
+                           if (item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact')) {
+                              return (
+                                 <a
+                                    key={item.url}
+                                    href="https://smartsourcingusa.com/contact"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-normal"
+                                 >
+                                    {item.title}
+                                 </a>
+                              );
+                           }
                            return (
-                              <Link key={item.url} href={item.url} className="text-sm font-normal">
+                              <Link key={item.url} href={resolveNavbarItemHref(item)} className="text-sm font-normal">
                                  {item.title}
                               </Link>
                            );
@@ -209,11 +219,8 @@ const IntroNavbar = () => {
                      {user ? (
                         user.role === 'admin' ? (
                            <>
-                              <Link href={route('dashboard')} className="text-sm font-normal">
+                              <Link href={getDashboardUrl(auth)} className="text-sm font-normal">
                                  Dashboard
-                              </Link>
-                              <Link href={props.customize ? '/' : '?customize=true'} className="block w-full text-sm font-normal sm:hidden">
-                                 {props.customize ? 'Back' : 'Customize'}
                               </Link>
                               <Button variant="outline" onClick={() => router.post(route('logout'))}>
                                  Log Out
@@ -222,20 +229,20 @@ const IntroNavbar = () => {
                         ) : (
                            <>
                               {user.role === 'instructor' && props.system.sub_type === 'collaborative' && (
-                                 <Link href={route('dashboard')} className="text-sm font-normal">
+                                 <Link href={getDashboardUrl(auth)} className="text-sm font-normal">
                                     Dashboard
                                  </Link>
                               )}
-                              <Link href={route('student.index', { tab: 'courses' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'courses')} className="text-sm font-normal">
                                  My Courses
                               </Link>
-                              <Link href={route('student.index', { tab: 'wishlist' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'wishlist')} className="text-sm font-normal">
                                  Wishlist
                               </Link>
-                              <Link href={route('student.index', { tab: 'profile' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'profile')} className="text-sm font-normal">
                                  My Profile
                               </Link>
-                              <Link href={route('student.index', { tab: 'settings' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'settings')} className="text-sm font-normal">
                                  Settings
                               </Link>
                               <Button variant="secondary" onClick={() => router.post(route('logout'))}>

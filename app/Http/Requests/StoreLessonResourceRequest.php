@@ -27,6 +27,7 @@ class StoreLessonResourceRequest extends FormRequest
             'resource' => 'nullable|string|max:255',
             'resource_url' => 'nullable|string|max:255',
             'section_lesson_id' => 'required|exists:section_lessons,id',
+            'is_downloadable' => 'sometimes|boolean',
         ];
     }
 }

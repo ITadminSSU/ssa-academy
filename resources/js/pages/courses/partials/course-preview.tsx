@@ -1,3 +1,4 @@
+import CourseBannerPlaceholder from '@/components/course-banner-placeholder';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
@@ -5,6 +6,7 @@ import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { BarChart3, Calendar, Clock, Languages, Mail, Play, Users } from 'lucide-react';
 import { CourseDetailsProps } from '../show';
+import SsuEnrollmentPanel from '@/components/ssu-enrollment-panel';
 import EnrollOrPlayerButton from './course-player-button';
 
 const CoursePreview = () => {
@@ -14,10 +16,14 @@ const CoursePreview = () => {
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
 
    return (
-      <div className="bg-card sticky top-24 space-y-5 rounded-lg border p-5 shadow">
+      <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
          <div className="space-y-4">
             <div className="relative">
-               <img className="w-full rounded-lg" src={course.thumbnail ?? '/assets/images/blank-image.jpg'} alt="" />
+               {course.thumbnail ? (
+                  <img className="aspect-video w-full rounded-lg object-cover" src={course.thumbnail} alt={course.title} />
+               ) : (
+                  <CourseBannerPlaceholder title={course.title} className="aspect-video w-full rounded-lg" />
+               )}
 
                {course.preview && (
                   <Dialog>
@@ -44,9 +50,17 @@ const CoursePreview = () => {
                )}
             </div>
 
-            <h2 className="text-4xl font-bold capitalize">
+            <h2 className="font-display text-primary text-3xl font-bold capitalize">
                {course.pricing_type === 'free' ? (
                   course.pricing_type
+               ) : course.billing_model === 'subscription' ? (
+                  <>
+                     <span className="font-semibold">
+                        {currency?.symbol}
+                        {course.subscription_price ?? course.price}
+                     </span>
+                     <span className="text-muted-foreground ml-2 text-base font-medium">/month</span>
+                  </>
                ) : course.discount ? (
                   <>
                      <span className="font-semibold">
@@ -68,56 +82,58 @@ const CoursePreview = () => {
                )}
             </h2>
 
-            <EnrollOrPlayerButton />
+            <SsuEnrollmentPanel>
+               <EnrollOrPlayerButton />
+            </SsuEnrollmentPanel>
          </div>
 
-         <div className="space-y-4 pt-5">
-            <div className="flex items-center justify-between">
-               <span className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+         <div className="divide-border/60 mt-1 divide-y border-t pt-1">
+            <div className="flex items-center justify-between py-2.5 text-sm">
+               <span className="text-muted-foreground flex items-center gap-2">
+                  <Users className="text-primary h-4.5 w-4.5" />
                   {frontend.students}
                </span>
-               <span>{course.enrollments_count || 0}</span>
+               <span className="font-medium">{course.enrollments_count || 0}</span>
             </div>
 
-            <div className="flex items-center justify-between">
-               <span className="flex items-center gap-2">
-                  <Languages className="h-5 w-5" />
+            <div className="flex items-center justify-between py-2.5 text-sm">
+               <span className="text-muted-foreground flex items-center gap-2">
+                  <Languages className="text-primary h-4.5 w-4.5" />
                   {frontend.language}
                </span>
-               <span>{courseLanguage?.label}</span>
+               <span className="font-medium">{courseLanguage?.label}</span>
             </div>
 
-            <div className="flex items-center justify-between">
-               <span className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+            <div className="flex items-center justify-between py-2.5 text-sm">
+               <span className="text-muted-foreground flex items-center gap-2">
+                  <Clock className="text-primary h-4.5 w-4.5" />
                   {frontend.duration}
                </span>
-               <span>{getCourseDuration(course)}</span>
+               <span className="font-medium">{getCourseDuration(course)}</span>
             </div>
 
-            <div className="flex items-center justify-between">
-               <span className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
+            <div className="flex items-center justify-between py-2.5 text-sm">
+               <span className="text-muted-foreground flex items-center gap-2">
+                  <BarChart3 className="text-primary h-4.5 w-4.5" />
                   {frontend.level}
                </span>
-               <span className="capitalize">{course.level}</span>
+               <span className="font-medium capitalize">{course.level}</span>
             </div>
 
-            <div className="flex items-center justify-between">
-               <span className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+            <div className="flex items-center justify-between py-2.5 text-sm">
+               <span className="text-muted-foreground flex items-center gap-2">
+                  <Calendar className="text-primary h-4.5 w-4.5" />
                   {frontend.expiry_period}
                </span>
-               <span className="capitalize">{course.expiry_type === 'lifetime' ? 'lifetime' : course?.expiry_duration}</span>
+               <span className="font-medium capitalize">{course.expiry_type === 'lifetime' ? 'lifetime' : course?.expiry_duration}</span>
             </div>
 
-            <div className="flex items-center justify-between">
-               <span className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
+            <div className="flex items-center justify-between py-2.5 text-sm">
+               <span className="text-muted-foreground flex items-center gap-2">
+                  <Mail className="text-primary h-4.5 w-4.5" />
                   {frontend.certificate_included}
                </span>
-               <span>Yes</span>
+               <span className="font-medium">Yes</span>
             </div>
          </div>
       </div>

@@ -10,7 +10,7 @@ const RevenueChart = () => {
    const { auth, revenueData, translate } = props;
    const { dashboard } = translate;
    const isAdmin = auth.user.role === 'admin';
-   const currency = systemCurrency(props.system.fields['selling_currency']);
+   const currency = systemCurrency(props.system?.fields?.['selling_currency'] ?? 'USD');
 
    // Format revenue data for chart
    const chartData = useMemo(() => {

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getDashboardUrl, getStudentDashboardUrl } from '@/lib/dashboard';
 import { StudentDashboardProps } from '@/types/page';
 import { router, usePage } from '@inertiajs/react';
 import { LayoutDashboard, LogOut, LucideProps } from 'lucide-react';
@@ -38,7 +39,7 @@ const TabLists = ({ tabs }: TabListsProps) => {
             <Button
                variant="ghost"
                className="text-muted-foreground h-11 w-full justify-start gap-3 rounded-none px-5 py-3 text-start"
-               onClick={() => router.get(route('dashboard'))}
+               onClick={() => router.get(getDashboardUrl(auth))}
             >
                <LayoutDashboard className="h-4 w-4" />
                <span>{common.dashboard}</span>
@@ -50,8 +51,8 @@ const TabLists = ({ tabs }: TabListsProps) => {
                <TabsTrigger
                   key={id}
                   value={slug}
-                  className="hover:bg-secondary hover:text-secondary-foreground data-[state=active]:!bg-muted data-[state=active]:!text-secondary-foreground relative flex h-10 cursor-pointer items-center justify-start gap-3 rounded-md px-4 text-start"
-                  onClick={() => router.get(route('student.index', { tab: slug }))}
+                  className="text-foreground hover:bg-muted hover:text-foreground data-[state=active]:!bg-muted data-[state=active]:!text-foreground relative flex h-10 cursor-pointer items-center justify-start gap-3 rounded-md px-4 text-start"
+                  onClick={() => router.get(getStudentDashboardUrl(auth.user, slug))}
                >
                   <Icon className="h-4 w-4" />
                   <span>{name}</span>

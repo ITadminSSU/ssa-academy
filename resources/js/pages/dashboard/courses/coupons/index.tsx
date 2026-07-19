@@ -37,8 +37,8 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
          <div className="space-y-6">
             <div className="flex items-center justify-between">
                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Course Coupons</h1>
-                  <p className="mt-1 text-sm text-gray-600">Manage discount coupons for your Courses</p>
+                  <h1 className="text-3xl font-bold text-foreground">Course Coupons</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">Manage discount coupons for your Courses</p>
                </div>
                <CouponForm
                   title="Create Coupon"
@@ -58,7 +58,7 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
                   title="Coupon List"
                   globalSearch={true}
                   tablePageSizes={[10, 15, 20, 25]}
-                  routeName="Course-coupons.index"
+                  routeName="course-coupons.index"
                />
 
                <Table className="border-border border-y">
@@ -83,7 +83,7 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
                   </TableBody>
                </Table>
 
-               <TableFooter className="p-5 sm:p-7" routeName="Course-coupons.index" paginationInfo={coupons} />
+               <TableFooter className="p-5 sm:p-7" routeName="course-coupons.index" paginationInfo={coupons} />
             </Card>
          </div>
       </>

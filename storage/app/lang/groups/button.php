@@ -124,6 +124,8 @@ return [
             'course_preview' => 'Course Preview',
             'submit_for_approval' => 'Submit for Approval',
             'approval_status' => 'Approval Status',
+            'publish_course' => 'Publish Course',
+            'unpublish_course' => 'Unpublish',
         ],
     ],
 
@@ -257,7 +259,7 @@ return [
             'details' => 'Details',
             'instructor' => 'Instructor',
             'reviews' => 'Reviews',
-            'summery' => 'Summery',
+            'summery' => 'Summary',
             'certificate' => 'Certificate',
             'forum' => 'Forum',
             'review' => 'Review',

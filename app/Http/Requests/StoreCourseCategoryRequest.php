@@ -23,9 +23,10 @@ class StoreCourseCategoryRequest extends FormRequest
     {
         return [
             'title' => 'required|max:255|unique:course_categories',
-            'icon' => 'string|required',
+            'icon' => 'nullable|string',
             'sort' => 'required',
             'status' => 'required',
+            'show_in_nav' => 'nullable|boolean',
             'keywords' => 'nullable|string|max:50',
             'description' => 'nullable|string|max:500',
             'thumbnail' => 'nullable|image|mimes:jpg,png,jpeg,svg|max:1024',

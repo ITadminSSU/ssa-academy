@@ -13,7 +13,9 @@ class CertificateTemplateRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
+            'type' => 'nullable|string|in:course,exam',
             'logo' => 'nullable|image|mimes:png,svg,webp|max:1024',
+            'background_image' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:4096',
             'template_data' => 'required|array',
         ];
     }

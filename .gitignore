@@ -22,3 +22,12 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Local deploy artifacts and database dumps (do not publish)
+*.zip
+*.sql
+ssu-academy-hostinger.zip
+ssu-deploy-build.zip
+ssu-deploy-code.zip
+vendor.zip
+public.zip

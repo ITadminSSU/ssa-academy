@@ -2,9 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { resolveLogo } from '@/lib/branding';
 import jsPDF from 'jspdf';
-import { Award, Calendar, Download, FileImage, FileText } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Download, FileImage, FileText } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface DynamicCertificateProps {
@@ -12,24 +13,54 @@ interface DynamicCertificateProps {
    courseName: string;
    studentName: string;
    completionDate: string;
+   verificationReference?: string | null;
+   certificateId?: string | null;
+   trainingHours?: string | null;
+   instructorName?: string | null;
 }
 
-const DynamicCertificate = ({ template, courseName, studentName, completionDate }: DynamicCertificateProps) => {
+const BLUE = '#2D537C';
+const RED = '#E94448';
+const DARK = '#1A1B1B';
+const FONT = 'Helvetica, Arial, sans-serif';
+const WIDTH = 1200;
+const HEIGHT = 800;
+
+const FIXED_TEXT = {
+   course: {
+      title: 'CERTIFICATE OF COMPLETION',
+      subtitle: 'Awarded for successfully completing the professional certification program.',
+      connective: 'has successfully completed the requirements for',
+   },
+   exam: {
+      title: 'CERTIFICATE OF EXAMINATION',
+      subtitle: 'This certificate is proudly presented to',
+      connective: 'for outstanding performance in the examination',
+   },
+   footerName: 'SMART SOURCING UNIVERSITY',
+   footerTagline: 'Building Future Construction Professionals',
+   labels: {
+      certificateId: 'Certificate ID:',
+      dateIssued: 'Date Issued:',
+      trainingHours: 'Training Hours:',
+      instructor: 'Instructor:',
+      verificationCode: 'Verification Code:',
+   },
+};
+
+const DynamicCertificate = ({
+   template,
+   courseName,
+   studentName,
+   completionDate,
+   verificationReference,
+   certificateId,
+   trainingHours,
+   instructorName,
+}: DynamicCertificateProps) => {
    const [downloadFormat, setDownloadFormat] = useState('png');
-   const certificateRef = useRef<HTMLDivElement>(null);
-   const dimensions = { width: 900, height: 600 };
-
-   const { template_data } = template;
-
-   const handleDownloadCertificate = async () => {
-      if (!certificateRef.current) return;
-
-      if (downloadFormat === 'pdf') {
-         await downloadAsPDF();
-      } else {
-         await downloadAsPNG();
-      }
-   };
+   const previewRef = useRef<HTMLCanvasElement>(null);
+   const logoUrl = useMemo(() => resolveLogo(template.logo_path, 'dark'), [template.logo_path]);
 
    const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
@@ -41,26 +72,199 @@ const DynamicCertificate = ({ template, courseName, studentName, completionDate 
       });
    };
 
-   const downloadAsPNG = async () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+   // Draw a "Label: value" line. For left align, label starts at x. For right align,
+   // the whole line ends at x (label printed, then value measured after).
+   const drawMetaLine = (
+      ctx: CanvasRenderingContext2D,
+      label: string,
+      value: string | null | undefined,
+      x: number,
+      y: number,
+      align: 'left' | 'right',
+   ) => {
+      ctx.font = `500 18px ${FONT}`;
+      ctx.textBaseline = 'alphabetic';
 
-      if (!ctx) return;
+      const labelWidth = ctx.measureText(label).width;
+      const gap = 6;
+      const valueText = value || '—';
+      const valueWidth = ctx.measureText(valueText).width;
+      const totalWidth = labelWidth + gap + valueWidth;
 
-      canvas.width = dimensions.width;
-      canvas.height = dimensions.height;
+      const labelX = align === 'left' ? x : x - totalWidth;
+      const valueX = labelX + labelWidth + gap;
 
-      // Load logo first if it exists
-      let logoImage: HTMLImageElement | null = null;
-      if (template.logo_path) {
-         try {
-            logoImage = await loadImage(template.logo_path);
-         } catch (error) {
-            console.error('Failed to load logo:', error);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = BLUE;
+      ctx.fillText(label, labelX, y);
+
+      ctx.fillStyle = DARK;
+      ctx.fillText(valueText, valueX, y);
+   };
+
+   const drawLCorner = (ctx: CanvasRenderingContext2D, x: number, y: number, dx: number, dy: number) => {
+      const arm = 70;
+      ctx.strokeStyle = BLUE;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'square';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + dx * arm, y);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + dy * arm);
+      ctx.stroke();
+   };
+
+   const drawCertificate = (ctx: CanvasRenderingContext2D, logoImage: HTMLImageElement | null) => {
+      const isExam = template.type === 'exam';
+      const copy = isExam ? FIXED_TEXT.exam : FIXED_TEXT.course;
+
+      // 1. White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // 2. Faint watermark circle (no name underline line)
+      const circleCy = 400;
+      ctx.beginPath();
+      ctx.arc(WIDTH / 2, circleCy, 150, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(45, 83, 124, 0.05)';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(45, 83, 124, 0.12)';
+      ctx.stroke();
+
+      // 3. L-shaped corner accents
+      drawLCorner(ctx, 30, 30, 1, 1); // top-left
+      drawLCorner(ctx, WIDTH - 30, 30, -1, 1); // top-right
+      drawLCorner(ctx, 30, HEIGHT - 30, 1, -1); // bottom-left
+      drawLCorner(ctx, WIDTH - 30, HEIGHT - 30, -1, -1); // bottom-right
+
+      // 4. Logo top-center (enlarged)
+      if (logoImage) {
+         const logoMaxHeight = 130;
+         const logoMaxWidth = 480;
+         const aspect = logoImage.width / logoImage.height;
+         let drawWidth = Math.min(logoMaxWidth, logoMaxHeight * aspect);
+         let drawHeight = drawWidth / aspect;
+
+         if (drawHeight > logoMaxHeight) {
+            drawHeight = logoMaxHeight;
+            drawWidth = drawHeight * aspect;
          }
+
+         const logoX = (WIDTH - drawWidth) / 2;
+         ctx.drawImage(logoImage, logoX, 40, drawWidth, drawHeight);
       }
 
-      await drawCertificate(ctx, dimensions, logoImage);
+      // 5. Text
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+
+      // Title
+      ctx.font = `bold 48px ${FONT}`;
+      ctx.fillStyle = BLUE;
+      ctx.fillText(copy.title, WIDTH / 2, 220);
+
+      // Subtitle / presentation line
+      ctx.font = `20px ${FONT}`;
+      ctx.fillStyle = BLUE;
+      ctx.fillText(copy.subtitle, WIDTH / 2, 258);
+
+      // Recipient name
+      ctx.font = `bold 44px ${FONT}`;
+      ctx.fillStyle = BLUE;
+      ctx.fillText((studentName || '').toUpperCase(), WIDTH / 2, 408);
+
+      // Connective text
+      ctx.font = `20px ${FONT}`;
+      ctx.fillStyle = BLUE;
+      ctx.fillText(copy.connective, WIDTH / 2, 450);
+
+      // Course / exam name
+      ctx.font = `bold 30px ${FONT}`;
+      ctx.fillStyle = RED;
+      ctx.fillText((courseName || '').toUpperCase(), WIDTH / 2, 495);
+
+      // Metadata — exam certificates use a simplified layout (no training hours or instructor)
+      if (isExam) {
+         drawMetaLine(ctx, FIXED_TEXT.labels.certificateId, certificateId, 90, 620, 'left');
+         drawMetaLine(ctx, FIXED_TEXT.labels.dateIssued, completionDate, 90, 658, 'left');
+         drawMetaLine(ctx, FIXED_TEXT.labels.verificationCode, verificationReference, WIDTH - 90, 620, 'right');
+      } else {
+         drawMetaLine(ctx, FIXED_TEXT.labels.certificateId, certificateId, 90, 620, 'left');
+         drawMetaLine(ctx, FIXED_TEXT.labels.dateIssued, completionDate, 90, 658, 'left');
+         drawMetaLine(ctx, FIXED_TEXT.labels.trainingHours, trainingHours, 90, 696, 'left');
+         drawMetaLine(ctx, FIXED_TEXT.labels.instructor, instructorName, WIDTH - 90, 620, 'right');
+         drawMetaLine(ctx, FIXED_TEXT.labels.verificationCode, verificationReference, WIDTH - 90, 658, 'right');
+      }
+
+      // Footer
+      ctx.textAlign = 'center';
+      ctx.font = `bold 16px ${FONT}`;
+      ctx.fillStyle = BLUE;
+      ctx.fillText(FIXED_TEXT.footerName, WIDTH / 2, 755);
+
+      ctx.font = `13px ${FONT}`;
+      ctx.fillStyle = BLUE;
+      ctx.fillText(FIXED_TEXT.footerTagline, WIDTH / 2, 778);
+   };
+
+   // Render the on-screen preview canvas whenever inputs change.
+   useEffect(() => {
+      let cancelled = false;
+
+      const render = async () => {
+         const canvas = previewRef.current;
+         if (!canvas) return;
+         const ctx = canvas.getContext('2d');
+         if (!ctx) return;
+
+         let logoImage: HTMLImageElement | null = null;
+         try {
+            if (logoUrl) logoImage = await loadImage(logoUrl);
+         } catch {
+            // leave logo null
+         }
+
+         if (cancelled) return;
+         drawCertificate(ctx, logoImage);
+      };
+
+      render();
+
+      return () => {
+         cancelled = true;
+      };
+   }, [logoUrl, template.type, courseName, studentName, completionDate, verificationReference, certificateId, trainingHours, instructorName]);
+
+   const handleDownloadCertificate = async () => {
+      if (downloadFormat === 'pdf') {
+         await downloadAsPDF();
+      } else {
+         await downloadAsPNG();
+      }
+   };
+
+   const getRenderedCanvas = async (): Promise<HTMLCanvasElement> => {
+      const canvas = document.createElement('canvas');
+      canvas.width = WIDTH;
+      canvas.height = HEIGHT;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
+
+      let logoImage: HTMLImageElement | null = null;
+      try {
+         if (logoUrl) logoImage = await loadImage(logoUrl);
+      } catch {
+         // leave logo null
+      }
+
+      drawCertificate(ctx, logoImage);
+      return canvas;
+   };
+
+   const downloadAsPNG = async () => {
+      const canvas = await getRenderedCanvas();
 
       canvas.toBlob((blob) => {
          if (!blob) return;
@@ -79,302 +283,29 @@ const DynamicCertificate = ({ template, courseName, studentName, completionDate 
    };
 
    const downloadAsPDF = async () => {
-      const isLandscape = dimensions.width > dimensions.height;
+      const canvas = await getRenderedCanvas();
 
       const pdf = new jsPDF({
-         orientation: isLandscape ? 'landscape' : 'portrait',
+         orientation: 'landscape',
          unit: 'px',
-         format: [dimensions.width, dimensions.height],
+         format: [WIDTH, HEIGHT],
       });
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) return;
-
-      canvas.width = dimensions.width;
-      canvas.height = dimensions.height;
-
-      // Load logo first if it exists
-      let logoImage: HTMLImageElement | null = null;
-      if (template.logo_path) {
-         try {
-            logoImage = await loadImage(template.logo_path);
-         } catch (error) {
-            console.error('Failed to load logo:', error);
-         }
-      }
-
-      await drawCertificate(ctx, dimensions, logoImage);
-
       const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, dimensions.width, dimensions.height);
+      pdf.addImage(imgData, 'PNG', 0, 0, WIDTH, HEIGHT);
       pdf.save(`${studentName}_${courseName}_Certificate.pdf`);
 
       toast.success('Certificate saved as PDF!');
    };
 
-   const wrapText = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
-      const words = text.split(' ');
-      let line = '';
-      let testLine = '';
-      const lines = [];
-
-      for (let n = 0; n < words.length; n++) {
-         testLine += `${words[n]} `;
-         const metrics = ctx.measureText(testLine);
-         const testWidth = metrics.width;
-
-         if (testWidth > maxWidth && n > 0) {
-            lines.push({ text: line.trim(), width: ctx.measureText(line).width });
-            testLine = `${words[n]} `;
-            line = `${words[n]} `;
-         } else {
-            line = testLine;
-         }
-      }
-      lines.push({ text: line.trim(), width: ctx.measureText(line).width });
-
-      let currentY = y;
-      lines.forEach((lineObj) => {
-         ctx.fillText(lineObj.text, x, currentY);
-         currentY += lineHeight;
-      });
-
-      return currentY;
-   };
-
-   const drawCertificate = async (
-      ctx: CanvasRenderingContext2D,
-      dimensions: { width: number; height: number },
-      logoImage: HTMLImageElement | null = null,
-   ) => {
-      // Background
-      ctx.fillStyle = template_data.backgroundColor;
-      ctx.fillRect(0, 0, dimensions.width, dimensions.height);
-
-      // Outer border
-      ctx.strokeStyle = template_data.borderColor;
-      ctx.lineWidth = 8;
-      ctx.strokeRect(20, 20, dimensions.width - 40, dimensions.height - 40);
-
-      // Inner border
-      ctx.strokeStyle = template_data.primaryColor;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(40, 40, dimensions.width - 80, dimensions.height - 80);
-
-      // Set text align
-      ctx.textAlign = 'center';
-
-      let currentY = 100;
-
-      // Draw logo if exists
-      if (logoImage) {
-         const logoSize = 80;
-         const logoX = (dimensions.width - logoSize) / 2;
-         const logoY = 60;
-         ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
-         currentY = logoY + logoSize + 30; // Position text below logo
-      }
-
-      // Title
-      ctx.font = `bold 42px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.primaryColor;
-      ctx.fillText(template_data.titleText, dimensions.width / 2, currentY);
-      currentY += 20;
-
-      // Decorative line under title
-      ctx.strokeStyle = template_data.borderColor;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(dimensions.width / 2 - 150, currentY);
-      ctx.lineTo(dimensions.width / 2 + 150, currentY);
-      ctx.stroke();
-      currentY += 50;
-
-      // Description text
-      ctx.font = `22px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.secondaryColor;
-      currentY = wrapText(ctx, template_data.descriptionText, dimensions.width / 2, currentY, dimensions.width - 100, 30);
-      currentY += 50;
-
-      // Student name
-      ctx.font = `bold 36px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.primaryColor;
-      ctx.fillText(studentName, dimensions.width / 2, currentY);
-
-      // Underline for student name
-      const nameWidth = ctx.measureText(studentName).width;
-      ctx.strokeStyle = template_data.borderColor;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo((dimensions.width - nameWidth) / 2 - 20, currentY + 10);
-      ctx.lineTo((dimensions.width + nameWidth) / 2 + 20, currentY + 10);
-      ctx.stroke();
-      currentY += 60;
-
-      // Completion text
-      ctx.font = `22px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.secondaryColor;
-      ctx.fillText(template_data.completionText, dimensions.width / 2, currentY);
-      currentY += 50;
-
-      // Course name
-      ctx.font = `bold 28px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.primaryColor;
-      ctx.fillText(courseName, dimensions.width / 2, currentY);
-      currentY += 60;
-
-      // Completion date
-      ctx.font = `18px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.secondaryColor;
-      ctx.fillText(`Completed on: ${completionDate}`, dimensions.width / 2, currentY);
-      currentY += 60;
-
-      // Footer
-      ctx.font = `16px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.secondaryColor;
-      ctx.fillText(template_data.footerText, dimensions.width / 2, dimensions.height - 60);
-   };
-
    return (
-      <Card className="mx-auto max-w-[800px] space-y-7 p-6">
-         <div
-            ref={certificateRef}
-            className="relative flex flex-col justify-center rounded-lg border-4 p-8 text-center"
-            style={{
-               backgroundColor: template_data.backgroundColor,
-               borderColor: template_data.borderColor,
-               fontFamily: template_data.fontFamily,
-            }}
-         >
-            {/* Inner decorative border */}
-            <div
-               className="absolute inset-4 rounded border-2"
-               style={{
-                  borderColor: template_data.primaryColor,
-               }}
-            ></div>
-
-            <div className="relative z-10">
-               {/* Logo or Award Icon */}
-               {template.logo_path ? (
-                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center">
-                     <img src={template.logo_path} alt="Logo" className="h-full w-full object-contain" />
-                  </div>
-               ) : (
-                  <Award
-                     className="mx-auto mb-3 h-12 w-12"
-                     style={{
-                        color: template_data.borderColor,
-                     }}
-                  />
-               )}
-
-               {/* Title */}
-               <div className="mb-6">
-                  <h2
-                     className="mb-2 font-serif text-2xl font-bold"
-                     style={{
-                        color: template_data.primaryColor,
-                     }}
-                  >
-                     {template_data.titleText}
-                  </h2>
-                  <div
-                     className="mx-auto h-0.5 w-32"
-                     style={{
-                        backgroundColor: template_data.borderColor,
-                     }}
-                  ></div>
-               </div>
-
-               {/* Description */}
-               <div className="space-y-4">
-                  <p
-                     className="font-serif text-lg"
-                     style={{
-                        color: template_data.secondaryColor,
-                     }}
-                  >
-                     {template_data.descriptionText}
-                  </p>
-
-                  {/* Student Name */}
-                  <div className="relative">
-                     <p
-                        className="mx-8 pb-2 font-serif text-2xl font-bold"
-                        style={{
-                           color: template_data.primaryColor,
-                        }}
-                     >
-                        {studentName}
-                     </p>
-                     <div
-                        className="absolute bottom-0 left-1/2 h-0.5 w-48 -translate-x-1/2 transform"
-                        style={{
-                           backgroundColor: template_data.borderColor,
-                        }}
-                     ></div>
-                  </div>
-
-                  {/* Completion Text */}
-                  <p
-                     className="font-serif text-lg"
-                     style={{
-                        color: template_data.secondaryColor,
-                     }}
-                  >
-                     {template_data.completionText}
-                  </p>
-
-                  {/* Course Name */}
-                  <p
-                     className="font-serif text-xl font-semibold"
-                     style={{
-                        color: template_data.primaryColor,
-                     }}
-                  >
-                     {courseName}
-                  </p>
-
-                  {/* Completion Date */}
-                  <div className="mt-6 flex items-center justify-center gap-2">
-                     <Calendar
-                        className="h-4 w-4"
-                        style={{
-                           color: template_data.secondaryColor,
-                        }}
-                     />
-                     <p
-                        className="text-muted-foreground font-serif text-sm"
-                        style={{
-                           color: template_data.secondaryColor,
-                        }}
-                     >
-                        Completed on: {completionDate}
-                     </p>
-                  </div>
-               </div>
-
-               {/* Footer */}
-               <div
-                  className="mt-6 border-t pt-4"
-                  style={{
-                     borderColor: template_data.borderColor,
-                  }}
-               >
-                  <p
-                     className="font-serif text-sm"
-                     style={{
-                        color: template_data.secondaryColor,
-                     }}
-                  >
-                     {template_data.footerText}
-                  </p>
-               </div>
-            </div>
-         </div>
+      <Card className="mx-auto max-w-[900px] space-y-7 p-6">
+         <canvas
+            ref={previewRef}
+            width={WIDTH}
+            height={HEIGHT}
+            className="h-auto w-full rounded-lg shadow-lg"
+         />
 
          <div className="space-y-4">
             <RadioGroup value={downloadFormat} onValueChange={setDownloadFormat} className="flex justify-center space-x-6">

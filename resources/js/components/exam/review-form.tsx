@@ -81,7 +81,7 @@ const ReviewForm = ({ examId, review, handler, onSuccess }: Props) => {
                               <Star
                                  className={cn(
                                     'h-8 w-8',
-                                    rating <= (hoveredRating || data.rating) ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200',
+                                    rating <= (hoveredRating || data.rating) ? 'fill-yellow-400 text-yellow-400' : 'fill-muted-foreground/30 text-muted-foreground/30',
                                  )}
                               />
                            </button>

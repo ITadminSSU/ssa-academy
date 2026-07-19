@@ -14,14 +14,25 @@ use Inertia\Inertia;
 
 class OfflineController extends Controller
 {
-    private $offline;
-
     public function __construct(
         private MediaService $media,
         private PaymentService $payment,
         private SettingsService $settingsService,
-    ) {
-        $this->offline = $this->settingsService->getSetting(['type' => 'payment', 'sub_type' => 'offline']);
+    ) {}
+
+    private function resolveGatewaySettings(Request $request)
+    {
+        $gateway = $request->query('gateway', 'offline');
+        $allowed = ['offline', 'bank_transfer', 'wire_transfer'];
+
+        if (!in_array($gateway, $allowed, true)) {
+            $gateway = 'offline';
+        }
+
+        return [
+            'type' => $gateway,
+            'settings' => $this->settingsService->getSetting(['type' => 'payment', 'sub_type' => $gateway]),
+        ];
     }
 
     /**
@@ -29,6 +40,7 @@ class OfflineController extends Controller
      */
     public function index(Request $request)
     {
+        $gateway = $this->resolveGatewaySettings($request);
         $user = Auth::user();
         $checkoutItem = $this->payment->getCheckoutItem(
             $request->item_type,
@@ -46,6 +58,7 @@ class OfflineController extends Controller
                 'tax_amount' => $checkoutItem['taxAmount'],
                 'final_price' => $checkoutItem['finalPrice'],
                 'coupon_code' => $checkoutItem['coupon'] ? $checkoutItem['coupon']->code : null,
+                'gateway' => $gateway['type'],
             ]
         ]);
 
@@ -54,8 +67,9 @@ class OfflineController extends Controller
             'item' => $checkoutItem['item'],
             'amount' => $checkoutItem['finalPrice'],
             'currency' => app('system_settings')->fields['selling_currency'] ?? 'USD',
-            'payment_instructions' => $this->offline->fields['payment_instructions'] ?? '',
-            'payment_details' => $this->offline->fields['payment_details'] ?? '',
+            'gateway_type' => $gateway['type'],
+            'payment_instructions' => $gateway['settings']->fields['payment_instructions'] ?? '',
+            'payment_details' => $gateway['settings']->fields['payment_details'] ?? '',
         ]);
     }
 
@@ -96,8 +110,10 @@ class OfflineController extends Controller
             $transactionId = 'OFFLINE-' . strtoupper(Str::random(12));
 
             // Create payment history with pending status
+            $gatewayType = $temp->properties['gateway'] ?? 'offline';
+
             $this->payment->coursesBuy(
-                'offline',
+                $gatewayType,
                 $item_type,
                 $item_id,
                 $transactionId,

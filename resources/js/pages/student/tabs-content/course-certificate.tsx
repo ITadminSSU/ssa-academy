@@ -10,19 +10,21 @@ import { Award, ClipboardList, Lock } from 'lucide-react';
 
 const CourseCertificate = () => {
    const { props } = usePage<StudentCourseProps>();
-   const { course, watchHistory, completion, certificateTemplate, marksheetTemplate, studentMarks, auth } = props;
+   const { course, watchHistory, completion, courseGates, certificate, certificateTemplate, marksheetTemplate, studentMarks, auth } = props;
+   const verificationReference = certificate?.verification_reference || certificate?.identifier;
 
-   // Check if course is completed
-   const isCompleted = watchHistory?.completion_date || completion?.completion === 100;
+   const certificateUnlocked = courseGates?.certificate_unlocked ?? (watchHistory?.completion_date || completion?.completion === 100);
 
-   if (!isCompleted) {
+   if (!certificateUnlocked) {
+      const lockMessage = courseGates?.has_quizzes
+         ? 'Pass all course quizzes to unlock your certificate and marksheet.'
+         : `Complete all course modules to unlock your certificate and marksheet. Your current progress: ${completion?.completion || 0}%`;
+
       return (
          <Alert>
             <Lock className="h-4 w-4" />
             <AlertTitle>Certificate & Marksheet Locked</AlertTitle>
-            <AlertDescription>
-               Complete all course modules to unlock your certificate and marksheet. Your current progress: {completion?.completion || 0}%
-            </AlertDescription>
+            <AlertDescription>{lockMessage}</AlertDescription>
          </Alert>
       );
    }
@@ -75,6 +77,10 @@ const CourseCertificate = () => {
                      courseName={course.title}
                      studentName={auth.user.name}
                      completionDate={completionDate}
+                     verificationReference={verificationReference}
+                     certificateId={certificate?.certificate_id}
+                     trainingHours={course.training_hours}
+                     instructorName={course.instructor?.user?.name}
                   />
                )}
             </TabsContent>

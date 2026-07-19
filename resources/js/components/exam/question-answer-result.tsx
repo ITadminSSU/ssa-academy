@@ -1,4 +1,5 @@
 import { Check, X } from 'lucide-react';
+import QuantityTakeoffBreakdown from '@/components/exam/quantity-takeoff-breakdown';
 
 interface AttemptAnswerWithQuestion extends ExamAttemptAnswer {
    exam_question: ExamQuestion;
@@ -8,7 +9,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
    const answerData = answer.answer_data;
 
    if (!answerData) {
-      return <p className="text-gray-500 italic">No answer provided</p>;
+      return <p className="text-muted-foreground italic">No answer provided</p>;
    }
 
    switch (question.question_type) {
@@ -18,7 +19,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
          return (
             <div className="space-y-3">
-               <p className="font-semibold text-gray-700">Select the option that best matches:</p>
+               <p className="font-semibold text-muted-foreground">Select the option that best matches:</p>
                <div className="space-y-2">
                   {options.map((option: any, idx: number) => {
                      const isSelected = option.id === selectedId;
@@ -29,12 +30,12 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                            key={option.id || idx}
                            className={`rounded-lg border-2 p-3 ${
                               isSelected && isCorrect
-                                 ? 'border-green-500 bg-green-50'
+                                 ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
                                  : isSelected && !isCorrect
-                                   ? 'border-red-500 bg-red-50'
+                                   ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
                                    : isCorrect
-                                     ? 'border-green-300 bg-green-50'
-                                     : 'border-gray-200 bg-white'
+                                     ? 'border-green-300 bg-green-50 dark:bg-green-950/20'
+                                     : 'border-border bg-card'
                            }`}
                         >
                            <div className="flex items-start gap-2">
@@ -48,7 +49,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                                  ) : isCorrect ? (
                                     <Check className="h-5 w-5 text-green-600" />
                                  ) : (
-                                    <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                                    <div className="h-5 w-5 rounded-full border-2 border-border" />
                                  )}
                               </div>
                               <div className="flex-1">
@@ -71,7 +72,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
          return (
             <div className="space-y-3">
-               <p className="font-semibold text-gray-700">Select all statements that apply:</p>
+               <p className="font-semibold text-muted-foreground">Select all statements that apply:</p>
                <div className="space-y-2">
                   {options.map((option: any, idx: number) => {
                      const isSelected = selectedIds.includes(option.id);
@@ -82,10 +83,10 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                            key={option.id || idx}
                            className={`rounded-lg border-2 p-3 ${
                               isSelected && isCorrect
-                                 ? 'border-green-500 bg-green-50'
+                                 ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
                                  : isSelected && !isCorrect
-                                   ? 'border-red-500 bg-red-50'
-                                   : 'border-gray-200 bg-white'
+                                   ? 'border-red-500 bg-red-50 dark:bg-red-950/20'
+                                   : 'border-border bg-card'
                            }`}
                         >
                            <div className="flex items-start gap-2">
@@ -99,7 +100,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                                  ) : isCorrect ? (
                                     <Check className="h-5 w-5 text-green-600" />
                                  ) : (
-                                    <div className="h-5 w-5 rounded border-2 border-gray-300" />
+                                    <div className="h-5 w-5 rounded border-2 border-border" />
                                  )}
                               </div>
                               <div className="flex-1">
@@ -127,7 +128,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
          return (
             <div className="space-y-3">
-               <p className="font-semibold text-gray-700">Fill in the blanks:</p>
+               <p className="font-semibold text-muted-foreground">Fill in the blanks:</p>
                <div className="space-y-3">
                   {userAnswers.map((userAns: string, idx: number) => {
                      const correctOptions = correctAnswers;
@@ -142,7 +143,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                                  <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
                               )}
                               <div className="flex-1">
-                                 <p className="text-sm font-semibold text-gray-700">Blank {idx + 1}</p>
+                                 <p className="text-sm font-semibold text-muted-foreground">Blank {idx + 1}</p>
                               </div>
                            </div>
                            <div className="ml-7 space-y-1">
@@ -172,10 +173,10 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
          return (
             <div className="space-y-3">
-               <p className="font-semibold text-gray-700">Arrange in the correct order:</p>
+               <p className="font-semibold text-muted-foreground">Arrange in the correct order:</p>
                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                     <p className="mb-2 text-sm font-semibold text-gray-600">Your Order:</p>
+                     <p className="mb-2 text-sm font-semibold text-muted-foreground">Your Order:</p>
                      <div className="space-y-2">
                         {userOrder.map((itemIndex: number, idx: number) => (
                            <div key={idx} className="flex items-center gap-2 rounded border border-blue-200 bg-blue-50 p-2">
@@ -188,10 +189,10 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                      </div>
                   </div>
                   <div>
-                     <p className="mb-2 text-sm font-semibold text-gray-600">Correct Order:</p>
+                     <p className="mb-2 text-sm font-semibold text-muted-foreground">Correct Order:</p>
                      <div className="space-y-2">
                         {correctOrder.map((itemIndex: number, idx: number) => (
-                           <div key={idx} className="flex items-center gap-2 rounded border border-green-200 bg-green-50 p-2">
+                           <div key={idx} className="flex items-center gap-2 rounded border border-green-200 bg-green-50 p-2 dark:border-green-800 dark:bg-green-950/20">
                               <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-green-600 text-xs font-semibold text-white">
                                  {idx + 1}
                               </span>
@@ -211,7 +212,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
          return (
             <div className="space-y-3">
-               <p className="font-semibold text-gray-700">Match each item with its pair:</p>
+               <p className="font-semibold text-muted-foreground">Match each item with its pair:</p>
                <div className="space-y-3">
                   {userMatches.map((match: any, idx: number) => {
                      // Find the correct match definition
@@ -221,7 +222,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                      return (
                         <div
                            key={idx}
-                           className={`rounded-lg border-2 p-3 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}
+                           className={`rounded-lg border-2 p-3 ${isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-red-500 bg-red-50 dark:bg-red-950/20'}`}
                         >
                            <div className="flex items-center gap-3">
                               {isCorrect ? (
@@ -253,9 +254,74 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
          return (
             <div className="space-y-3">
-               <p className="font-semibold text-gray-700">Student's Answer:</p>
-               <div className="rounded-lg border-2 border-gray-300 bg-gray-50 p-4">
+               <p className="font-semibold text-muted-foreground">Student's Answer:</p>
+               <div className="rounded-lg border-2 border-border bg-muted p-4">
                   <p className="text-sm whitespace-pre-wrap">{userAnswer}</p>
+               </div>
+            </div>
+         );
+      }
+
+      case 'file_submission': {
+         const submissionUrl = (answerData as any)?.submission_file_url;
+         const submissionName = (answerData as any)?.submission_file_name || 'Student submission';
+         const comment = (answerData as any)?.comment;
+         const planUrl = question.options?.plan_file_url;
+         const planName = question.options?.plan_file_name || 'Plan file';
+
+         return (
+            <div className="space-y-4">
+               {planUrl && (
+                  <div>
+                     <p className="mb-2 text-sm font-semibold text-muted-foreground">Plan provided to student</p>
+                     <a href={planUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm underline">
+                        {planName}
+                     </a>
+                  </div>
+               )}
+               <div>
+                  <p className="mb-2 text-sm font-semibold text-muted-foreground">Student submission</p>
+                  {submissionUrl ? (
+                     <a href={submissionUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium underline">
+                        {submissionName}
+                     </a>
+                  ) : (
+                     <p className="text-sm text-muted-foreground italic">No file uploaded</p>
+                  )}
+               </div>
+               {comment && (
+                  <div className="rounded-lg border border-border bg-muted p-3">
+                     <p className="mb-1 text-xs font-semibold text-muted-foreground">Student notes</p>
+                     <p className="text-sm whitespace-pre-wrap">{comment}</p>
+                  </div>
+               )}
+            </div>
+         );
+      }
+
+      case 'quantity_takeoff': {
+         const breakdown = (answerData as any)?.grading_breakdown || [];
+         const linesCorrect = (answerData as any)?.lines_correct;
+         const linesTotal = (answerData as any)?.lines_total;
+         const supportingUrl = (answerData as any)?.supporting_file_url;
+         const supportingName = (answerData as any)?.supporting_file_name || 'Supporting work';
+
+         return (
+            <div className="space-y-4">
+               <QuantityTakeoffBreakdown
+                  breakdown={breakdown}
+                  linesCorrect={linesCorrect}
+                  linesTotal={linesTotal}
+               />
+               <div className="rounded-lg border bg-muted/40 p-4">
+                  <p className="mb-2 text-sm font-semibold text-muted-foreground">Supporting work</p>
+                  {supportingUrl ? (
+                     <a href={supportingUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium underline">
+                        {supportingName}
+                     </a>
+                  ) : (
+                     <p className="text-sm text-muted-foreground italic">No supporting file uploaded</p>
+                  )}
                </div>
             </div>
          );
@@ -263,8 +329,8 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
 
       default:
          return (
-            <div className="rounded bg-gray-100 p-3">
-               <p className="text-sm text-gray-600">Answer data:</p>
+            <div className="rounded bg-muted p-3">
+               <p className="text-sm text-muted-foreground">Answer data:</p>
                <pre className="mt-2 overflow-auto text-xs">{JSON.stringify(answerData, null, 2)}</pre>
             </div>
          );

@@ -36,6 +36,19 @@ const NavbarPreview = ({ auth, navbar }: NavbarPreviewProps) => {
                   </a>
                );
             }
+            if (item.title === 'Contact Us' || item.title === 'Contact' || item.value?.includes('/contact')) {
+               return (
+                  <a
+                     key={item.id}
+                     href="https://smartsourcingusa.com/contact"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="py-1 text-sm font-normal"
+                  >
+                     {item.title}
+                  </a>
+               );
+            }
             return (
                <Link key={item.id} href={item.value || ''} className="py-1 text-sm font-normal">
                   {item.title}
@@ -96,9 +109,9 @@ const NavbarPreview = ({ auth, navbar }: NavbarPreviewProps) => {
          <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-10">
-               <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer">
-                  <AppLogo className="h-12" />
-               </a>
+               <Link href={route('category.courses', { category: 'all' })}>
+                  <AppLogo className="ssu-nav-logo" />
+               </Link>
 
                {/* Desktop Navigation */}
                <div className="hidden gap-4 md:flex md:items-center">

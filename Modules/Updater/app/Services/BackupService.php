@@ -224,13 +224,14 @@ class BackupService extends FileService
 
       foreach ($tables as $table) {
          $tableName = $table->$tableKey;
+         $logicalTableName = \App\Support\Database\SsuAcademyTableRegistry::toLogicalName($tableName);
 
          // Skip certain system tables if needed
-         if (in_array($tableName, ['sessions', 'cache', 'cache_locks'])) {
+         if (in_array($logicalTableName, ['sessions', 'cache', 'cache_locks'], true)) {
             continue;
          }
 
-         $sql .= $this->getDumpForTable($tableName);
+         $sql .= $this->getDumpForTable($tableName, $logicalTableName);
       }
 
       $sql .= "COMMIT;\n";
@@ -242,7 +243,7 @@ class BackupService extends FileService
    /**
     * Generate SQL dump for a specific table
     */
-   private function getDumpForTable($tableName)
+   private function getDumpForTable(string $tableName, string $logicalTableName)
    {
       $sql = "\n-- --------------------------------------------------------\n";
       $sql .= "-- Table structure for table `{$tableName}`\n";
@@ -256,7 +257,7 @@ class BackupService extends FileService
       // Get table data
       $sql .= "-- Dumping data for table `{$tableName}`\n\n";
 
-      $rows = DB::table($tableName)->get();
+      $rows = DB::table($logicalTableName)->get();
 
       if ($rows->count() > 0) {
          $sql .= "INSERT INTO `{$tableName}` (";

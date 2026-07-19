@@ -72,7 +72,7 @@ const ListeningForm = ({ data, setData, errors, isSubmit, setIsFileSelected, set
                      })
                   }
                />
-               <p className="mt-1 text-xs text-gray-500">Direct link to an audio file (mp3, wav, ogg)</p>
+               <p className="mt-1 text-xs text-muted-foreground">Direct link to an audio file (mp3, wav, ogg)</p>
             </div>
          ) : (
             <div className="space-y-3">
@@ -101,7 +101,7 @@ const ListeningForm = ({ data, setData, errors, isSubmit, setIsFileSelected, set
                         setIsFileSelected(false);
                      }}
                   />
-                  <p className="mt-1 text-xs text-gray-500">Supported formats: MP3, WAV, OGG (Max 100MB)</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Supported formats: MP3, WAV, OGG (Max 100MB)</p>
                </div>
             </div>
          )}

@@ -23,11 +23,6 @@ class ExamResource extends JsonResource
             'id' => $this->instructor->id,
             'name' => $this->instructor->user->name ?? 'Unknown',
          ],
-         'category' => [
-            'id' => $this->exam_category->id,
-            'name' => $this->exam_category->name,
-            'slug' => $this->exam_category->slug,
-         ],
 
          // Pricing
          'pricing_type' => $this->pricing_type,

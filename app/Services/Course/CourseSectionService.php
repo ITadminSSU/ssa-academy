@@ -6,6 +6,7 @@ use App\Models\ChunkedUpload;
 use App\Models\Course\Course;
 use App\Models\Course\CourseSection;
 use App\Models\Course\SectionLesson;
+use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
 use App\Services\MediaService;
 use App\Services\Course\CoursePlayerService;
@@ -289,21 +290,77 @@ class CourseSectionService extends MediaService
 
    public function initWatchHistory(string $course_id, string $watching_type, string $user_id): ?WatchHistory
    {
-      $lesson = SectionLesson::query()->where('course_id', $course_id);
       $history = WatchHistory::where('course_id', $course_id)
          ->where('user_id', $user_id)
          ->first();
 
-      if ($lesson->count() >= 0 && !$history) {
-         $lesson = $lesson->orderBy('sort', 'asc')->first();
-
-         $coursePlay = new CoursePlayerService();
-         $course = Course::where('id', $course_id)->with('sections')->first();
-
-         return $coursePlay->watchHistory($course, $lesson->id, $watching_type, $user_id);
+      if ($history) {
+         return $history;
       }
 
-      return $history;
+      $course = Course::where('id', $course_id)->with('sections')->first();
+
+      if (!$course) {
+         return null;
+      }
+
+      [$watchingId, $resolvedType] = $this->resolveFirstWatchableItem($course_id, $watching_type);
+
+      if (!$watchingId) {
+         return null;
+      }
+
+      $coursePlay = new CoursePlayerService();
+
+      return $coursePlay->watchHistory($course, $watchingId, $resolvedType, $user_id);
+   }
+
+   /**
+    * Resolve the first lesson or quiz to seed watch history.
+    *
+    * @return array{0: ?string, 1: string}
+    */
+   protected function resolveFirstWatchableItem(string $course_id, string $watching_type): array
+   {
+      if ($watching_type === 'quiz') {
+         $quiz = SectionQuiz::query()
+            ->where('course_id', $course_id)
+            ->orderBy('id', 'asc')
+            ->first();
+
+         if ($quiz) {
+            return [(string) $quiz->id, 'quiz'];
+         }
+      } else {
+         $lesson = SectionLesson::query()
+            ->where('course_id', $course_id)
+            ->orderBy('sort', 'asc')
+            ->first();
+
+         if ($lesson) {
+            return [(string) $lesson->id, 'lesson'];
+         }
+      }
+
+      $quiz = SectionQuiz::query()
+         ->where('course_id', $course_id)
+         ->orderBy('id', 'asc')
+         ->first();
+
+      if ($quiz) {
+         return [(string) $quiz->id, 'quiz'];
+      }
+
+      $lesson = SectionLesson::query()
+         ->where('course_id', $course_id)
+         ->orderBy('sort', 'asc')
+         ->first();
+
+      if ($lesson) {
+         return [(string) $lesson->id, 'lesson'];
+      }
+
+      return [null, $watching_type];
    }
 
    /**

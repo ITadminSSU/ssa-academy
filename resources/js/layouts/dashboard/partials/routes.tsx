@@ -1,7 +1,8 @@
 import { routeLastSegment } from '@/lib/route';
-import { Award, Book, Briefcase, CassetteTape, CreditCard, LayoutDashboard, Newspaper, Receipt, School, Settings, Users } from 'lucide-react';
+import { Award, Book, Briefcase, CassetteTape, CreditCard, Folder, LayoutDashboard, LifeBuoy, Newspaper, School, Settings, UserCheck, Users } from 'lucide-react';
 
-const dashboardRoutes: DashboardRoute[] = [
+function buildDashboardRouteTemplate(): DashboardRoute[] {
+   return [
    {
       title: 'Main Menu',
       slug: 'main-menu',
@@ -9,8 +10,8 @@ const dashboardRoutes: DashboardRoute[] = [
          {
             Icon: LayoutDashboard,
             name: 'Dashboard',
-            path: route('dashboard'),
-            slug: routeLastSegment(route('dashboard')),
+            path: '/dashboard',
+            slug: 'dashboard',
             active: true,
             access: ['admin', 'instructor', 'collaborative', 'administrative'],
             children: [],
@@ -27,7 +28,7 @@ const dashboardRoutes: DashboardRoute[] = [
                   name: 'Categories',
                   path: route('categories.index'),
                   slug: routeLastSegment(route('categories.index')),
-                  access: ['admin', 'collaborative', 'administrative'],
+                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
                {
                   name: 'Manage Courses',
@@ -47,6 +48,24 @@ const dashboardRoutes: DashboardRoute[] = [
                   path: route('course-coupons.index'),
                   access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
+               {
+                  name: 'Tracking Dashboard',
+                  slug: routeLastSegment(route('student-progress.index')),
+                  path: route('student-progress.index'),
+                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Top Performers',
+                  slug: routeLastSegment(route('top-performers.index')),
+                  path: route('top-performers.index'),
+                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Verify Certificate',
+                  slug: routeLastSegment(route('certificate.verify')),
+                  path: route('certificate.verify'),
+                  access: ['admin', 'instructor'],
+               },
             ],
          },
          {
@@ -57,12 +76,6 @@ const dashboardRoutes: DashboardRoute[] = [
             active: true,
             access: ['admin', 'instructor', 'collaborative', 'administrative'],
             children: [
-               {
-                  name: 'Categories',
-                  slug: routeLastSegment(route('exam-categories.index')),
-                  path: route('exam-categories.index'),
-                  access: ['admin', 'collaborative', 'administrative'],
-               },
                {
                   name: 'Manage Exams',
                   slug: routeLastSegment(route('exams.index')),
@@ -76,9 +89,9 @@ const dashboardRoutes: DashboardRoute[] = [
                   access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
                {
-                  name: 'Exam Coupons',
-                  slug: routeLastSegment(route('exam-coupons.index')),
-                  path: route('exam-coupons.index'),
+                  name: 'Exam Leaderboard',
+                  slug: routeLastSegment(route('exams.leaderboard')),
+                  path: route('exams.leaderboard'),
                   access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
             ],
@@ -136,50 +149,6 @@ const dashboardRoutes: DashboardRoute[] = [
             ],
          },
          {
-            Icon: Receipt,
-            name: 'Payouts',
-            path: '',
-            slug: 'payouts',
-            active: true,
-            access: ['instructor', 'collaborative'],
-            children: [
-               {
-                  name: 'Withdraw',
-                  slug: routeLastSegment(route('payouts.index')),
-                  path: route('payouts.index'),
-                  access: ['instructor', 'collaborative'],
-               },
-               {
-                  name: 'Settings',
-                  slug: routeLastSegment(route('payouts.settings.index')),
-                  path: route('payouts.settings.index'),
-                  access: ['instructor', 'collaborative'],
-               },
-            ],
-         },
-         {
-            Icon: Receipt,
-            name: 'Payout Report',
-            path: '',
-            slug: 'payouts',
-            active: true,
-            access: ['admin', 'collaborative'],
-            children: [
-               {
-                  name: 'Payout Request',
-                  slug: routeLastSegment(route('payouts.request.index')),
-                  path: route('payouts.request.index'),
-                  access: ['admin', 'collaborative'],
-               },
-               {
-                  name: 'Payout History',
-                  slug: routeLastSegment(route('payouts.history.index')),
-                  path: route('payouts.history.index'),
-                  access: ['admin', 'collaborative'],
-               },
-            ],
-         },
-         {
             Icon: CreditCard,
             name: 'Payment Report',
             path: '',
@@ -191,6 +160,18 @@ const dashboardRoutes: DashboardRoute[] = [
                   name: 'Online Payments',
                   slug: routeLastSegment(route('payment-reports.online.index')),
                   path: route('payment-reports.online.index'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Refund Tracking',
+                  slug: routeLastSegment(route('payment-refunds.index')),
+                  path: route('payment-refunds.index'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Trainer Metrics',
+                  slug: routeLastSegment(route('admin.trainer-metrics.index')),
+                  path: route('admin.trainer-metrics.index'),
                   access: ['admin', 'collaborative', 'administrative'],
                },
                // {
@@ -270,6 +251,15 @@ const dashboardRoutes: DashboardRoute[] = [
             children: [],
          },
          {
+            Icon: UserCheck,
+            name: 'Candidate Pipeline',
+            path: route('candidates.index'),
+            slug: routeLastSegment(route('candidates.index')),
+            active: true,
+            access: ['admin', 'collaborative', 'administrative'],
+            children: [],
+         },
+         {
             Icon: Award,
             name: 'Certificates',
             path: '',
@@ -292,6 +282,42 @@ const dashboardRoutes: DashboardRoute[] = [
             ],
          },
          {
+            Icon: Folder,
+            name: 'Learner Hub',
+            path: '',
+            slug: 'learner-hub',
+            active: true,
+            access: ['admin', 'instructor', 'collaborative', 'administrative'],
+            children: [
+               {
+                  name: 'Announcements',
+                  slug: routeLastSegment(route('announcements.index')),
+                  path: route('announcements.index'),
+                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Forum Questions',
+                  slug: 'forum-questions',
+                  path: route('trainer.forum-questions.index'),
+                  access: ['instructor', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Forum Questions',
+                  slug: 'forum-questions',
+                  path: route('admin.forum-questions.index'),
+                  access: ['admin'],
+               },
+            ],
+         },
+         {
+            Icon: LifeBuoy,
+            name: 'Help Center',
+            path: route('help-center.index'),
+            slug: routeLastSegment(route('help-center.index')),
+            access: ['admin', 'instructor', 'collaborative', 'administrative'],
+            children: [],
+         },
+         {
             Icon: Settings,
             name: 'Settings',
             path: '',
@@ -309,6 +335,12 @@ const dashboardRoutes: DashboardRoute[] = [
                   name: 'System',
                   slug: routeLastSegment(route('settings.system')),
                   path: route('settings.system'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Platform Tools',
+                  slug: routeLastSegment(route('settings.platform-tools')),
+                  path: route('settings.platform-tools'),
                   access: ['admin', 'collaborative', 'administrative'],
                },
                {
@@ -363,6 +395,72 @@ const dashboardRoutes: DashboardRoute[] = [
          },
       ],
    },
-];
+   ];
+}
 
-export default dashboardRoutes;
+const FEATURE_GATED_SLUGS: Partial<Record<string, keyof PlatformFeatures>> = {
+   'job-circulars': 'job_circulars',
+   newsletters: 'newsletters',
+};
+
+function cloneDashboardRoutes(template: DashboardRoute[]): DashboardRoute[] {
+   return template.map((section) => ({
+      ...section,
+      pages: section.pages.map((page) => ({
+         ...page,
+         children: page.children.map((child) => ({ ...child })),
+      })),
+   }));
+}
+
+export function getDashboardRoutes(dashboardUrl: string, features?: PlatformFeatures): DashboardRoute[] {
+   const routes = cloneDashboardRoutes(buildDashboardRouteTemplate());
+   const dashboardSlug = routeLastSegment(dashboardUrl);
+
+   routes[0].pages[0] = {
+      ...routes[0].pages[0],
+      path: dashboardUrl,
+      slug: dashboardSlug,
+   };
+
+   if (features) {
+      routes[0].pages = routes[0].pages.filter((page) => {
+         const featureKey = FEATURE_GATED_SLUGS[page.slug];
+
+         return !featureKey || features[featureKey];
+      });
+   }
+
+   if (dashboardSlug === 'admin') {
+      routes[0].pages = routes[0].pages.map((page) => {
+         if (page.slug !== 'courses') {
+            return page;
+         }
+
+         return {
+            ...page,
+            children: page.children.map((child) => {
+               if (child.name === 'Tracking Dashboard') {
+                  return {
+                     ...child,
+                     slug: routeLastSegment(route('admin.student-progress.index')),
+                     path: route('admin.student-progress.index'),
+                  };
+               }
+
+               if (child.name === 'Top Performers') {
+                  return {
+                     ...child,
+                     slug: routeLastSegment(route('admin.top-performers.index')),
+                     path: route('admin.top-performers.index'),
+                  };
+               }
+
+               return child;
+            }),
+         };
+      });
+   }
+
+   return routes;
+}

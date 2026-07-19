@@ -17,6 +17,10 @@ class SectionLesson extends Model implements HasMedia
         'sort',
         'status',
         'lesson_type',
+        'requires_submission',
+        'activity_total_mark',
+        'activity_pass_mark',
+        'activity_retake',
         'lesson_provider',
         'lesson_src',
         'embed_source',
@@ -28,6 +32,10 @@ class SectionLesson extends Model implements HasMedia
         'course_id',
         'lesson_number',
         'course_section_id',
+    ];
+
+    protected $casts = [
+        'requires_submission' => 'boolean',
     ];
 
     // Relationships
@@ -49,6 +57,11 @@ class SectionLesson extends Model implements HasMedia
     public function resources(): HasMany
     {
         return $this->hasMany(LessonResource::class)->orderBy('created_at', 'desc');
+    }
+
+    public function activity_submissions(): HasMany
+    {
+        return $this->hasMany(LessonActivitySubmission::class, 'section_lesson_id')->orderByDesc('attempt_number');
     }
 
     protected static function booted()

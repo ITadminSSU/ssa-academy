@@ -56,7 +56,7 @@ const Quiz = ({ quiz, completed }: Props) => {
                <Link
                   className={cn(
                      'flex cursor-pointer items-center gap-3 py-1',
-                     isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-gray-500',
+                     isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-muted-foreground',
                   )}
                   href={route('course.player', {
                      type: 'quiz',
@@ -81,7 +81,7 @@ const Quiz = ({ quiz, completed }: Props) => {
             </div>
          ) : (
             <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
-               <div className="flex items-center gap-3 py-1 text-gray-500">
+               <div className="flex items-center gap-3 py-1 text-muted-foreground">
                   <Lock className="h-4 w-4" />
 
                   <QuizIcon quiz={quiz} />

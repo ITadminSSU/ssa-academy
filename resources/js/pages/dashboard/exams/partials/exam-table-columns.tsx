@@ -47,7 +47,6 @@ const ExamTableColumn = (): ColumnDef<Exam>[] => {
                <Link href={route('exams.details', { slug: row.original.slug, id: row.original.id })} className="font-medium hover:underline">
                   {row.getValue('title')}
                </Link>
-               <p className="text-muted-foreground text-xs">{row.original.exam_category.title}</p>
             </div>
          ),
       },
@@ -59,7 +58,7 @@ const ExamTableColumn = (): ColumnDef<Exam>[] => {
                   <DropdownMenuTrigger className="flex items-center justify-center">
                      <Button variant="ghost" className="text-muted-foreground capitalize">
                         <span>{urlParams['status'] ?? 'Status'}</span>
-                        <ChevronsUpDown className="h-3 w-3 text-gray-700" />
+                        <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
                      </Button>
                   </DropdownMenuTrigger>
 
@@ -75,7 +74,7 @@ const ExamTableColumn = (): ColumnDef<Exam>[] => {
                                  }),
                               )
                            }
-                           className={cn('cursor-pointer text-center capitalize', urlParams['status'] === status && 'bg-gray-100')}
+                           className={cn('cursor-pointer text-center capitalize', urlParams['status'] === status && 'bg-muted')}
                         >
                            {status}
                         </DropdownMenuItem>

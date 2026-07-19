@@ -36,7 +36,7 @@ const Index = (props: InstructorPageProps) => {
 
                <div className="group">
                   <h3 className="text-xl font-semibold">{user.name}</h3>
-                  <p className="text-gray-500">{user.email}</p>
+                  <p className="text-muted-foreground">{user.email}</p>
                </div>
 
                <div className="ml-auto flex items-center gap-1">
@@ -47,15 +47,15 @@ const Index = (props: InstructorPageProps) => {
 
             <div className="mt-6 flex gap-8">
                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-gray-500" />
+                  <Users className="h-5 w-5 text-muted-foreground" />
                   <span>{total_enrollments_count} {common.students}</span>
                </div>
                <div className="flex items-center gap-2">
-                  <Book className="h-5 w-5 text-gray-500" />
+                  <Book className="h-5 w-5 text-muted-foreground" />
                   <span>{courses.length} {common.courses}</span>
                </div>
                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-gray-500" />
+                  <Star className="h-5 w-5 text-muted-foreground" />
                   <span>{total_reviews_count} {common.reviews}</span>
                </div>
             </div>

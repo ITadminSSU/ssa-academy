@@ -25,14 +25,14 @@ const ReviewCard = ({ review, onEdit, onDelete }: Props) => {
                         {review.user?.name?.charAt(0).toUpperCase() || 'U'}
                      </div>
                      <div>
-                        <p className="font-medium text-gray-900">{review.user?.name || 'Anonymous'}</p>
-                        <p className="text-xs text-gray-500">{format(parseISO(review.created_at), 'MMM dd, yyyy')}</p>
+                        <p className="font-medium text-foreground">{review.user?.name || 'Anonymous'}</p>
+                        <p className="text-xs text-muted-foreground">{format(parseISO(review.created_at), 'MMM dd, yyyy')}</p>
                      </div>
                   </div>
 
                   <RatingDisplay rating={review.rating} showCount={false} size="sm" className="mb-2" />
 
-                  {review.review && <p className="text-sm text-gray-700">{review.review}</p>}
+                  {review.review && <p className="text-sm text-muted-foreground">{review.review}</p>}
                </div>
 
                {isOwnReview && (onEdit || onDelete) && (

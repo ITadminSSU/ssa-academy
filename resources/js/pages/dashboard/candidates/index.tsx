@@ -1,0 +1,85 @@
+import TableFilter from '@/components/table/table-filter';
+import TableFooter from '@/components/table/table-footer';
+import TableHeader from '@/components/table/table-header';
+import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import DashboardLayout from '@/layouts/dashboard/layout';
+import { SharedData } from '@/types/global';
+import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
+import { ReactNode, useState } from 'react';
+import StatusFilter from './partials/status-filter';
+import TableColumns from './partials/table-columns';
+
+interface StatusOption {
+   value: string;
+   label: string;
+}
+
+interface Props extends SharedData {
+   candidates: Pagination<User>;
+   statuses: StatusOption[];
+   filters: {
+      status?: string;
+      search?: string;
+   };
+}
+
+const CandidatesIndex = (props: Props) => {
+   const [sorting, setSorting] = useState<SortingState>([]);
+   const { translate } = props;
+   const { dashboard } = translate;
+
+   const table = useReactTable({
+      data: props.candidates.data,
+      columns: TableColumns(translate),
+      onSortingChange: setSorting,
+      getCoreRowModel: getCoreRowModel(),
+      getSortedRowModel: getSortedRowModel(),
+      getFilteredRowModel: getFilteredRowModel(),
+      state: { sorting },
+   });
+
+   return (
+      <Card>
+         <TableFilter
+            data={props.candidates}
+            title={dashboard.candidate_pipeline ?? 'Candidate Pipeline'}
+            globalSearch={true}
+            tablePageSizes={[10, 15, 20, 25]}
+            routeName="candidates.index"
+            component={<StatusFilter statuses={props.statuses} routeName="candidates.index" />}
+         />
+
+         <p className="text-muted-foreground border-border border-b px-6 pb-4 text-sm">
+            {dashboard.candidate_pipeline_description ??
+               'Track external learners with paid enrollments, scores, completion, and hiring status.'}
+         </p>
+
+         <Table className="border-border border-y">
+            <TableHeader table={table} tableHeadClass="px-6" />
+
+            <TableBody>
+               {table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                     {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="px-6">
+                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                     ))}
+                  </TableRow>
+               ))}
+            </TableBody>
+         </Table>
+
+         {table.getRowModel().rows.length <= 0 && (
+            <p className="border-border w-full border-b px-6 py-10 text-center">{dashboard.no_results_found}</p>
+         )}
+
+         <TableFooter className="p-5 sm:p-7" routeName="candidates.index" paginationInfo={props.candidates} />
+      </Card>
+   );
+};
+
+CandidatesIndex.layout = (page: ReactNode) => <DashboardLayout children={page} />;
+
+export default CandidatesIndex;

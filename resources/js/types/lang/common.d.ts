@@ -26,6 +26,8 @@ interface CommonLang {
 
    // Common Status
    active: string;
+   employee: string;
+   external: string;
    inactive: string;
    published: string;
    draft: string;

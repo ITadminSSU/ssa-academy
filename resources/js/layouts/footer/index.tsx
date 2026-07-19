@@ -1,8 +1,8 @@
 import AppLogo from '@/components/app-logo';
+import SocialMediaIcon from '@/components/social-media-icon';
 import { Button } from '@/components/ui/button';
 import { SystemProps } from '@/pages/dashboard/settings/system';
 import { Link, usePage } from '@inertiajs/react';
-import { DynamicIcon } from 'lucide-react/dynamic';
 
 const Index = () => {
    const { props } = usePage<SystemProps>();
@@ -18,11 +18,11 @@ const Index = () => {
       <div className="overflow-hidden bg-[rgba(255,222,99,0.06)]">
          <div className="container space-y-9 pt-[60px] pb-5">
             <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
-               <div className="w-full space-y-5 md:max-w-[300px]">
+               <div className="w-full space-y-5 md:max-w-[400px]">
                   <div>
-                     <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                        <AppLogo className="h-[100px] w-auto" />
-                     </a>
+                     <Link href={route('category.courses', { category: 'all' })} className="inline-flex items-center">
+                        <AppLogo className="ssu-footer-logo" />
+                     </Link>
                   </div>
 
                   <p className="text-muted-foreground text-sm">{system.fields.description}</p>
@@ -39,8 +39,8 @@ const Index = () => {
                                  className="bg-muted hover:bg-primary hover:text-primary-foreground text-muted-foreground rounded-full transition-colors"
                                  asChild
                               >
-                                 <a href={socialItem.url} target="_blank">
-                                    <DynamicIcon name={socialItem.icon} className="h-5 w-5" />
+                                 <a href={socialItem.url} target="_blank" rel="noopener noreferrer">
+                                    <SocialMediaIcon name={socialItem.icon} title={socialItem.title} url={socialItem.url} />
                                     <span className="sr-only">{socialItem.title}</span>
                                  </a>
                               </Button>
@@ -56,11 +56,23 @@ const Index = () => {
                         <ul className="text-muted-foreground flex flex-col gap-2 text-sm">
                            {section.items?.map((item, itemIndex) =>
                               section.slug === 'address' ? (
-                                 <li key={`item-${itemIndex}`}>{item.title}</li>
+                                 <li key={`item-${itemIndex}`}>
+                                    {item.title.startsWith('Email:') ? (
+                                       <a href="mailto:training@smartsourcingusa.com" className="hover:text-foreground transition-colors">
+                                          {item.title}
+                                       </a>
+                                    ) : (
+                                       item.title
+                                    )}
+                                 </li>
                               ) : (
                                  <li key={`item-${itemIndex}`}>
                                     {item.title === 'About Us' || item.title === 'About' || item.url?.includes('/about') ? (
                                        <a href="https://smartsourcingusa.com/#about" target="_blank" rel="noopener noreferrer">
+                                          {item.title}
+                                       </a>
+                                    ) : item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact') ? (
+                                       <a href="https://smartsourcingusa.com/contact" target="_blank" rel="noopener noreferrer">
                                           {item.title}
                                        </a>
                                     ) : (

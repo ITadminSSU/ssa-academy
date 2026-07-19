@@ -3,7 +3,7 @@ import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
-import { BookText, CircleDollarSign, FilePenLine, FileText, FlaskConical, FolderInput, Settings, TvMinimalPlay } from 'lucide-react';
+import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FileText, FlaskConical, FolderInput, Settings } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { ReactNode } from 'react';
 import Assignment from './partials/assignment';
@@ -11,10 +11,10 @@ import Basic from './partials/basic';
 import CourseUpdateHeader from './partials/course-update-header';
 import Curriculum from './partials/curriculum';
 import Info from './partials/info';
-import LiveClass from './partials/live-class';
 import Media from './partials/media';
 import Pricing from './partials/pricing';
 import SEO from './partials/seo';
+import ActivitySubmissions from './partials/activity-submissions';
 import Submissions from './partials/submissions';
 
 export interface CourseUpdateProps extends SharedData {
@@ -22,6 +22,7 @@ export interface CourseUpdateProps extends SharedData {
    assignment?: string;
    course: Course;
    prices: string[];
+   audiences: string[];
    lastSectionSort: number;
    lastLessonSort: number;
    statuses: string[];
@@ -29,11 +30,16 @@ export interface CourseUpdateProps extends SharedData {
    expiries: string[];
    categories: CourseCategory[];
    submissions: Pagination<AssignmentSubmission>;
+   activitySubmissions?: Pagination<LessonActivitySubmission> | null;
    watchHistory: WatchHistory | null;
    approvalStatus: CourseApprovalValidation;
    zoomConfig: ZoomConfigFields;
    assignments: CourseAssignment[];
    instructors: Instructor[] | null;
+   instructorExams?: Pick<Exam, 'id' | 'title' | 'slug'>[];
+   billingModels?: { value: string; label?: string }[] | string[];
+   stripeActive?: boolean;
+   stripeSynced?: boolean;
 }
 
 const Update = (props: CourseUpdateProps) => {
@@ -50,17 +56,17 @@ const Update = (props: CourseUpdateProps) => {
       },
       {
          id: nanoid(),
-         name: button.live_class,
-         slug: 'live-class',
-         Icon: TvMinimalPlay,
-         Component: LiveClass,
-      },
-      {
-         id: nanoid(),
          name: 'Assignment',
          slug: 'assignment',
          Icon: FileText,
          Component: assignment ? Submissions : Assignment,
+      },
+      {
+         id: nanoid(),
+         name: 'Activity Reviews',
+         slug: 'activity-reviews',
+         Icon: ClipboardCheck,
+         Component: ActivitySubmissions,
       },
       {
          id: nanoid(),

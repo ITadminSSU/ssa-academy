@@ -9,6 +9,7 @@ use Modules\PaymentGateways\Http\Controllers\Payment\PaypalController;
 use Modules\PaymentGateways\Http\Controllers\Payment\PaystackController;
 use Modules\PaymentGateways\Http\Controllers\Payment\SslCommerzController;
 use Modules\PaymentGateways\Http\Controllers\Payment\StripeController;
+use Modules\PaymentGateways\Http\Controllers\Payment\StripeWebhookController;
 use Modules\PaymentGateways\Http\Controllers\Payment\OfflineController;
 use Modules\PaymentGateways\Http\Controllers\Payment\PaymentReportController;
 use Modules\PaymentGateways\Http\Controllers\Payment\RazorpayController;
@@ -53,6 +54,9 @@ Route::middleware(['auth', 'verified'])->prefix('payments')->group(function () {
     Route::post('offline/submit', [OfflineController::class, 'submit'])->name('payments.offline.submit');
     Route::get('offline/cancel', [OfflineController::class, 'cancel'])->name('payments.offline.cancel');
 });
+
+Route::withoutMiddleware([VerifyCsrfToken::class])->post('stripe/webhook', [StripeWebhookController::class, 'handle'])
+    ->name('payments.stripe.webhook');
 
 Route::withoutMiddleware([VerifyCsrfToken::class])->middleware([SSLConfigMiddleware::class])->prefix('payments/sslcommerz')->group(function () {
     Route::post('/payment', [SslCommerzController::class, 'index'])->name('sslcommerz.payment');

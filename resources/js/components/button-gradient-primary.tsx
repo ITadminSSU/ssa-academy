@@ -8,13 +8,13 @@ interface Props extends ButtonProps {
    shadowClass?: string;
 }
 
-const ButtonGradientPrimary = ({ children, className, shadow = true, shadowClass, containerClass, ...props }: Props) => {
+const ButtonGradientPrimary = ({ children, className, shadow = false, shadowClass, containerClass, ...props }: Props) => {
    return (
       <div className={cn('relative', containerClass)}>
          {shadow && (
             <div
                className={cn(
-                  "after:pointer-events-none after:absolute after:top-1/2 after:-left-7 after:h-[84px] after:w-[84px] after:-translate-y-1/2 after:rounded-full after:bg-[#E4CBA8A6] after:blur-[30px] after:content-[''] dark:after:bg-[#e4cba857]",
+                  "after:pointer-events-none after:absolute after:top-1/2 after:-left-4 after:h-16 after:w-16 after:-translate-y-1/2 after:rounded-full after:bg-primary/20 after:blur-2xl after:content-['']",
                   shadowClass,
                )}
             ></div>
@@ -22,7 +22,7 @@ const ButtonGradientPrimary = ({ children, className, shadow = true, shadowClass
 
          <Button
             className={cn(
-               'from-primary to-secondary-dark hover:from-secondary-dark hover:to-secondary-dark dark:from-secondary-dark dark:to-secondary-foreground dark:hover:from-secondary-dark dark:hover:to-secondary-dark relative z-10 h-auto bg-gradient-to-r px-5 py-2.5 text-white shadow-none',
+               'from-[oklch(0.64_0.13_250)] to-primary hover:from-primary hover:to-primary-dark font-display relative z-10 h-auto bg-gradient-to-r px-5 py-2.5 text-white shadow-sm transition-all hover:shadow-md',
                className,
             )}
             {...props}

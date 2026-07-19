@@ -1,4 +1,5 @@
-import AppLogo from '@/components/app-logo';
+import DashboardLogoLink from '@/components/dashboard-logo-link';
+import { getDashboardUrl, getStudentDashboardUrl } from '@/lib/dashboard';
 import Appearance from '@/components/appearance';
 import AppearanceToggleTab from '@/components/appearance-tabs';
 import Notification from '@/components/notification';
@@ -7,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { resolveNavbarItemHref } from '@/lib/navbar';
 import { getPageSection } from '@/lib/page';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -47,9 +49,7 @@ const LandingNavbar = () => {
             <div className="flex min-h-[72px] items-center justify-between py-2">
                {/* Logo */}
                <div className="flex items-center gap-0 sm:gap-4">
-                  <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
-                     <AppLogo className="h-[100px]" />
-                  </a>
+                  <DashboardLogoLink className="ssu-nav-logo" />
                </div>
 
                {/* Desktop Navigation */}
@@ -79,8 +79,21 @@ const LandingNavbar = () => {
                                  </a>
                               );
                            }
+                           if (item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact')) {
+                              return (
+                                 <a
+                                    key={item.url}
+                                    href="https://smartsourcingusa.com/contact"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-normal"
+                                 >
+                                    {item.title}
+                                 </a>
+                              );
+                           }
                            return (
-                              <Link key={item.url} href={item.url} className="text-sm font-normal">
+                              <Link key={item.url} href={resolveNavbarItemHref(item)} className="text-sm font-normal">
                                  {item.title}
                               </Link>
                            );
@@ -106,7 +119,7 @@ const LandingNavbar = () => {
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="hidden w-[160px] md:block">
                               {(user.role === 'admin' || user.role === 'instructor') && (
-                                 <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.get(route('dashboard'))}>
+                                 <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.get(getDashboardUrl(auth))}>
                                     <LayoutDashboard className="mr-1 h-4 w-4" />
                                     <span>Dashboard</span>
                                  </DropdownMenuItem>
@@ -117,7 +130,7 @@ const LandingNavbar = () => {
                                     <DropdownMenuItem
                                        key={id}
                                        className="cursor-pointer px-3"
-                                       onClick={() => router.get(route('student.index', { tab: slug }))}
+                                       onClick={() => router.get(getStudentDashboardUrl(user, slug))}
                                     >
                                        <Icon className="mr-1 h-4 w-4" />
                                        <span>{name}</span>
@@ -174,8 +187,21 @@ const LandingNavbar = () => {
                                  </a>
                               );
                            }
+                           if (item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact')) {
+                              return (
+                                 <a
+                                    key={item.url}
+                                    href="https://smartsourcingusa.com/contact"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm font-normal"
+                                 >
+                                    {item.title}
+                                 </a>
+                              );
+                           }
                            return (
-                              <Link key={item.url} href={item.url} className="text-sm font-normal">
+                              <Link key={item.url} href={resolveNavbarItemHref(item)} className="text-sm font-normal">
                                  {item.title}
                               </Link>
                            );
@@ -184,7 +210,7 @@ const LandingNavbar = () => {
                      {user ? (
                         user.role === 'admin' ? (
                            <>
-                              <Link href={route('dashboard')} className="text-sm font-normal">
+                              <Link href={getDashboardUrl(auth)} className="text-sm font-normal">
                                  Dashboard
                               </Link>
                               <Button variant="outline" onClick={() => router.post(route('logout'))}>
@@ -194,20 +220,20 @@ const LandingNavbar = () => {
                         ) : (
                            <>
                               {user.role === 'instructor' && props.system.sub_type === 'collaborative' && (
-                                 <Link href={route('dashboard')} className="text-sm font-normal">
+                                 <Link href={getDashboardUrl(auth)} className="text-sm font-normal">
                                     Dashboard
                                  </Link>
                               )}
-                              <Link href={route('student.index', { tab: 'courses' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'courses')} className="text-sm font-normal">
                                  My Courses
                               </Link>
-                              <Link href={route('student.index', { tab: 'wishlist' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'wishlist')} className="text-sm font-normal">
                                  Wishlist
                               </Link>
-                              <Link href={route('student.index', { tab: 'profile' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'profile')} className="text-sm font-normal">
                                  My Profile
                               </Link>
-                              <Link href={route('student.index', { tab: 'settings' })} className="text-sm font-normal">
+                              <Link href={getStudentDashboardUrl(user, 'settings')} className="text-sm font-normal">
                                  Settings
                               </Link>
                               <Button variant="secondary" onClick={() => router.post(route('logout'))}>

@@ -2,10 +2,14 @@
 
 namespace Modules\PaymentGateways\Services;
 
+use App\Enums\PaymentBillingType;
+use App\Enums\PaymentRefundStatus;
 use App\Enums\UserType;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCoupon;
+use App\Models\Course\CourseEnrollment;
 use App\Models\Instructor;
+use App\Models\Subscription;
 use Modules\PaymentGateways\Models\PaymentHistory;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseService;
@@ -85,6 +89,10 @@ class PaymentService
         $instructor = null;
         $historyData = [];
 
+        if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
+            return;
+        }
+
         // Handle course purchase
         if ($item_type === 'course') {
             $course = Course::findOrFail($item_id);
@@ -98,11 +106,18 @@ class PaymentService
             ];
 
             if ($paymentMethod !== 'offline') {
-                $this->courseEnrollment->createCourseEnroll([
-                    'user_id' => $user_id,
-                    'course_id' => $course->id,
-                    'enrollment_type' => 'paid',
-                ]);
+                $alreadyEnrolled = CourseEnrollment::query()
+                    ->where('user_id', $user_id)
+                    ->where('course_id', $course->id)
+                    ->exists();
+
+                if (!$alreadyEnrolled) {
+                    $this->courseEnrollment->createCourseEnroll([
+                        'user_id' => $user_id,
+                        'course_id' => $course->id,
+                        'enrollment_type' => 'paid',
+                    ]);
+                }
             }
 
             // $this->cartService->clearCart($user_id);
@@ -147,6 +162,54 @@ class PaymentService
             'coupon' => $couponCode,
             'transaction_id' => $transactionId,
             'invoice' => $invoice_no,
+            'refund_status' => PaymentRefundStatus::PAID->value,
+            'billing_type' => PaymentBillingType::ONE_TIME,
+            ...$historyData,
+        ]);
+    }
+
+    public function recordSubscriptionPayment(
+        Subscription $subscription,
+        string $transactionId,
+        float $totalPrice,
+        float $taxAmount,
+        PaymentBillingType $billingType,
+        ?string $couponCode = null,
+    ): void {
+        if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
+            return;
+        }
+
+        $course = Course::findOrFail($subscription->course_id);
+        $instructor = Instructor::with('user')
+            ->where('id', $course->instructor_id)
+            ->first();
+
+        $historyData = [
+            'purchase_type' => Course::class,
+            'purchase_id' => $course->id,
+            'subscription_id' => $subscription->id,
+            'billing_type' => $billingType,
+        ];
+
+        if ($instructor->user->role == UserType::ADMIN->value) {
+            $historyData['admin_revenue'] = $totalPrice;
+        } else {
+            $instructorRevenue = app('system_settings')->fields['instructor_revenue'];
+            $instructorRevenueAmount = $totalPrice * ($instructorRevenue / 100);
+            $historyData['instructor_revenue'] = $instructorRevenueAmount - $taxAmount;
+            $historyData['admin_revenue'] = ($totalPrice - $instructorRevenueAmount) + $taxAmount;
+        }
+
+        PaymentHistory::create([
+            'user_id' => $subscription->user_id,
+            'amount' => $totalPrice,
+            'tax' => $taxAmount,
+            'payment_type' => 'stripe',
+            'coupon' => $couponCode,
+            'transaction_id' => $transactionId,
+            'invoice' => random_int(10000000, 99999999),
+            'refund_status' => PaymentRefundStatus::PAID->value,
             ...$historyData,
         ]);
     }

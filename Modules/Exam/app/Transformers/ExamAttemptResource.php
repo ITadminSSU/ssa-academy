@@ -30,6 +30,7 @@ class ExamAttemptResource extends JsonResource
          'incorrect_answers' => $this->incorrect_answers,
          'is_passed' => $this->is_passed,
          'status' => $this->status,
+         'tracking_reference' => $this->tracking_reference,
 
          // Relationships
          'user' => $this->when($this->relationLoaded('user'), function () {

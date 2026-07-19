@@ -210,7 +210,7 @@ return [
     'details' => 'Details',
     'instructor' => 'Instructor',
     'reviews' => 'Reviews',
-    'summery' => 'Summery',
+    'summery' => 'Summary',
     'certificate' => 'Certificate',
     'forum' => 'Forum',
     'review' => 'Review',

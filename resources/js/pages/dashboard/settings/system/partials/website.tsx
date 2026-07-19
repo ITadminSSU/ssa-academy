@@ -33,6 +33,7 @@ const Website = () => {
 
    const { data, setData, post, errors, processing } = useForm({
       ...(props.system.fields as SystemFields),
+      direction: 'none',
       ...(mediaFields as MediaFields),
    });
 
@@ -193,30 +194,15 @@ const Website = () => {
 
                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   <div>
-                     <Label>{'Website Direction'}</Label>
-                     <Select value={data.direction} onValueChange={(value) => setData('direction', value)}>
-                        <SelectTrigger>
-                           <SelectValue placeholder={input.select_option} />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value="none">None</SelectItem>
-                           <SelectItem value="ltr">LTR</SelectItem>
-                           <SelectItem value="rtl">RTL</SelectItem>
-                        </SelectContent>
-                     </Select>
-                     <InputError message={errors.direction} />
-                  </div>
-
-                  <div>
                      <Label>{'Default Theme'}</Label>
                      <Select value={data.theme} onValueChange={(value) => setData('theme', value as Appearance)}>
                         <SelectTrigger>
                            <SelectValue placeholder={input.select_option} />
                         </SelectTrigger>
                         <SelectContent>
-                           <SelectItem value="system">System</SelectItem>
                            <SelectItem value="light">Light</SelectItem>
                            <SelectItem value="dark">Dark</SelectItem>
+                           <SelectItem value="system">System</SelectItem>
                         </SelectContent>
                      </Select>
                      <InputError message={errors.theme} />

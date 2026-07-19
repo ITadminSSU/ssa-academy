@@ -1,4 +1,5 @@
 import CourseCard1 from '@/components/cards/course-card-1';
+import { resolveAuthor, resolveSiteName } from '@/lib/branding';
 import TableFooter from '@/components/table/table-footer';
 import { getQueryParams } from '@/lib/route';
 import { cn } from '@/lib/utils';
@@ -25,7 +26,7 @@ const Index = (props: CoursesIndexProps) => {
    const urlParams = getQueryParams(url);
 
    // Generate meta information based on category
-   const siteName = system?.fields?.name || 'Mentor Learning Management System';
+   const siteName = resolveSiteName(system?.fields?.name);
    const totalCourses = courses?.total || 0;
    const siteUrl = url;
    const siteOrigin = typeof window !== 'undefined' ? window.location.origin : url.split('/').slice(0, 3).join('/');
@@ -57,7 +58,7 @@ const Index = (props: CoursesIndexProps) => {
             <title>{fullTitle}</title>
             <meta name="description" content={pageDescription} />
             <meta name="keywords" content={pageKeywords} />
-            <meta name="author" content={system?.fields?.author || 'UiLib'} />
+            <meta name="author" content={resolveAuthor(system?.fields?.author)} />
 
             {/* Open Graph Tags */}
             <meta property="og:type" content="website" />
@@ -170,7 +171,7 @@ const Index = (props: CoursesIndexProps) => {
          </div>
 
          <TableFooter
-            className="mt-6 p-5 sm:p-7"
+            className="ssu-surface-card mt-6 p-5 sm:p-7"
             routeName="category.courses"
             paginationInfo={courses}
             routeParams={{

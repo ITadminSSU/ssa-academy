@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { canEnrollCourseWithoutPayment, requiresCoursePayment } from '@/lib/learner-access';
 import { cn, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -19,9 +20,16 @@ const CourseCard3 = ({ course, className }: Props) => {
    const currency = systemCurrency(props.system.fields['selling_currency']);
 
    // Enrollment/Buy button component
+   const loginRedirectUrl = `${route('login')}?redirect=${encodeURIComponent(window.location.href)}`;
+
    const enrollmentHandler = (course: Course) => {
+      if (!user) {
+         router.get(loginRedirectUrl);
+         return;
+      }
+
       router.post(route('enrollments.store'), {
-         user_id: user?.id,
+         user_id: user.id,
          course_id: course.id,
          enrollment_type: 'free',
       });
@@ -63,26 +71,17 @@ const CourseCard3 = ({ course, className }: Props) => {
             <p>{course.short_description}</p>
 
             <div className="flex items-center gap-3">
-               {course.pricing_type === 'free' ? (
-                  <Button
-                     className="px-5"
-                     onClick={() =>
-                        router.post(route('enrollments.store'), {
-                           user_id: user?.id,
-                           course_id: course.id,
-                           enrollment_type: 'free',
-                        })
-                     }
-                  >
-                     <Clock /> {common.free} | {button.enroll_now}
-                  </Button>
-               ) : (
+               {requiresCoursePayment(user, course) ? (
                   <CheckoutItem item="course" item_id={course.id}>
                      <Button className="px-5">
                         <Clock /> {`${currency?.symbol}${course.price}`} | {button.enroll_now}
                      </Button>
                   </CheckoutItem>
-               )}
+               ) : canEnrollCourseWithoutPayment(user, course) ? (
+                  <Button className="px-5" onClick={() => enrollmentHandler(course)}>
+                     <Clock /> {common.free} | {button.enroll_now}
+                  </Button>
+               ) : null}
 
                <Button
                   variant="outline"

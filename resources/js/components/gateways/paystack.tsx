@@ -34,7 +34,7 @@ const Paystack = ({ payment, routePath }: PaystackProps) => {
          <div className="mb-6 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">{settings.paystack_settings}</h2>
-               <p className="text-gray-500">{settings.configure_payment_gateway.replace(':gateway', 'Paystack')}</p>
+               <p className="text-muted-foreground">{settings.configure_payment_gateway.replace(':gateway', 'Paystack')}</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -65,7 +65,7 @@ const Paystack = ({ payment, routePath }: PaystackProps) => {
                <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">{settings.test_mode}:</span>
                   <Switch id="status" checked={data.test_mode} onCheckedChange={(checked) => setData('test_mode', checked)} />
-                  <Label htmlFor="status" className="text-gray-500">
+                  <Label htmlFor="status" className="text-muted-foreground">
                      {data.test_mode ? settings.using_test_keys : settings.using_live_keys}
                   </Label>
                </div>

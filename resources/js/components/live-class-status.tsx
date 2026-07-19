@@ -82,13 +82,13 @@ const LiveClassStatus = ({ courseId, liveClass, zoomConfig }: Props) => {
    const getStatusColor = (status: string) => {
       switch (status) {
          case 'live':
-            return 'text-green-600 bg-green-100';
+            return 'text-[color:var(--brand-red)] bg-[color:var(--brand-red)]/10';
          case 'upcoming':
-            return 'text-blue-600 bg-blue-100';
+            return 'text-[color:var(--brand-blue)] bg-[color:var(--brand-blue)]/10';
          case 'ended':
-            return 'text-muted-foreground bg-gray-100';
+            return 'text-muted-foreground bg-muted';
          default:
-            return 'text-orange-600 bg-orange-100';
+            return 'text-primary bg-primary/10';
       }
    };
 

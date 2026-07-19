@@ -27,7 +27,7 @@ const FillBlankQuestion = ({ question, answer, onAnswerChange }: Props) => {
 
    useEffect(() => {
       setValues(buildInitialValues());
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
    }, [question.id]);
 
    const emitChange = (newValues: string[]) => {
@@ -49,9 +49,9 @@ const FillBlankQuestion = ({ question, answer, onAnswerChange }: Props) => {
 
    return (
       <div className="space-y-4">
-         <p className="text-sm text-gray-600">Fill in the blanks with appropriate answers:</p>
+         <p className="text-sm text-muted-foreground">Fill in the blanks with appropriate answers:</p>
 
-         <div className="rounded-lg bg-gray-50 p-6">
+         <div className="rounded-lg bg-muted p-6">
             <div className="prose prose-sm max-w-none">
                {blanks
                   ? parts.map((part, index) => {
@@ -82,7 +82,7 @@ const FillBlankQuestion = ({ question, answer, onAnswerChange }: Props) => {
             <Label className="text-sm font-semibold">Your Answers:</Label>
             {Array.from({ length: totalInputs }).map((_, index) => (
                <div key={index} className="flex items-center gap-3 rounded border p-2">
-                  <span className="text-sm font-semibold text-gray-600">Blank {index + 1}:</span>
+                  <span className="text-sm font-semibold text-muted-foreground">Blank {index + 1}:</span>
                   <Input
                      type="text"
                      value={values[index] || ''}

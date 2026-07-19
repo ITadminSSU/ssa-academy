@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/hooks/use-auth';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { Head } from '@inertiajs/react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
@@ -15,8 +14,6 @@ interface Props {
 }
 
 const CategoriesIndex = ({ categories }: Props) => {
-   const { isAdmin } = useAuth();
-
    const defaultCategory = categories.find((category) => category.slug === 'default');
    const otherCategories = categories.filter((category) => category.slug !== 'default');
    return (
@@ -26,8 +23,8 @@ const CategoriesIndex = ({ categories }: Props) => {
          <div className="space-y-6">
             <div className="flex items-center justify-between">
                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Exam Categories</h1>
-                  <p className="mt-1 text-sm text-gray-600">Manage exam categories and organize your exams</p>
+                  <h1 className="text-3xl font-bold text-foreground">Exam Categories</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">Manage exam categories and organize your exams</p>
                </div>
 
                <CategoryForm
@@ -42,7 +39,7 @@ const CategoriesIndex = ({ categories }: Props) => {
             </div>
 
             {categories.length > 0 ? (
-               <div className="mt-6 grid grid-cols-1 gap-6 border-t border-gray-300 py-6 md:grid-cols-2 lg:grid-cols-3">
+               <div className="mt-6 grid grid-cols-1 gap-6 border-t border-border py-6 md:grid-cols-2 lg:grid-cols-3">
                   {defaultCategory && (
                      <Card key={defaultCategory.id} className="p-6">
                         <div className="flex items-center gap-2">
@@ -77,31 +74,29 @@ const CategoriesIndex = ({ categories }: Props) => {
                                  }
                               />
 
-                              {isAdmin && (
-                                 <DeleteModal
-                                    message="Are you sure you want to delete this category?"
-                                    routePath={route('exam-categories.destroy', category.id)}
-                                    actionComponent={
-                                       <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="bg-destructive/8 hover:bg-destructive/6 h-8 w-8 rounded-full p-0"
-                                       >
-                                          <Trash2 className="text-destructive text-sm" />
-                                       </Button>
-                                    }
-                                 />
-                              )}
+                              <DeleteModal
+                                 message="Are you sure you want to delete this category?"
+                                 routePath={route('exam-categories.destroy', category.id)}
+                                 actionComponent={
+                                    <Button
+                                       size="icon"
+                                       variant="ghost"
+                                       className="bg-destructive/8 hover:bg-destructive/6 h-8 w-8 rounded-full p-0"
+                                    >
+                                       <Trash2 className="text-destructive text-sm" />
+                                    </Button>
+                                 }
+                              />
                            </div>
                         </div>
 
                         <Separator className="my-4" />
 
                         <CardContent className="p-0">
-                           <p className="mb-3 text-sm text-gray-600">{category.description || 'No description'}</p>
+                           <p className="mb-3 text-sm text-muted-foreground">{category.description || 'No description'}</p>
                            <div className="flex items-center justify-between">
                               <Badge variant={category.status ? 'default' : 'secondary'}>{category.status ? 'Active' : 'Inactive'}</Badge>
-                              <span className="text-sm text-gray-500">{category.exams_count || 0} exams</span>
+                              <span className="text-sm text-muted-foreground">{category.exams_count || 0} exams</span>
                            </div>
                         </CardContent>
                      </Card>
@@ -111,7 +106,7 @@ const CategoriesIndex = ({ categories }: Props) => {
                <div className="col-span-full">
                   <Card>
                      <CardContent className="flex flex-col items-center justify-center py-12">
-                        <p className="mb-4 text-gray-600">No categories found. Create your first category!</p>
+                        <p className="mb-4 text-muted-foreground">No categories found. Create your first category!</p>
                         <CategoryForm
                            title="Create Category"
                            handler={

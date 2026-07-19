@@ -13,9 +13,10 @@ interface DynamicMarksheetProps {
    studentName: string;
    completionDate: string;
    studentMarks: StudentMarks;
+   variant?: 'course' | 'exam';
 }
 
-const DynamicMarksheet = ({ template, courseName, studentName, completionDate, studentMarks }: DynamicMarksheetProps) => {
+const DynamicMarksheet = ({ template, courseName, studentName, completionDate, studentMarks, variant = 'course' }: DynamicMarksheetProps) => {
    const [downloadFormat, setDownloadFormat] = useState('png');
    const marksheetRef = useRef<HTMLDivElement>(null);
    const dimensions = { width: 700, height: 900 };
@@ -258,40 +259,40 @@ const DynamicMarksheet = ({ template, courseName, studentName, completionDate, s
       currentY += 45;
 
       // Assignment Row
+      if (variant === 'course') {
+         ctx.fillStyle = template_data.backgroundColor;
+         ctx.fillRect(leftMargin, currentY, tableWidth, 45);
+
+         ctx.textAlign = 'left';
+         ctx.font = `18px ${template_data.fontFamily}`;
+         ctx.fillStyle = template_data.secondaryColor;
+         ctx.fillText('Assignment', leftMargin + 15, currentY + 28);
+
+         ctx.textAlign = 'right';
+         ctx.font = `bold 18px ${template_data.fontFamily}`;
+         ctx.fillStyle = template_data.primaryColor;
+         ctx.fillText(`${studentMarks.assignment.obtained}/${studentMarks.assignment.total}`, rightMargin - 15, currentY + 28);
+
+         ctx.strokeStyle = template_data.borderColor;
+         ctx.lineWidth = 1;
+         ctx.strokeRect(leftMargin, currentY, tableWidth, 45);
+         currentY += 45;
+      }
+
+      // Quiz / Exam Row
       ctx.fillStyle = template_data.backgroundColor;
       ctx.fillRect(leftMargin, currentY, tableWidth, 45);
 
       ctx.textAlign = 'left';
       ctx.font = `18px ${template_data.fontFamily}`;
       ctx.fillStyle = template_data.secondaryColor;
-      ctx.fillText('Assignment', leftMargin + 15, currentY + 28);
-
-      ctx.textAlign = 'right';
-      ctx.font = `bold 18px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.primaryColor;
-      ctx.fillText(`${studentMarks.assignment.obtained}/${studentMarks.assignment.total}`, rightMargin - 15, currentY + 28);
-
-      // Border
-      ctx.strokeStyle = template_data.borderColor;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(leftMargin, currentY, tableWidth, 45);
-      currentY += 45;
-
-      // Quiz Row
-      ctx.fillStyle = template_data.backgroundColor;
-      ctx.fillRect(leftMargin, currentY, tableWidth, 45);
-
-      ctx.textAlign = 'left';
-      ctx.font = `18px ${template_data.fontFamily}`;
-      ctx.fillStyle = template_data.secondaryColor;
-      ctx.fillText('Quiz', leftMargin + 15, currentY + 28);
+      ctx.fillText(variant === 'exam' ? 'Exam' : 'Quiz', leftMargin + 15, currentY + 28);
 
       ctx.textAlign = 'right';
       ctx.font = `bold 18px ${template_data.fontFamily}`;
       ctx.fillStyle = template_data.primaryColor;
       ctx.fillText(`${studentMarks.quiz.obtained}/${studentMarks.quiz.total}`, rightMargin - 15, currentY + 28);
 
-      // Border
       ctx.strokeStyle = template_data.borderColor;
       ctx.lineWidth = 1;
       ctx.strokeRect(leftMargin, currentY, tableWidth, 45);
@@ -497,29 +498,31 @@ const DynamicMarksheet = ({ template, courseName, studentName, completionDate, s
                            </tr>
                         </thead>
                         <tbody>
-                           <tr
-                              className="border-b"
-                              style={{
-                                 borderColor: template_data.borderColor,
-                              }}
-                           >
-                              <td
-                                 className="p-3"
+                           {variant === 'course' && (
+                              <tr
+                                 className="border-b"
                                  style={{
-                                    color: template_data.secondaryColor,
+                                    borderColor: template_data.borderColor,
                                  }}
                               >
-                                 Assignment
-                              </td>
-                              <td
-                                 className="p-3 text-right font-medium"
-                                 style={{
-                                    color: template_data.primaryColor,
-                                 }}
-                              >
-                                 {studentMarks.assignment.obtained}/{studentMarks.assignment.total}
-                              </td>
-                           </tr>
+                                 <td
+                                    className="p-3"
+                                    style={{
+                                       color: template_data.secondaryColor,
+                                    }}
+                                 >
+                                    Assignment
+                                 </td>
+                                 <td
+                                    className="p-3 text-right font-medium"
+                                    style={{
+                                       color: template_data.primaryColor,
+                                    }}
+                                 >
+                                    {studentMarks.assignment.obtained}/{studentMarks.assignment.total}
+                                 </td>
+                              </tr>
+                           )}
                            <tr>
                               <td
                                  className="p-3"
@@ -527,7 +530,7 @@ const DynamicMarksheet = ({ template, courseName, studentName, completionDate, s
                                     color: template_data.secondaryColor,
                                  }}
                               >
-                                 Quiz
+                                 {variant === 'exam' ? 'Exam' : 'Quiz'}
                               </td>
                               <td
                                  className="p-3 text-right font-medium"

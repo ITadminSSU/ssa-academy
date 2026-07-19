@@ -29,7 +29,7 @@ const Resources = () => {
          <div className="flex items-center justify-between">
             <div>
                <h3 className="text-lg font-semibold">Exam Resources</h3>
-               <p className="text-sm text-gray-600">Exam Resources List</p>
+               <p className="text-sm text-muted-foreground">Exam Resources List</p>
             </div>
 
             <div className="flex items-center gap-2">

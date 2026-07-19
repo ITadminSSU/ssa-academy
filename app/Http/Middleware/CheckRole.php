@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\AuthService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +26,8 @@ class CheckRole
             return $next($request);
         }
 
-        // If user doesn't have the required role
-        return redirect()->back()->with('error', 'You do not have permission to access this page.');
+        // Avoid redirect loops when a student hits trainer/admin routes.
+        return redirect(app(AuthService::class)->homeUrlFor($request->user()))
+            ->with('error', 'You do not have permission to access this page.');
     }
 }

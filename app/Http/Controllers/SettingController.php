@@ -22,7 +22,6 @@ use App\Http\Requests\UpdateSmtpSettingsRequest;
 use App\Http\Requests\UpdateStorageRequest;
 use App\Http\Requests\UpdateZoomConfigRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 
 class SettingController extends Controller
@@ -85,8 +84,9 @@ class SettingController extends Controller
     {
         $home = $this->settingsService->getSetting(['type' => 'home_page']);
         $pages = Page::with('sections')->get();
+        $ssuLandingPage = Page::where('slug', 'ssu-home')->with('sections')->first();
 
-        return Inertia::render('dashboard/settings/pages/index', compact('home', 'pages'));
+        return Inertia::render('dashboard/settings/pages/index', compact('home', 'pages', 'ssuLandingPage'));
     }
 
     /**
@@ -228,16 +228,6 @@ class SettingController extends Controller
         $this->settingsService->authUpdate($request->validated(), $id);
 
         return back()->with('success', 'Auth settings updated successfully.');
-    }
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function maintenance(Request $request)
-    {
-        Artisan::call('optimize:clear');
-
-        return redirect(route('system.update.seeder'));
     }
 
     /**

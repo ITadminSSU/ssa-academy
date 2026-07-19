@@ -33,7 +33,7 @@ const Update = ({ language }: Props) => {
          <div className="mb-6 flex items-center justify-between gap-4">
             <div>
                <h1 className="text-2xl font-bold">{settings.language_properties}</h1>
-               <p className="text-gray-500">{settings.translate_language_properties}</p>
+               <p className="text-muted-foreground">{settings.translate_language_properties}</p>
             </div>
             <Link href={route('language.index')}>
                <Button>

@@ -4,9 +4,59 @@ declare global {
    const route: typeof routeFn;
 }
 
+export interface PlatformFeatures {
+   blog: boolean;
+   job_circulars: boolean;
+   careers_page: boolean;
+   newsletters: boolean;
+   exams_public_nav: boolean;
+}
+
+export interface Branding {
+   name: string;
+   short_name: string;
+   author: string;
+   tagline: string;
+   keywords: string;
+   description: string;
+   logos?: {
+      icon?: string;
+      dark?: string;
+      light?: string;
+      favicon?: string;
+   };
+}
+
+export interface LearnerNavCourse {
+   id: number;
+   title: string;
+   slug: string;
+}
+
+export interface LearnerNavCategory {
+   id: number;
+   title: string;
+   slug: string;
+   courses: LearnerNavCourse[];
+}
+
+export interface LearnerNavGuide {
+   id: number;
+   key: string;
+   title: string;
+}
+
+export interface LearnerNav {
+   categories: LearnerNavCategory[];
+   guides?: LearnerNavGuide[];
+}
+
 export interface SharedData {
    page: Page;
    auth: Auth;
+   learnerNav?: LearnerNav | null;
+   branding: Branding;
+   features: PlatformFeatures;
    customize: boolean;
    navbar: Navbar;
    footer: Footer;
@@ -20,7 +70,7 @@ export interface SharedData {
    };
    langs: Language[];
    locale: string;
-   direction: 'ltr' | 'rtl';
+   direction: 'ltr';
    cartCount: number;
    translate: LanguageTranslations;
    [key: string]: unknown;

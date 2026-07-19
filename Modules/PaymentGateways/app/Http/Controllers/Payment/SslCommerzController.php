@@ -55,8 +55,8 @@ class SslCommerzController extends Controller
         // If item has category, use it (support both course and exam)
         if (isset($item->course_category) && $item->course_category) {
             $productCategory = $item->course_category->title ?? 'Online Course';
-        } elseif (isset($item->exam_category) && $item->exam_category) {
-            $productCategory = $item->exam_category->title ?? 'Online Course';
+        } elseif ($request->item_type === 'exam') {
+            $productCategory = 'Online Exam';
         }
 
         $post_data = array();

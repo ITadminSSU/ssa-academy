@@ -98,26 +98,26 @@ const CoursePreview = () => {
 
             <div className="space-y-3 text-sm">
                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-400" />
+                  <Clock className="h-4 w-4 text-muted-foreground/70" />
                   <span>
                      {exam.duration_hours > 0 && `${exam.duration_hours} hours `}
                      {exam.duration_minutes > 0 && `${exam.duration_minutes} minutes`}
                   </span>
                </div>
                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-gray-400" />
+                  <BookOpen className="h-4 w-4 text-muted-foreground/70" />
                   <span>{exam.total_questions} questions</span>
                </div>
                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-gray-400" />
+                  <Award className="h-4 w-4 text-muted-foreground/70" />
                   <span>{exam.max_attempts} attempts allowed</span>
                </div>
                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-gray-400" />
+                  <Target className="h-4 w-4 text-muted-foreground/70" />
                   <span>{exam.pass_mark} marks to pass</span>
                </div>
                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <Calendar className="h-4 w-4 text-muted-foreground/70" />
                   <span className="capitalize">{exam.expiry_type === 'lifetime' ? 'Lifetime' : exam.expiry_duration}</span>
                </div>
             </div>

@@ -24,7 +24,7 @@ const SubscribeInput = ({ className, buttonText }: SubscribeInputProps) => {
 
    return (
       <form onSubmit={submit} className={cn('relative z-10', className)}>
-         <div className="bg-background text-primary flex items-center justify-between gap-2 rounded-md border border-gray-400">
+         <div className="bg-background text-primary flex items-center justify-between gap-2 rounded-md border border-muted-foreground/30">
             <input
                type="email"
                name="email"

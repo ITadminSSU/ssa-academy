@@ -9,10 +9,10 @@ import { ReactNode } from 'react';
 import Layout from './partials/layout';
 import CourseAssignments from './tabs-content/course-assignments';
 import CourseCertificate from './tabs-content/course-certificate';
-import CourseLiveClasses from './tabs-content/course-live-classes';
 import CourseModules from './tabs-content/course-modules';
 import CourseQuizzes from './tabs-content/course-quizzes';
 import CourseResources from './tabs-content/course-resources';
+import SubscriptionAccessBanner from '@/pages/course-player/partials/subscription-access-banner';
 
 const Course = (props: StudentCourseProps) => {
    const { tab, course, watchHistory, completion } = props;
@@ -21,10 +21,6 @@ const Course = (props: StudentCourseProps) => {
       {
          value: 'modules',
          label: 'Modules',
-      },
-      {
-         value: 'live_classes',
-         label: 'Live Classes',
       },
       {
          value: 'assignments',
@@ -48,8 +44,6 @@ const Course = (props: StudentCourseProps) => {
       switch (tab) {
          case 'modules':
             return <CourseModules />;
-         case 'live_classes':
-            return <CourseLiveClasses />;
          case 'assignments':
             return <CourseAssignments />;
          case 'quizzes':
@@ -69,7 +63,9 @@ const Course = (props: StudentCourseProps) => {
 
          <CourseCard7 course={course} watch_history={watchHistory} completion={completion} />
 
-         <Card className="mt-6">
+         <SubscriptionAccessBanner />
+
+         <Card className="mt-4">
             <Tabs value={tab} className="bg-card w-full overflow-hidden rounded-md">
                <div className="overflow-x-auto overflow-y-hidden">
                   <TabsList className="bg-transparent px-0 py-6">

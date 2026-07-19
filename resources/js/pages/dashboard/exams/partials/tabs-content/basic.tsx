@@ -8,14 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { onHandleChange } from '@/lib/inertia';
 import { useForm, usePage } from '@inertiajs/react';
-import { useMemo } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 import { ExamUpdateProps } from '../../update';
 
 const Basic = () => {
    const { props } = usePage<ExamUpdateProps>();
-   const { auth, system, tab, categories, exam, instructors } = props;
+   const { auth, system, tab, exam, instructors } = props;
 
    const { data, setData, post, errors, processing } = useForm({
       tab: tab,
@@ -25,21 +24,12 @@ const Basic = () => {
       status: exam.status || 'draft',
       level: exam.level || '',
       instructor_id: exam.instructor_id || '',
-      exam_category_id: exam.exam_category_id || '',
    });
 
-   // Handle form submission
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       post(route('exams.update', { exam: exam.id }));
    };
-
-   const transformedCategories = useMemo(() => {
-      return categories.map((category) => ({
-         label: category.title,
-         value: category.id.toString(),
-      }));
-   }, [categories]);
 
    const transformedInstructors = instructors?.map((instructor) => ({
       label: instructor.user.name,
@@ -48,25 +38,6 @@ const Basic = () => {
 
    const levels = ['beginner', 'intermediate', 'advanced'];
    const statuses = ['draft', 'published', 'archived'];
-
-   const selectedCategory = categories.find((cat) => cat.id === data.exam_category_id);
-
-   //    let selectedCategory: any;
-   // categories.map((category) => {
-   //    if (course.course_category_child_id) {
-   //       category.category_children?.map((child) => {
-   //          if (child.id === data.course_category_child_id) {
-   //             selectedCategory = child;
-   //             return;
-   //          }
-   //       });
-   //    } else {
-   //       if (category.id === data.course_category_id) {
-   //          selectedCategory = category;
-   //          return;
-   //       }
-   //    }
-   // });
 
    return (
       <Card className="container p-4 sm:p-6">
@@ -125,19 +96,6 @@ const Basic = () => {
             )}
 
             <div className="grid gap-6 md:grid-cols-2">
-               <div>
-                  <Label>Category *</Label>
-                  <Combobox
-                     data={transformedCategories}
-                     placeholder="Select category"
-                     defaultValue={selectedCategory?.id.toString() || ''}
-                     onSelect={(selected) => {
-                        setData('exam_category_id', selected.value as string);
-                     }}
-                  />
-                  <InputError message={errors.exam_category_id} />
-               </div>
-
                <div>
                   <Label>Difficulty Level *</Label>
                   <Select value={data.level} onValueChange={(value) => setData('level', value)}>

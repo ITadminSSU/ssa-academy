@@ -80,7 +80,7 @@ class IntroSections
             'slug' => 'top_courses',
             'title' => 'Courses',
             'sub_title' => 'Popular Courses',
-            'description' => 'Your professional development is supported by Mentor covering everything from technical subjects to essential abilities.',
+            'description' => 'Your professional development is supported by Smart Sourcing Academy covering everything from technical subjects to essential abilities.',
             'flags' => [
                'title' => true,
                'sub_title' => true,
@@ -129,7 +129,7 @@ class IntroSections
             'slug' => 'new_courses',
             'title' => 'Courses',
             'sub_title' => 'Latest Courses',
-            'description' => 'Your professional development is supported by Mentor covering everything from technical subjects to essential abilities.',
+            'description' => 'Your professional development is supported by Smart Sourcing Academy covering everything from technical subjects to essential abilities.',
             'flags' => [
                'title' => true,
                'sub_title' => true,
@@ -532,7 +532,7 @@ class IntroSections
             'name' => 'Category Courses',
             'slug' => 'category_courses',
             'title' => 'Everything you need to know in one place',
-            'description' => 'Your professional development is supported by Mentor, covering everything from technical subjects to essential abilities.',
+            'description' => 'Your professional development is supported by Smart Sourcing Academy, covering everything from technical subjects to essential abilities.',
             'flags' => [
                'title' => true,
                'description' => true,

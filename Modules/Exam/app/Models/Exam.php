@@ -7,6 +7,7 @@ use App\Models\Instructor;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Course\Course;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -20,7 +21,6 @@ class Exam extends BaseModel implements HasMedia
       'short_description',
       'description',
       'instructor_id',
-      'exam_category_id',
       'pricing_type',
       'price',
       'discount',
@@ -32,6 +32,8 @@ class Exam extends BaseModel implements HasMedia
       'max_attempts',
       'total_questions',
       'status',
+      'exam_mode',
+      'takeoff_config',
       'level',
       'thumbnail',
       'banner',
@@ -54,7 +56,13 @@ class Exam extends BaseModel implements HasMedia
       'duration_minutes' => 'integer',
       'max_attempts' => 'integer',
       'total_questions' => 'integer',
+      'takeoff_config' => 'array',
    ];
+
+   public function isQuantityTakeoff(): bool
+   {
+      return $this->exam_mode === 'quantity_takeoff';
+   }
 
    /**
     * The "booted" method of the model.
@@ -79,11 +87,6 @@ class Exam extends BaseModel implements HasMedia
    public function instructor(): BelongsTo
    {
       return $this->belongsTo(Instructor::class);
-   }
-
-   public function exam_category(): BelongsTo
-   {
-      return $this->belongsTo(ExamCategory::class);
    }
 
    public function questions(): HasMany
@@ -134,5 +137,10 @@ class Exam extends BaseModel implements HasMedia
    public function outcomes(): HasMany
    {
       return $this->hasMany(ExamOutcome::class)->orderBy('sort', 'asc');
+   }
+
+   public function linked_courses(): HasMany
+   {
+      return $this->hasMany(Course::class, 'final_exam_id');
    }
 }

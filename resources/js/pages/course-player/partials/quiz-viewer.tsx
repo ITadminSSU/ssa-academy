@@ -1,5 +1,6 @@
 import LoadingButton from '@/components/loading-button';
 import Tabs from '@/components/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +13,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Renderer } from 'richtor';
 import 'richtor/styles';
+import { Lock } from 'lucide-react';
 import LessonControl from './lesson-control';
 
 type QuizAnswer = {
@@ -24,8 +26,26 @@ interface QuizViewerProps {
 }
 
 const QuizViewer = ({ quiz }: QuizViewerProps) => {
-   const { auth, translate } = usePage<CoursePlayerProps>().props;
+   const { auth, translate, courseGates, subscriptionAccess } = usePage<CoursePlayerProps>().props;
    const { frontend } = translate;
+   const canMarkProgress = subscriptionAccess?.can_mark_progress ?? true;
+
+   if (courseGates && !courseGates.quizzes_unlocked) {
+      return (
+         <Card className="min-h-[60vh] w-full p-6">
+            <Alert>
+               <Lock className="h-4 w-4" />
+               <AlertTitle>Quiz locked</AlertTitle>
+               <AlertDescription>
+                  Submit all course assignments before taking this quiz.
+                  {courseGates.pending_assignments_count > 0
+                     ? ` ${courseGates.pending_assignments_count} assignment(s) still need trainer approval.`
+                     : ''}
+               </AlertDescription>
+            </Alert>
+         </Card>
+      );
+   }
    const [finished, setFinished] = useState(false);
    const [currentTab, setCurrentTab] = useState('summary');
    const submissions = quiz.quiz_submissions;
@@ -156,7 +176,7 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
    };
 
    return (
-      <Card className="group relative h-full max-h-[80vh] w-full overflow-hidden rounded-lg">
+      <Card className="group relative h-full max-h-[80vh] w-full overflow-y-auto rounded-lg">
          <LessonControl className="opacity-0 transition-all duration-300 group-hover:opacity-100" />
 
          <p className="p-6 text-center text-lg font-bold">{quiz.title}</p>
@@ -171,23 +191,23 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
                         <p>{frontend.summery}</p>
 
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.duration}</p>
+                           <p className="text-muted-foreground">{frontend.duration}</p>
                            <p>:{` ${quiz.hours} ${frontend.hours} ${quiz.minutes} ${frontend.minutes} ${quiz.seconds} ${frontend.seconds}`}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.total_questions}</p>
+                           <p className="text-muted-foreground">{frontend.total_questions}</p>
                            <p>: {quiz.quiz_questions.length}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.total_marks}</p>
+                           <p className="text-muted-foreground">{frontend.total_marks}</p>
                            <p>: {quiz.total_mark}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.pass_marks}</p>
+                           <p className="text-muted-foreground">{frontend.pass_marks}</p>
                            <p>: {quiz.pass_mark}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.retake}</p>
+                           <p className="text-muted-foreground">{frontend.retake}</p>
                            <p>: {quiz.retake}</p>
                         </div>
                      </div>
@@ -195,30 +215,32 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
                         <p>{frontend.result}</p>
 
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.retake_attempts}</p>
+                           <p className="text-muted-foreground">{frontend.retake_attempts}</p>
                            <p>: {submissions[0]?.attempts || 0}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.correct_answers}</p>
+                           <p className="text-muted-foreground">{frontend.correct_answers}</p>
                            <p>: {submissions[0]?.correct_answers || 0}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.incorrect_answers}</p>
+                           <p className="text-muted-foreground">{frontend.incorrect_answers}</p>
                            <p>: {submissions[0]?.incorrect_answers || 0}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">{frontend.total_marks}</p>
+                           <p className="text-muted-foreground">{frontend.total_marks}</p>
                            <p>: {submissions[0]?.total_marks || 0}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
-                           <p className="text-gray-500">Status</p>
+                           <p className="text-muted-foreground">Status</p>
                            <p>: {submissions[0]?.is_passed ? frontend.passed : frontend.not_passed}</p>
                         </div>
                      </div>
                   </div>
 
                   <div className="flex justify-center p-6">
-                     {submissions[0]?.attempts >= quiz.retake ? (
+                     {!canMarkProgress ? (
+                        <p className="text-muted-foreground text-sm">This quiz is read-only while your subscription is inactive.</p>
+                     ) : submissions[0]?.attempts >= quiz.retake ? (
                         <Button type="button" size="lg">
                            {frontend.quiz_submitted}
                         </Button>

@@ -22,6 +22,7 @@ const EditForm = ({ user, actionComponent }: Props) => {
    const { data, put, setData, processing, errors, reset } = useForm({
       name: user.name,
       status: user.status,
+      user_type: user.user_type || 'external',
    });
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -48,6 +49,24 @@ const EditForm = ({ user, actionComponent }: Props) => {
                      <Label>{input.name}</Label>
                      <Input required value={data.name} onChange={(e) => setData('name', e.target.value)} />
                      <InputError message={errors.name} />
+                  </div>
+
+                  <div>
+                     <Label>{input.user_type}</Label>
+                     <Select
+                        required
+                        value={data.user_type}
+                        onValueChange={(value: 'employee' | 'external') => setData('user_type', value)}
+                     >
+                        <SelectTrigger>
+                           <SelectValue placeholder={dashboard.select_user_type} />
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="employee">{input.user_type_employee}</SelectItem>
+                           <SelectItem value="external">{input.user_type_external}</SelectItem>
+                        </SelectContent>
+                     </Select>
+                     <InputError message={errors.user_type} />
                   </div>
 
                   <div>

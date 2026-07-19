@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { getDashboardUrl, getStudentDashboardUrl } from '@/lib/dashboard';
 import { SharedData } from '@/types/global';
 import { router, usePage } from '@inertiajs/react';
 import { GraduationCap, Heart, LayoutDashboard, LogOut, SettingsIcon, UserCircle } from 'lucide-react';
@@ -52,7 +53,7 @@ const ProfileToggle = () => {
 
          <DropdownMenuContent align="end" className="w-[160px]">
             {(user.role === 'admin' || user.role === 'instructor') && (
-               <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.get(route('dashboard'))}>
+               <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.get(getDashboardUrl(props.auth))}>
                   <LayoutDashboard className="mr-1 h-4 w-4" />
                   <span>{button.dashboard}</span>
                </DropdownMenuItem>
@@ -60,13 +61,13 @@ const ProfileToggle = () => {
 
             {(user.role === 'student' || user.role === 'instructor') &&
                studentMenuItems.map(({ id, name, Icon, slug }) => (
-                  <DropdownMenuItem key={id} className="cursor-pointer px-3" onClick={() => router.get(route('student.index', { tab: slug }))}>
+                  <DropdownMenuItem key={id} className="cursor-pointer px-3" onClick={() => router.get(getStudentDashboardUrl(user, slug))}>
                      <Icon className="mr-1 h-4 w-4" />
                      <span>{name}</span>
                   </DropdownMenuItem>
                ))}
 
-            <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.post('/logout')}>
+            <DropdownMenuItem className="cursor-pointer px-3" onClick={() => router.post(route('logout'))}>
                <LogOut className="mr-1 h-4 w-4" />
                <span>{button.logout}</span>
             </DropdownMenuItem>

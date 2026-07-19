@@ -25,7 +25,7 @@ const QuizForm = ({ title, quiz, handler, sectionId }: Props) => {
    const { translate } = props;
    const { dashboard, input, button } = translate;
 
-   const { data, setData, post, put, reset, errors, processing } = useForm({
+   const { data, setData, post, reset, errors, processing } = useForm({
       title: quiz?.title || '',
       course_section_id: sectionId,
       course_id: props.course.id,
@@ -42,7 +42,7 @@ const QuizForm = ({ title, quiz, handler, sectionId }: Props) => {
       e.preventDefault();
 
       if (quiz) {
-         put(route('quiz.update', quiz.id), {
+         post(route('quiz.update', quiz.id), {
             onSuccess: () => {
                reset();
                setOpen(false);

@@ -24,6 +24,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'status' => 'required',
+            'user_type' => 'required|in:employee,external',
         ];
     }
 }

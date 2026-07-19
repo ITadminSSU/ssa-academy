@@ -3,13 +3,14 @@ import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import Tabs from '@/components/tabs';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { getFileMetadata } from '@/lib/file-metadata';
 import { onHandleChange } from '@/lib/inertia';
@@ -66,6 +67,10 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
       summary: lesson ? lesson.summary : '',
       course_id: lesson ? lesson.course_id : props.course.id,
       course_section_id: sectionId,
+      requires_submission: lesson?.requires_submission ?? false,
+      activity_total_mark: lesson?.activity_total_mark ?? 100,
+      activity_pass_mark: lesson?.activity_pass_mark ?? 70,
+      activity_retake: lesson?.activity_retake ?? 1,
    });
 
    const isFileUpload = ['video', 'document', 'image'].includes(data.lesson_type);
@@ -197,7 +202,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                               <div>
                                  <Label>
                                     Video URL
-                                    <span className="text-xs text-gray-500">(Provide the shareable url only)</span>
+                                    <span className="text-xs text-muted-foreground">(Provide the shareable url only)</span>
                                  </Label>
                                  <Input
                                     required
@@ -244,11 +249,66 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                            </div>
                         )}
 
+                        {['document', 'text'].includes(data.lesson_type) && (
+                           <div className="space-y-4 rounded-lg border p-4">
+                              <div className="flex items-center gap-2">
+                                 <Checkbox
+                                    id="requires_submission"
+                                    checked={data.requires_submission}
+                                    onCheckedChange={(checked) =>
+                                       setData((prev) => ({
+                                          ...prev,
+                                          requires_submission: checked === true,
+                                       }))
+                                    }
+                                 />
+                                 <Label htmlFor="requires_submission" className="cursor-pointer font-medium">
+                                    Practical activity (learner uploads completed file for trainer review)
+                                 </Label>
+                              </div>
+
+                              {data.requires_submission && (
+                                 <div className="grid gap-4 sm:grid-cols-3">
+                                    <div>
+                                       <Label>Total marks *</Label>
+                                       <Input
+                                          type="number"
+                                          min={1}
+                                          value={data.activity_total_mark}
+                                          onChange={(e) => setData('activity_total_mark', Number(e.target.value))}
+                                       />
+                                       <InputError message={errors.activity_total_mark} />
+                                    </div>
+                                    <div>
+                                       <Label>Pass marks *</Label>
+                                       <Input
+                                          type="number"
+                                          min={0}
+                                          value={data.activity_pass_mark}
+                                          onChange={(e) => setData('activity_pass_mark', Number(e.target.value))}
+                                       />
+                                       <InputError message={errors.activity_pass_mark} />
+                                    </div>
+                                    <div>
+                                       <Label>Attempts allowed</Label>
+                                       <Input
+                                          type="number"
+                                          min={1}
+                                          value={data.activity_retake}
+                                          onChange={(e) => setData('activity_retake', Number(e.target.value))}
+                                       />
+                                       <InputError message={errors.activity_retake} />
+                                    </div>
+                                 </div>
+                              )}
+                           </div>
+                        )}
+
                         {data.lesson_type === 'embed' && (
                            <div>
                               <Label>
                                  Embed source
-                                 <span className="text-xs text-gray-500">(Provide the source url only)</span>
+                                 <span className="text-xs text-muted-foreground">(Provide the source url only)</span>
                               </Label>
                               <Textarea
                                  required
@@ -286,7 +346,15 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                            </div>
                         )}
 
-                        {['video_url', 'video'].includes(data.lesson_type) && (
+                        {data.lesson_type === 'video' && data.duration && data.duration !== '00:00:00' && (
+                           <div>
+                              <Label htmlFor="duration">{input.duration}</Label>
+                              <Input type="text" name="duration" value={data.duration} readOnly className="bg-muted" />
+                              <p className="text-muted-foreground mt-1 text-xs">Detected automatically from the uploaded video.</p>
+                           </div>
+                        )}
+
+                        {data.lesson_type === 'video_url' && (
                            <div>
                               <Label htmlFor="duration">{input.duration}</Label>
                               <Input
@@ -297,7 +365,6 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                  value={data.duration}
                                  placeholder="00:00:00"
                                  onChange={onDurationChange}
-                                 readOnly={data.lesson_type === 'video'}
                               />
                               <InputError message={errors.duration} />
                            </div>
@@ -348,17 +415,16 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                               </Button>
                            </DialogClose>
 
-                           {!lesson && (
-                              <TabsList className="p-0">
-                                 <TabsTrigger asChild value="form" className={cn(lessonType === 'form' ? 'hidden' : 'block')}>
-                                    <Button>{button.next}</Button>
-                                 </TabsTrigger>
-
-                                 <TabsTrigger asChild value="type" className={cn(lessonType === 'type' ? 'hidden' : 'block')}>
-                                    <Button>{button.back}</Button>
-                                 </TabsTrigger>
-                              </TabsList>
-                           )}
+                           {!lesson &&
+                              (lessonType === 'type' ? (
+                                 <Button type="button" onClick={() => setLessonType('form')}>
+                                    {button.next}
+                                 </Button>
+                              ) : (
+                                 <Button type="button" onClick={() => setLessonType('type')}>
+                                    {button.back}
+                                 </Button>
+                              ))}
                         </div>
 
                         {(lesson || lessonType === 'form') && (

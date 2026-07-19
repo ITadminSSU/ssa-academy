@@ -14,6 +14,10 @@ use Illuminate\Database\Eloquent\Collection;
 
 class CourseForumService extends MediaService
 {
+   public function __construct(
+      private CommunityDiscussionService $communityDiscussion,
+   ) {}
+
    function getForums(array $data, bool $paginate = false): LengthAwarePaginator|Collection
    {
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
@@ -53,6 +57,14 @@ class CourseForumService extends MediaService
    {
       $replyData = Arr::except($data, 'course_forum_user_id');
       $reply = CourseForumReply::create($replyData);
+
+      $forum = CourseForum::with('course.instructor:id,user_id')->find($data['course_forum_id']);
+      $replier = User::find($data['user_id']);
+
+      if ($forum && $replier) {
+         $this->communityDiscussion->reopenIfStudentFollowUp($forum, $replier);
+         $this->communityDiscussion->autoResolveIfInstructorReplied($forum, $replier);
+      }
 
       $this->notifyInstructor([...$data, 'title' => 'reply']);
 

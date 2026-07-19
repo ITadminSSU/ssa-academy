@@ -2,7 +2,8 @@ import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
 import TableHeader from '@/components/table/table-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import SsuStatCard from '@/components/ssu-stat-card';
+import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
@@ -60,51 +61,14 @@ const BlogsIndex = () => {
                </Button>
             </div>
 
-            {/* Statistics Cards */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.total_blogs}</CardTitle>
-                     <BookOpen className="text-muted-foreground h-4 w-4" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold">{statistics.total}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.published}</CardTitle>
-                     <Eye className="h-4 w-4 text-green-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-green-600">{statistics.published}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.draft}</CardTitle>
-                     <Edit className="h-4 w-4 text-yellow-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-yellow-600">{statistics.draft}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.archived}</CardTitle>
-                     <Archive className="h-4 w-4 text-gray-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-gray-600">{statistics.archived}</div>
-                  </CardContent>
-               </Card>
+               <SsuStatCard title={dashboard.total_blogs} value={statistics.total} toneIndex={0} icon={<BookOpen className="h-6 w-6" />} />
+               <SsuStatCard title={dashboard.published} value={statistics.published} toneIndex={1} icon={<Eye className="h-6 w-6" />} />
+               <SsuStatCard title={dashboard.draft} value={statistics.draft} toneIndex={2} icon={<Edit className="h-6 w-6" />} />
+               <SsuStatCard title={dashboard.archived} value={statistics.archived} toneIndex={0} icon={<Archive className="h-6 w-6" />} />
             </div>
 
-            {/* Blogs Table */}
-            <Card>
+            <Card className="ssu-table-shell">
                <TableFilter data={blogs} title={dashboard.blog} globalSearch={true} tablePageSizes={[10, 15, 20, 25]} routeName="blogs.index" />
 
                <Table className="border-border border-y">

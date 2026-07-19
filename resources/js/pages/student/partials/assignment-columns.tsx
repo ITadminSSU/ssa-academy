@@ -25,7 +25,9 @@ const getSubmissionStatus = (assignment: CourseAssignment) => {
 
    const latestSubmission = assignment.submissions[0];
 
-   if (latestSubmission.status === 'graded') {
+   if (['passed', 'approved'].includes(latestSubmission.status)) {
+      return { status: latestSubmission.status, label: latestSubmission.status === 'passed' ? 'Passed' : 'Approved', variant: 'default' as const };
+   } else if (latestSubmission.status === 'graded') {
       return { status: 'graded', label: 'Graded', variant: 'default' as const };
    } else if (latestSubmission.is_late) {
       return { status: 'late', label: 'Late Submission', variant: 'destructive' as const };

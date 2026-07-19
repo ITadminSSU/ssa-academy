@@ -3,9 +3,9 @@ import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
-import { BookText, CircleDollarSign, FileText, FlaskConical, FolderInput, HelpCircle, ListTodo, Settings } from 'lucide-react';
+import { BookText, CircleDollarSign, FileSpreadsheet, FileText, FlaskConical, FolderInput, HelpCircle, ListTodo, Settings } from 'lucide-react';
 import { nanoid } from 'nanoid';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import ExamUpdateHeader from './partials/exam-update-header';
 import Attempts from './partials/tabs-content/attempts';
 import Basic from './partials/tabs-content/basic';
@@ -13,6 +13,7 @@ import Info from './partials/tabs-content/info';
 import Media from './partials/tabs-content/media';
 import Pricing from './partials/tabs-content/pricing';
 import Questions from './partials/tabs-content/questions';
+import QuantityTakeoff from './partials/tabs-content/quantity-takeoff';
 import Resources from './partials/tabs-content/resources';
 import SEO from './partials/tabs-content/seo';
 import ExamSettings from './partials/tabs-content/settings';
@@ -22,21 +23,43 @@ export interface ExamUpdateProps extends SharedData {
    exam: Exam;
    attempt: ExamAttempt | null;
    attempts: Pagination<ExamAttempt>;
-   categories: ExamCategory[];
    instructors: Instructor[] | null;
+   takeoffAnalytics?: Array<{
+      key: string;
+      item: string;
+      unit: string;
+      attempts: number;
+      misses: number;
+      miss_rate: number;
+   }> | null;
 }
 
 const Update = (props: ExamUpdateProps) => {
    const { tab, exam } = props;
 
-   const tabs = [
-      {
-         id: nanoid(),
-         name: 'Questions',
-         slug: 'questions',
-         Icon: HelpCircle,
-         Component: Questions,
-      },
+   const tabs = useMemo(() => {
+      const baseTabs = exam.exam_mode === 'quantity_takeoff'
+         ? [
+              {
+                 id: nanoid(),
+                 name: 'Quantity Take-Off',
+                 slug: 'quantity-takeoff',
+                 Icon: FileSpreadsheet,
+                 Component: QuantityTakeoff,
+              },
+           ]
+         : [
+              {
+                 id: nanoid(),
+                 name: 'Questions',
+                 slug: 'questions',
+                 Icon: HelpCircle,
+                 Component: Questions,
+              },
+           ];
+
+      return [
+         ...baseTabs,
       {
          id: nanoid(),
          name: 'Resources',
@@ -93,7 +116,8 @@ const Update = (props: ExamUpdateProps) => {
          Icon: FlaskConical,
          Component: SEO,
       },
-   ];
+      ];
+   }, [exam.exam_mode]);
 
    return (
       <section className="space-y-8">

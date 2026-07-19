@@ -41,18 +41,18 @@ const Profile = () => {
                   {imageUrl ? (
                      <img alt="item-1" src={imageUrl} className="h-[100px] w-[100px] rounded-full md:h-[120px] md:w-[120px]" />
                   ) : (
-                     <div className="h-[100px] w-[100px] rounded-full bg-gray-300 md:h-[120px] md:w-[120px]"></div>
+                     <div className="h-[100px] w-[100px] rounded-full bg-muted md:h-[120px] md:w-[120px]"></div>
                   )}
 
                   <label htmlFor="formFileSm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                     <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gray-100">
-                        <Camera className="h-6 w-6 text-gray-500" />
+                     <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-muted">
+                        <Camera className="h-6 w-6 text-muted-foreground" />
                      </div>
                   </label>
                   <input hidden id="formFileSm" type="file" onChange={handleImageChange} />
                </div>
 
-               <small className="text-gray-500">{dashboard.image_upload_requirements}</small>
+               <small className="text-muted-foreground">{dashboard.image_upload_requirements}</small>
 
                {errors.photo && <p className="mt-1 text-sm text-red-500">{errors.photo}</p>}
             </div>

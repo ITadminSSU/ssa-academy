@@ -32,7 +32,7 @@ const Paytm = ({ payment }: PaytmProps) => {
          <div className="mb-6 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">{settings.paytm_settings}</h2>
-               <p className="text-gray-500">{settings.configure_payment_gateway.replace(':gateway', 'Paytm')}</p>
+               <p className="text-muted-foreground">{settings.configure_payment_gateway.replace(':gateway', 'Paytm')}</p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -60,7 +60,7 @@ const Paytm = ({ payment }: PaytmProps) => {
                <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">{settings.test_mode}:</span>
                   <Switch id="status" checked={data.test_mode} onCheckedChange={(checked) => setData('test_mode', checked)} />
-                  <Label htmlFor="status" className="text-gray-500">
+                  <Label htmlFor="status" className="text-muted-foreground">
                      {data.test_mode ? settings.using_staging_environment : settings.using_production_environment}
                   </Label>
                </div>
@@ -79,7 +79,7 @@ const Paytm = ({ payment }: PaytmProps) => {
                         placeholder={input.merchant_id_placeholder}
                      />
                      <InputError message={errors.public_key} />
-                     <p className="mt-1 text-sm text-gray-500">
+                     <p className="mt-1 text-sm text-muted-foreground">
                         {data.test_mode
                            ? settings.use_staging_key.replace(':key', 'merchant ID')
                            : settings.use_production_key.replace(':key', 'merchant ID')}
@@ -96,7 +96,7 @@ const Paytm = ({ payment }: PaytmProps) => {
                         type="password"
                      />
                      <InputError message={errors.secret_key} />
-                     <p className="mt-1 text-sm text-gray-500">
+                     <p className="mt-1 text-sm text-muted-foreground">
                         {data.test_mode
                            ? settings.use_staging_key.replace(':key', 'merchant key')
                            : settings.use_production_key.replace(':key', 'merchant key')}

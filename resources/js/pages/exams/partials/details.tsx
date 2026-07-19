@@ -11,48 +11,48 @@ const Details = () => {
       <div className="space-y-6">
          <div className="grid grid-cols-2 gap-6">
             <div className="flex items-start gap-3">
-               <Clock className="mt-1 h-5 w-5 text-gray-400" />
+               <Clock className="mt-1 h-5 w-5 text-muted-foreground/70" />
                <div>
                   <p className="font-semibold">Duration</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                      {exam.duration_hours > 0 && `${exam.duration_hours}h `}
                      {exam.duration_minutes > 0 && `${exam.duration_minutes}m`}
                   </p>
                </div>
             </div>
             <div className="flex items-start gap-3">
-               <BookOpen className="mt-1 h-5 w-5 text-gray-400" />
+               <BookOpen className="mt-1 h-5 w-5 text-muted-foreground/70" />
                <div>
                   <p className="font-semibold">Questions</p>
-                  <p className="text-sm text-gray-600">{exam.total_questions} questions</p>
+                  <p className="text-sm text-muted-foreground">{exam.total_questions} questions</p>
                </div>
             </div>
             <div className="flex items-start gap-3">
-               <Target className="mt-1 h-5 w-5 text-gray-400" />
+               <Target className="mt-1 h-5 w-5 text-muted-foreground/70" />
                <div>
                   <p className="font-semibold">Pass Mark</p>
-                  <p className="text-sm text-gray-600">{exam.pass_mark} marks</p>
+                  <p className="text-sm text-muted-foreground">{exam.pass_mark} marks</p>
                </div>
             </div>
             <div className="flex items-start gap-3">
-               <Award className="mt-1 h-5 w-5 text-gray-400" />
+               <Award className="mt-1 h-5 w-5 text-muted-foreground/70" />
                <div>
                   <p className="font-semibold">Max Attempts</p>
-                  <p className="text-sm text-gray-600">{exam.max_attempts} attempts</p>
+                  <p className="text-sm text-muted-foreground">{exam.max_attempts} attempts</p>
                </div>
             </div>
             <div className="flex items-start gap-3">
-               <Users className="mt-1 h-5 w-5 text-gray-400" />
+               <Users className="mt-1 h-5 w-5 text-muted-foreground/70" />
                <div>
                   <p className="font-semibold">Enrolled Students</p>
-                  <p className="text-sm text-gray-600">{exam.enrollments_count ?? 0}</p>
+                  <p className="text-sm text-muted-foreground">{exam.enrollments_count ?? 0}</p>
                </div>
             </div>
             <div className="flex items-start gap-3">
-               <Calendar className="mt-1 h-5 w-5 text-gray-400" />
+               <Calendar className="mt-1 h-5 w-5 text-muted-foreground/70" />
                <div>
                   <p className="font-semibold">Access</p>
-                  <p className="text-sm text-gray-600">{exam.expiry_type === 'lifetime' ? 'Lifetime' : `${exam.expiry_duration} days`}</p>
+                  <p className="text-sm text-muted-foreground">{exam.expiry_type === 'lifetime' ? 'Lifetime' : `${exam.expiry_duration} days`}</p>
                   {/* {exam.expiry_type === 'lifetime' ? 'Lifetime access' : `${exam.expiry_duration} days access`} */}
                </div>
             </div>

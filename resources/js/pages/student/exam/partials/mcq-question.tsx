@@ -25,7 +25,7 @@ const McqQuestion = ({ question, answer, onAnswerChange }: Props) => {
    return (
       <div className="space-y-4">
          <div className="flex items-start justify-between">
-            <p className="text-sm text-gray-600">Select the correct answer:</p>
+            <p className="text-sm text-muted-foreground">Select the correct answer:</p>
             {selectedOption && (
                <Button variant="ghost" size="sm" onClick={handleClear}>
                   <X className="mr-2 h-4 w-4" />
@@ -40,7 +40,7 @@ const McqQuestion = ({ question, answer, onAnswerChange }: Props) => {
                   <div
                      key={option.id}
                      className={`flex items-start space-x-3 rounded-lg border-2 p-4 transition-colors ${
-                        selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
+                        selectedOption === option.id ? 'border-primary bg-primary/5' : 'border-border hover:border-border'
                      }`}
                   >
                      <RadioGroupItem value={option.id.toString()} id={`option-${option.id}`} className="mt-0.5" />

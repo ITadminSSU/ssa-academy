@@ -45,7 +45,7 @@ const Update = ({ page }: Props) => {
 
          <div className="container mx-auto space-y-10 px-4 py-6">
             <div className="mb-6 flex items-center justify-between">
-               <h1 className="text-2xl font-bold text-gray-800">{settings.edit_custom_page}</h1>
+               <h1 className="text-2xl font-bold text-foreground">{settings.edit_custom_page}</h1>
 
                <Button asChild>
                   <Link href={route('settings.pages')}>

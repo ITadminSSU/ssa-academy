@@ -2,7 +2,8 @@ import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
 import TableHeader from '@/components/table/table-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import SsuStatCard from '@/components/ssu-stat-card';
+import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
@@ -34,56 +35,13 @@ const Index = (props: Props) => {
    return (
       <>
          <div className="mb-6 grid gap-6 sm:grid-cols-2 md:grid-cols-4">
-            <Card>
-               <CardContent className="flex items-center gap-4 p-6">
-                  <div className="bg-primary/10 rounded-lg p-2">
-                     <CircleDollarSign className="text-primary h-6 w-6" />
-                  </div>
-                  <div>
-                     <CardTitle className="text-base font-medium">{dashboard.total_earnings}</CardTitle>
-                     <p className="mt-1 text-2xl font-bold">{totalEarnings} $</p>
-                  </div>
-               </CardContent>
-            </Card>
-
-            <Card>
-               <CardContent className="flex items-center gap-4 p-6">
-                  <div className="bg-primary/10 rounded-lg p-2">
-                     <Wallet className="text-primary h-6 w-6" />
-                  </div>
-                  <div>
-                     <CardTitle className="text-base font-medium">{dashboard.available}</CardTitle>
-                     <p className="mt-1 text-2xl font-bold">{availableForWithdrawal} $</p>
-                  </div>
-               </CardContent>
-            </Card>
-
-            <Card>
-               <CardContent className="flex items-center gap-4 p-6">
-                  <div className="bg-primary/10 rounded-lg p-2">
-                     <DollarSign className="text-primary h-6 w-6" />
-                  </div>
-                  <div>
-                     <CardTitle className="text-base font-medium">{dashboard.total_payout}</CardTitle>
-                     <p className="mt-1 text-2xl font-bold">{totalPayouts} $</p>
-                  </div>
-               </CardContent>
-            </Card>
-
-            <Card>
-               <CardContent className="flex items-center gap-4 p-6">
-                  <div className="bg-primary/10 rounded-lg p-2">
-                     <CircleDollarSign className="text-primary h-6 w-6" />
-                  </div>
-                  <div>
-                     <CardTitle className="text-base font-medium">{dashboard.requested}</CardTitle>
-                     <p className="mt-1 text-2xl font-bold">{pendingPayouts} $</p>
-                  </div>
-               </CardContent>
-            </Card>
+            <SsuStatCard title={dashboard.total_earnings} value={`${totalEarnings} $`} toneIndex={0} icon={<CircleDollarSign className="h-6 w-6" />} />
+            <SsuStatCard title={dashboard.available} value={`${availableForWithdrawal} $`} toneIndex={1} icon={<Wallet className="h-6 w-6" />} />
+            <SsuStatCard title={dashboard.total_payout} value={`${totalPayouts} $`} toneIndex={2} icon={<DollarSign className="h-6 w-6" />} />
+            <SsuStatCard title={dashboard.requested} value={`${pendingPayouts} $`} toneIndex={0} icon={<CircleDollarSign className="h-6 w-6" />} />
          </div>
 
-         <Card className="gap-0 py-0">
+         <Card className="ssu-table-shell gap-0 py-0">
             <div className="relative flex items-center justify-between">
                <TableFilter
                   data={payouts}

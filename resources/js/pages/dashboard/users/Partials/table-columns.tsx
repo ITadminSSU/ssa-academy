@@ -54,6 +54,15 @@ const TableColumn = (translate: LanguageTranslations): ColumnDef<User>[] => {
          ),
       },
       {
+         accessorKey: 'user_type',
+         header: table.user_type,
+         cell: ({ row }) => (
+            <div className="capitalize">
+               <span>{row.original.user_type === 'employee' ? common.employee : common.external}</span>
+            </div>
+         ),
+      },
+      {
          id: 'professional_type',
          header: 'Professional Type',
          cell: ({ row }) => {

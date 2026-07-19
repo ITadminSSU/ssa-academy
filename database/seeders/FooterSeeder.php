@@ -40,6 +40,7 @@ class FooterSeeder extends Seeder
                 'items' => [
                     ['title' => 'Cookie Policy', 'url' => '/cookie-policy'],
                     ['title' => 'Terms & Conditions', 'url' => '/terms-and-conditions'],
+                    ['title' => 'Non-Disclosure Agreement', 'url' => '/non-disclosure-agreement'],
                     ['title' => 'Privacy Policy', 'url' => '/privacy-policy'],
                     ['title' => 'Refund Policy', 'url' => '/refund-policy'],
                 ],
@@ -49,9 +50,8 @@ class FooterSeeder extends Seeder
                 'slug' => 'address',
                 'title' => 'Address',
                 'items' => [
-                    ['title' => 'Corner view Subudbazar, Sylhet, Bangladesh.'],
-                    ['title' => 'Email: uilib@gmail.com'],
-                    ['title' => 'Phone: +880 1123 456 780'],
+                    ['title' => 'UTAH, USA'],
+                    ['title' => 'Email: training@smartsourcingusa.com'],
                 ],
             ],
             [
@@ -59,10 +59,10 @@ class FooterSeeder extends Seeder
                 'slug' => 'social_media',
                 'title' => 'Social Media',
                 'items' => [
-                    ['title' => 'Facebook', 'url' => 'https://www.facebook.com/', 'icon' => 'facebook'],
-                    ['title' => 'Twitter', 'url' => 'https://www.twitter.com/', 'icon' => 'twitter'],
-                    ['title' => 'Instagram', 'url' => 'https://www.instagram.com/', 'icon' => 'instagram'],
-                    ['title' => 'LinkedIn', 'url' => 'https://www.linkedin.com/', 'icon' => 'linkedin'],
+                    ['title' => 'Facebook', 'url' => 'https://www.facebook.com/share/18opWCAsMm/?mibextid=wwXIfr', 'icon' => 'facebook'],
+                    ['title' => 'TikTok', 'url' => 'https://www.tiktok.com/@smartsourcingusa?_r=1&_t=ZS-97LU5272CZB', 'icon' => 'tiktok'],
+                    ['title' => 'Instagram', 'url' => 'https://www.instagram.com/smartsourcingusa', 'icon' => 'instagram'],
+                    ['title' => 'LinkedIn', 'url' => 'https://www.linkedin.com/company/smartsourcingusa/', 'icon' => 'linkedin'],
                 ],
             ],
             // [
@@ -79,7 +79,7 @@ class FooterSeeder extends Seeder
             [
                 'type' => 'copyright',
                 'slug' => 'copyright',
-                'title' => '© Copyright 2025 UI Lib, All rights reserved.',
+                'title' => '© Copyright 2026 Smart Sourcing USA. All rights reserved.',
                 'items' => [],
             ],
         ];

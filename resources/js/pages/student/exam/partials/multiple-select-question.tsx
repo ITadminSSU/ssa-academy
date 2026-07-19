@@ -35,7 +35,7 @@ const MultipleSelectQuestion = ({ question, answer, onAnswerChange }: Props) => 
    return (
       <div className="space-y-4">
          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">Select all correct answers:</p>
+            <p className="text-sm text-muted-foreground">Select all correct answers:</p>
             <div className="flex gap-2">
                <Button variant="ghost" size="sm" onClick={handleSelectAll}>
                   Select All
@@ -53,7 +53,7 @@ const MultipleSelectQuestion = ({ question, answer, onAnswerChange }: Props) => 
                   <div
                      key={option.id}
                      className={`flex items-start space-x-3 rounded-lg border-2 p-4 transition-colors ${
-                        isChecked ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
+                        isChecked ? 'border-primary bg-primary/5' : 'border-border hover:border-border'
                      }`}
                   >
                      <Checkbox
@@ -71,7 +71,7 @@ const MultipleSelectQuestion = ({ question, answer, onAnswerChange }: Props) => 
          </div>
 
          {selectedOptions.length > 0 && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
                Selected: <span className="font-semibold">{selectedOptions.length}</span> option(s)
             </p>
          )}

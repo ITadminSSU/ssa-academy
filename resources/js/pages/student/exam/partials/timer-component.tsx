@@ -67,15 +67,15 @@ const TimerComponent = ({ endTime, onTimeUp, attempt, questionIndex }: Props) =>
          <CardContent className="p-4">
             <div className="flex items-center justify-between">
                <h6 className="flex items-center gap-2">
-                  {isWarning ? <AlertTriangle className="text-destructive h-5 w-5" /> : <Clock className="h-5 w-5 text-gray-600" />}
-                  <span className="font-semibold text-gray-700">Time Remaining</span>
+                  {isWarning ? <AlertTriangle className="text-destructive h-5 w-5" /> : <Clock className="h-5 w-5 text-muted-foreground" />}
+                  <span className="font-semibold text-muted-foreground">Time Remaining</span>
                </h6>
 
                <Badge variant={isWarning ? 'destructive' : 'secondary'} className="font-mono text-lg">
                   {formatTime(timeLeft)}
                </Badge>
             </div>
-            <p className="pl-7 text-sm text-gray-600">
+            <p className="pl-7 text-sm text-muted-foreground">
                Question {questionIndex + 1} of {attempt.exam.questions.length}
             </p>
 

@@ -24,7 +24,7 @@ const InstructorTableColumn = (
                      {user.photo ? (
                         <img src={user.photo} alt={user.name} className="h-full w-full object-cover" />
                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">
+                        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
                            <span className="text-lg">{table.img_placeholder}</span>
                         </div>
                      )}

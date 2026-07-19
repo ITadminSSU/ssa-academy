@@ -310,11 +310,11 @@ const ZoomLiveClass = ({ live_class, watchHistory, zoom_sdk_client_id }: Props) 
    // Render loading state
    if (loading) {
       return (
-         <div className="flex min-h-screen items-center justify-center bg-gray-900">
+         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="text-center">
-               <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-white"></div>
-               <h1 className="text-xl font-semibold text-white">{live_class.class_topic}</h1>
-               <p className="text-gray-300">{!sdkLoaded ? frontend.loading_zoom_sdk : frontend.joining_meeting}</p>
+               <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
+               <h1 className="text-xl font-semibold text-foreground">{live_class.class_topic}</h1>
+               <p className="text-muted-foreground">{!sdkLoaded ? frontend.loading_zoom_sdk : frontend.joining_meeting}</p>
             </div>
          </div>
       );
@@ -323,15 +323,15 @@ const ZoomLiveClass = ({ live_class, watchHistory, zoom_sdk_client_id }: Props) 
    // Render error state
    if (error) {
       return (
-         <div className="flex min-h-screen items-center justify-center bg-gray-100">
-            <div className="max-w-md rounded-lg bg-white p-8 text-center shadow-lg">
+         <div className="flex min-h-screen items-center justify-center bg-muted">
+            <div className="max-w-md rounded-lg bg-card p-8 text-center shadow-lg">
                <h1 className="mb-4 text-2xl font-bold text-red-600">{frontend.unable_to_join_meeting}</h1>
                <p className="text-muted-foreground mb-4">{error}</p>
 
                {/* Fallback: Show direct Zoom link if available */}
                {meetingInfo?.join_url && (
                   <div className="mt-4">
-                     <p className="mb-2 text-sm text-gray-500">{frontend.you_can_join_directly}</p>
+                     <p className="mb-2 text-sm text-muted-foreground">{frontend.you_can_join_directly}</p>
                      <a
                         href={meetingInfo.join_url}
                         target="_blank"
@@ -343,7 +343,7 @@ const ZoomLiveClass = ({ live_class, watchHistory, zoom_sdk_client_id }: Props) 
                   </div>
                )}
 
-               <button onClick={() => window.location.reload()} className="mt-4 rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700">
+               <button onClick={() => window.location.reload()} className="mt-4 rounded bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/80">
                   {frontend.try_again}
                </button>
             </div>

@@ -25,6 +25,14 @@ class CourseWishlistService
 
    public function deleteWishlist(string $id): void
    {
-      CourseWishlist::find($id)->delete();
+      $wishlist = CourseWishlist::where('id', $id)
+         ->where('user_id', auth()->id())
+         ->first();
+
+      if (! $wishlist) {
+         abort(404, 'Wishlist item not found.');
+      }
+
+      $wishlist->delete();
    }
 }

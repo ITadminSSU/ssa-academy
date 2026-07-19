@@ -50,6 +50,18 @@ const CourseUpdateHeader = () => {
             </Link>
          </Button>
 
+         <Button variant="outline">
+            <Link href={route('student-progress.show', course.id)}>{button.view_progress}</Link>
+         </Button>
+
+         {course.final_exam_id ? (
+            <Button variant="outline">
+               <Link href={route('exams.edit', { exam: course.final_exam_id, tab: 'attempts' })}>
+                  {button.view_final_exam_attempts ?? 'Final Exam Attempts'}
+               </Link>
+            </Button>
+         ) : null}
+
          {watchHistory ? (
             <Button>
                <Link
@@ -69,7 +81,7 @@ const CourseUpdateHeader = () => {
          )}
 
          <Button
-            className={cn('capitalize', course.status === 'approved' ? 'bg-green-500' : course.status === 'rejected' ? 'bg-red-500' : 'bg-gray-500')}
+            className={cn('capitalize', course.status === 'approved' ? 'bg-green-500' : course.status === 'rejected' ? 'bg-red-500' : 'bg-muted')}
             disabled
          >
             {course.status}
@@ -77,10 +89,16 @@ const CourseUpdateHeader = () => {
 
          {approve_able ? (
             user.role === 'instructor' ? (
-               course.status !== 'approved' &&
-               course.status !== 'pending' && (
-                  <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'pending' })}>
-                     {button.submit_for_approval}
+               course.status === 'approved' ? (
+                  <Button
+                     variant="outline"
+                     onClick={() => router.put(route('course.status', { id: course.id }), { status: 'draft' })}
+                  >
+                     {button.unpublish_course ?? 'Unpublish'}
+                  </Button>
+               ) : (
+                  <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'approved' })}>
+                     {button.publish_course ?? 'Publish Course'}
                   </Button>
                )
             ) : (

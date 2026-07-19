@@ -20,7 +20,7 @@ const PageNotFound = () => {
                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                   <Link
                      href="/"
-                     className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 font-semibold text-slate-900 shadow-lg shadow-slate-900/30 transition hover:-translate-y-0.5"
+                     className="inline-flex items-center justify-center rounded-full bg-card px-6 py-3 font-semibold text-foreground shadow-lg shadow-slate-900/30 transition hover:-translate-y-0.5"
                   >
                      Return Home
                   </Link>

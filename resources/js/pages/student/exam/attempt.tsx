@@ -37,7 +37,17 @@ const TakeExam = ({ attempt }: Props) => {
 
    const questions = attempt.exam.questions || [];
    const currentQuestion = questions[currentQuestionIndex];
-   const answeredQuestions = new Set(Object.keys(answers).map(Number));
+   const answeredQuestions = new Set(
+      Object.entries(answers)
+         .filter(([, value]) => {
+            if (!value) return false;
+            if (typeof value === 'object' && 'submission_file_url' in value) {
+               return Boolean((value as { submission_file_url?: string }).submission_file_url);
+            }
+            return true;
+         })
+         .map(([id]) => Number(id)),
+   );
 
    // Load saved answers from localStorage
    useEffect(() => {
@@ -194,7 +204,7 @@ const TakeExam = ({ attempt }: Props) => {
                         )}
 
                         {/* Navigation */}
-                        <div className="flex items-center justify-between rounded-lg bg-white p-4 shadow">
+                        <div className="flex items-center justify-between rounded-lg bg-card p-4 shadow">
                            <Button onClick={handlePrevious} disabled={currentQuestionIndex === 0} variant="outline">
                               <ChevronLeft className="mr-2 h-4 w-4" />
                               Previous
@@ -242,7 +252,7 @@ const TakeExam = ({ attempt }: Props) => {
                         <AlertDialogDescription className="space-y-3">
                            <p>Are you sure you want to submit your exam? This action cannot be undone.</p>
                            {unansweredCount > 0 && (
-                              <div className="rounded-lg bg-yellow-50 p-3">
+                              <div className="rounded-lg bg-yellow-500/10 p-3">
                                  <p className="text-sm font-semibold text-yellow-800">
                                     Warning: You have {unansweredCount} unanswered question{unansweredCount > 1 ? 's' : ''}!
                                  </p>

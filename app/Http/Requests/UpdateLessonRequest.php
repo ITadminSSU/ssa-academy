@@ -13,6 +13,14 @@ class UpdateLessonRequest extends FormRequest
             'course_id' => (int) request('course_id'),
             'course_section_id' => (int) request('course_section_id'),
             'is_free' => (int) request('is_free'),
+            'requires_submission' => filter_var(request('requires_submission'), FILTER_VALIDATE_BOOLEAN),
+            'activity_total_mark' => request('activity_total_mark') !== null && request('activity_total_mark') !== ''
+                ? (int) request('activity_total_mark')
+                : null,
+            'activity_pass_mark' => request('activity_pass_mark') !== null && request('activity_pass_mark') !== ''
+                ? (int) request('activity_pass_mark')
+                : null,
+            'activity_retake' => (int) (request('activity_retake') ?: 1),
             // 'status' => (int) request('status'),
             // 'is_free' => filter_var(request('is_free'), FILTER_VALIDATE_BOOLEAN),
         ]);
@@ -47,6 +55,10 @@ class UpdateLessonRequest extends FormRequest
             'description' => 'nullable|string',
             'thumbnail' => 'nullable|string',
             'summary' => 'nullable|string',
+            'requires_submission' => 'nullable|boolean',
+            'activity_total_mark' => 'nullable|integer|min:1|required_if:requires_submission,true',
+            'activity_pass_mark' => 'nullable|integer|min:0|required_if:requires_submission,true',
+            'activity_retake' => 'nullable|integer|min:1',
             'attachment' => 'nullable|file|max:20480', // Max 20MB
             'embed_source' => [
                 'nullable',

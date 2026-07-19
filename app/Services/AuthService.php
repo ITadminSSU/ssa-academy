@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\LearnerUserType;
 use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
+    public function __construct(private LearnerTypeResolver $learnerTypeResolver) {}
     public function recaptchaStatus()
     {
         $recaptchaStatus = false;
@@ -55,6 +57,7 @@ class AuthService
                 'email' => $user->email,
                 'photo' => $user->avatar,
                 'role' => UserType::STUDENT->value,
+                'user_type' => $this->learnerTypeResolver->resolveFromEmail($user->email)->value,
                 'email_verified_at' => now(),
                 'google_id' => $user->id,
                 'password' => Hash::make('googleauth'),
@@ -101,5 +104,40 @@ class AuthService
         if (!empty($updateData)) {
             $existingUser->update($updateData);
         }
+    }
+
+    public function dashboardRouteNameFor(?User $user): string
+    {
+        if (!$user) {
+            return 'login';
+        }
+
+        return match ($user->role) {
+            UserType::ADMIN->value => 'dashboard.admin',
+            UserType::INSTRUCTOR->value => 'dashboard.trainer',
+            UserType::STUDENT->value => $user->isEmployeeLearner()
+                ? 'dashboard.internal'
+                : 'dashboard.external',
+            default => 'login',
+        };
+    }
+
+    public function homeUrlFor(?User $user, array $parameters = []): string
+    {
+        if (!$user) {
+            return route('login');
+        }
+
+        $routeName = $this->dashboardRouteNameFor($user);
+
+        if ($routeName === 'login') {
+            return route('login');
+        }
+
+        if (in_array($routeName, ['dashboard.internal', 'dashboard.external'], true)) {
+            $parameters = array_merge(['tab' => 'home'], $parameters);
+        }
+
+        return route($routeName, $parameters);
     }
 }

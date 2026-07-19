@@ -1,5 +1,7 @@
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { AlertCircle, Calendar, CheckCircle, Clock, FileText } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, Download, FileText } from 'lucide-react';
+import { Link } from '@inertiajs/react';
 import { Renderer } from 'richtor';
 import 'richtor/styles';
 
@@ -13,7 +15,6 @@ const AssignmentDetails = ({ assignment, deadlinePassed }: Props) => {
 
    return (
       <div className="space-y-6">
-         {/* Assignment Info */}
          <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3 rounded-lg border p-4">
                <Calendar className="text-primary h-5 w-5" />
@@ -47,7 +48,22 @@ const AssignmentDetails = ({ assignment, deadlinePassed }: Props) => {
             </div>
          </div>
 
-         {/* Deadline Warning */}
+         {assignment.sample_project_path && (
+            <div className="rounded-lg border p-4">
+               <p className="mb-2 font-medium">Sample Project</p>
+               <p className="text-muted-foreground mb-3 text-sm">
+                  Download the sample project before submitting your work.
+                  {assignment.sample_downloaded ? ' (Download recorded)' : ''}
+               </p>
+               <Button asChild variant="outline" size="sm">
+                  <Link href={route('assignment.sample.download', assignment.id)}>
+                     <Download className="mr-2 h-4 w-4" />
+                     Download Sample Project
+                  </Link>
+               </Button>
+            </div>
+         )}
+
          {deadlinePassed && (
             <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
                <div className="text-destructive flex items-center gap-2">
@@ -62,7 +78,6 @@ const AssignmentDetails = ({ assignment, deadlinePassed }: Props) => {
             </div>
          )}
 
-         {/* Overview Section */}
          {assignment.summary && (
             <>
                <h3 className="text-lg font-semibold">OVERVIEW</h3>

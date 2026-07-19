@@ -152,6 +152,17 @@ interface SettingsLang {
 
    // General Settings
    manage_core_settings: string;
+   platform_tools: string;
+   platform_tools_description: string;
+   platform_tools_operations: string;
+   platform_tools_operations_description: string;
+   platform_tools_clear_cache: string;
+   platform_tools_clear_cache_description: string;
+   platform_tools_clear_cache_confirm: string;
+   platform_tools_storage_link: string;
+   platform_tools_storage_link_description: string;
+   platform_tools_storage_link_confirm: string;
+   platform_tools_note: string;
    app_maintenance: string;
    app_version: string;
    current_version: string;

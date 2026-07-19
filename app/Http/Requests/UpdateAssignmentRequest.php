@@ -36,6 +36,8 @@ class UpdateAssignmentRequest extends FormRequest
             ],
             'retake' => 'required|integer|min:1',
             'summary' => 'nullable|string',
+            'sample_project_type' => 'nullable|in:url,file',
+            'sample_project_path' => 'nullable|string|max:2048',
             'deadline' => 'nullable|date',
             'late_submission' => 'nullable|boolean',
             'late_total_mark' => 'nullable|numeric|min:0',

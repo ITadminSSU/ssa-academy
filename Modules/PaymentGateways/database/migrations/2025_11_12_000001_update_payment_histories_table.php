@@ -21,10 +21,12 @@ return new class extends Migration
 
       // Backfill existing records to the new polymorphic structure
       if (class_exists(Course::class)) {
-         DB::statement(sprintf(
-            "UPDATE payment_histories SET purchase_type = '%s', purchase_id = course_id WHERE course_id IS NOT NULL",
-            addslashes(Course::class)
-         ));
+         DB::table('payment_histories')
+            ->whereNotNull('course_id')
+            ->update([
+               'purchase_type' => Course::class,
+               'purchase_id' => DB::raw('course_id'),
+            ]);
       }
 
       Schema::table('payment_histories', function (Blueprint $table) {
@@ -43,10 +45,11 @@ return new class extends Migration
       });
 
       if (class_exists(Course::class)) {
-         DB::statement(sprintf(
-            "UPDATE payment_histories SET course_id = purchase_id WHERE purchase_type = '%s'",
-            addslashes(Course::class)
-         ));
+         DB::table('payment_histories')
+            ->where('purchase_type', Course::class)
+            ->update([
+               'course_id' => DB::raw('purchase_id'),
+            ]);
       }
 
       Schema::table('payment_histories', function (Blueprint $table) {

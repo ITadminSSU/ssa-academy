@@ -1,4 +1,5 @@
 import ExamCard from '@/components/exam/exam-card-1';
+import { resolveAuthor, resolveSiteName } from '@/lib/branding';
 import TableFooter from '@/components/table/table-footer';
 import { getQueryParams } from '@/lib/route';
 import { cn } from '@/lib/utils';
@@ -10,38 +11,25 @@ import Layout from './layout';
 export interface ExamsIndexProps extends SharedData {
    levels: string[];
    prices: string[];
-   category?: ExamCategory;
-   categoryChild?: ExamCategoryChild;
    exams: Pagination<Exam>;
-   categories: ExamCategory[];
 }
 
 const Index = (props: ExamsIndexProps) => {
    const { url } = usePage();
-   const { exams, category, system } = props;
+   const { exams, system } = props;
    const urlParams = getQueryParams(url);
 
-   // Generate meta information based on category
-   const siteName = system?.fields?.name || 'Mentor Learning Management System';
+   const siteName = resolveSiteName(system?.fields?.name);
    const totalExams = exams?.total || 0;
    const siteUrl = url;
    const siteOrigin = typeof window !== 'undefined' ? window.location.origin : url.split('/').slice(0, 3).join('/');
 
-   let pageTitle = category ? category.title : 'All';
-   let pageDescription = `Browse ${totalExams}+ professional certification exams from expert instructors. Test your skills with our comprehensive exam catalog.`;
-   let pageKeywords = 'online exams, certification exams, professional tests, skills assessment, exam preparation';
-   let ogTitle = 'All Exams';
-
-   if (category && category.title) {
-      pageTitle = `${category.title} Exams`;
-      ogTitle = `${category.title} Exams`;
-      pageDescription = `Explore ${totalExams} ${category.title.toLowerCase()} certification exams. Test your expertise in ${category.title.toLowerCase()} with industry-standard assessments.`;
-      pageKeywords = `${category.title.toLowerCase()}, exams, certification, assessment, ${category.title} test, professional certification`;
-   }
-
+   const pageTitle = 'All Exams';
+   const pageDescription = `Browse ${totalExams}+ professional certification exams from expert instructors. Test your skills with our comprehensive exam catalog.`;
+   const pageKeywords = 'online exams, certification exams, professional tests, skills assessment, exam preparation';
+   const ogTitle = 'All Exams';
    const fullTitle = `${pageTitle} | ${siteName}`;
    const examImage = exams?.data?.[0]?.thumbnail;
-   const categoryImage = category?.thumbnail || examImage;
 
    return (
       <>
@@ -49,34 +37,26 @@ const Index = (props: ExamsIndexProps) => {
             <title>{fullTitle}</title>
             <meta name="description" content={pageDescription} />
             <meta name="keywords" content={pageKeywords} />
-            <meta name="author" content={system?.fields?.author || 'UiLib'} />
+            <meta name="author" content={resolveAuthor(system?.fields?.author)} />
 
-            {/* Open Graph Tags */}
             <meta property="og:type" content="website" />
             <meta property="og:url" content={siteUrl} />
             <meta property="og:title" content={ogTitle} />
             <meta property="og:description" content={pageDescription} />
             <meta property="og:site_name" content={siteName} />
-
-            {/* Open Graph Image */}
-            <meta property="og:image" content={categoryImage} />
+            <meta property="og:image" content={examImage} />
             <meta property="og:image:width" content="1200" />
             <meta property="og:image:height" content="630" />
             <meta property="og:image:alt" content={`${pageTitle} - Exam Catalog`} />
 
-            {/* Twitter Card Tags */}
             <meta name="twitter:card" content="summary_large_image" />
             <meta name="twitter:title" content={ogTitle} />
             <meta name="twitter:description" content={pageDescription} />
-            <meta name="twitter:image" content={categoryImage} />
+            <meta name="twitter:image" content={examImage} />
 
-            {/* Category-specific meta */}
-            {category && <meta name="category:name" content={category.title} />}
-            {category && <meta name="category:slug" content={category.slug} />}
             <meta name="exams:total" content={totalExams.toString()} />
             <meta name="exams:page" content={(exams?.current_page || 1).toString()} />
 
-            {/* Schema.org structured data */}
             <script type="application/ld+json">
                {JSON.stringify({
                   '@context': 'https://schema.org',
@@ -84,7 +64,7 @@ const Index = (props: ExamsIndexProps) => {
                   name: pageTitle,
                   description: pageDescription,
                   url: siteUrl,
-                  image: categoryImage,
+                  image: examImage,
                   provider: {
                      '@type': 'Organization',
                      name: siteName,
@@ -132,13 +112,6 @@ const Index = (props: ExamsIndexProps) => {
                            }))
                            .filter(Boolean) || [],
                   },
-                  ...(category && {
-                     about: {
-                        '@type': 'Thing',
-                        name: category.title,
-                        description: `Professional ${category.title.toLowerCase()} certification exams`,
-                     },
-                  }),
                })}
             </script>
          </Head>
@@ -151,14 +124,7 @@ const Index = (props: ExamsIndexProps) => {
             ))}
          </div>
 
-         <TableFooter
-            className="mt-6 p-5 sm:p-7"
-            routeName="category.exams"
-            paginationInfo={exams}
-            routeParams={{
-               category: category ? category.slug : 'all',
-            }}
-         />
+         <TableFooter className="mt-6 p-5 sm:p-7" routeName="exams.browse" paginationInfo={exams} />
       </>
    );
 };

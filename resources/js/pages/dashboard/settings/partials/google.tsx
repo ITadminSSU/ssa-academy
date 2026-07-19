@@ -29,7 +29,7 @@ const Google = (props: Props) => {
          <div className="mb-7 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">{auth.google_auth_settings}</h2>
-               <p className="text-gray-500">{auth.google_auth_description}</p>
+               <p className="text-muted-foreground">{auth.google_auth_description}</p>
             </div>
 
             <div className="flex items-center space-x-2">

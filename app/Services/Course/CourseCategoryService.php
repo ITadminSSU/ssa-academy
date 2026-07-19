@@ -4,7 +4,9 @@ namespace App\Services\Course;
 
 use App\Models\Course\CourseCategory;
 use App\Models\Course\CourseCategoryChild;
+use App\Models\User;
 use App\Services\MediaService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class CourseCategoryService extends MediaService
@@ -30,6 +32,47 @@ class CourseCategoryService extends MediaService
          'lastPosition' => $categories->max('sort') ?? 0,
          'lastChildPosition' => $categories->flatMap->category_children->max('sort') ?? 0,
       ];
+   }
+
+   /**
+    * Parent course categories (with their published/visible courses) for the
+    * data-driven learner sidebar. Categories appear when flagged with
+    * show_in_nav, or when they already have a catalog-visible, approved course.
+    * The system "default" category is always excluded.
+    */
+   function getLearnerNavCategories(?User $user = null): Collection
+   {
+      return CourseCategory::query()
+         ->where('slug', '!=', 'default')
+         ->where(function ($query) use ($user) {
+            // Show categories explicitly flagged for the sidebar, or any
+            // category that already has catalog-visible published courses.
+            $query->where('show_in_nav', true)
+               ->orWhereHas('courses', function ($courses) use ($user) {
+                  $courses->where('status', 'approved')->visibleInCatalog($user);
+               });
+         })
+         ->with(['courses' => function ($query) use ($user) {
+            $query->where('status', 'approved')
+               ->visibleInCatalog($user)
+               ->select('id', 'title', 'slug', 'course_category_id')
+               ->orderBy('title', 'asc');
+         }])
+         ->orderBy('sort', 'asc')
+         ->get(['id', 'title', 'slug', 'sort'])
+         ->map(function (CourseCategory $category) {
+            return [
+               'id' => $category->id,
+               'title' => $category->title,
+               'slug' => $category->slug,
+               'courses' => $category->courses->map(fn ($course) => [
+                  'id' => $course->id,
+                  'title' => $course->title,
+                  'slug' => $course->slug,
+               ])->values(),
+            ];
+         })
+         ->values();
    }
 
    function createCategory(array $data): CourseCategory
@@ -86,7 +129,10 @@ class CourseCategoryService extends MediaService
 
    function deleteCategory(CourseCategory $category): bool
    {
-      $defaultCategory = CourseCategory::where('slug', 'default')->first();
+      $defaultCategory = CourseCategory::firstOrCreate(
+         ['slug' => 'default'],
+         ['title' => 'Default', 'sort' => 0, 'status' => 1]
+      );
 
       $category->courses()->update([
          'course_category_id' => $defaultCategory->id,

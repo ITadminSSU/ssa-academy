@@ -63,9 +63,9 @@ const LiveClass = () => {
                      </p>
 
                      <div className="p-8 text-center">
-                        <Calendar className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                        <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground/70" />
                         <h3 className="mb-2 text-lg font-medium">{dashboard.no_live_classes_scheduled}</h3>
-                        <p className="text-gray-500">{dashboard.schedule_first_live_class}</p>
+                        <p className="text-muted-foreground">{dashboard.schedule_first_live_class}</p>
                      </div>
                   </div>
                ) : (

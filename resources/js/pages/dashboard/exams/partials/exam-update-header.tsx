@@ -19,6 +19,8 @@ const ExamUpdateHeader = () => {
    const { exam } = props;
    const statuses = ['draft', 'published', 'archived'].filter((status) => status !== exam.status);
 
+   const [publishing, setPublishing] = useState(false);
+
    const { data, post, setData, processing, errors, reset } = useForm({
       tab: 'status',
       status: '',
@@ -36,6 +38,21 @@ const ExamUpdateHeader = () => {
       });
    };
 
+   // Trainers publish/unpublish their own exams directly (no admin review).
+   const handleTogglePublish = () => {
+      const nextStatus = exam.status === 'published' ? 'draft' : 'published';
+
+      router.post(
+         route('exams.update', exam.id),
+         { tab: 'status', status: nextStatus },
+         {
+            preserveScroll: true,
+            onStart: () => setPublishing(true),
+            onFinish: () => setPublishing(false),
+         },
+      );
+   };
+
    return (
       <div className="flex flex-wrap items-center gap-4 md:gap-6">
          <Button>
@@ -49,15 +66,22 @@ const ExamUpdateHeader = () => {
                   ? 'bg-green-500 hover:bg-green-600'
                   : exam.status === 'archived'
                     ? 'bg-red-500 hover:bg-red-600'
-                    : 'bg-gray-500 hover:bg-gray-600',
+                    : 'bg-muted hover:bg-muted/80',
             )}
             disabled
          >
             {exam.status}
          </Button>
 
-         {user.role === 'instructor' && exam.status !== 'published' && (
-            <Button onClick={() => router.put(route('exams.status', { exam: exam.id }), { status: 'published' })}>Submit for Review</Button>
+         {user.role === 'instructor' && (
+            <LoadingButton
+               type="button"
+               loading={publishing}
+               className={cn('capitalize', exam.status === 'published' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600')}
+               onClick={handleTogglePublish}
+            >
+               {exam.status === 'published' ? 'Unpublish' : 'Publish Exam'}
+            </LoadingButton>
          )}
 
          {user.role === 'admin' && (
@@ -89,7 +113,7 @@ const ExamUpdateHeader = () => {
 
                      <div className="pb-6">
                         <Label>
-                           Feedback <span className="text-gray-500">(Optional)</span>
+                           Feedback <span className="text-muted-foreground">(Optional)</span>
                         </Label>
                         <Editor
                            ssr={true}

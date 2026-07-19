@@ -1,7 +1,7 @@
 <div class="order-summery">
    <div class="bg-card rounded-lg border shadow-sm">
       <div class="p-6">
-         <h2 class="mb-4 text-lg font-semibold">{{ __('Payout Summery') }}</h2>
+         <h2 class="mb-4 text-lg font-semibold">{{ __('Payout Summary') }}</h2>
 
          <div class="space-y-4">
             <div class="space-y-2">

@@ -79,7 +79,7 @@ const MultipleChoiceForm = ({ data, setData, errors, isMultipleSelect }: Props) 
             </Button>
          </div>
 
-         <p className="text-sm text-gray-600">
+         <p className="text-sm text-muted-foreground">
             {isMultipleSelect
                ? 'Check all correct answers (students can select multiple options)'
                : 'Select the correct answer (students can select only one)'}

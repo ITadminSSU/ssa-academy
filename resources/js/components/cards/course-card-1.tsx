@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
-import { Clock, Heart, Star, Users } from 'lucide-react';
+import { ArrowRight, Clock, Heart, Star, Users } from 'lucide-react';
 
 interface Props {
    course: Course;
@@ -21,6 +21,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
 
    const isWishlisted = wishlists?.find((wishlist) => wishlist.course_id === course.id);
    const currency = systemCurrency(props.system.fields['selling_currency']);
+   const detailsUrl = route('course.details', { slug: course.slug, id: course.id });
 
    const handleWishlist = () => {
       if (isWishlisted) {
@@ -31,71 +32,81 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    };
 
    return (
-      <Card className={cn('group p-0', viewType === 'list' && 'sm:flex sm:w-full sm:flex-row sm:justify-between', className)}>
-         <CardHeader className="p-0">
-            <div className="relative">
-               <div className={cn('p-2 pb-0', viewType === 'list' && 'pb-2')}>
-                  <Link
-                     href={route('course.details', {
-                        slug: course.slug,
-                        id: course.id,
-                     })}
-                  >
-                     <div className={cn('relative h-[190px] overflow-hidden rounded-lg', viewType === 'list' && 'sm:w-[260px]')}>
-                        <img
-                           src={course.thumbnail || '/assets/images/blank-image.jpg'}
-                           alt={course.title}
-                           className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                           onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = '/assets/images/blank-image.jpg';
-                           }}
-                        />
-                     </div>
-                  </Link>
-               </div>
+      <article
+         className={cn(
+            'ssu-course-card group flex flex-col',
+            viewType === 'list' && 'sm:flex-row sm:items-stretch',
+            className,
+         )}
+      >
+         <CardHeader className="relative shrink-0 p-0">
+            <Link href={detailsUrl} className="block">
+               <div
+                  className={cn(
+                     'relative overflow-hidden',
+                     viewType === 'list' ? 'aspect-[16/10] sm:aspect-auto sm:h-full sm:min-h-[200px] sm:w-[280px]' : 'aspect-[16/10]',
+                  )}
+               >
+                  <img
+                     src={course.thumbnail || '/assets/images/blank-image.jpg'}
+                     alt={course.title}
+                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                     onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/assets/images/blank-image.jpg';
+                     }}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[oklch(0.22_0.04_255)]/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-               {wishlists && (
-                  <TooltipProvider delayDuration={0}>
-                     <Tooltip>
-                        <TooltipTrigger className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100">
-                           <Button size="icon" variant="ghost" className="bg-white/80 hover:bg-white" onClick={handleWishlist}>
-                              <Heart className={cn('h-4 w-4', isWishlisted && 'text-red-500')} />
-                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                           <p> {isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}</p>
-                        </TooltipContent>
-                     </Tooltip>
-                  </TooltipProvider>
-               )}
-            </div>
+                  {course.pricing_type === 'free' && <span className="ssu-course-card__badge">{common.free}</span>}
+                  {course.level && (
+                     <span className="absolute bottom-3 left-3 rounded-full border border-white/20 bg-card/90 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[oklch(0.22_0.04_255)] uppercase backdrop-blur-sm">
+                        {course.level}
+                     </span>
+                  )}
+               </div>
+            </Link>
+
+            {wishlists && (
+               <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                     <TooltipTrigger asChild>
+                        <Button
+                           size="icon"
+                           variant="ghost"
+                           className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full border border-white/30 bg-card/90 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:bg-card"
+                           onClick={handleWishlist}
+                        >
+                           <Heart className={cn('h-4 w-4', isWishlisted ? 'fill-[color:var(--brand-red)] text-[color:var(--brand-red)]' : 'text-muted-foreground')} />
+                        </Button>
+                     </TooltipTrigger>
+                     <TooltipContent>
+                        <p>{isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}</p>
+                     </TooltipContent>
+                  </Tooltip>
+               </TooltipProvider>
+            )}
          </CardHeader>
 
-         <div className={cn(viewType === 'list' && 'flex w-[calc(100%-272px)] flex-col justify-between')}>
-            <CardContent className={cn('p-4', viewType === 'list' && 'h-full')}>
-               <div className="text-secondary-foreground mb-1 flex items-center gap-1.5 text-xs">
-                  <Users className="h-3 w-3" />
-                  <span>
-                     {course.enrollments_count || 0} {course.enrollments_count || 0 > 0 ? ` ${common.students}` : ` ${frontend.student}`}
+         <div className={cn('flex flex-1 flex-col', viewType === 'list' && 'min-w-0')}>
+            <CardContent className="flex flex-1 flex-col gap-3 p-5">
+               <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="inline-flex items-center gap-1">
+                     <Users className="h-3 w-3 text-primary" />
+                     {course.enrollments_count || 0} {course.enrollments_count === 1 ? frontend.student : common.students}
                   </span>
-
-                  <Clock className="ml-2 h-3 w-3" />
-                  <span>{getCourseDuration(course, 'readable')}</span>
+                  <span className="inline-flex items-center gap-1">
+                     <Clock className="h-3 w-3 text-[color:var(--brand-blue)]" />
+                     {getCourseDuration(course, 'readable')}
+                  </span>
                </div>
 
-               <Link
-                  className={cn('space-y-3', viewType === 'list' && 'sm:flex sm:h-full sm:flex-col sm:justify-between sm:py-4')}
-                  href={route('course.details', {
-                     slug: course.slug,
-                     id: course.id,
-                  })}
-               >
-                  <p className="hover:text-secondary-foreground font-semibold">{course.title}</p>
+               <Link href={detailsUrl} className="space-y-2">
+                  <h3 className="ssu-course-card__title">{course.title}</h3>
 
                   <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
-                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                     <span>{course.average_rating ? Number(course.average_rating).toFixed(2) : '0.00'}</span>
+                     <Star className="h-3.5 w-3.5 fill-[color:var(--brand-blue)] text-[color:var(--brand-blue)]" />
+                     <span className="font-medium text-foreground">{course.average_rating ? Number(course.average_rating).toFixed(1) : '0.0'}</span>
                      <span>
                         ({course.reviews_count || 0} {common.reviews})
                      </span>
@@ -103,13 +114,13 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                </Link>
             </CardContent>
 
-            <CardFooter className="flex w-full items-center justify-between p-4 pt-0">
-               <p className="capitalize">
+            <CardFooter className="mt-auto flex items-center justify-between gap-3 border-t border-border/60 p-5 pt-4">
+               <div className="ssu-course-card__price capitalize">
                   {course.pricing_type === 'free' ? (
                      common.free
                   ) : course.discount ? (
                      <>
-                        <span className="font-semibold">
+                        <span>
                            {currency?.symbol}
                            {course.discount_price}
                         </span>
@@ -119,28 +130,22 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                         </span>
                      </>
                   ) : (
-                     <>
-                        <span className="font-semibold">
-                           {currency?.symbol}
-                           {course.price}
-                        </span>
-                     </>
+                     <span>
+                        {currency?.symbol}
+                        {course.price}
+                     </span>
                   )}
-               </p>
+               </div>
 
-               <Button asChild variant="outline" className="border-secondary-light hover:bg-background hover:border-primary px-2.5">
-                  <Link
-                     href={route('course.details', {
-                        slug: course.slug,
-                        id: course.id,
-                     })}
-                  >
+               <Button asChild size="sm" className="rounded-full px-4">
+                  <Link href={detailsUrl}>
                      {button.learn_more}
+                     <ArrowRight className="ml-1 h-3.5 w-3.5" />
                   </Link>
                </Button>
             </CardFooter>
          </div>
-      </Card>
+      </article>
    );
 };
 

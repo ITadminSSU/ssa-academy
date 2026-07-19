@@ -24,15 +24,20 @@ export default function Recaptcha({ status }: { status?: string }) {
          {status === 'verification-link-sent' && <div className="mb-4 text-center text-sm font-medium text-green-600">{auth.verification_sent}</div>}
 
          <form onSubmit={submit} className="space-y-6 text-center">
-            <Button disabled={processing} variant="secondary">
+            <Button type="submit" disabled={processing} variant="secondary" className="w-full">
                {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
                {button.submit}
             </Button>
-
-            <Button onClick={() => router.post(route('logout'))} className="mx-auto block text-sm">
-               {button.logout}
-            </Button>
          </form>
+
+         <Button
+            type="button"
+            variant="outline"
+            className="mx-auto mt-4 block w-full"
+            onClick={() => router.post(route('logout'))}
+         >
+            {button.logout}
+         </Button>
       </AuthLayout>
    );
 }

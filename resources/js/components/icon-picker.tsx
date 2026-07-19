@@ -33,7 +33,7 @@ const IconPicker = ({ enableSearch = true, onSelect }: IconPickerProps) => {
             <div className="mb-6">
                <div className="flex items-center justify-between">
                   <Label htmlFor="email">{input.icon_placeholder}</Label>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                      {frontend.showing_results} {filteredIcons.length} {common.of} {allNames.length}
                   </p>
                </div>
@@ -43,9 +43,9 @@ const IconPicker = ({ enableSearch = true, onSelect }: IconPickerProps) => {
                      type="text"
                      placeholder="Search Icons..."
                      onChange={searchHandler}
-                     className="focus:border-primary h-10 w-full rounded-md border border-gray-200 py-[15px] pr-4 pl-12 text-sm font-normal text-gray-500 focus:ring-0 focus:outline-0"
+                     className="focus:border-primary h-10 w-full rounded-md border border-border py-[15px] pr-4 pl-12 text-sm font-normal text-muted-foreground focus:ring-0 focus:outline-0"
                   />
-                  <Search className="absolute top-3 left-4 z-10 h-4 w-4 text-gray-700" />
+                  <Search className="absolute top-3 left-4 z-10 h-4 w-4 text-muted-foreground" />
                </div>
             </div>
          )}

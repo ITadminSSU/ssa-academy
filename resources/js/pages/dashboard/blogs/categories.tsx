@@ -2,6 +2,7 @@ import DataSortModal from '@/components/data-sort-modal';
 import DeleteModal from '@/components/inertia/delete-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import SsuStatCard from '@/components/ssu-stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
@@ -78,37 +79,10 @@ const BlogCategoriesIndex = () => {
                </div>
             </div>
 
-            {/* Statistics Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.total_categories}</CardTitle>
-                     <FolderOpen className="text-muted-foreground h-4 w-4" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold">{statistics.total}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.active}</CardTitle>
-                     <PlayCircle className="h-4 w-4 text-green-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-green-600">{statistics.active}</div>
-                  </CardContent>
-               </Card>
-
-               <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium">{dashboard.inactive}</CardTitle>
-                     <PauseCircle className="h-4 w-4 text-red-600" />
-                  </CardHeader>
-                  <CardContent>
-                     <div className="text-2xl font-bold text-red-600">{statistics.inactive}</div>
-                  </CardContent>
-               </Card>
+               <SsuStatCard title={dashboard.total_categories} value={statistics.total} toneIndex={0} icon={<FolderOpen className="h-6 w-6" />} />
+               <SsuStatCard title={dashboard.active} value={statistics.active} toneIndex={1} icon={<PlayCircle className="h-6 w-6" />} />
+               <SsuStatCard title={dashboard.inactive} value={statistics.inactive} toneIndex={2} icon={<PauseCircle className="h-6 w-6" />} />
             </div>
 
             {/* Categories Grid */}

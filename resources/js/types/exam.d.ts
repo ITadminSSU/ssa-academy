@@ -29,9 +29,7 @@ interface Exam extends TableCommon {
    short_description?: string;
    description?: string;
    instructor_id: number;
-   exam_category_id: number;
    instructor: Instructor;
-   exam_category: ExamCategory;
    pricing_type: 'free' | 'paid';
    price: number;
    discount: number;
@@ -44,6 +42,17 @@ interface Exam extends TableCommon {
    max_attempts: number;
    total_questions: number;
    status: 'draft' | 'published' | 'archived';
+   exam_mode?: 'standard' | 'quantity_takeoff';
+   takeoff_config?: {
+      answer_key_file_url?: string;
+      answer_key_file_name?: string;
+      line_items?: Array<{ key: string; item: string; unit: string; expected_qty?: number; tolerance_override?: number | null }>;
+      parsed_at?: string;
+      tutorial_video_url?: string;
+      tutorial_video_name?: string;
+      student_template_file_url?: string;
+      student_template_file_name?: string;
+   };
    level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
    thumbnail?: string;
    banner?: string;
@@ -92,7 +101,7 @@ interface ExamOutcome extends TableCommon {
    sort: number;
 }
 
-type ExamQuestionType = 'multiple_choice' | 'multiple_select' | 'matching' | 'fill_blank' | 'ordering' | 'short_answer' | 'listening';
+type ExamQuestionType = 'multiple_choice' | 'multiple_select' | 'matching' | 'fill_blank' | 'ordering' | 'short_answer' | 'listening' | 'file_submission' | 'quantity_takeoff';
 
 interface ExamQuestionOption extends TableCommon {
    exam_question_id: number;
@@ -118,6 +127,10 @@ interface ExamQuestion extends TableCommon {
       audio_file?: File;
       audio_source?: 'url' | 'upload';
       instructions?: string;
+      plan_file_url?: string;
+      plan_file_name?: string;
+      grading_rubric?: string;
+      line_items?: Array<{ key: string; item: string; unit: string }>;
    };
    question_options?: ExamQuestionOption[];
    media?: Media[];
@@ -148,6 +161,8 @@ interface ExamAttempt extends TableCommon {
    incorrect_answers: number;
    is_passed: boolean;
    status: 'in_progress' | 'completed' | 'abandoned' | 'submitted';
+   tracking_reference?: string | null;
+   certificate_id?: string | null;
    user: User;
    exam: Exam;
    attempt_answers: ExamAttemptAnswer[];
@@ -163,6 +178,25 @@ interface ExamAttemptAnswer extends TableCommon {
       answers?: string[];
       order?: number[];
       text?: string;
+      quantities?: Record<string, string | number>;
+      supporting_file_url?: string;
+      supporting_file_name?: string;
+      line_overrides?: Record<string, boolean>;
+      grading_breakdown?: Array<{
+         key: string;
+         item: string;
+         unit: string;
+         expected_qty: number;
+         submitted_qty?: number | null;
+         within_tolerance: boolean;
+         is_correct?: boolean;
+         auto_within_tolerance?: boolean;
+         manual_override?: boolean | null;
+         tolerance: number;
+      }>;
+      lines_correct?: number;
+      lines_total?: number;
+      lines_percent?: number;
    };
    is_correct?: boolean;
    marks_obtained: number;

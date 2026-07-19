@@ -13,9 +13,9 @@ interface Props {
 const ExamSeoForm = ({ data, setData, errors }: Props) => {
    return (
       <div className="space-y-4">
-         <div className="rounded-lg bg-gray-50 p-4">
-            <h4 className="mb-2 font-semibold text-gray-900">Search Engine Optimization</h4>
-            <p className="text-sm text-gray-600">Help search engines understand your exam better with proper meta tags.</p>
+         <div className="rounded-lg bg-muted p-4">
+            <h4 className="mb-2 font-semibold text-foreground">Search Engine Optimization</h4>
+            <p className="text-sm text-muted-foreground">Help search engines understand your exam better with proper meta tags.</p>
          </div>
 
          <div>
@@ -28,7 +28,7 @@ const ExamSeoForm = ({ data, setData, errors }: Props) => {
                placeholder={data.title || 'Exam title'}
                maxLength={60}
             />
-            <p className="mt-1 text-sm text-gray-500">{(data.meta_title || '').length}/60 characters</p>
+            <p className="mt-1 text-sm text-muted-foreground">{(data.meta_title || '').length}/60 characters</p>
             <InputError message={errors.meta_title} />
          </div>
 
@@ -43,7 +43,7 @@ const ExamSeoForm = ({ data, setData, errors }: Props) => {
                rows={3}
                maxLength={160}
             />
-            <p className="mt-1 text-sm text-gray-500">{(data.meta_description || '').length}/160 characters</p>
+            <p className="mt-1 text-sm text-muted-foreground">{(data.meta_description || '').length}/160 characters</p>
             <InputError message={errors.meta_description} />
          </div>
 
@@ -56,14 +56,14 @@ const ExamSeoForm = ({ data, setData, errors }: Props) => {
                onChange={(e) => onHandleChange(e, setData)}
                placeholder="exam, certification, test, assessment"
             />
-            <p className="mt-1 text-sm text-gray-500">Comma-separated keywords</p>
+            <p className="mt-1 text-sm text-muted-foreground">Comma-separated keywords</p>
             <InputError message={errors.meta_keywords} />
          </div>
 
          <div className="border-t pt-4">
-            <div className="mb-4 rounded-lg bg-gray-50 p-4">
-               <h4 className="mb-2 font-semibold text-gray-900">Open Graph (Social Media)</h4>
-               <p className="text-sm text-gray-600">Customize how your exam appears when shared on social media.</p>
+            <div className="mb-4 rounded-lg bg-muted p-4">
+               <h4 className="mb-2 font-semibold text-foreground">Open Graph (Social Media)</h4>
+               <p className="text-sm text-muted-foreground">Customize how your exam appears when shared on social media.</p>
             </div>
 
             <div>
@@ -93,12 +93,12 @@ const ExamSeoForm = ({ data, setData, errors }: Props) => {
          </div>
 
          {(data.meta_title || data.meta_description) && (
-            <div className="mt-6 rounded-lg border bg-white p-4">
-               <p className="mb-2 text-sm font-semibold text-gray-600">Search Result Preview:</p>
+            <div className="mt-6 rounded-lg border bg-card p-4">
+               <p className="mb-2 text-sm font-semibold text-muted-foreground">Search Result Preview:</p>
                <div className="space-y-1">
                   <p className="text-lg font-medium text-blue-600">{data.meta_title || data.title}</p>
                   <p className="text-sm text-green-700">yoursite.com/exams/{data.slug}</p>
-                  <p className="text-sm text-gray-600">{data.meta_description || data.short_description}</p>
+                  <p className="text-sm text-muted-foreground">{data.meta_description || data.short_description}</p>
                </div>
             </div>
          )}

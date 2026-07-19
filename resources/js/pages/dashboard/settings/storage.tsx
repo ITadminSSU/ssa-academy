@@ -33,7 +33,7 @@ const Storage = ({ storage }: Props) => {
       <div className="md:px-3">
          <div className="mb-6">
             <h1 className="text-2xl font-bold">{settings.storage_settings}</h1>
-            <p className="text-gray-500">{settings.storage_settings_description}</p>
+            <p className="text-muted-foreground">{settings.storage_settings_description}</p>
          </div>
          <Card className="p-4 sm:p-6">
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -61,7 +61,7 @@ const ExamCertificate = () => {
                   <Award className="h-4 w-4" />
                   Certificate
                </TabsTrigger>
-               <TabsTrigger disabled value="" className="flex h-9 cursor-pointer items-center gap-2">
+               <TabsTrigger value="marksheet" className="flex h-9 cursor-pointer items-center gap-2">
                   <ClipboardList className="h-4 w-4" />
                   Marksheet
                </TabsTrigger>
@@ -82,6 +82,8 @@ const ExamCertificate = () => {
                      courseName={exam.title}
                      studentName={auth.user.name}
                      completionDate={completionDate}
+                     certificateId={bestAttempt?.certificate_id}
+                     verificationReference={bestAttempt?.tracking_reference}
                   />
                )}
             </TabsContent>
@@ -106,6 +108,7 @@ const ExamCertificate = () => {
                      studentName={auth.user.name}
                      completionDate={completionDate}
                      studentMarks={studentMarks}
+                     variant="exam"
                   />
                )}
             </TabsContent>

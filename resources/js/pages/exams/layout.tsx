@@ -14,29 +14,28 @@ import ExamFilter from './partials/exam-filter';
 
 const Layout = ({ children }: { children: ReactNode }) => {
    const { url, props } = usePage<ExamsIndexProps>();
-   const { category, translate } = props;
+   const { translate } = props;
    const { frontend } = translate;
    const [open, setOpen] = useState(false);
    const urlParams = getQueryParams(url);
    const viewType = urlParams['view'] ?? 'grid';
    const { screen } = useScreen();
 
-   const getQueryRoute = (newParams: Record<string, string>, category?: string) => {
+   const getQueryRoute = (newParams: Record<string, string>) => {
       const updatedParams = { ...urlParams };
 
       if ('search' in updatedParams) {
          delete updatedParams.search;
       }
 
-      return route('category.exams', {
-         category: category || 'all',
+      return route('exams.browse', {
          ...updatedParams,
          ...newParams,
       });
    };
 
    const gridListHandler = (view: string) => {
-      router.get(getQueryRoute({ view }, category?.slug));
+      router.get(getQueryRoute({ view }));
    };
 
    return (
@@ -48,7 +47,6 @@ const Layout = ({ children }: { children: ReactNode }) => {
                </Card>
             )}
 
-            {/* Main Content */}
             <div className="flex-1">
                <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -69,8 +67,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
                      )}
 
                      <div>
-                        <h2 className="text-2xl font-bold capitalize">{category ? category.title : frontend.all} Exams</h2>
-                        {category && category.description && <p className="text-muted-foreground mt-1 text-sm">{category.description}</p>}
+                        <h2 className="text-2xl font-bold capitalize">{frontend.all} Exams</h2>
                      </div>
                   </div>
                   <div className="flex gap-2">
@@ -102,7 +99,6 @@ const Layout = ({ children }: { children: ReactNode }) => {
                   </div>
                </div>
 
-               {/* Exam Grid */}
                {children}
             </div>
          </div>

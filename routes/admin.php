@@ -3,16 +3,21 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\SettingController;
-use App\Http\Controllers\Course\CategoryChildController;
-use App\Http\Controllers\Course\CourseCategoryController;
 use App\Http\Controllers\Course\CourseController;
-use App\Http\Controllers\Course\CourseCouponController;
 use App\Http\Controllers\Course\CourseEnrollmentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobCircularController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\Admin\CandidatePipelineController;
+use App\Http\Controllers\Admin\PaymentRefundController;
 use App\Http\Controllers\Admin\ProfessionalTypeController;
+use App\Http\Controllers\Admin\PlatformToolsController;
+use App\Http\Controllers\Admin\TrainerMetricsController;
+use App\Http\Controllers\Course\CourseStudentProgressController;
+use App\Http\Controllers\Course\TopPerformerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TrainerForumQuestionsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,24 +30,37 @@ use App\Http\Controllers\Admin\ProfessionalTypeController;
 |
  */
 
-Route::prefix('dashboard')->group(function () {
+Route::prefix('dashboard/admin')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard.admin');
+
+    Route::get('forum-questions', [TrainerForumQuestionsController::class, 'index'])->name('admin.forum-questions.index');
+
     // users
     Route::resource('users', UsersController::class)->only(['index', 'update']);
     Route::get('users/{id}/cv/download', [UsersController::class, 'downloadCv'])->name('users.cv.download');
     Route::get('users/{id}/cv/view', [UsersController::class, 'viewCv'])->name('users.cv.view');
 
-    // Category
-    Route::resource('courses/categories', CourseCategoryController::class)->only(['index', 'store', 'destroy'])->names('categories');
-    Route::post('courses/categories/update/{category}', [CourseCategoryController::class, 'update'])->name('categories.update');
-    Route::post('courses/categories/sort', [CourseCategoryController::class, 'sort'])->name('categories.sort');
-    Route::resource('courses/category-child', CategoryChildController::class)->only(['store', 'update', 'destroy'])->names('category-child');
-    Route::post('courses/category-child/sort', [CategoryChildController::class, 'sort'])->name('category-child.sort');
+    // payment refund tracking
+    Route::get('payment-refunds', [PaymentRefundController::class, 'index'])->name('payment-refunds.index');
+    Route::get('payment-refunds/users/{user}', [PaymentRefundController::class, 'userPayments'])->name('payment-refunds.user');
+    Route::put('payment-refunds/{payment}', [PaymentRefundController::class, 'update'])->name('payment-refunds.update');
+    Route::post('payment-refunds/{payment}/process', [PaymentRefundController::class, 'processGatewayRefund'])->name('payment-refunds.process');
+
+    // master trainer metrics (all trainers)
+    Route::get('trainer-metrics', [TrainerMetricsController::class, 'index'])->name('admin.trainer-metrics.index');
+    Route::get('student-progress', [CourseStudentProgressController::class, 'index'])->name('admin.student-progress.index');
+    Route::get('student-progress/{course}', [CourseStudentProgressController::class, 'show'])->name('admin.student-progress.show');
+    Route::get('top-performers', [TopPerformerController::class, 'index'])->name('admin.top-performers.index');
+
+    // external learner candidate pipeline
+    Route::get('candidates', [CandidatePipelineController::class, 'index'])->name('candidates.index');
+    Route::get('candidates/{id}', [CandidatePipelineController::class, 'show'])->name('candidates.show');
+    Route::put('candidates/{id}/status', [CandidatePipelineController::class, 'updateStatus'])->name('candidates.status.update');
+    Route::post('candidates/{candidate}/refunds/{payment}', [CandidatePipelineController::class, 'processRefund'])->name('candidates.refund.process');
+    Route::post('candidates/{candidate}/refunds', [CandidatePipelineController::class, 'processAllRefunds'])->name('candidates.refund.process-all');
 
     // course
     Route::delete('courses/{id}', [CourseController::class, 'destroy'])->name('courses.destroy');
-
-    // exam coupon
-    Route::resource('courses/course/coupons', CourseCouponController::class)->only(['index', 'store', 'update', 'destroy'])->names('course-coupons');
 
     // instructor
     Route::middleware('checkCourseCreation')->group(function () {
@@ -58,9 +76,11 @@ Route::prefix('dashboard')->group(function () {
     Route::resource('newsletters', NewsletterController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('newsletters/send', [NewsletterController::class, 'newsletter_send'])->name('newsletters.send')->middleware('smtpConfig', 'checkSmtp');
 
-    // job circulars
-    Route::resource('job-circulars', JobCircularController::class)->except(['show']);
-    Route::put('job-circulars/{job_circular}/toggle-status', [JobCircularController::class, 'toggleStatus'])->name('job-circulars.toggle-status');
+    // job circulars (disabled unless FEATURE_JOB_CIRCULARS=true)
+    Route::middleware('feature:job_circulars')->group(function () {
+        Route::resource('job-circulars', JobCircularController::class)->except(['show']);
+        Route::put('job-circulars/{job_circular}/toggle-status', [JobCircularController::class, 'toggleStatus'])->name('job-circulars.toggle-status');
+    });
 
     // professional types
     Route::resource('professional-types', ProfessionalTypeController::class)->except(['create', 'show', 'edit']);
@@ -88,7 +108,9 @@ Route::prefix('dashboard')->group(function () {
         Route::get('smtp', 'smtp')->name('settings.smtp');
         Route::post('smtp/{id}', 'smtp_update')->name('settings.smtp.update');
 
-        Route::get('maintenance', 'maintenance')->name('settings.maintenance');
+        Route::get('platform-tools', [PlatformToolsController::class, 'index'])->name('settings.platform-tools');
+        Route::post('platform-tools/clear-cache', [PlatformToolsController::class, 'clearCache'])->name('settings.platform-tools.clear-cache');
+        Route::post('platform-tools/storage-link', [PlatformToolsController::class, 'storageLink'])->name('settings.platform-tools.storage-link');
 
         Route::get('live-class', 'live_class')->name('settings.live-class');
         Route::post('live-class/{id}', 'live_class_update')->name('settings.live-class.update');

@@ -115,18 +115,18 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                   {userPhoto ? (
                      <img alt="item-1" src={userPhoto} className="h-[100px] w-[100px] rounded-full object-cover" />
                   ) : (
-                     <div className="h-[100px] w-[100px] rounded-full bg-gray-300"></div>
+                     <div className="h-[100px] w-[100px] rounded-full bg-muted"></div>
                   )}
 
                   <label htmlFor="formFileSm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                     <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-gray-100">
-                        <Camera className="h-6 w-6 text-gray-500" />
+                     <div className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-muted">
+                        <Camera className="h-6 w-6 text-muted-foreground" />
                      </div>
                   </label>
                   <input hidden type="file" id="formFileSm" name="photo" onChange={(e) => onHandleChange(e, onImageChange)} />
                </div>
 
-               <small className="text-xs text-gray-500">Allowed: JPG, JPEG, PNG, SVG File, Maximum 2MB</small>
+               <small className="text-xs text-muted-foreground">Allowed: JPG, JPEG, PNG, SVG File, Maximum 2MB</small>
 
                {errors.photo && <p className="mt-1 text-sm text-red-500">{errors.photo}</p>}
             </div>

@@ -1,0 +1,320 @@
+/*
+ * =============================================================================
+ * SSU Academy Design System — APPROVED PATTERNS ONLY
+ * =============================================================================
+ *
+ * This file is the single source of truth for Smart Sourcing Academy UI.
+ * Do not introduce Mentor LMS template classes, ad-hoc colors, or legacy fonts.
+ *
+ * TYPOGRAPHY (locked)
+ * -------------------
+ * Display — Plus Jakarta Sans (`--font-display`, `.font-display`)
+ *   Use for: page titles, dashboard headings, buttons, card titles, kickers
+ *
+ * Body — Source Sans 3 (`--font-sans`, default on `body`)
+ *   Use for: forms, tables, paragraphs, metadata, helper text
+ *
+ * Do NOT use: Inter, Poppins, or Mentor green #00A76F / rgba(0,167,111,*)
+ *
+ * COLOR PALETTE (locked)
+ * ----------------------
+ * Dark Grey — `--primary` / #1A1B1B — chrome, headers, sidebars, primary actions
+ * Grey tint — `--sidebar-primary` / #3A3B3B — active/selected states on dark surfaces
+ * Red  — `--brand-red` / #E94448 — alerts, emphasis, tertiary accents
+ *
+ * Stat/icon backgrounds: rotate dark grey / red only (`ssu-theme.ts`)
+ *
+ * APPROVED SURFACE CLASSES
+ * ------------------------
+ * .ssu-page-shell        — page background wrapper
+ * .ssu-surface-card      — cards, panels, dashboard widgets
+ * .ssu-kicker            — uppercase section labels
+ * .ssu-stat-card         — dashboard metric tiles (left primary stripe)
+ * .ssu-table-shell       — data tables inside cards
+ * .ssu-course-card*      — public course catalog cards
+ * .ssu-auth-hero/panel   — login & register layout
+ * .ssu-enrollment-shell — course detail purchase sidebar
+ * .ssu-enrollment-panel — enrollment CTA block
+ * .ssu-checkout-button   — payment checkout entry (rounded primary)
+ * .ssu-player-*          — course player chrome (header, sidebar, footer)
+ * .ssu-nav-shell         — public site navbar
+ * .ssu-dashboard-header  — admin top bar
+ * .ssu-sidebar-brand     — dashboard sidebar logo area
+ *
+ * REACT COMPONENTS (use with these classes)
+ * -----------------------------------------
+ * SsuStatCard, SsuEnrollmentPanel, SsuCheckoutButton
+ *
+ * =============================================================================
+ */
+
+@layer base {
+   h1,
+   h2,
+   h3,
+   h4,
+   h5,
+   h6 {
+      font-family: var(--font-display);
+      letter-spacing: -0.02em;
+   }
+}
+
+@layer utilities {
+   .font-display {
+      font-family: var(--font-display);
+   }
+
+   .ssu-page-shell {
+      @apply bg-[oklch(0.98_0.008_255)] dark:bg-background min-h-full;
+   }
+
+   .ssu-surface-card {
+      @apply border-border/70 bg-card rounded-xl border shadow-sm;
+   }
+
+   .ssu-kicker {
+      @apply text-xs font-semibold tracking-[0.18em] uppercase text-[oklch(0.32_0.06_255)] dark:text-primary;
+   }
+
+   .ssu-nav-shell {
+      @apply border-border/60 bg-background/95 supports-[backdrop-filter]:bg-background/80 border-b backdrop-blur-md;
+   }
+
+   .ssu-nav-shell--sticky {
+      @apply border-primary/15 shadow-sm;
+   }
+
+   .ssu-nav-logo {
+      @apply h-14 w-auto max-w-[300px];
+   }
+
+   .ssu-footer-logo {
+      @apply h-24 w-auto max-w-[400px] object-contain;
+   }
+
+   .ssu-header-logo {
+      @apply h-8 w-auto max-w-[180px] object-contain;
+   }
+
+   .ssu-dashboard-header .ssu-header-logo {
+      @apply rounded-lg bg-[oklch(0.20_0.003_255)] px-3 py-1.5;
+   }
+
+   .ssu-dashboard-header {
+      @apply border-border/60 bg-background/90 supports-[backdrop-filter]:bg-background/75 border-b backdrop-blur-sm;
+   }
+
+   .ssu-stat-card {
+      @apply border-border/70 bg-card relative overflow-hidden rounded-xl border p-4 shadow-sm sm:p-6;
+   }
+
+   .ssu-stat-card::before {
+      content: '';
+      @apply bg-primary absolute top-0 left-0 h-full w-1;
+   }
+
+   .ssu-sidebar-brand {
+      @apply border-sidebar-border/80 border-b;
+   }
+
+   .ssu-sidebar-brand .dashboard-sidebar-logo {
+      @apply mx-auto block h-auto w-full object-contain;
+      min-height: 4rem;
+      max-height: 8rem;
+   }
+
+   .ssu-sidebar-brand a {
+      @apply flex w-full justify-center;
+   }
+
+   /* Dashboard sidebar: active nav item (lightened brand-blue pill on dark grey) */
+   [data-sidebar='menu-button'][data-active='true'] {
+      color: var(--sidebar-primary-foreground);
+      background-color: var(--sidebar-primary);
+   }
+
+   [data-sidebar='menu-button'][data-active='true'] svg {
+      color: var(--sidebar-primary-foreground);
+   }
+
+   /* Sidebar hover for non-active items: subtle lift off the dark grey */
+   [data-sidebar='menu-button']:not([data-active='true']):hover {
+      background-color: oklch(0.26 0.004 255);
+      color: oklch(0.98 0 0);
+   }
+
+   [data-sidebar='menu-button']:not([data-active='true']):hover svg {
+      color: oklch(0.98 0 0);
+   }
+
+   .ssu-course-card {
+      @apply border-border/70 bg-card overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md;
+   }
+
+   .ssu-course-card__badge {
+      @apply bg-primary text-primary-foreground absolute top-3 left-3 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+   }
+
+   .ssu-course-card__title {
+      @apply font-display text-foreground group-hover:text-primary line-clamp-2 text-base leading-snug font-semibold transition-colors;
+   }
+
+   .ssu-course-card__price {
+      @apply font-display text-primary text-lg font-semibold;
+   }
+
+   .ssu-table-shell {
+      @apply border-border/70 bg-card overflow-hidden rounded-xl border shadow-sm;
+   }
+
+   .ssu-auth-hero {
+      @apply relative hidden flex-col overflow-hidden bg-[oklch(0.20_0.003_255)] p-10 text-white lg:flex lg:min-h-svh;
+   }
+
+   .ssu-auth-hero__logo {
+      @apply flex flex-[1.4] items-center justify-center pt-4 pb-10;
+   }
+
+   .ssu-auth-hero__footer {
+      @apply mt-auto shrink-0 pb-2;
+   }
+
+   .ssu-auth-logo {
+      @apply w-full max-w-[min(100%,48rem)];
+   }
+
+   .ssu-auth-logo img,
+   .ssu-auth-logo > div {
+      @apply mx-auto h-auto w-full max-h-[24rem] min-h-[14rem] max-w-[36rem] object-contain;
+   }
+
+   .ssu-auth-logo-colored img,
+   .ssu-auth-logo-colored > div {
+      @apply mx-auto h-auto w-full max-h-[24rem] min-h-[14rem] max-w-[36rem] object-contain;
+      filter: none;
+   }
+
+   .ssu-auth-logo-mobile img,
+   .ssu-auth-logo-mobile > div {
+      @apply mx-auto h-auto w-full max-h-24 min-h-16 object-contain;
+   }
+
+   .ssu-auth-mobile-brand {
+      @apply rounded-2xl bg-[oklch(0.20_0.003_255)] px-5 py-4 shadow-sm;
+   }
+
+   .ssu-auth-mobile-brand .ssu-auth-logo-mobile img,
+   .ssu-auth-mobile-brand .ssu-auth-logo-mobile > div {
+      @apply mx-auto max-h-24 min-h-16 object-contain;
+   }
+
+   .ssu-auth-panel {
+      @apply border-border/70 bg-card flex w-full max-w-md flex-col gap-8 rounded-2xl border p-6 shadow-sm md:p-8;
+   }
+
+   .ssu-enrollment-shell {
+      @apply border-border/70 bg-card rounded-xl border shadow-sm;
+   }
+
+   .ssu-enrollment-panel {
+      @apply border-border/60 rounded-xl border bg-[oklch(0.97_0.01_255)] p-4 dark:bg-muted/20;
+   }
+
+   .ssu-checkout-button {
+      @apply font-display;
+   }
+
+   .ssu-player-shell {
+      @apply bg-[oklch(0.98_0.008_255)] dark:bg-background;
+   }
+
+   .ssu-player-header {
+      @apply relative z-50 h-16 shrink-0 overflow-hidden border-b border-white/10 bg-[oklch(0.22_0.04_255)] text-white shadow-sm;
+
+      .ssu-nav-logo,
+      .ssu-player-logo {
+         @apply h-14 w-auto max-w-[300px] object-contain;
+         filter: none !important;
+      }
+
+      button,
+      [data-slot='button'] {
+         @apply text-white;
+      }
+
+      [data-slot='button'].bg-secondary,
+      [data-slot='button'][class*='bg-secondary'] {
+         @apply border border-white/30 bg-white/15 text-white shadow-none hover:bg-white/25 hover:text-white;
+      }
+
+      .text-muted-foreground {
+         color: oklch(0.92 0.01 255 / 85%);
+      }
+
+      .lucide-user-circle {
+         @apply text-white;
+      }
+   }
+
+   .ssu-dark-chrome {
+      button,
+      [data-slot='button'] {
+         @apply border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white;
+      }
+
+      .text-muted-foreground {
+         color: oklch(0.92 0.01 255 / 80%);
+      }
+   }
+
+   .ssu-player-sidebar {
+      @apply border-border/60 bg-card border-l;
+
+      [data-slot='button'].bg-secondary,
+      [data-slot='button'][class*='bg-secondary'] {
+         @apply bg-primary text-primary-foreground hover:bg-primary-dark shadow-sm;
+      }
+
+      [data-slot='button'][disabled] {
+         @apply bg-muted text-muted-foreground opacity-60;
+      }
+   }
+
+   .ssu-curriculum-panel {
+      @apply bg-card text-foreground;
+   }
+
+   .ssu-curriculum-item--active {
+      @apply bg-muted text-foreground;
+   }
+
+   .dark .ssu-curriculum-item--active {
+      background-color: oklch(0.32 0.02 255);
+      color: oklch(0.98 0 0);
+   }
+
+   .ssu-player-footer {
+      @apply border-border/60 bg-background border-t px-6 py-4;
+   }
+
+   .ssu-player-progress {
+      @apply bg-white/20 [&>div]:bg-[color:var(--brand-blue)];
+   }
+
+   .ssu-catalog-hero {
+      @apply bg-primary text-primary-foreground rounded-xl border border-primary/20 px-6 py-8 shadow-sm;
+   }
+
+   .ssu-catalog-hero .ssu-kicker {
+      @apply text-primary-foreground/75;
+   }
+
+   .ssu-catalog-filter {
+      @apply border-border/70 bg-card rounded-xl border p-4 shadow-sm;
+   }
+
+   .ssu-catalog-filter__heading {
+      @apply text-foreground mb-3 text-sm font-semibold;
+   }
+}

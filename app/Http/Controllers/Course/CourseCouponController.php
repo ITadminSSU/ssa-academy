@@ -33,7 +33,11 @@ class CourseCouponController extends Controller
     */
    public function store(CourseCouponRequest $request)
    {
-      CourseCoupon::create($request->validated());
+      $payload = $request->validated();
+      $payload['course_id'] = $payload['course_id'] ?? null;
+      $payload['created_by'] = $request->user()->id;
+
+      CourseCoupon::create($payload);
 
       return redirect()
          ->route('course-coupons.index')

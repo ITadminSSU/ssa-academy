@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ProfessionalType;
 use App\Services\AuthService;
+use App\Services\LearnerTypeResolver;
+use App\Services\LegalAgreementService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,11 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private LearnerTypeResolver $learnerTypeResolver,
+        private LegalAgreementService $legalAgreement,
+    ) {}
 
     /**
      * Show the registration page.
@@ -33,6 +39,7 @@ class RegisteredUserController extends Controller
             'googleLogIn' => $authStatus['authStatus'],
             'recaptcha' => $recaptchaStatus,
             'professionalTypes' => $professionalTypes,
+            'legalDocument' => $this->legalAgreement->documentPayload(),
         ]);
     }
 
@@ -49,9 +56,11 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'recaptcha_status' => 'required|boolean',
             'recaptcha' => 'nullable|captcha|required_if:recaptcha_status,true',
-            'professional_type_id' => 'nullable|exists:professional_types,id',
+            'professional_type_id' => 'required|exists:professional_types,id',
             'professional_type_other' => 'nullable|string|max:255',
-            'cv_resume' => 'nullable|file|mimes:pdf,doc,docx|max:10240', // 10MB max
+            'cv_resume' => 'required|file|mimes:pdf,doc,docx|max:10240',
+            'accept_terms' => 'accepted',
+            'accept_nda' => 'accepted',
         ];
 
         // If professional_type_id is provided, check if it's "Other"
@@ -62,12 +71,20 @@ class RegisteredUserController extends Controller
             }
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'professional_type_id.required' => 'Please select your professional type.',
+            'cv_resume.required' => 'Please upload your CV or resume.',
+            'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
+            'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
+            'accept_terms.accepted' => 'You must agree to the Terms & Conditions to create an account.',
+            'accept_nda.accepted' => 'You must agree to the Non-Disclosure Agreement to create an account.',
+        ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'role' => 'student',
+            'user_type' => $this->learnerTypeResolver->resolveFromEmail($request->email)->value,
             'status' => 1,
             'password' => Hash::make($request->password),
             'professional_type_id' => $request->professional_type_id,
@@ -75,11 +92,9 @@ class RegisteredUserController extends Controller
         ]);
 
         // Handle CV/Resume upload
-        if ($request->hasFile('cv_resume')) {
-            $user->addMediaFromRequest('cv_resume')
-                ->withCustomProperties(['name' => 'cv_resume'])
-                ->toMediaCollection('cv_resume');
-        }
+        $user->addMediaFromRequest('cv_resume')
+            ->withCustomProperties(['name' => 'cv_resume'])
+            ->toMediaCollection('cv_resume');
 
         // Check if SMTP is configured before sending verification email
         $smtpConfigured = $this->isSmtpConfigured();
@@ -109,10 +124,11 @@ class RegisteredUserController extends Controller
             ]);
         }
 
+        $this->legalAgreement->recordAcceptance($user, $request, $smtpConfigured);
+
         Auth::login($user);
 
-        // return to_route('dashboard');
-        return redirect()->route('student.index', ['tab' => 'courses']);
+        return redirect()->intended($this->authService->homeUrlFor($user));
     }
 
     /**

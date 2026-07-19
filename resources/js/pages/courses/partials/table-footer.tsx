@@ -75,7 +75,7 @@ const TableFooter = (props: Props) => {
             <span className="mr-3">| {frontend.go_to_page_colon}</span>
             <DropdownMenu>
                <DropdownMenuTrigger>
-                  <Button variant="secondary" className="hover:border-primary h-8 w-[60px] rounded-md border border-gray-200 text-gray-700">
+                  <Button variant="secondary" className="hover:border-primary h-8 w-[60px] rounded-md border border-border text-muted-foreground">
                      {current_page}
                   </Button>
                </DropdownMenuTrigger>
@@ -115,7 +115,7 @@ const TableFooter = (props: Props) => {
                <span className="mr-3">| {frontend.go_to_page_colon}</span>
                <DropdownMenu>
                   <DropdownMenuTrigger>
-                     <Button variant="secondary" className="hover:border-primary h-8 w-[60px] rounded-md border border-gray-200 text-gray-700">
+                     <Button variant="secondary" className="hover:border-primary h-8 w-[60px] rounded-md border border-border text-muted-foreground">
                         {current_page}
                      </Button>
                   </DropdownMenuTrigger>

@@ -6,7 +6,7 @@ use App\Models\Course\AssignmentSubmission;
 use App\Models\Course\CourseAssignment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class AssignmentSubmissionService extends CourseSectionService
 {
@@ -35,6 +35,12 @@ class AssignmentSubmissionService extends CourseSectionService
    public function submitAssignment(array $data): AssignmentSubmission
    {
       $assignment = CourseAssignment::findOrFail($data['course_assignment_id']);
+
+      if (!app(CourseCompletionGateService::class)->isAssignmentSubmissionAllowed($assignment, (int) Auth::id())) {
+         throw ValidationException::withMessages([
+            'course_assignment_id' => 'Complete video lessons and download the sample project before submitting.',
+         ]);
+      }
 
       // Check if submission is late
       $isLate = false;

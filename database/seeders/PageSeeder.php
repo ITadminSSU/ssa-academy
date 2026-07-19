@@ -34,7 +34,7 @@ class PageSeeder extends Seeder
       }
 
       // Set default home page
-      $page = Page::where('slug', 'home-1')->first();
+      $page = Page::where('slug', 'ssu-home')->first();
 
       Setting::create([
          'type' => 'home_page',

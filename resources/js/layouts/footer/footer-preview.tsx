@@ -1,9 +1,9 @@
 import AppLogo from '@/components/app-logo';
+import SocialMediaIcon from '@/components/social-media-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SystemProps } from '@/pages/dashboard/settings/system';
 import { Link, usePage } from '@inertiajs/react';
-import { DynamicIcon } from 'lucide-react/dynamic';
 
 const FooterPreview = () => {
    const { props } = usePage<SystemProps>();
@@ -19,10 +19,10 @@ const FooterPreview = () => {
       <div className={`overflow-hidden bg-[rgba(255,222,99,0.06)]`}>
          <div className="space-y-9 px-4 pt-[60px] pb-5">
             <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
-               <div className="w-full space-y-5 md:max-w-[300px]">
+               <div className="w-full space-y-5 md:max-w-[400px]">
                   <div>
                      <Link href="/">
-                        <AppLogo />
+                        <AppLogo className="ssu-footer-logo" />
                      </Link>
                   </div>
 
@@ -40,8 +40,8 @@ const FooterPreview = () => {
                                  className="bg-muted hover:bg-primary hover:text-primary-foreground text-muted-foreground rounded-full transition-colors"
                                  asChild
                               >
-                                 <a href={socialItem.url} target="_blank">
-                                    <DynamicIcon name={socialItem.icon} className="h-5 w-5" />
+                                 <a href={socialItem.url} target="_blank" rel="noopener noreferrer">
+                                    <SocialMediaIcon name={socialItem.icon} title={socialItem.title} url={socialItem.url} />
                                     <span className="sr-only">{socialItem.title}</span>
                                  </a>
                               </Button>

@@ -74,7 +74,7 @@ const ReviewForm = () => {
                               <Star
                                  className={cn(
                                     'h-6 w-6',
-                                    star <= (hoverRating || props.userReview?.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-300',
+                                    star <= (hoverRating || props.userReview?.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40',
                                  )}
                               />
                            </button>
@@ -101,7 +101,7 @@ const ReviewForm = () => {
                                  <Star
                                     className={cn(
                                        'h-8 w-8 cursor-pointer transition-colors',
-                                       star <= (hoverRating || data.rating) ? 'fill-amber-400 text-amber-400' : 'text-gray-300 hover:text-amber-200',
+                                       star <= (hoverRating || data.rating) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40 hover:text-amber-200',
                                     )}
                                  />
                               </button>
@@ -117,7 +117,7 @@ const ReviewForm = () => {
 
                      {/* Comment Field */}
                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">{frontend.review} *</Label>
+                        <Label className="text-sm font-medium text-muted-foreground">{frontend.review} *</Label>
                         <Textarea
                            required
                            value={data.review}
@@ -154,7 +154,7 @@ const ReviewForm = () => {
                                     {[1, 2, 3, 4, 5].map((star) => (
                                        <button key={star} type="button">
                                           <Star
-                                             className={cn('h-4 w-4', star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300')}
+                                             className={cn('h-4 w-4', star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40')}
                                           />
                                        </button>
                                     ))}

@@ -71,7 +71,7 @@ const ExamSettingsForm = ({ data, setData, errors }: Props) => {
                min="0"
                required
             />
-            <p className="mt-1 text-sm text-gray-500">Minimum marks required to pass the exam</p>
+            <p className="mt-1 text-sm text-muted-foreground">Minimum marks required to pass the exam</p>
             <InputError message={errors.pass_mark} />
          </div>
 
@@ -86,9 +86,9 @@ const ExamSettingsForm = ({ data, setData, errors }: Props) => {
                   step={1}
                   className="py-4"
                />
-               <div className="flex justify-between text-sm text-gray-600">
+               <div className="flex justify-between text-sm text-muted-foreground">
                   <span>1 attempt</span>
-                  <span className="font-semibold text-gray-900">{data.max_attempts || 1} attempt(s)</span>
+                  <span className="font-semibold text-foreground">{data.max_attempts || 1} attempt(s)</span>
                   <span>10 attempts</span>
                </div>
             </div>
@@ -107,7 +107,7 @@ const ExamSettingsForm = ({ data, setData, errors }: Props) => {
                   <SelectItem value="archived">Archived</SelectItem>
                </SelectContent>
             </Select>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
                {data.status === 'draft' && 'Only visible to you'}
                {data.status === 'published' && 'Visible to all students'}
                {data.status === 'archived' && 'Hidden from students'}

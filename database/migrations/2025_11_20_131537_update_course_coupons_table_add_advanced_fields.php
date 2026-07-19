@@ -82,12 +82,20 @@ return new class extends Migration
      */
     protected function getForeignKeyName(string $table, string $column): ?string
     {
-        return DB::table('information_schema.KEY_COLUMN_USAGE')
-            ->select('CONSTRAINT_NAME')
-            ->where('TABLE_SCHEMA', DB::getDatabaseName())
-            ->where('TABLE_NAME', $table)
-            ->where('COLUMN_NAME', $column)
-            ->whereNotNull('REFERENCED_TABLE_NAME')
-            ->value('CONSTRAINT_NAME');
+        $connection = DB::connection();
+        $physicalTable = $connection->getTablePrefix() . $table;
+
+        $result = $connection->selectOne(
+            'SELECT CONSTRAINT_NAME
+             FROM information_schema.KEY_COLUMN_USAGE
+             WHERE TABLE_SCHEMA = ?
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+               AND REFERENCED_TABLE_NAME IS NOT NULL
+             LIMIT 1',
+            [$connection->getDatabaseName(), $physicalTable, $column]
+        );
+
+        return $result->CONSTRAINT_NAME ?? null;
     }
 };

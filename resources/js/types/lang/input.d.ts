@@ -20,6 +20,10 @@ interface InputLang {
    system_email: string;
    account_email: string;
    contact_email: string;
+   user_type: string;
+   user_type_placeholder: string;
+   user_type_employee: string;
+   user_type_external: string;
    from_address: string;
    from_name: string;
 
@@ -86,6 +90,10 @@ interface InputLang {
    course_instructor: string;
    made_in: string;
    pricing_type: string;
+   course_audience: string;
+   course_audience_internal: string;
+   course_audience_public: string;
+   course_audience_both: string;
    price: string;
    expiry_period_type: string;
    expiry_date: string;

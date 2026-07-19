@@ -19,8 +19,8 @@ const TableDataExport = (props: Props) => {
       <div className={`relative ml-3 ${className}`}>
          <DropdownMenu>
             <DropdownMenuTrigger>
-               <Button size="icon" variant="secondary" className="group h-10 w-11 rounded-md border border-gray-200 p-0 hover:border-blue-500">
-                  <Download className="h-4 w-4 text-gray-700 group-hover:text-blue-500" />
+               <Button size="icon" variant="secondary" className="group h-10 w-11 rounded-md border p-0 hover:border-primary">
+                  <Download className="h-4 w-4 text-secondary-foreground group-hover:text-primary" />
                </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

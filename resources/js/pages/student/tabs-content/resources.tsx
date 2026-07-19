@@ -1,108 +1,99 @@
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StudentCourseProps } from '@/types/page';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StudentDashboardProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
-import { format } from 'date-fns';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, FileText } from 'lucide-react';
+
+export const RESOURCE_TYPES: { key: string; label: string }[] = [
+   { key: 'course_outline', label: 'Course Outlines' },
+   { key: 'estimating_template', label: 'Estimating Templates' },
+   { key: 'sample_project', label: 'Sample Projects' },
+];
+
+const ResourceCard = ({ resource }: { resource: LearnerResource }) => (
+   <Card className="border">
+      <CardContent className="space-y-3 p-4">
+         <div className="flex items-start gap-3">
+            <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+               <FileText className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+               <p className="font-semibold">{resource.title}</p>
+               {resource.description && <p className="text-muted-foreground mt-1 text-sm">{resource.description}</p>}
+            </div>
+         </div>
+         <div className="flex flex-wrap gap-2">
+            {resource.file && (
+               <Button asChild size="sm" variant="outline">
+                  <a href={resource.file} target="_blank" rel="noopener noreferrer" download={resource.file_name ?? true}>
+                     <Download className="h-4 w-4" />
+                     {resource.file_name ?? 'Download'}
+                  </a>
+               </Button>
+            )}
+            {resource.link && (
+               <Button asChild size="sm" variant="outline">
+                  <a href={resource.link} target="_blank" rel="noopener noreferrer">
+                     <ExternalLink className="h-4 w-4" />
+                     Open link
+                  </a>
+               </Button>
+            )}
+         </div>
+      </CardContent>
+   </Card>
+);
 
 const Resources = () => {
-   const { props } = usePage<StudentCourseProps>();
-   const { resources } = props;
+   const { resources = [] } = usePage<StudentDashboardProps>().props;
 
-   // Function to format date in Bengali style if needed
-   const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      return format(date, 'MMMM dd, yyyy, hh:mm a');
-   };
-
-   // Helper to handle file download
-   const handleDownload = async (resource: LessonResource, e: React.MouseEvent) => {
-      e.preventDefault();
-      try {
-         // For non-link resources, use the download endpoint
-         const url = route('resources.download', resource.id);
-         window.open(url, '_blank');
-      } catch (error) {
-         // Fallback to direct download if the endpoint fails
-         window.open(resource.resource, '_blank');
-      }
-   };
+   const queryType = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('type') : null;
+   const defaultType = RESOURCE_TYPES.find((type) => type.key === queryType)?.key ?? RESOURCE_TYPES[0].key;
 
    return (
-      <div className="space-y-8">
-         {resources && resources.length > 0 ? (
-            resources.map((section, sectionIndex) => (
-               <Card key={section.id}>
-                  {/* Module Header */}
-                  <div className="bg-muted rounded-t-lg px-4 py-3">
-                     <h3 className="text-lg font-semibold">Module: {section.title}</h3>
-                  </div>
+      <div className="space-y-6">
+         <div>
+            <h1 className="text-2xl font-bold tracking-tight">Resources</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Download templates, outlines, and sample materials.</p>
+         </div>
 
-                  {/* Lessons Table */}
-                  <div className="space-y-4 p-4">
-                     {section.section_lessons && section.section_lessons.length > 0 ? (
-                        section.section_lessons.map((lesson) =>
-                           lesson.resources && lesson.resources.length > 0 ? (
-                              <div key={lesson.id} className="rounded-md border">
-                                 {/* Lesson Title */}
-                                 <div className="p-4">
-                                    <p className="text-base font-medium">
-                                       <span className="font-semibold">Lesson:</span> {lesson.title}
-                                    </p>
-                                 </div>
+         <Tabs defaultValue={defaultType} className="w-full">
+            <TabsList className="flex h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
+               {RESOURCE_TYPES.map((type) => (
+                  <TabsTrigger
+                     key={type.key}
+                     value={type.key}
+                     className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg border px-4 py-2"
+                  >
+                     {type.label}
+                  </TabsTrigger>
+               ))}
+            </TabsList>
 
-                                 {/* Resources Table */}
-                                 <div className="overflow-hidden border-t">
-                                    <Table>
-                                       <TableHeader className="bg-muted/50">
-                                          <TableRow>
-                                             <TableHead className="px-4 font-semibold">Title</TableHead>
-                                             <TableHead className="px-4 font-semibold">Date & Time</TableHead>
-                                             <TableHead className="px-4 text-right font-semibold">Action</TableHead>
-                                          </TableRow>
-                                       </TableHeader>
-                                       <TableBody>
-                                          {lesson.resources.map((resource) => (
-                                             <TableRow key={resource.id} className="hover:bg-muted/30">
-                                                <TableCell className="px-4 py-3 font-medium">{resource.title}</TableCell>
-                                                <TableCell className="text-muted-foreground px-4 py-3">{formatDate(resource.created_at)}</TableCell>
-                                                <TableCell className="px-4 py-3 text-right">
-                                                   <div className="flex items-center justify-end gap-2">
-                                                      {resource.type === 'link' ? (
-                                                         <Button asChild size="sm" variant="secondary">
-                                                            <a target="_blank" href={resource.resource}>
-                                                               <ExternalLink className="h-3 w-3" />
-                                                               Check
-                                                            </a>
-                                                         </Button>
-                                                      ) : (
-                                                         <Button size="sm" variant="secondary" onClick={(e) => handleDownload(resource, e)}>
-                                                            <Download className="h-3 w-3" />
-                                                            Download
-                                                         </Button>
-                                                      )}
-                                                   </div>
-                                                </TableCell>
-                                             </TableRow>
-                                          ))}
-                                       </TableBody>
-                                    </Table>
-                                 </div>
-                              </div>
-                           ) : null,
-                        )
+            {RESOURCE_TYPES.map((type) => {
+               const items = resources.filter((resource) => resource.type === type.key);
+
+               return (
+                  <TabsContent key={type.key} value={type.key} className="mt-4">
+                     {items.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                           {items.map((resource) => (
+                              <ResourceCard key={resource.id} resource={resource} />
+                           ))}
+                        </div>
                      ) : (
-                        <div className="text-muted-foreground py-8 text-center">No lessons found in this module.</div>
+                        <Card className="border">
+                           <CardContent className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+                              <FileText className="text-muted-foreground h-10 w-10" />
+                              <p className="text-muted-foreground text-sm">No {type.label.toLowerCase()} available yet.</p>
+                           </CardContent>
+                        </Card>
                      )}
-                  </div>
-               </Card>
-            ))
-         ) : (
-            <div className="py-12 text-center">
-               <p className="text-muted-foreground text-lg">No resources available for this course yet.</p>
-            </div>
-         )}
+                  </TabsContent>
+               );
+            })}
+         </Tabs>
       </div>
    );
 };

@@ -43,10 +43,24 @@ $payment_methods = [
         'logo' => asset('assets/payment/sslcommerz.png'),
     ],
     [
+        'name' => 'Bank Transfer',
+        'sub_type' => 'bank_transfer',
+        'method' => 'GET',
+        'route' => '/payments/offline/redirect?gateway=bank_transfer',
+        'logo' => asset('assets/payment/offline.svg'),
+    ],
+    [
+        'name' => 'Wire Transfer',
+        'sub_type' => 'wire_transfer',
+        'method' => 'GET',
+        'route' => '/payments/offline/redirect?gateway=wire_transfer',
+        'logo' => asset('assets/payment/offline.svg'),
+    ],
+    [
         'name' => 'Offline Payment',
         'sub_type' => 'offline',
         'method' => 'GET',
-        'route' => '/payments/offline/redirect',
+        'route' => '/payments/offline/redirect?gateway=offline',
         'logo' => asset('assets/payment/offline.svg'),
     ],
 ];

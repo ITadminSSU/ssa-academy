@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 
 const Main = ({ children }: PropsWithChildren) => {
    const { props } = usePage<SharedData>();
-   const { direction } = props;
 
    useEffect(() => {
       if (props.flash.error) {
@@ -17,11 +16,6 @@ const Main = ({ children }: PropsWithChildren) => {
          toast.success(props.flash.success || props.flash.warning);
       }
    }, [props.flash]);
-
-   useEffect(() => {
-      // Update direction on <html> tag dynamically
-      document.documentElement.setAttribute('dir', direction);
-   }, [direction]);
 
    return (
       <>

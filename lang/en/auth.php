@@ -21,9 +21,19 @@ return [
     'google_auth_settings' => 'Google Auth Settings',
     'google_auth_description' => 'Google Auth Description',
 
-    // Login Page
+    // Login Page (unified portal — all roles)
     'login_title' => 'Log in to your account',
-    'login_description' => 'Enter your email and password below to log in',
+    'login_description' => 'Enter your email and password below. One portal for administrators, trainers, internal employees, and external learners.',
+    'login_audiences_heading' => 'Who signs in here',
+    'login_audience_admin' => 'Administrators',
+    'login_audience_admin_hint' => 'Manage courses, users, approvals, and platform settings',
+    'login_audience_trainer' => 'Trainers',
+    'login_audience_trainer_hint' => 'Create courses, review progress, and manage enrollments',
+    'login_audience_internal' => 'Internal employees',
+    'login_audience_internal_hint' => 'Access assigned training paths inside your organization',
+    'login_audience_external' => 'External learners',
+    'login_audience_external_hint' => 'Purchase and complete public courses and certifications',
+    'login_external_register_note' => "Don't have an account?",
     'remember_me' => 'Remember me',
     'forgot_password' => 'Forgot Password',
     'continue_with' => 'Or continue with',
@@ -32,9 +42,11 @@ return [
 
 
     // Register Page
-    'register_title' => 'Create an account',
-    'register_description' => 'Enter your details below to create your account',
+    'register_title' => 'Create your account',
+    'register_description' => 'External learners can register here. Company email addresses are recognized automatically for internal access.',
     'have_account' => 'Already have an account?',
+    'register_learner_type_note' => 'Company email addresses are recognized automatically for internal access. Other accounts are registered as public learners. Admins can update learner type if needed.',
+    'register_required_fields_note' => 'All fields are required. You must upload a CV/resume and agree to the Terms & Conditions and NDA before creating an account.',
 
     // Forgot Password
     'forgot_description' => 'Enter your email to receive a password reset link',

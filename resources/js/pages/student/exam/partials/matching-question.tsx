@@ -30,7 +30,7 @@ const MatchingQuestion = ({ question, answer, onAnswerChange }: Props) => {
 
    useEffect(() => {
       setSelectedMatches(buildInitialMatches());
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
    }, [question.id]);
 
    const emitChange = (newMatches: Record<number, string>) => {
@@ -63,7 +63,7 @@ const MatchingQuestion = ({ question, answer, onAnswerChange }: Props) => {
    return (
       <div className="space-y-4">
          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">Match each item on the left with the correct item on the right:</p>
+            <p className="text-sm text-muted-foreground">Match each item on the left with the correct item on the right:</p>
             <Button variant="ghost" size="sm" onClick={handleClearAll} disabled={Object.keys(selectedMatches).length === 0}>
                Clear All
             </Button>
@@ -97,7 +97,7 @@ const MatchingQuestion = ({ question, answer, onAnswerChange }: Props) => {
          </div>
 
          {Object.keys(selectedMatches).length > 0 && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
                Matched: <span className="font-semibold">{Object.keys(selectedMatches).length}</span> of {leftItems.length}
             </p>
          )}

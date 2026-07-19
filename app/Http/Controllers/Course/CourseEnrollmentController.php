@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCourseEnrollmentRequest;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseService;
+use App\Services\LegalAgreementService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,7 @@ class CourseEnrollmentController extends Controller
         private UserService $user,
         private CourseService $course,
         private CourseEnrollmentService $courseEnrollment,
+        private LegalAgreementService $legalAgreement,
     ) {}
 
     /**
@@ -59,6 +61,10 @@ class CourseEnrollmentController extends Controller
      */
     public function store(StoreCourseEnrollmentRequest $request)
     {
+        if ($this->legalAgreement->requiresAcceptance($request->user())) {
+            return back()->with('error', 'Accept the Terms & Conditions and NDA before enrolling in courses.');
+        }
+
         $this->courseEnrollment->createCourseEnroll($request->validated());
 
         return back()->with('success', 'Enrollment is successfully done in this course');

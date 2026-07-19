@@ -25,8 +25,9 @@ class GatewayRequest extends FormRequest
          'active' => 'required|boolean',
       ];
 
-      // Add currency and test_mode for gateways that need them (not for offline)
-      if (request('type') !== 'offline') {
+      $manualTypes = ['offline', 'bank_transfer', 'wire_transfer'];
+
+      if (!in_array(request('type'), $manualTypes, true)) {
          $rules['currency'] = 'required|string|size:3';
          $rules['test_mode'] = 'required|boolean';
       }
@@ -48,7 +49,7 @@ class GatewayRequest extends FormRequest
          'razorpay' => $this->razorpayRules(),
          'sslcommerz' => $this->sslcommerzRules(),
          'paystack' => $this->paystackRules(),
-         'offline' => $this->offlineRules(),
+         'offline', 'bank_transfer', 'wire_transfer' => $this->offlineRules(),
          default => [],
       };
    }

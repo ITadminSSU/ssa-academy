@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Enums\CoursePricingType;
 use App\Http\Controllers\Controller;
+use App\Services\LegalAgreementService;
 use App\Services\UserService;
 use Illuminate\Support\Facades\Auth;
 use Modules\Exam\Http\Requests\ExamEnrollmentRequest;
@@ -18,6 +19,7 @@ class ExamEnrollmentController extends Controller
         private UserService $user,
         private ExamService $exam,
         private ExamEnrollmentService $examEnrollments,
+        private LegalAgreementService $legalAgreement,
     ) {}
 
     /**
@@ -47,6 +49,10 @@ class ExamEnrollmentController extends Controller
      */
     public function store(ExamEnrollmentRequest $request)
     {
+        if ($this->legalAgreement->requiresAcceptance($request->user())) {
+            return back()->with('error', 'Accept the Terms & Conditions and NDA before enrolling in exams.');
+        }
+
         $this->examEnrollments->createExamEnroll($request->validated());
 
         return back()->with('success', 'Enrollment is successfully done in this exam');

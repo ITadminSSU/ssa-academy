@@ -1,6 +1,7 @@
 import ChunkedUploaderInput from '@/components/chunked-uploader-input';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +32,7 @@ const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Pr
       resource: resource ? resource.resource : '',
       resource_url: null,
       section_lesson_id: lesson.id,
+      is_downloadable: resource ? resource.is_downloadable !== false : true,
    });
 
    const handleSubmit = async (e: React.FormEvent) => {
@@ -147,6 +149,19 @@ const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Pr
                      setIsSubmit(false);
                   }}
                />
+            </div>
+         )}
+
+         {data.type !== 'link' && (
+            <div className="flex items-center gap-2">
+               <Checkbox
+                  id="is_downloadable"
+                  checked={data.is_downloadable}
+                  onCheckedChange={(checked) => setData('is_downloadable', checked === true)}
+               />
+               <Label htmlFor="is_downloadable" className="cursor-pointer font-normal">
+                  Allow students to download this resource
+               </Label>
             </div>
          )}
 

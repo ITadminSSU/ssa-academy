@@ -45,7 +45,7 @@ const CourseCard5 = ({ course, className }: Props) => {
 
                   <div className="flex items-center gap-2">
                      {course.discount ? (
-                        <p className="pt-1 text-gray-300 line-through">
+                        <p className="pt-1 text-muted-foreground/40 line-through">
                            {currency?.symbol}
                            {course.discount_price}
                         </p>

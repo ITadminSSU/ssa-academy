@@ -2,8 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\CourseAudience;
+use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
+use App\Models\User;
+use App\Support\AuthenticatedUser;
+use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCourseEnrollmentRequest extends FormRequest
 {
@@ -38,5 +42,50 @@ class StoreCourseEnrollmentRequest extends FormRequest
             ],
             'enrollment_type' => 'required|string|in:free,paid',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'user_id' => AuthenticatedUser::resolve(
+                $this->input('user_id') ? (int) $this->input('user_id') : null,
+                allowAdminDelegation: isAdmin(),
+            ),
+        ]);
+
+        $user = User::find($this->input('user_id'));
+        $course = Course::find($this->input('course_id'));
+
+        if ($user?->qualifiesForFreeCourseAccess()) {
+            $this->merge(['enrollment_type' => 'free']);
+        }
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $user = User::find($this->input('user_id'));
+            $course = Course::find($this->input('course_id'));
+
+            if (!$user || !$course) {
+                return;
+            }
+
+            if (
+                !isAdmin()
+                && $course->audience === CourseAudience::INTERNAL
+                && !$user->isEmployeeLearner()
+            ) {
+                $validator->errors()->add('course_id', 'This course is only available to internal employees.');
+            }
+
+            if (
+                !$user->qualifiesForFreeCourseAccess()
+                && $course->pricing_type === 'paid'
+                && $this->input('enrollment_type') === 'free'
+            ) {
+                $validator->errors()->add('enrollment_type', 'Paid courses require payment for external learners.');
+            }
+        });
     }
 }

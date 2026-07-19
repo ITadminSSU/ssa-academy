@@ -11,7 +11,6 @@ import { ArrowLeft, Award, BookOpen, Calendar, DollarSign, Edit, Eye, TrendingUp
 interface Props {
    exam: Exam & {
       instructor: Instructor;
-      exam_category: ExamCategory;
       questions: ExamQuestion[];
       enrollments: ExamEnrollment[];
       attempts: ExamAttempt[];
@@ -47,8 +46,8 @@ const ShowExam = ({ exam, stats }: Props) => {
                      </Button>
                   </Link>
                   <div>
-                     <h1 className="text-3xl font-bold text-gray-900">{exam.title}</h1>
-                     <p className="mt-1 text-gray-600">{exam.exam_category.title}</p>
+                     <h1 className="text-3xl font-bold text-foreground">{exam.title}</h1>
+                     <p className="mt-1 text-muted-foreground capitalize">{exam.level || 'Exam'}</p>
                   </div>
                </div>
                <div className="flex gap-2">
@@ -80,40 +79,40 @@ const ShowExam = ({ exam, stats }: Props) => {
                      <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                            <div>
-                              <p className="text-sm text-gray-600">Status</p>
+                              <p className="text-sm text-muted-foreground">Status</p>
                               <Badge variant={exam.status === 'published' ? 'default' : exam.status === 'draft' ? 'secondary' : 'outline'}>
                                  {exam.status}
                               </Badge>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Pricing</p>
+                              <p className="text-sm text-muted-foreground">Pricing</p>
                               <p className="font-semibold">{exam.pricing_type === 'free' ? 'Free' : `$${exam.discount_price || exam.price}`}</p>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Total Questions</p>
+                              <p className="text-sm text-muted-foreground">Total Questions</p>
                               <p className="font-semibold">{exam.total_questions}</p>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Total Marks</p>
+                              <p className="text-sm text-muted-foreground">Total Marks</p>
                               <p className="font-semibold">{exam.total_marks}</p>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Duration</p>
+                              <p className="text-sm text-muted-foreground">Duration</p>
                               <p className="font-semibold">
                                  {exam.duration_hours > 0 && `${exam.duration_hours}h `}
                                  {exam.duration_minutes > 0 && `${exam.duration_minutes}m`}
                               </p>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Pass Mark</p>
+                              <p className="text-sm text-muted-foreground">Pass Mark</p>
                               <p className="font-semibold">{exam.pass_mark}</p>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Max Attempts</p>
+                              <p className="text-sm text-muted-foreground">Max Attempts</p>
                               <p className="font-semibold">{exam.max_attempts}</p>
                            </div>
                            <div>
-                              <p className="text-sm text-gray-600">Level</p>
+                              <p className="text-sm text-muted-foreground">Level</p>
                               <p className="font-semibold">{exam.level || 'Not set'}</p>
                            </div>
                         </div>
@@ -128,22 +127,22 @@ const ShowExam = ({ exam, stats }: Props) => {
                      <CardContent>
                         <div className="space-y-4">
                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Total Attempts</span>
+                              <span className="text-sm text-muted-foreground">Total Attempts</span>
                               <span className="font-semibold">{stats.total_attempts}</span>
                            </div>
                            <Separator />
                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Completed Attempts</span>
+                              <span className="text-sm text-muted-foreground">Completed Attempts</span>
                               <span className="font-semibold">{stats.completed_attempts}</span>
                            </div>
                            <Separator />
                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Average Score</span>
+                              <span className="text-sm text-muted-foreground">Average Score</span>
                               <span className="font-semibold">{stats.average_score.toFixed(1)}%</span>
                            </div>
                            <Separator />
                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Pass Rate</span>
+                              <span className="text-sm text-muted-foreground">Pass Rate</span>
                               <Badge variant={stats.pass_rate >= 70 ? 'default' : 'destructive'}>{stats.pass_rate.toFixed(1)}%</Badge>
                            </div>
                         </div>
@@ -162,7 +161,7 @@ const ShowExam = ({ exam, stats }: Props) => {
                                  <div key={attempt.id} className="flex items-center justify-between rounded-lg border p-3">
                                     <div>
                                        <p className="font-semibold">{attempt.user?.name}</p>
-                                       <p className="text-sm text-gray-600">{format(parseISO(attempt.start_time), 'MMM dd, yyyy HH:mm')}</p>
+                                       <p className="text-sm text-muted-foreground">{format(parseISO(attempt.start_time), 'MMM dd, yyyy HH:mm')}</p>
                                     </div>
                                     <div className="text-right">
                                        <Badge
@@ -180,7 +179,7 @@ const ShowExam = ({ exam, stats }: Props) => {
                               ))}
                            </div>
                         ) : (
-                           <p className="text-center text-sm text-gray-600">No attempts yet</p>
+                           <p className="text-center text-sm text-muted-foreground">No attempts yet</p>
                         )}
                      </CardContent>
                   </Card>
@@ -219,16 +218,16 @@ const ShowExam = ({ exam, stats }: Props) => {
                            <div className="space-y-3">
                               {recentEnrollments.map((enrollment) => (
                                  <div key={enrollment.id} className="flex items-center gap-3">
-                                    <Calendar className="h-4 w-4 text-gray-400" />
+                                    <Calendar className="h-4 w-4 text-muted-foreground/70" />
                                     <div className="flex-1">
                                        <p className="text-sm font-semibold">{enrollment.user?.name}</p>
-                                       <p className="text-xs text-gray-600">{format(parseISO(enrollment.entry_date), 'MMM dd, yyyy')}</p>
+                                       <p className="text-xs text-muted-foreground">{format(parseISO(enrollment.entry_date), 'MMM dd, yyyy')}</p>
                                     </div>
                                  </div>
                               ))}
                            </div>
                         ) : (
-                           <p className="text-center text-sm text-gray-600">No enrollments yet</p>
+                           <p className="text-center text-sm text-muted-foreground">No enrollments yet</p>
                         )}
                      </CardContent>
                   </Card>
@@ -244,7 +243,7 @@ const ShowExam = ({ exam, stats }: Props) => {
                               <p className="text-3xl font-bold">
                                  {(exam.reviews.reduce((sum, r) => sum + r.rating, 0) / exam.reviews.length).toFixed(1)}
                               </p>
-                              <p className="text-sm text-gray-600">{exam.reviews.length} reviews</p>
+                              <p className="text-sm text-muted-foreground">{exam.reviews.length} reviews</p>
                            </div>
                         </CardContent>
                      </Card>

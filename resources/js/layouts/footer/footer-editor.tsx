@@ -23,10 +23,10 @@ import {
    Plus,
    Share2,
    Trash2,
-   Twitter,
    X,
    Youtube,
 } from 'lucide-react';
+import { TikTokIcon } from '@/components/social-media-icon';
 import React, { useState } from 'react';
 
 interface FooterItemForm {
@@ -148,7 +148,11 @@ const FooterEditor = ({ footer }: { footer: Footer }) => {
 
    const socialMediaIcons = [
       { value: 'facebook', label: 'Facebook', icon: <Facebook className="h-4 w-4" /> },
-      { value: 'twitter', label: 'Twitter', icon: <Twitter className="h-4 w-4" /> },
+      {
+         value: 'tiktok',
+         label: 'TikTok',
+         icon: <TikTokIcon className="h-4 w-4" />,
+      },
       { value: 'instagram', label: 'Instagram', icon: <Instagram className="h-4 w-4" /> },
       { value: 'linkedin', label: 'LinkedIn', icon: <Linkedin className="h-4 w-4" /> },
       { value: 'github', label: 'GitHub', icon: <Github className="h-4 w-4" /> },

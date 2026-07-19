@@ -1,18 +1,11 @@
 import AppLogo from '@/components/app-logo';
-import DataSortModal from '@/components/data-sort-modal';
-import Switch from '@/components/switch';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { getPageSection } from '@/lib/page';
-import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { getYear } from 'date-fns';
-import { Settings } from 'lucide-react';
 
 const LandingFooter = () => {
-   const { page, customize, system } = usePage<SharedData>().props;
+   const { page, system } = usePage<SharedData>().props;
 
    const aboutUsSection = getPageSection(page, 'footer_list_1');
    const customerCareSection = getPageSection(page, 'footer_list_2');
@@ -22,53 +15,14 @@ const LandingFooter = () => {
       .filter((section): section is PageSection => section !== undefined)
       .sort((a, b) => (a.sort || 0) - (b.sort || 0));
 
-   const sectionActiveChange = (id: string | number, active: boolean) => {
-      router.post(route('page.section.update', id), {
-         active,
-      });
-   };
-
    return (
-      <div className="text-primary-foreground dark:text-primary relative bg-gray-900 pt-20 pb-10 dark:bg-gray-800">
-         {customize && page && (
-            <div className="absolute top-6 right-6 z-20">
-               <DataSortModal
-                  title="Footer Links"
-                  data={sections}
-                  handler={
-                     <Button size="icon">
-                        <Settings className="h-7 w-7" />
-                     </Button>
-                  }
-                  onOrderChange={(newOrder, setOpen) => {
-                     router.post(
-                        route('page.section.sort'),
-                        {
-                           sortedData: newOrder,
-                        },
-                        { preserveScroll: true, onSuccess: () => setOpen && setOpen(false) },
-                     );
-                  }}
-                  renderContent={(item) => (
-                     <Card className="flex w-full items-center justify-between px-4 py-3">
-                        <p>{item.name}</p>
-
-                        <div className="flex items-center space-x-2">
-                           <Label htmlFor="active">Active</Label>
-                           <Switch id="active" defaultChecked={item.active} onCheckedChange={(checked) => sectionActiveChange(item.id, checked)} />
-                        </div>
-                     </Card>
-                  )}
-               />
-            </div>
-         )}
-
+      <div className="relative bg-gray-900 pt-20 pb-10 text-white dark:bg-gray-800">
          <div className="container">
             <div className="mb-11 flex flex-col items-start justify-between gap-10 md:flex-row">
                <div className="w-full">
-                  <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
+                  <Link href={route('home')} className="inline-flex items-center">
                      <AppLogo theme="light" className="h-[50px] w-auto" />
-                  </a>
+                  </Link>
 
                   <p className="mt-5 text-sm max-w-[300px]">{system.fields.description}</p>
                </div>
@@ -77,7 +31,7 @@ const LandingFooter = () => {
                   {sections.map(
                      (section) =>
                         section.active && (
-                           <div className={cn('relative w-full', customize && 'section-edit')}>
+                           <div className="relative w-full">
                               <p className="mb-3 text-lg font-semibold">{section?.title}</p>
                               <ul className="flex flex-col gap-2 text-sm">
                                  {section?.properties.array.map((item, itemIndex) =>
@@ -87,6 +41,10 @@ const LandingFooter = () => {
                                        <li key={`item-${itemIndex}`}>
                                           {item.title === 'About Us' || item.title === 'About' || item.url?.includes('/about') ? (
                                              <a href="https://smartsourcingusa.com/#about" target="_blank" rel="noopener noreferrer">
+                                                {item.title}
+                                             </a>
+                                          ) : item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact') ? (
+                                             <a href="https://smartsourcingusa.com/contact" target="_blank" rel="noopener noreferrer">
                                                 {item.title}
                                              </a>
                                           ) : (

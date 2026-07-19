@@ -187,7 +187,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
 
                            <div className="flex-1">
                               <div className="font-medium">{item.title}</div>
-                              <div className="text-sm text-gray-600">{item.value}</div>
+                              <div className="text-sm text-muted-foreground">{item.value}</div>
                            </div>
 
                            <div className="flex gap-2">
@@ -207,7 +207,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                      ))}
                   </div>
                ) : (
-                  <div className="py-8 text-center text-gray-500">No URL items found. Click "Add URL Item" to create one.</div>
+                  <div className="py-8 text-center text-muted-foreground">No URL items found. Click "Add URL Item" to create one.</div>
                )}
             </TabsContent>
 
@@ -241,10 +241,10 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                            {item.items && Array.isArray(item.items) && (
                               <div className="ml-8 space-y-1">
                                  {(item.items as any[]).map((subItem: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                                    <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
                                        <span>•</span>
                                        <span>{subItem.title}</span>
-                                       <span className="text-gray-400">({subItem.url})</span>
+                                       <span className="text-muted-foreground/70">({subItem.url})</span>
                                     </div>
                                  ))}
                               </div>
@@ -253,7 +253,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                      ))}
                   </div>
                ) : (
-                  <div className="py-8 text-center text-gray-500">No dropdown items found. Click "Add Dropdown" to create one.</div>
+                  <div className="py-8 text-center text-muted-foreground">No dropdown items found. Click "Add Dropdown" to create one.</div>
                )}
             </TabsContent>
 
@@ -286,7 +286,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                      ))}
                   </div>
                ) : (
-                  <div className="py-8 text-center text-gray-500">No action items found. Click "Add Action Item" to create one.</div>
+                  <div className="py-8 text-center text-muted-foreground">No action items found. Click "Add Action Item" to create one.</div>
                )}
             </TabsContent>
          </Tabs>

@@ -36,7 +36,7 @@ const CourseReviews = () => {
                                     {[1, 2, 3, 4, 5].map((star) => (
                                        <button key={star} type="button">
                                           <Star
-                                             className={cn('h-4 w-4', star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300')}
+                                             className={cn('h-4 w-4', star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40')}
                                           />
                                        </button>
                                     ))}

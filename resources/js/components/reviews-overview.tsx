@@ -39,7 +39,7 @@ const ReviewsOverview = ({ total_reviews, rating_distribution }: OverviewProps) 
                   ? 'fill-amber-400 text-amber-400'
                   : filled && index < Math.floor(rating - 1) + 0.5
                     ? 'fill-amber-400 text-amber-400'
-                    : 'text-gray-300'
+                    : 'text-muted-foreground/40'
             }`}
          />
       ));

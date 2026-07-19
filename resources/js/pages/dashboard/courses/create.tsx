@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import courseDurations from '@/data/course-durations';
 import courseLanguages from '@/data/course-languages';
+import { courseAudienceFieldLabel, courseAudienceOptionLabel } from '@/lib/course-audience-labels';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { onHandleChange } from '@/lib/inertia';
 import { SharedData } from '@/types/global';
@@ -22,6 +23,7 @@ import 'richtor/styles';
 interface Props extends SharedData {
    labels: string[];
    prices: string[];
+   audiences: string[];
    expiries: string[];
    categories: CourseCategory[];
    instructors: Instructor[];
@@ -33,7 +35,7 @@ const Index = (props: Props) => {
    const { input, button, common } = translate;
 
    const user = props.auth.user;
-   const { labels, prices, expiries, categories, instructors, system } = props;
+   const { labels, prices, audiences, expiries, categories, instructors, system } = props;
 
    const { data, setData, post, errors, processing } = useForm({
       title: '',
@@ -43,12 +45,12 @@ const Index = (props: Props) => {
       level: '',
       language: '',
       pricing_type: 'paid',
+      audience: 'public',
       price: '',
       discount: false as boolean,
       discount_price: '',
       expiry_type: 'lifetime',
       expiry_duration: '',
-      drip_content: false as boolean,
       thumbnail: null,
       instructor_id: user.role === 'admin' && system.sub_type === 'collaborative' ? '' : user.instructor_id,
       course_category_id: '',
@@ -195,6 +197,25 @@ const Index = (props: Props) => {
                   </div>
 
                   <div>
+                     <Label>{courseAudienceFieldLabel(input)} *</Label>
+                     <RadioGroup
+                        value={data.audience as string}
+                        className="flex flex-col gap-2 pt-2 pb-1"
+                        onValueChange={(value) => setData('audience', value)}
+                     >
+                        {audiences.map((audience) => (
+                           <div key={audience} className="flex items-center space-x-2">
+                              <RadioGroupItem value={audience} id={`audience-${audience}`} />
+                              <Label htmlFor={`audience-${audience}`} className="font-normal">
+                                 {courseAudienceOptionLabel(input, audience)}
+                              </Label>
+                           </div>
+                        ))}
+                     </RadioGroup>
+                     <InputError message={errors.audience} />
+                  </div>
+
+                  <div>
                      <Label>{input.pricing_type} *</Label>
                      <RadioGroup
                         defaultValue={data.pricing_type as string}
@@ -298,25 +319,6 @@ const Index = (props: Props) => {
                      <Label htmlFor="thumbnail">{input.thumbnail}</Label>
                      <Input type="file" name="thumbnail" onChange={(e) => onHandleChange(e, setData)} />
                      <InputError message={errors.thumbnail} />
-                  </div>
-
-                  <div>
-                     <Label htmlFor="drip_content">{input.enable_drip_content} *</Label>
-                     <RadioGroup
-                        defaultValue={data.drip_content ? 'on' : 'off'}
-                        className="flex items-center space-x-4 pt-2 pb-1"
-                        onValueChange={(value) => setData('drip_content', value === 'on')}
-                     >
-                        <div className="flex items-center space-x-2">
-                           <RadioGroupItem className="cursor-pointer" id="off" value="off" />
-                           <Label htmlFor="off">{common.off}</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                           <RadioGroupItem className="cursor-pointer" id="on" value="on" />
-                           <Label htmlFor="on">{common.on}</Label>
-                        </div>
-                     </RadioGroup>
-                     <InputError message={errors.drip_content} />
                   </div>
                </div>
             </div>

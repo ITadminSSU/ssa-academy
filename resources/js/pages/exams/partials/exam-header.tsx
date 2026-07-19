@@ -30,7 +30,7 @@ const ExamHeader = () => {
             {/* Rating */}
             <div className="flex items-center gap-1">
                <p className="font-semibold">{average_rating ? Number(average_rating).toFixed(1) : 0}</p>
-               <RatingStars rating={average_rating || 0} starClass="w-4 h-5" />
+               <RatingStars rating={average_rating || 0} starClass="h-4 w-4" />
             </div>
 
             {/* Language */}

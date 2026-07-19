@@ -4,6 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
 import useScreen from '@/hooks/use-screen';
+import { resolveNavbarItemHref } from '@/lib/navbar';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, usePage } from '@inertiajs/react';
@@ -17,10 +18,10 @@ interface NavbarProps {
    customizable?: boolean;
 }
 
-const Navbar = ({ language = false, heightCover = true, customizable = true }: NavbarProps) => {
+const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
    const { props } = usePage<SharedData>();
-   const { ziggy, navbar, translate } = props;
-   const { isAdmin, isLoggedIn } = useAuth();
+   const { navbar, translate } = props;
+   const { isLoggedIn } = useAuth();
    const [isSticky, setIsSticky] = useState(false);
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const { screen } = useScreen();
@@ -60,8 +61,21 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
                      </a>
                   );
                }
+               if (item.title === 'Contact Us' || item.title === 'Contact' || item.value?.includes('/contact')) {
+                  return (
+                     <a
+                        key={item.id}
+                        href="https://smartsourcingusa.com/contact"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-normal"
+                     >
+                        {item.title}
+                     </a>
+                  );
+               }
                return (
-                  <Link key={item.id} href={item.value || ''} className="text-sm font-normal">
+                  <Link key={item.id} href={resolveNavbarItemHref(item)} className="text-sm font-normal">
                      {item.title}
                   </Link>
                );
@@ -92,16 +106,14 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
    };
 
    const sortedItems = navbar.navbar_items.sort((a, b) => a.sort - b.sort);
-   const customizeLink = props.customize ? ziggy.location : '?customize=true';
 
    return (
       <>
-         <div className={cn('fixed top-0 z-30 w-full', isMenuOpen && 'bg-background')}>
+         <div className={cn('ssu-nav-shell fixed top-0 z-30 w-full', isMenuOpen && 'bg-background', isSticky && 'ssu-nav-shell--sticky')}>
             <div
                className={cn(
-                  'container mt-0 flex min-h-[72px] items-center justify-between gap-1 !px-4 py-2 transition-all duration-200 md:gap-6',
-                  isSticky && 'bg-background shadow-card mx-auto mt-4 min-h-16 w-full rounded-2xl md:!max-w-6xl',
-                  screen < 768 && 'mt-0 min-h-[72px] rounded-none',
+                  'container mt-0 flex min-h-16 items-center justify-between gap-1 !px-4 py-2 transition-all duration-200 md:gap-6',
+                  screen < 768 && 'min-h-16',
                )}
             >
                <div className="flex items-center gap-2">
@@ -111,33 +123,22 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
                   </Button>
 
                   {/* Logo */}
-                  <a href="https://smartsourcingusa.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
-                     <AppLogo className="h-[100px]" />
-                  </a>
+                  <Link href={route('home')} className="flex items-center">
+                     <AppLogo className="ssu-nav-logo" />
+                  </Link>
                </div>
 
                {/* Desktop Navigation */}
                <div className="hidden gap-4 md:flex md:items-center">
-                  <a
-                     href="https://smartsourcingusa.com"
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="text-sm font-normal"
-                  >
+                  <Link href={route('home')} className="hover:text-primary text-sm font-medium transition-colors">
                      Home
-                  </a>
+                  </Link>
                   {sortedItems.map((item) => (
                      <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                   ))}
                </div>
 
                <div className="flex items-center gap-2">
-                  {customizable && isAdmin && (
-                     <Button asChild variant="outline" className="hidden text-sm font-normal sm:block">
-                        <Link href={customizeLink}>{props.customize ? 'Back' : 'Customize'}</Link>
-                     </Button>
-                  )}
-
                   <Actions language={language} />
                </div>
             </div>
@@ -146,23 +147,12 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
             {isMenuOpen && (
                <ScrollArea className="bg-background h-[calc(100vh-72px)] border-t md:hidden">
                   <div className="flex flex-col space-y-4 px-6 py-4">
-                     <a
-                        href="https://smartsourcingusa.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-normal"
-                     >
+                     <Link href={route('home')} className="text-sm font-normal">
                         Home
-                     </a>
+                     </Link>
                      {sortedItems.map((item) => (
                         <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                      ))}
-
-                     {customizable && isAdmin && (
-                        <Button asChild variant="outline" className="text-sm font-normal">
-                           <Link href={customizeLink}>{props.customize ? 'Back' : 'Customize'}</Link>
-                        </Button>
-                     )}
 
                      {!isLoggedIn && (
                         <div className="block space-y-2 sm:hidden">
@@ -179,7 +169,7 @@ const Navbar = ({ language = false, heightCover = true, customizable = true }: N
             )}
          </div>
 
-         {heightCover && <div className="relative z-20 h-[72px] bg-transparent" />}
+         {heightCover && <div className="relative z-20 h-16 bg-transparent" />}
       </>
    );
 };

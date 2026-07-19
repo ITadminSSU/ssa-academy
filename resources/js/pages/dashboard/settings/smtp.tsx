@@ -33,7 +33,7 @@ const SMTP = ({ smtp }: Props) => {
       <div className="md:px-3">
          <div className="mb-6">
             <h1 className="text-2xl font-bold">{settings.smtp_settings}</h1>
-            <p className="text-gray-500">{settings.email_settings_description}</p>
+            <p className="text-muted-foreground">{settings.email_settings_description}</p>
          </div>
 
          <Card className="p-4 sm:p-6">

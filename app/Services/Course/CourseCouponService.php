@@ -41,11 +41,27 @@ class CourseCouponService
 
    public function getCouponsList(array $data, bool $paginate = false): LengthAwarePaginator|Collection
    {
+      $user = Auth::user();
       $page = array_key_exists('coupon_per_page', $data) ? intval($data['coupon_per_page']) : 10;
 
+      $search = $data['coupon_search'] ?? $data['search'] ?? null;
+
       $coupons = CourseCoupon::with('course:id,title')
-         ->when(isset($data['coupon_search']), function ($query) use ($data) {
-            $query->where('code', 'like', '%' . $data['coupon_search'] . '%');
+         ->when(!isAdmin(), function ($query) use ($user) {
+            $query->where(function ($scoped) use ($user) {
+               $scoped->where(function ($global) use ($user) {
+                  $global->whereNull('course_id')
+                     ->where(function ($owner) use ($user) {
+                        $owner->whereNull('created_by')
+                           ->orWhere('created_by', $user->id);
+                     });
+               })->orWhereHas('course', function ($courseQuery) use ($user) {
+                  $courseQuery->where('instructor_id', $user->instructor_id);
+               });
+            });
+         })
+         ->when(!empty($search), function ($query) use ($search) {
+            $query->where('code', 'like', '%' . $search . '%');
          })
          ->when(isset($data['is_active']), function ($query) use ($data) {
             $query->where('is_active', $data['is_active']);

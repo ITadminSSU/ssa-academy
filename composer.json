@@ -1,11 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/react-starter-kit",
+    "name": "smartsourcing/ssu-academy",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Smart Sourcing Academy — enterprise learning platform.",
     "keywords": [
         "laravel",
-        "framework"
+        "react",
+        "academy",
+        "training"
     ],
     "license": "MIT",
     "require": {
@@ -51,7 +53,8 @@
             "app/Helpers/Utils.php",
             "database/data/PageData.php",
             "database/data/utils/IntroSections.php",
-            "database/data/utils/InnerSections.php"
+            "database/data/utils/InnerSections.php",
+            "database/data/utils/SsuHomeSections.php"
         ]
     },
     "autoload-dev": {

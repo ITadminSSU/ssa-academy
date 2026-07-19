@@ -58,7 +58,7 @@ const FillBlankForm = ({ data, setData, errors }: Props) => {
                </Button>
             </div>
 
-            <p className="text-sm text-gray-600">Add multiple variations if there are different ways to answer correctly</p>
+            <p className="text-sm text-muted-foreground">Add multiple variations if there are different ways to answer correctly</p>
 
             {answers.map((answer, index) => (
                <div key={index} className="flex gap-2">

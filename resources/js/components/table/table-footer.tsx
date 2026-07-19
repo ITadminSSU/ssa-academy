@@ -72,7 +72,7 @@ const TableFooter = (props: Props) => {
             <span className="mr-3">| {table.go_to_page}</span>
             <DropdownMenu>
                <DropdownMenuTrigger>
-                  <Button variant="secondary" className="hover:border-primary h-8 w-[60px] rounded-md border border-gray-200 text-gray-700">
+                  <Button variant="secondary" className="hover:border-primary h-8 w-[60px] rounded-md border">
                      {current_page}
                   </Button>
                </DropdownMenuTrigger>

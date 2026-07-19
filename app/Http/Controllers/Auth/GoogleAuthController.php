@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\UserType;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\LegalAgreementService;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -13,12 +14,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
 {
-    public AuthService $authService;
-
-    public function __construct()
-    {
-        $this->authService = new AuthService();
-    }
+    public function __construct(
+        private AuthService $authService,
+        private LegalAgreementService $legalAgreement,
+    ) {}
 
     /**
      * Show the google sighup/login form.
@@ -52,21 +51,22 @@ class GoogleAuthController extends Controller
                 Auth::login($registered, true);
             }
 
-            if ($registered->role === UserType::STUDENT->value) {
-                if ($from && $from == 'api') {
-                    session()->forget('from');
-                    return redirect()->intended(config('app.frontend_url') . '/student');
-                } else {
-                    return redirect()->intended(route('student.index', ['tab' => 'courses'], absolute: false));
-                }
-            } else {
-                if ($from && $from == 'api') {
-                    session()->forget('from');
-                    return redirect()->intended(config('app.frontend_url') . '/dashboard');
-                } else {
-                    return redirect()->intended(route('dashboard', absolute: false));
-                }
+            if ($this->legalAgreement->requiresAcceptance($registered)) {
+                return redirect()->route('legal.agreement.show');
             }
+
+            $dashboardUrl = $this->authService->homeUrlFor($registered);
+
+            if ($from && $from == 'api') {
+                session()->forget('from');
+
+                return redirect()->intended(match ($registered->role) {
+                    UserType::STUDENT->value => config('app.frontend_url') . '/student',
+                    default => config('app.frontend_url') . '/dashboard',
+                });
+            }
+
+            return redirect()->intended($dashboardUrl);
         } catch (\Throwable $th) {
             if ($from && $from == 'api') {
                 session()->forget('from');

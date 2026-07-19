@@ -29,7 +29,7 @@ const Recaptcha = (props: Props) => {
          <div className="mb-7 flex items-center justify-between">
             <div>
                <h2 className="text-xl font-semibold">ReCaptcha Settings</h2>
-               <p className="text-gray-500">Provide the ReCaptcha site key and secret key.</p>
+               <p className="text-muted-foreground">Provide the ReCaptcha site key and secret key.</p>
             </div>
 
             <div className="flex items-center space-x-2">

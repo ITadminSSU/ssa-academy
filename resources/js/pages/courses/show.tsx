@@ -1,17 +1,17 @@
 import Tabs from '@/components/tabs';
-import { Separator } from '@/components/ui/separator';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LandingLayout from '@/layouts/landing-layout';
 import { SharedData } from '@/types/global';
 import { Head } from '@inertiajs/react';
 import { ReactNode } from 'react';
-import CourseHeader from './partials/course-header';
+import CourseHero from './partials/course-hero';
 import CoursePreview from './partials/course-preview';
 import CourseReviews from './partials/course-reviews';
 import Curriculum from './partials/curriculum';
 import Details from './partials/details';
 import Instructor from './partials/instructor';
 import Overview from './partials/overview';
+import Videos from './partials/videos';
 
 export interface CourseDetailsProps extends SharedData {
    course: Course;
@@ -21,6 +21,7 @@ export interface CourseDetailsProps extends SharedData {
    wishlists: CourseWishlist[];
    reviews: Pagination<CourseReview>;
    totalReviews: CourseTotalReview;
+   subscriptionAccess?: SubscriptionAccess | null;
 }
 
 const Show = ({ course, system, translate }: CourseDetailsProps & { translate: any }) => {
@@ -35,6 +36,11 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
       {
          value: 'curriculum',
          label: button.curriculum,
+         Component: <Videos course={course} />,
+      },
+      {
+         value: 'modules',
+         label: button.modules || 'Modules',
          Component: <Curriculum course={course} />,
       },
       {
@@ -63,7 +69,7 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
    // Generate meta information for the course
    const pageTitle = course.meta_title || `${course.title} | ${system.fields?.name}`;
    const pageDescription = course.meta_description || course.short_description || course.description || frontend.learn_comprehensive_course;
-   const pageKeywords = course.meta_keywords || `${course.title}, ${frontend.online_course_learning_lms}, ${system.fields?.keywords || 'LMS'}`;
+   const pageKeywords = course.meta_keywords || `${course.title}, ${frontend.online_course_learning_lms}, ${system.fields?.keywords || 'SSU Academy'}`;
    const ogTitle = course.og_title || course.title;
    const ogDescription = course.og_description || pageDescription;
    const courseImage = course.thumbnail || '';
@@ -145,33 +151,37 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
             </script>
          </Head>
 
-         <div className="container grid grid-cols-1 gap-7 py-10 md:grid-cols-3">
-            <div className="space-y-8 md:col-span-2">
-               <CourseHeader course={course} />
+         <CourseHero course={course} />
 
-               <Tabs defaultValue="overview" className="bg-card overflow-hidden rounded-md border shadow">
-                  <div className="overflow-x-auto overflow-y-hidden">
-                     <TabsList className="vertical-tabs-list">
-                        {tabs.map(({ label, value }) => (
-                           <TabsTrigger key={value} value={value} className="vertical-tabs-trigger">
-                              <span>{label}</span>
-                           </TabsTrigger>
-                        ))}
-                     </TabsList>
-                  </div>
+         <div className="ssu-page-shell">
+            <div className="container grid grid-cols-1 gap-7 pb-14 md:grid-cols-3 md:-mt-12">
+               <div className="space-y-8 md:col-span-2">
+                  <Tabs defaultValue="overview" className="ssu-surface-card relative z-10 overflow-hidden">
+                     <div className="border-border/70 overflow-x-auto overflow-y-hidden border-b">
+                        <TabsList className="flex h-auto w-full justify-start gap-2 rounded-none bg-transparent p-3">
+                           {tabs.map(({ label, value }) => (
+                              <TabsTrigger
+                                 key={value}
+                                 value={value}
+                                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap"
+                              >
+                                 <span>{label}</span>
+                              </TabsTrigger>
+                           ))}
+                        </TabsList>
+                     </div>
 
-                  <Separator className="mt-[1px]" />
+                     {tabs.map(({ value, Component }) => (
+                        <TabsContent key={value} value={value} className="m-0 p-5 md:p-6">
+                           {Component}
+                        </TabsContent>
+                     ))}
+                  </Tabs>
+               </div>
 
-                  {tabs.map(({ value, Component }) => (
-                     <TabsContent key={value} value={value} className="m-0 p-5">
-                        {Component}
-                     </TabsContent>
-                  ))}
-               </Tabs>
-            </div>
-
-            <div>
-               <CoursePreview />
+               <div className="relative z-10">
+                  <CoursePreview />
+               </div>
             </div>
          </div>
       </>

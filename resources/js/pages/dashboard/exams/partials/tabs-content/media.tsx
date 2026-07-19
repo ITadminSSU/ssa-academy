@@ -50,7 +50,7 @@ const Media = () => {
                   }}
                />
                <InputError message={errors.thumbnail} />
-               <p className="mt-1 text-xs text-gray-500">Recommended size: 400x300px. Max size: 2MB</p>
+               <p className="mt-1 text-xs text-muted-foreground">Recommended size: 400x300px. Max size: 2MB</p>
 
                {previewThumbnail && (
                   <div className="mt-4">

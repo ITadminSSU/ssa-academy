@@ -46,14 +46,31 @@ class InstallerController extends Controller
             'symlink_enabled' => function_exists('symlink'),
         ];
 
-        foreach ($requirements as $item) {
-            if (!$item) {
+        $blockingKeys = [
+            'php_version',
+            'openssl_enabled',
+            'pdo_enabled',
+            'mbstring_enabled',
+            'curl_enabled',
+            'tokenizer_enabled',
+            'xml_enabled',
+            'ctype_enabled',
+            'fileinfo_enabled',
+            'gd_enabled',
+            'json_enabled',
+            'bcmath_enabled',
+        ];
+
+        $allValuesAreTrue = true;
+        foreach ($blockingKeys as $key) {
+            if (!$requirements[$key]) {
                 $allValuesAreTrue = false;
                 break;
             }
         }
 
         session()->put('requirements', $allValuesAreTrue);
+        session()->put('symlink_enabled', $requirements['symlink_enabled']);
 
         return Inertia::render('installer/Step1', compact('allValuesAreTrue', 'requirements'));
     }
@@ -188,14 +205,31 @@ class InstallerController extends Controller
             config(['database.connections.' . session('DB_CONNECTION') . '.database' => session('DB_DATABASE')]);
             config(['database.connections.' . session('DB_CONNECTION') . '.username' => session('DB_USERNAME')]);
             config(['database.connections.' . session('DB_CONNECTION') . '.password' => $dbPassword]);
+            config(['database.connections.' . session('DB_CONNECTION') . '.prefix' => 'ssu_academy_']);
 
             // Reconnect to database with new configuration
             DB::purge(session('DB_CONNECTION'));
             DB::reconnect(session('DB_CONNECTION'));
 
-            // Run migrations and create storage link
+            // Run migrations and create storage link when the host allows it
             Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
-            Artisan::call('storage:link');
+
+            $symlinkEnabled = function_exists('symlink');
+            $publicStoragePath = '';
+
+            if ($symlinkEnabled) {
+                try {
+                    Artisan::call('storage:link');
+                } catch (\Throwable) {
+                    $symlinkEnabled = false;
+                }
+            }
+
+            if (!$symlinkEnabled) {
+                // Hostinger: URLs use /storage/app/public/... ; StorageFileController strips
+                // that prefix and reads from storage/app/public on disk.
+                $publicStoragePath = 'app/public';
+            }
 
             // Add or update admin user
             $admin = User::updateOrCreate(
@@ -248,7 +282,10 @@ class InstallerController extends Controller
                 'DB_DATABASE' => session('DB_DATABASE'),
                 'DB_USERNAME' => session('DB_USERNAME'),
                 'DB_PASSWORD' => session('DB_PASSWORD'),
-                'MENTOR_INSTALLED' => 'true'
+                'DB_TABLE_PREFIX' => 'ssu_academy_',
+                'PUBLIC_STORAGE_PATH' => $publicStoragePath,
+                'SSU_ACADEMY_INSTALLED' => 'true',
+                'MENTOR_INSTALLED' => null,
             ]);
 
             // Mark as installed

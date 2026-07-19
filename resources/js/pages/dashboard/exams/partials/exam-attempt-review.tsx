@@ -1,4 +1,5 @@
 import QuestionAnswerResult from '@/components/exam/question-answer-result';
+import QuantityTakeoffLineOverrides from '@/components/exam/quantity-takeoff-line-overrides';
 import QuestionStatusBadge from '@/components/exam/question-status-badge';
 import QuestionStatusIcon from '@/components/exam/question-status-icon';
 import QuestionTypeBadge from '@/components/exam/question-type-badge';
@@ -53,15 +54,17 @@ const ExamAttemptReview = ({ attempt }: { attempt: ExamAttempt }) => {
 
    const needsManualGrading = answers.some((answer) => {
       const question = safeQuestion(answer);
-      return question.question_type === 'listening' || question.question_type === 'short_answer';
+      return question.question_type === 'listening' || question.question_type === 'short_answer' || question.question_type === 'file_submission';
    });
+
+   const isQuantityTakeoff = attempt.exam?.exam_mode === 'quantity_takeoff';
 
    if (!attempt) {
       return (
          <div className="flex h-full items-center justify-center p-10">
             <div className="text-center">
-               <h1 className="text-2xl font-semibold text-gray-800">Attempt data unavailable</h1>
-               <p className="mt-2 text-sm text-gray-600">Please return to the exam list and try again.</p>
+               <h1 className="text-2xl font-semibold text-foreground">Attempt data unavailable</h1>
+               <p className="mt-2 text-sm text-muted-foreground">Please return to the exam list and try again.</p>
                <div className="mt-4">
                   <Link href={route('student.index', 'exams')}>
                      <Button variant="outline">Back to My Exams</Button>
@@ -74,6 +77,30 @@ const ExamAttemptReview = ({ attempt }: { attempt: ExamAttempt }) => {
 
    return (
       <div className="space-y-6">
+         {isQuantityTakeoff && (
+            <Card>
+               <CardHeader>
+                  <CardTitle>Quantity take-off summary</CardTitle>
+               </CardHeader>
+               <CardContent className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                     <p className="text-sm text-muted-foreground">Score</p>
+                     <p className="text-2xl font-bold">{attempt.percentage?.toFixed?.(1) ?? attempt.percentage}%</p>
+                  </div>
+                  <div>
+                     <p className="text-sm text-muted-foreground">Marks</p>
+                     <p className="text-2xl font-bold">
+                        {attempt.obtained_marks}/{attempt.total_marks}
+                     </p>
+                  </div>
+                  <div>
+                     <p className="text-sm text-muted-foreground">Result</p>
+                     <p className="text-2xl font-bold">{attempt.is_passed ? 'Passed' : 'Failed'}</p>
+                  </div>
+               </CardContent>
+            </Card>
+         )}
+
          {/* Question-wise Analysis */}
          <Card>
             <CardHeader>
@@ -96,9 +123,9 @@ const ExamAttemptReview = ({ attempt }: { attempt: ExamAttempt }) => {
                      const questionId = question.id as number;
 
                      return (
-                        <div key={answer.id ?? index} className="overflow-hidden rounded-lg border-2 border-gray-200 bg-white">
+                        <div key={answer.id ?? index} className="overflow-hidden rounded-lg border-2 border-border bg-card">
                            {/* Question Header */}
-                           <div className="border-b border-gray-200 bg-gray-50 p-4">
+                           <div className="border-b border-border bg-muted p-4">
                               <div className="flex items-start justify-between gap-4">
                                  <div className="flex flex-1 items-start gap-3">
                                     <div className="mt-1 flex-shrink-0">
@@ -110,14 +137,14 @@ const ExamAttemptReview = ({ attempt }: { attempt: ExamAttempt }) => {
                                           {question.question_type && <QuestionTypeBadge type={question.question_type as ExamQuestionType} />}
                                           <QuestionStatusBadge answer={answer} />
                                        </div>
-                                       <p className="text-sm font-medium text-gray-700">{question.title}</p>
+                                       <p className="text-sm font-medium text-muted-foreground">{question.title}</p>
                                     </div>
                                  </div>
                                  <div className="flex-shrink-0 text-right">
-                                    <p className="text-lg font-bold text-gray-900">
+                                    <p className="text-lg font-bold text-foreground">
                                        {answer.marks_obtained || 0}/{question.marks || 0}
                                     </p>
-                                    <p className="text-xs text-gray-500">marks</p>
+                                    <p className="text-xs text-muted-foreground">marks</p>
                                  </div>
                               </div>
                            </div>
@@ -131,10 +158,17 @@ const ExamAttemptReview = ({ attempt }: { attempt: ExamAttempt }) => {
                                  <QuestionAnswerResult answer={answer} question={question} />
                               </div>
 
+                              {isQuantityTakeoff && question.question_type === 'quantity_takeoff' && answer.answer_data?.grading_breakdown && (
+                                 <QuantityTakeoffLineOverrides
+                                    attemptId={attempt.id}
+                                    breakdown={answer.answer_data.grading_breakdown}
+                                 />
+                              )}
+
                               {/* Manual Grading Section for listening and short_answer */}
-                              {(question.question_type === 'listening' || question.question_type === 'short_answer') && (
-                                 <div className="mt-4 rounded-lg border-t border-gray-200 bg-yellow-50 p-4 pt-4">
-                                    <Label htmlFor={`grade-${questionId}`} className="text-sm font-semibold text-gray-700">
+                              {(question.question_type === 'listening' || question.question_type === 'short_answer' || question.question_type === 'file_submission') && !isQuantityTakeoff && (
+                                 <div className="mt-4 rounded-lg border-t border-border bg-yellow-500/10 p-4 pt-4">
+                                    <Label htmlFor={`grade-${questionId}`} className="text-sm font-semibold text-muted-foreground">
                                        Assign Marks (Max: {question.marks || 0})
                                     </Label>
                                     <Input

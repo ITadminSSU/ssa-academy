@@ -1,5 +1,6 @@
+import ManualTransferGateway from '@/components/gateways/manual-transfer-gateway';
 import Mollie from '@/components/gateways/mollie';
-// import Offline from '@/components/gateways/offline';
+import PaymentGatewayOverview from '@/components/gateways/payment-gateway-overview';
 import Paypal from '@/components/gateways/paypal';
 import Paystack from '@/components/gateways/paystack';
 import Razorpay from '@/components/gateways/razorpay';
@@ -20,68 +21,78 @@ const Payment = ({ payments }: Props) => {
    const page = usePage();
    const params = getQueryParams(page.url);
 
-   const tabs = payments
-      .filter((payment) => payment.sub_type !== 'offline') // Filter out offline payments
-      .map((payment) => {
-         let Component;
+   const resolveComponent = (payment: Settings<any>) => {
+      switch (payment.sub_type) {
+         case 'paypal':
+            return Paypal;
+         case 'stripe':
+            return Stripe;
+         case 'mollie':
+            return Mollie;
+         case 'paystack':
+            return Paystack;
+         case 'sslcommerz':
+            return SSLCommerz;
+         case 'razorpay':
+            return Razorpay;
+         case 'bank_transfer':
+            return (props: { payment: Settings<any>; routePath: string }) => (
+               <ManualTransferGateway
+                  {...props}
+                  gatewayType="bank_transfer"
+                  title="Bank Transfer Settings"
+                  description="Configure domestic bank transfer instructions for students."
+               />
+            );
+         case 'wire_transfer':
+            return (props: { payment: Settings<any>; routePath: string }) => (
+               <ManualTransferGateway
+                  {...props}
+                  gatewayType="wire_transfer"
+                  title="Wire Transfer Settings"
+                  description="Configure international wire transfer instructions for students."
+               />
+            );
+         case 'offline':
+            return (props: { payment: Settings<any>; routePath: string }) => (
+               <ManualTransferGateway
+                  {...props}
+                  gatewayType="offline"
+                  title="Offline Payment Settings"
+                  description="Legacy manual payment option (cash, cheque, etc.)."
+               />
+            );
+         default:
+            return ({ payment }: { payment: any }) => <div>No component found for {payment.sub_type}</div>;
+      }
+   };
 
-         switch (payment.sub_type) {
-            case 'paypal':
-               Component = Paypal;
-               break;
+   const tabs = payments.map((payment) => ({
+      ...payment,
+      Component: resolveComponent(payment),
+   }));
 
-            case 'stripe':
-               Component = Stripe;
-               break;
+   const orderedTabs = [
+      ...tabs.filter((t) => ['stripe', 'bank_transfer', 'wire_transfer'].includes(t.sub_type)),
+      ...tabs.filter((t) => !['stripe', 'bank_transfer', 'wire_transfer', 'offline'].includes(t.sub_type)),
+      ...tabs.filter((t) => t.sub_type === 'offline'),
+   ];
 
-            case 'mollie':
-               Component = Mollie;
-               break;
-
-            case 'paystack':
-               Component = Paystack;
-               break;
-
-            case 'sslcommerz':
-               Component = SSLCommerz;
-               break;
-
-            case 'razorpay':
-               Component = Razorpay;
-               break;
-
-            // case 'offline':
-            //    Component = Offline;
-            //    break;
-
-            default:
-               Component = ({ payment }: { payment: any }) => <div>No component found</div>;
-               break;
-         }
-
-         return {
-            ...payment,
-            Component,
-         };
-      });
+   const defaultTab = params['tab'] ?? orderedTabs[0]?.sub_type;
 
    return (
       <section className="md:px-3">
-         <Tabs value={params['tab'] ?? tabs[0].sub_type} className="grid grid-rows-1 gap-5 md:grid-cols-4">
+         <PaymentGatewayOverview payments={payments} />
+
+         <Tabs value={defaultTab} className="grid grid-rows-1 gap-5 md:grid-cols-4">
             <div>
                <TabsList className="horizontal-tabs-list">
-                  {tabs.map(({ id, title, sub_type }) => (
+                  {orderedTabs.map(({ id, title, sub_type }) => (
                      <TabsTrigger
                         key={id}
                         value={sub_type}
                         className="horizontal-tabs-trigger"
-                        onClick={() =>
-                           router.get(
-                              route('settings.payment', {
-                                 tab: sub_type,
-                              }),
-                           )
-                        }
+                        onClick={() => router.get(route('settings.payment', { tab: sub_type }))}
                      >
                         {title}
                      </TabsTrigger>
@@ -90,7 +101,7 @@ const Payment = ({ payments }: Props) => {
             </div>
 
             <div className="md:col-span-3">
-               {tabs.map((payment) => (
+               {orderedTabs.map((payment) => (
                   <TabsContent key={payment.id} value={payment.sub_type} className="m-0">
                      <payment.Component payment={payment} routePath={route('settings.payment.update', payment.id)} />
                   </TabsContent>

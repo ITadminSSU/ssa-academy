@@ -17,8 +17,8 @@ docker network create mentor-network
 # Run MySQL container
 docker run -d --name mysql --network mentor-network \
   -e MYSQL_ROOT_PASSWORD=rootpassword \
-  -e MYSQL_DATABASE=mentor_lms \
-  -e MYSQL_USER=mentor_user \
+  -e MYSQL_DATABASE=ssu_academy \
+  -e MYSQL_USER=ssu_academy_user \
   -e MYSQL_PASSWORD=your_password \
   -p 3306:3306 mysql:8.0
 
@@ -29,8 +29,9 @@ docker run -d --name mentor-lms-app --network mentor-network -p 8080:80 mentor-l
 **Database Configuration:**
 - Host: `mysql`
 - Port: `3306`
-- Database: `mentor_lms`
-- Username: `mentor_user`
+- Database: `ssu_academy`
+- Table prefix: `ssu_academy_` (set `DB_TABLE_PREFIX=ssu_academy_` in `.env`)
+- Username: `ssu_academy_user`
 - Password: `your_password`
 
 #### Option B: With External MySQL

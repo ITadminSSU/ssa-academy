@@ -107,6 +107,8 @@ return [
     'course_preview' => 'Course Preview',
     'submit_for_approval' => 'Submit for Approval',
     'approval_status' => 'Approval Status',
+    'publish_course' => 'Publish Course',
+    'unpublish_course' => 'Unpublish',
 
     // ==================================================
     // 04. Authentication Buttons
@@ -152,6 +154,7 @@ return [
     'prev' => 'Prev',
     'next' => 'Next',
     'back' => 'Back',
+    'view_progress' => 'View Progress',
     'show_full' => 'Show Full',
     'show_less' => 'Show Less',
 
@@ -210,7 +213,7 @@ return [
     'details' => 'Details',
     'instructor' => 'Instructor',
     'reviews' => 'Reviews',
-    'summery' => 'Summery',
+    'summery' => 'Summary',
     'certificate' => 'Certificate',
     'forum' => 'Forum',
     'review' => 'Review',

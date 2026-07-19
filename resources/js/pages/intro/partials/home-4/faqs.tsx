@@ -9,7 +9,7 @@ const FAQs = () => {
    const { page, customize } = props;
    const faqsCoursesSection = getPageSection(page, 'faqs');
 
-   const array = getPropertyArray(faqsCoursesSection);
+   const array = getPropertyArray(faqsCoursesSection).filter((faq) => (faq.title || '').trim());
    const midPoint = Math.floor(array.length / 2);
    const firstPart = array.slice(0, midPoint);
    const secondPart = array.slice(midPoint);

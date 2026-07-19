@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CoursePlayerProps } from '@/types/page';
+import { CoursePlayerProps, StudentCourseProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ClipboardList, Lock } from 'lucide-react';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 const QuizIcon = ({ quiz, latestSubmission }: { quiz: SectionQuiz; latestSubmission: QuizSubmission | null }) => {
-   const { props } = usePage<CoursePlayerProps>();
+   const { props } = usePage<StudentCourseProps | CoursePlayerProps>();
    const { translate } = props;
    const { frontend } = translate;
    const isPassed = latestSubmission?.is_passed;
@@ -48,13 +48,15 @@ const QuizIcon = ({ quiz, latestSubmission }: { quiz: SectionQuiz; latestSubmiss
 };
 
 const QuizStatus = ({ quiz, completed }: Props) => {
-   const { props } = usePage<CoursePlayerProps>();
-   const { watchHistory, translate } = props;
+   const { props } = usePage<StudentCourseProps | CoursePlayerProps>();
+   const { watchHistory, courseGates, translate } = props;
    const { frontend } = translate;
 
    const isCompleted = completed.some((item) => item.type === 'quiz' && item.id == quiz.id);
    const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && watchHistory.current_watching_id == quiz.id;
    const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
+   const quizzesUnlocked = courseGates?.quizzes_unlocked ?? true;
+   const canAccessQuiz = (isCompleted || isCurrentLesson || isNext) && quizzesUnlocked;
 
    const latestSubmission =
       quiz.quiz_submissions && quiz.quiz_submissions.length > 0 ? quiz.quiz_submissions[quiz.quiz_submissions.length - 1] : null;
@@ -62,14 +64,29 @@ const QuizStatus = ({ quiz, completed }: Props) => {
    const totalMarks = latestSubmission?.total_marks || 0;
    const hasAttempted = latestSubmission !== null;
 
+   if (!quizzesUnlocked && !hasAttempted) {
+      return (
+         <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
+            <div className="flex flex-1 items-center gap-3 text-muted-foreground">
+               <Lock className="h-5 w-5 shrink-0" />
+               <QuizIcon quiz={quiz} latestSubmission={null} />
+            </div>
+            <p className="text-muted-foreground max-w-xs text-right text-sm">
+               Submit {courseGates?.pending_assignments_count || 'all'} assignment
+               {(courseGates?.pending_assignments_count || 0) === 1 ? '' : 's'} first
+            </p>
+         </div>
+      );
+   }
+
    return (
       <>
-         {isCompleted || isCurrentLesson || isNext ? (
+         {canAccessQuiz ? (
             <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
                <div
                   className={cn(
                      'flex flex-1 items-center gap-3',
-                     isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-gray-500',
+                     isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-muted-foreground',
                   )}
                >
                   <QuizIcon quiz={quiz} latestSubmission={latestSubmission} />
@@ -105,7 +122,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
             </div>
          ) : (
             <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
-               <div className="flex flex-1 items-center gap-3 text-gray-500">
+               <div className="flex flex-1 items-center gap-3 text-muted-foreground">
                   <Lock className="h-5 w-5" />
 
                   <QuizIcon quiz={quiz} latestSubmission={null} />
@@ -115,7 +132,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
                   {/* Marks Display */}
                   {hasAttempted && (
                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-muted-foreground">
                            {frontend.total_marks}: {totalMarks}/{quiz.total_mark}
                         </p>
                      </div>

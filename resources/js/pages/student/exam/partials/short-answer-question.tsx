@@ -42,7 +42,7 @@ const ShortAnswerQuestion = ({ question, answer, onAnswerChange }: Props) => {
          </div>
 
          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">
+            <span className="text-muted-foreground">
                Word count: <span className={`font-semibold ${wordCount > wordLimit ? 'text-destructive' : ''}`}>{wordCount}</span>
                {wordLimit && ` / ${wordLimit}`}
             </span>
@@ -50,9 +50,9 @@ const ShortAnswerQuestion = ({ question, answer, onAnswerChange }: Props) => {
          </div>
 
          {question.options?.expected_answer && (
-            <div className="rounded-lg bg-gray-50 p-3">
-               <p className="mb-1 text-sm font-semibold text-gray-700">Guidance:</p>
-               <p className="text-sm text-gray-600">{question.options.expected_answer}</p>
+            <div className="rounded-lg bg-muted p-3">
+               <p className="mb-1 text-sm font-semibold text-muted-foreground">Guidance:</p>
+               <p className="text-sm text-muted-foreground">{question.options.expected_answer}</p>
             </div>
          )}
       </div>

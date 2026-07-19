@@ -14,7 +14,9 @@
       content="{{ csrf_token() }}"
    >
 
-   <title>{{ __('Payment Checkout') }}</title>
+   <title>{{ __('Payment Checkout') }} | {{ config('branding.name') }}</title>
+
+   <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700" rel="stylesheet" />
 
    {{-- vites --}}
    {{-- @routes
@@ -22,14 +24,18 @@
    @vite(['resources/js/app.tsx'])
 </head>
 
-<body class="flex min-h-screen items-center justify-center">
+<body class="ssu-page-shell flex min-h-screen items-center justify-center font-sans">
    <div class="payment mx-auto w-full max-w-[1200px] p-6 py-8 md:p-7">
+      <div class="mb-6">
+         <p class="ssu-kicker">Secure checkout</p>
+         <h1 class="font-display text-2xl font-semibold tracking-tight">{{ config('branding.name') }}</h1>
+      </div>
       <div class="grid grid-cols-12 items-start gap-7">
-         <div class="col-span-12 md:col-span-8">
+         <div class="ssu-surface-card col-span-12 p-6 md:col-span-8">
             @include('paymentgateways::partials.payment.CourseCard')
          </div>
-         <div class="bg-card col-span-12 overflow-hidden rounded-lg border shadow-sm md:col-span-4">
-            <div class="shadow-card col-span-12 space-y-6 rounded-lg p-6 md:col-span-8">
+         <div class="ssu-surface-card col-span-12 overflow-hidden md:col-span-4">
+            <div class="space-y-6 p-6">
                @include('paymentgateways::partials.payment.PaymentMethod')
 
                @if (session('error'))

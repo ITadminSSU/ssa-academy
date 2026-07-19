@@ -20,7 +20,7 @@ const ReviewCard1 = ({ review }: { review: Review }) => {
          <p className="text-muted-foreground mb-4 flex-grow text-sm">"{review.description}"</p>
 
          <div className="flex items-center">
-            <div className="mr-3 h-10 w-10 overflow-hidden rounded-full bg-gray-200">
+            <div className="mr-3 h-10 w-10 overflow-hidden rounded-full bg-muted">
                <img src={review.image || '/assets/icons/avatar.png'} alt={review.name} className="h-full w-full object-cover" />
             </div>
             <div>

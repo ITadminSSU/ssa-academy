@@ -53,7 +53,7 @@ const Lesson = ({ lesson, completed }: Props) => {
                <Link
                   className={cn(
                      'flex cursor-pointer items-center gap-3 py-1',
-                     isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-gray-500',
+                     isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-muted-foreground',
                   )}
                   href={route('course.player', {
                      type: 'lesson',
@@ -75,7 +75,7 @@ const Lesson = ({ lesson, completed }: Props) => {
             </LessonWrapper>
          ) : (
             <LessonWrapper lesson={lesson}>
-               <div className="flex items-center gap-3 py-1 text-gray-500">
+               <div className="flex items-center gap-3 py-1 text-muted-foreground">
                   <LessonIcons type="inactive" lesson={lesson} dripContent={true} isCompleted={isCompleted} />
 
                   <p>{lesson.title}</p>
