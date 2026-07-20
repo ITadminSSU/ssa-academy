@@ -14,9 +14,9 @@ return [
     'contact_email' => env('BRAND_CONTACT_EMAIL', 'info@smartsourcingusa.com'),
 
     'logos' => [
-        'icon' => '/assets/branding/logo-icon.png',
-        'dark' => '/assets/branding/logo-dark.png',
-        'light' => '/assets/branding/logo-light.png',
+        'icon' => '/assets/branding/ssa-academy-logo.png',
+        'dark' => '/assets/branding/ssa-academy-logo.png',
+        'light' => '/assets/branding/ssa-academy-logo.png',
         'favicon' => '/favicon.png',
     ],
 
