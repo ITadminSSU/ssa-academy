@@ -18,14 +18,18 @@ class AppConfig
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $system = $this->settingsService->getSetting(['type' => 'system'])['fields'];
-        $storage = $this->settingsService->getSetting(['type' => 'storage'])['fields'];
+        $systemSetting = $this->settingsService->getSetting(['type' => 'system']);
+        $storageSetting = $this->settingsService->getSetting(['type' => 'storage']);
 
-        // App configuration
-        config(['app.name' => $system['name']]);
+        if ($systemSetting) {
+            $system = $systemSetting->fields ?? [];
+            config(['app.name' => $system['name'] ?? config('app.name')]);
+        }
+
+        $storage = $storageSetting->fields ?? ['storage_driver' => 'local'];
 
         // Storage configuration
-        if ($storage['storage_driver'] == 's3') {
+        if (($storage['storage_driver'] ?? 'local') == 's3') {
             config(['media-library.disk_name' => 's3']);
             config([
                 'filesystems.default' => 's3',

@@ -15,8 +15,7 @@ class InstallerRoutes
     public function handle(Request $request, Closure $next)
     {
         $installed = Storage::disk('public')->exists('installed')
-            || env('SSU_ACADEMY_INSTALLED')
-            || env('MENTOR_INSTALLED');
+            || config('app.installed');
 
         if ($installed) {
             return redirect('/');

@@ -123,4 +123,15 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Application installed (web installer completed)
+    |--------------------------------------------------------------------------
+    |
+    | Read via config() in middleware — env() is unavailable after config:cache.
+    |
+    */
+
+    'installed' => (bool) env('SSU_ACADEMY_INSTALLED') || (bool) env('MENTOR_INSTALLED'),
+
 ];

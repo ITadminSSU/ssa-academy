@@ -18,29 +18,31 @@ class AuthConfig
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $auth = $this->settingsService->getSetting([
+        $authSetting = $this->settingsService->getSetting([
             'type' => 'auth',
-            'sub_type' => 'google'
-        ])['fields'];
+            'sub_type' => 'google',
+        ]);
+        $recaptchaSetting = $this->settingsService->getSetting([
+            'type' => 'auth',
+            'sub_type' => 'recaptcha',
+        ]);
 
-        $recaptcha = $this->settingsService->getSetting([
-            'type' => 'auth',
-            'sub_type' => 'recaptcha'
-        ])['fields'];
+        $auth = $authSetting->fields ?? [];
+        $recaptcha = $recaptchaSetting->fields ?? [];
 
         // Google Auth configuration
         config([
-            'services.google.status' => $auth['active'],
-            'services.google.client_id' => $auth['client_id'],
-            'services.google.client_secret' => $auth['client_secret'],
-            'services.google.redirect' => $auth['redirect'],
+            'services.google.status' => $auth['active'] ?? false,
+            'services.google.client_id' => $auth['client_id'] ?? null,
+            'services.google.client_secret' => $auth['client_secret'] ?? null,
+            'services.google.redirect' => $auth['redirect'] ?? null,
         ]);
 
         // Recaptcha configuration
         config([
-            'captcha.status' => $recaptcha['active'],
-            'captcha.secret' => $recaptcha['secret_key'],
-            'captcha.sitekey' => $recaptcha['site_key'],
+            'captcha.status' => $recaptcha['active'] ?? false,
+            'captcha.secret' => $recaptcha['secret_key'] ?? null,
+            'captcha.sitekey' => $recaptcha['site_key'] ?? null,
         ]);
 
         return $next($request);

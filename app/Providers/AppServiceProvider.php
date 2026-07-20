@@ -32,19 +32,22 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton('intro_page', function (): ?Page {
             try {
-                if (isDBConnected() && Schema::hasTable('settings')) {
-                    $home = Setting::where('type', 'home_page')->first();
-
-                    $page = Page::where('id', $home->fields['page_id'])
-                        ->with(['sections' => function ($query) {
-                            $query->orderBy('sort', 'asc');
-                        }])
-                        ->first();
-
-                    return $page;
+                if (! isDBConnected() || ! Schema::hasTable('settings') || ! Schema::hasTable('pages')) {
+                    return null;
                 }
 
-                return null;
+                $home = Setting::where('type', 'home_page')->first();
+                $pageId = $home?->fields['page_id'] ?? null;
+
+                if (! $pageId) {
+                    return null;
+                }
+
+                return Page::where('id', $pageId)
+                    ->with(['sections' => function ($query) {
+                        $query->orderBy('sort', 'asc');
+                    }])
+                    ->first();
             } catch (\Throwable $th) {
                 return null;
             }
