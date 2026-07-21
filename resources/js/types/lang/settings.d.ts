@@ -21,6 +21,8 @@ interface SettingsLang {
    email_settings_description: string;
    storage_settings: string;
    storage_settings_description: string;
+   bunny_stream_settings: string;
+   bunny_stream_settings_description: string;
 
    // Common Application Terms
    application_update: string;

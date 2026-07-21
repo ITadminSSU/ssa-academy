@@ -23,6 +23,7 @@ class SectionLesson extends Model implements HasMedia
         'activity_retake',
         'lesson_provider',
         'lesson_src',
+        'bunny_video_id',
         'embed_source',
         'thumbnail',
         'duration',

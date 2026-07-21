@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 
-type SecureVideoDelivery = 'direct' | 'signed' | 'blob';
+type SecureVideoDelivery = 'direct' | 'signed' | 'blob' | 'bunny_embed';
 
 interface SecureVideoPlayback {
    protected: boolean;
    stream_url: string;
+   embed_url?: string;
    delivery: SecureVideoDelivery;
    expires_at: string | null;
    mime_type?: string;
@@ -19,12 +20,16 @@ interface UseSecureVideoStreamOptions {
 
 export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream = false }: UseSecureVideoStreamOptions) {
    const [playbackUrl, setPlaybackUrl] = useState<string | null>(secureStream ? null : initialSrc || null);
+   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+   const [delivery, setDelivery] = useState<SecureVideoDelivery | null>(secureStream ? null : 'direct');
    const [loading, setLoading] = useState(secureStream);
    const [error, setError] = useState<string | null>(null);
 
    useEffect(() => {
       if (!secureStream) {
          setPlaybackUrl(initialSrc || null);
+         setEmbedUrl(null);
+         setDelivery('direct');
          setLoading(false);
          setError(null);
          return;
@@ -43,6 +48,8 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
          setLoading(true);
          setError(null);
          setPlaybackUrl(null);
+         setEmbedUrl(null);
+         setDelivery(null);
 
          try {
             const tokenResponse = await fetch(route('course.player.video.stream-url', { lesson: lessonId }), {
@@ -74,8 +81,17 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
                return;
             }
 
-            if (!payload.stream_url) {
+            if (!payload.stream_url && !payload.embed_url) {
                throw new Error('No secure stream was returned for this lesson.');
+            }
+
+            setDelivery(payload.delivery);
+
+            if (payload.delivery === 'bunny_embed') {
+               setEmbedUrl(payload.embed_url || payload.stream_url);
+               setPlaybackUrl(null);
+               setLoading(false);
+               return;
             }
 
             const playbackHeaders: HeadersInit = {
@@ -126,6 +142,8 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
 
    return {
       playbackUrl,
+      embedUrl,
+      delivery,
       loading,
       error,
    };

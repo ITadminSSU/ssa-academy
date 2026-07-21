@@ -16,17 +16,9 @@ class ChunkedUploadController extends Controller
     /**
      * Determine which upload service to use based on request or config
      */
-    private function getUploadService(Request $request): S3MultipartUploadService | LocalFileUploadService
+    private function getUploadService(?string $disk = null): S3MultipartUploadService | LocalFileUploadService
     {
-        $storage = $request->input('storage');
-
-        $storageType = 'local';
-
-        if (empty($storage)) {
-            $storageType = config('filesystems.default');
-        } else {
-            $storageType = $storage;
-        }
+        $storageType = $disk ?? config('filesystems.default');
 
         return $storageType === 's3' ? new S3MultipartUploadService() : new LocalFileUploadService();
     }
@@ -40,7 +32,9 @@ class ChunkedUploadController extends Controller
     public function initialize(ChunkInitiateRequest $request)
     {
         try {
-            $uploaderService = $this->getUploadService($request);
+            $storage = $request->input('storage');
+            $disk = empty($storage) ? config('filesystems.default') : $storage;
+            $uploaderService = $this->getUploadService($disk);
 
             $metadata = [
                 'filetype' => $request->filetype,
@@ -92,7 +86,7 @@ class ChunkedUploadController extends Controller
                 ->firstOrFail();
 
             // Determine upload service based on the stored disk type
-            $uploaderService = $this->getUploadService($request);
+            $uploaderService = $this->getUploadService($upload->disk);
 
             // Get part number
             $partNumber = $request->input('part_number');
@@ -151,7 +145,7 @@ class ChunkedUploadController extends Controller
     {
         try {
             // Determine upload service based on the stored disk type
-            $uploaderService = $this->getUploadService($request);
+            $uploaderService = $this->getUploadService($upload->disk);
 
             // Find the upload record
             $upload = ChunkedUpload::where('id', $id)
@@ -257,7 +251,7 @@ class ChunkedUploadController extends Controller
                 ->firstOrFail();
 
             // Determine upload service based on the stored disk type
-            $uploaderService = $this->getUploadService($request);
+            $uploaderService = $this->getUploadService($upload->disk);
 
             // Abort the upload
             $uploaderService->abortUpload($upload);

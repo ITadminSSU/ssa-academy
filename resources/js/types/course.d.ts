@@ -120,6 +120,7 @@ interface SectionLesson extends TableCommon {
    activity_retake?: number;
    activity_submissions?: LessonActivitySubmission[];
    lesson_src?: string;
+   bunny_video_id?: string | null;
    stream_protected?: boolean;
    lesson_provider?: string;
    embed_source?: string;

@@ -356,6 +356,12 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   access: ['admin', 'collaborative', 'administrative'],
                },
                {
+                  name: 'Bunny Stream',
+                  slug: routeLastSegment(route('settings.bunny-stream')),
+                  path: route('settings.bunny-stream'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
                   name: 'Payment',
                   slug: routeLastSegment(route('settings.payment')),
                   path: route('settings.payment'),

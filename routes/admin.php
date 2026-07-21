@@ -105,6 +105,9 @@ Route::prefix('dashboard/admin')->group(function () {
         Route::get('storage', 'storage')->name('settings.storage');
         Route::post('storage/{id}', 'storage_update')->name('settings.storage.update');
 
+        Route::get('bunny-stream', 'bunny_stream')->name('settings.bunny-stream');
+        Route::post('bunny-stream/{id}', 'bunny_stream_update')->name('settings.bunny-stream.update');
+
         Route::get('smtp', 'smtp')->name('settings.smtp');
         Route::post('smtp/{id}', 'smtp_update')->name('settings.smtp.update');
 

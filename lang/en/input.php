@@ -238,6 +238,13 @@ return [
    'mail_from_name' => 'Mail From Name',
    'aws_access_key_id' => 'AWS Access Key ID',
    'aws_default_region' => 'AWS Default Region',
+   'aws_endpoint' => 'S3 Endpoint URL',
+   'aws_use_path_style_endpoint' => 'Use path-style endpoint',
+   'bunny_stream_enabled' => 'Enable Bunny Stream for lesson videos',
+   'bunny_stream_library_id' => 'Stream Library ID',
+   'bunny_stream_api_key' => 'Stream API Key',
+   'bunny_stream_cdn_hostname' => 'CDN Hostname',
+   'bunny_stream_token_auth_key' => 'Token Authentication Key',
 
    // ==================================================
    // 08. Authentication & User Info Placeholder
@@ -412,5 +419,10 @@ return [
    'mail_from_address_placeholder' => 'noreply@example.com',
    'mail_from_name_placeholder' => 'Your Application Name',
    'aws_access_key_id_placeholder' => 'Enter AWS Access Key ID',
-   'aws_default_region_placeholder' => 'us-east-1',
+   'aws_default_region_placeholder' => 'auto',
+   'aws_endpoint_placeholder' => 'https://<account_id>.r2.cloudflarestorage.com',
+   'bunny_stream_library_id_placeholder' => '710026',
+   'bunny_stream_api_key_placeholder' => 'Enter your Bunny Stream API key',
+   'bunny_stream_cdn_hostname_placeholder' => 'vz-xxxxx.b-cdn.net',
+   'bunny_stream_token_auth_key_placeholder' => 'Enter your Bunny token authentication key',
 ];

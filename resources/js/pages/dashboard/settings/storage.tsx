@@ -1,6 +1,7 @@
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,7 +10,7 @@ import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
 
-type StorageFormData = StorageFields & Record<string, string>;
+type StorageFormData = StorageFields & Record<string, string | boolean>;
 
 interface Props extends SharedData {
    storage: Settings<StorageFormData>;
@@ -21,6 +22,8 @@ const Storage = ({ storage }: Props) => {
    const { settings, input, button } = translate;
    const { data, setData, post, errors, processing } = useForm<StorageFormData>({
       ...storage.fields,
+      aws_endpoint: storage.fields.aws_endpoint ?? '',
+      aws_use_path_style_endpoint: Boolean(storage.fields.aws_use_path_style_endpoint),
    });
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -47,7 +50,7 @@ const Storage = ({ storage }: Props) => {
                      </SelectTrigger>
                      <SelectContent>
                         <SelectItem value="local">Local</SelectItem>
-                        <SelectItem value="s3">AWS S3</SelectItem>
+                        <SelectItem value="s3">S3-Compatible (AWS S3 / Cloudflare R2)</SelectItem>
                      </SelectContent>
                   </Select>
                   <InputError message={errors.storage_driver} />
@@ -97,6 +100,30 @@ const Storage = ({ storage }: Props) => {
                         />
                         <InputError message={errors.aws_bucket} />
                      </div>
+                     <div>
+                        <Label>{input.aws_endpoint}</Label>
+                        <Input
+                           name="aws_endpoint"
+                           value={data.aws_endpoint || ''}
+                           onChange={(e) => setData(e.target.name, e.target.value)}
+                           placeholder={input.aws_endpoint_placeholder}
+                        />
+                        <p className="mt-1 text-sm text-muted-foreground">
+                           Required for Cloudflare R2. Use your account S3 API endpoint.
+                        </p>
+                        <InputError message={errors.aws_endpoint} />
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <Checkbox
+                           id="aws_use_path_style_endpoint"
+                           checked={Boolean(data.aws_use_path_style_endpoint)}
+                           onCheckedChange={(checked) => setData('aws_use_path_style_endpoint', checked === true)}
+                        />
+                        <Label htmlFor="aws_use_path_style_endpoint" className="cursor-pointer font-normal">
+                           {input.aws_use_path_style_endpoint}
+                        </Label>
+                     </div>
+                     <InputError message={errors.aws_use_path_style_endpoint} />
                   </>
                )}
 

@@ -9,10 +9,12 @@ use App\Models\Course\LessonResource;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
+use App\Services\BunnyStreamService;
 use App\Services\Payment\SubscriptionAccessService;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProtectedMediaService
 {
@@ -23,7 +25,10 @@ class ProtectedMediaService
     /** Deliver via blob URL when file is at or below this size (bytes). */
     private const VIDEO_BLOB_MAX_BYTES = 52_428_800; // 50 MB
 
-    public function __construct(private SubscriptionAccessService $subscriptionAccess) {}
+    public function __construct(
+        private SubscriptionAccessService $subscriptionAccess,
+        private BunnyStreamService $bunnyStream,
+    ) {}
 
     public function protectLessonForPlayer(SectionLesson $lesson, User $user): SectionLesson
     {
@@ -48,22 +53,36 @@ class ProtectedMediaService
     }
 
     /**
-     * @return array{protected: bool, stream_url: string, delivery: string, expires_at: string, mime_type: string}
+     * @return array{protected: bool, stream_url: string, delivery: string, expires_at: string, mime_type: string, embed_url?: string}
      */
     public function createVideoPlaybackPayload(SectionLesson $lesson, ?string $playbackToken = null): array
     {
-        $filePath = $this->resolveLessonVideoPath($lesson);
+        $expiresAt = now()->addMinutes(self::VIDEO_SIGNED_URL_TTL_MINUTES);
 
-        if (!$filePath) {
+        if ($lesson->bunny_video_id) {
+            $embedUrl = $this->bunnyStream->signedEmbedUrl($lesson->bunny_video_id, $expiresAt);
+
+            return [
+                'protected' => true,
+                'stream_url' => $embedUrl,
+                'embed_url' => $embedUrl,
+                'delivery' => 'bunny_embed',
+                'expires_at' => $expiresAt->toIso8601String(),
+                'mime_type' => 'text/html',
+            ];
+        }
+
+        $media = $this->resolveMediaForStreaming($lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src);
+
+        if (!$media) {
             abort(404, 'Video file not found. Please re-upload this lesson video.');
         }
 
-        $expiresAt = now()->addMinutes(self::VIDEO_SIGNED_URL_TTL_MINUTES);
         $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
         $mimeType = $this->resolveMimeType($originalSrc, 'video/mp4');
         $delivery = 'signed';
 
-        if (filesize($filePath) <= self::VIDEO_BLOB_MAX_BYTES) {
+        if ($media['type'] === 'local' && filesize($media['path']) <= self::VIDEO_BLOB_MAX_BYTES) {
             $delivery = 'blob';
         }
 
@@ -161,6 +180,135 @@ class ProtectedMediaService
         return response()->file($filePath, $headers);
     }
 
+    public function streamMediaResponse(Request $request, ?string $url, string $mimeType): Response
+    {
+        $media = $this->resolveMediaForStreaming($url);
+
+        if (!$media) {
+            abort(404, 'Media file not found.');
+        }
+
+        if ($media['type'] === 'local') {
+            return $this->streamFileResponse($request, $media['path'], $mimeType);
+        }
+
+        return $this->streamObjectStorageResponse($request, $media['key'], $mimeType);
+    }
+
+    public function lessonVideoIsStreamable(SectionLesson $lesson): bool
+    {
+        if ($lesson->bunny_video_id) {
+            return $this->bunnyStream->videoIsPlayable($lesson->bunny_video_id);
+        }
+
+        $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
+
+        return $this->resolveMediaForStreaming($originalSrc) !== null;
+    }
+
+    /**
+     * @return array{type: 'local', path: string}|array{type: 's3', key: string}|null
+     */
+    public function resolveMediaForStreaming(?string $url): ?array
+    {
+        $localPath = $this->resolveLocalPath($url);
+
+        if ($localPath && is_file($localPath)) {
+            return ['type' => 'local', 'path' => $localPath];
+        }
+
+        $upload = $this->findChunkedUpload($url);
+
+        if ($upload && $upload->disk === 's3' && $upload->key && $upload->status === 'completed') {
+            return ['type' => 's3', 'key' => $upload->key];
+        }
+
+        return null;
+    }
+
+    public function findChunkedUpload(?string $url): ?ChunkedUpload
+    {
+        if (!$url) {
+            return null;
+        }
+
+        return ChunkedUpload::where('file_url', $url)->first();
+    }
+
+    public function streamObjectStorageResponse(Request $request, string $key, string $mimeType): Response
+    {
+        $client = S3CompatibleStorage::makeClient();
+        $bucket = (string) config('filesystems.disks.s3.bucket');
+        $head = $client->headObject([
+            'Bucket' => $bucket,
+            'Key' => $key,
+        ]);
+        $fileSize = (int) ($head['ContentLength'] ?? 0);
+
+        if ($fileSize <= 0) {
+            abort(404, 'Media file not found.');
+        }
+
+        $start = 0;
+        $end = $fileSize - 1;
+        $status = 200;
+        $headers = [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff',
+            'X-Frame-Options' => 'SAMEORIGIN',
+            'Referrer-Policy' => 'no-referrer',
+            'Cross-Origin-Resource-Policy' => 'same-origin',
+            'Cache-Control' => 'private, no-store, max-age=0, no-transform',
+            'Pragma' => 'no-cache',
+            'Accept-Ranges' => 'bytes',
+        ];
+
+        $rangeHeader = null;
+
+        if ($request->headers->has('Range')) {
+            $range = $request->header('Range');
+
+            if (preg_match('/bytes=(\d*)-(\d*)/', (string) $range, $matches)) {
+                $start = $matches[1] !== '' ? (int) $matches[1] : 0;
+                $end = $matches[2] !== '' ? (int) $matches[2] : $fileSize - 1;
+            }
+
+            if ($start > $end || $start >= $fileSize) {
+                return response('Requested range not satisfiable', 416, [
+                    'Content-Range' => "bytes */{$fileSize}",
+                ]);
+            }
+
+            $end = min($end, $fileSize - 1);
+            $length = $end - $start + 1;
+            $status = 206;
+            $headers['Content-Length'] = (string) $length;
+            $headers['Content-Range'] = "bytes {$start}-{$end}/{$fileSize}";
+            $rangeHeader = "bytes={$start}-{$end}";
+        } else {
+            $headers['Content-Length'] = (string) $fileSize;
+        }
+
+        $getParams = [
+            'Bucket' => $bucket,
+            'Key' => $key,
+        ];
+
+        if ($rangeHeader !== null) {
+            $getParams['Range'] = $rangeHeader;
+        }
+
+        $object = $client->getObject($getParams);
+        $body = $object['Body'];
+
+        return response()->stream(function () use ($body) {
+            while (!$body->eof()) {
+                echo $body->read(8192);
+            }
+        }, $status, $headers);
+    }
+
     public function authorizeLessonAccess(User $user, SectionLesson $lesson): void
     {
         if ($user->role === 'admin') {
@@ -217,7 +365,24 @@ class ProtectedMediaService
             return false;
         }
 
-        return $this->isLocalMediaUrl($lesson->lesson_src);
+        if ($lesson->bunny_video_id && $lesson->lesson_type === 'video') {
+            return true;
+        }
+
+        if ($this->isLocalMediaUrl($lesson->lesson_src)) {
+            return true;
+        }
+
+        return $this->isObjectStorageMedia($lesson->lesson_src);
+    }
+
+    public function isObjectStorageMedia(?string $url): bool
+    {
+        $upload = $this->findChunkedUpload($url);
+
+        return $upload !== null
+            && $upload->disk === 's3'
+            && $upload->status === 'completed';
     }
 
     public function isLocalMediaUrl(?string $url): bool
@@ -285,13 +450,13 @@ class ProtectedMediaService
     public function resolveLessonVideoPath(SectionLesson $lesson): ?string
     {
         $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
-        $filePath = $this->resolveLocalPath($originalSrc);
+        $media = $this->resolveMediaForStreaming($originalSrc);
 
-        if (!$filePath || !is_file($filePath)) {
+        if (!$media || $media['type'] !== 'local') {
             return null;
         }
 
-        return $filePath;
+        return $media['path'];
     }
 
     public function resolveMimeType(?string $url, ?string $fallback = 'application/octet-stream'): string
@@ -321,7 +486,22 @@ class ProtectedMediaService
             return null;
         }
 
-        return $this->resolveLocalPath($resource->resource);
+        $media = $this->resolveMediaForStreaming($resource->resource);
+
+        if (!$media || $media['type'] !== 'local') {
+            return null;
+        }
+
+        return $media['path'];
+    }
+
+    public function resourceIsStreamable(LessonResource $resource): bool
+    {
+        if ($resource->type === 'link') {
+            return true;
+        }
+
+        return $this->resolveMediaForStreaming($resource->resource) !== null;
     }
 
     private function isExternalVideoUrl(string $url): bool

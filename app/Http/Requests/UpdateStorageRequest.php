@@ -27,6 +27,8 @@ class UpdateStorageRequest extends FormRequest
             'aws_secret_access_key' => 'required_if:storage_driver,s3|nullable|string|max:255',
             'aws_default_region' => 'required_if:storage_driver,s3|nullable|string|max:255',
             'aws_bucket' => 'required_if:storage_driver,s3|nullable|string|max:255',
+            'aws_endpoint' => 'nullable|string|max:500',
+            'aws_use_path_style_endpoint' => 'nullable|boolean',
         ];
     }
 }

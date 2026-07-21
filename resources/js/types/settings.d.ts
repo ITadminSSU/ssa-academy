@@ -68,7 +68,16 @@ interface StorageFields {
    aws_secret_access_key: string;
    aws_default_region: string;
    aws_bucket: string;
+   aws_endpoint: string;
    aws_use_path_style_endpoint: boolean;
+}
+
+interface BunnyStreamFields {
+   enabled: boolean;
+   library_id: string;
+   api_key: string;
+   cdn_hostname: string;
+   token_auth_key: string;
 }
 
 // Start Payment Gateway Fields

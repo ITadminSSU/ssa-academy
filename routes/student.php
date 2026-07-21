@@ -139,3 +139,9 @@ Route::prefix('dashboard/uploads/chunked')->controller(ChunkedUploadController::
     Route::get('{id}/status', 'status')->name('chunked.upload.status');
     Route::delete('{id}/abort', 'abort')->name('chunked.upload.abort');
 });
+
+Route::prefix('dashboard/uploads/bunny')->controller(\App\Http\Controllers\BunnyUploadController::class)->group(function () {
+    Route::post('initialize', 'initialize')->name('bunny.upload.initialize');
+    Route::post('complete', 'complete')->name('bunny.upload.complete');
+    Route::delete('abort', 'abort')->name('bunny.upload.abort');
+});

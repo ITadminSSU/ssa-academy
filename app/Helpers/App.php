@@ -13,6 +13,43 @@ function isDBConnected(): bool
    }
 }
 
+function setBunnyStreamConfig(array $config): void
+{
+   config([
+      'bunny.enabled' => filter_var($config['enabled'] ?? false, FILTER_VALIDATE_BOOL),
+      'bunny.library_id' => $config['library_id'] ?? '',
+      'bunny.api_key' => $config['api_key'] ?? '',
+      'bunny.cdn_hostname' => $config['cdn_hostname'] ?? '',
+      'bunny.token_auth_key' => $config['token_auth_key'] ?? '',
+   ]);
+}
+
+function setStorageConfig(array $storage): void
+{
+   $driver = $storage['storage_driver'] ?? 'local';
+
+   if ($driver === 's3') {
+      config(['media-library.disk_name' => 's3']);
+      config([
+         'filesystems.default' => 's3',
+         'filesystems.disks.s3.key' => $storage['aws_access_key_id'] ?? null,
+         'filesystems.disks.s3.secret' => $storage['aws_secret_access_key'] ?? null,
+         'filesystems.disks.s3.region' => $storage['aws_default_region'] ?? 'auto',
+         'filesystems.disks.s3.bucket' => $storage['aws_bucket'] ?? null,
+         'filesystems.disks.s3.endpoint' => $storage['aws_endpoint'] ?? null,
+         'filesystems.disks.s3.use_path_style_endpoint' => filter_var(
+            $storage['aws_use_path_style_endpoint'] ?? false,
+            FILTER_VALIDATE_BOOL
+         ),
+      ]);
+
+      return;
+   }
+
+   config(['media-library.disk_name' => 'public']);
+   config(['filesystems.default' => 'local']);
+}
+
 function setSmtpConfig(array $config)
 {
    config([

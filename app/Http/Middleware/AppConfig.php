@@ -20,6 +20,7 @@ class AppConfig
     {
         $systemSetting = $this->settingsService->getSetting(['type' => 'system']);
         $storageSetting = $this->settingsService->getSetting(['type' => 'storage']);
+        $bunnyStreamSetting = $this->settingsService->getSetting(['type' => 'bunny_stream']);
 
         if ($systemSetting) {
             $system = $systemSetting->fields ?? [];
@@ -27,26 +28,12 @@ class AppConfig
         }
 
         $storage = $storageSetting->fields ?? ['storage_driver' => 'local'];
+        setStorageConfig($storage);
 
-        // Storage configuration
-        if (($storage['storage_driver'] ?? 'local') == 's3') {
-            config(['media-library.disk_name' => 's3']);
-            config([
-                'filesystems.default' => 's3',
-                'filesystems.disks.s3.key' => $storage['aws_access_key_id'],
-                'filesystems.disks.s3.secret' => $storage['aws_secret_access_key'],
-                'filesystems.disks.s3.region' => $storage['aws_default_region'],
-                'filesystems.disks.s3.bucket' => $storage['aws_bucket'],
-                // 'filesystems.disks.s3.use_path_style_endpoint' => $storage['aws_use_path_style_endpoint'],
-            ]);
-        } else {
-            config(['media-library.disk_name' => 'public']);
-            config(['filesystems.default' => 'local']);
-        }
+        $bunnyStream = $bunnyStreamSetting?->fields ?? ['enabled' => false];
+        setBunnyStreamConfig($bunnyStream);
 
-        // Check S3 configuration from config
         if (config('filesystems.default') === 's3') {
-            // Check if required S3 credentials exist in config
             if (
                 empty(config('filesystems.disks.s3.key')) ||
                 empty(config('filesystems.disks.s3.secret')) ||

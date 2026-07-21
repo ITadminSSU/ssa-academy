@@ -22,6 +22,7 @@ return [
   'account_settings' => 'Account Settings',
   'smtp_settings' => 'SMTP Settings',
   'storage_settings' => 'Storage Settings',
+  'bunny_stream_settings' => 'Bunny Stream Settings',
   'language_settings' => 'Language Settings',
   'translation_settings' => 'Translation Settings',
   'add_language' => 'Add Language',
@@ -34,6 +35,8 @@ return [
   'email_settings_description' => 'Configure your email sending settings',
   'storage_settings' => 'Storage Settings',
   'storage_settings_description' => 'Configure your storage settings',
+  'bunny_stream_settings' => 'Bunny Stream Settings',
+  'bunny_stream_settings_description' => 'Configure Bunny Stream for lesson video hosting and playback',
 
   // Common Application Terms
   'application_update' => 'Application Update',
@@ -64,6 +67,7 @@ return [
   'css_description' => 'Write custom CSS that will be applied globally to the site.',
   'email_settings_description' => 'Configure your email sending settings',
   'storage_settings_description' => 'Configure your storage settings',
+  'bunny_stream_settings_description' => 'Configure Bunny Stream for lesson video hosting and playback',
   'system_settings_description' => 'Manage Smart Sourcing Academy platform identity, navigation, and global appearance.',
   'translation_description' => 'Translate Language Properties',
   'edit_custom_page' => 'Edit Custom Page',

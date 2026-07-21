@@ -18,8 +18,6 @@ import { useForm } from '@inertiajs/react';
 import { ReactNode, useMemo } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
-import ExamQuestionComposer from './partials/exam-question-composer';
-import { QuestionFormData } from './partials/question-dialog';
 
 interface Props extends SharedData {
    instructors: Instructor[];
@@ -50,20 +48,7 @@ const CreateExam = (props: Props) => {
       thumbnail: null as File | null,
       instructor_id: user.role === 'admin' && system.sub_type === 'collaborative' ? '' : user.instructor_id,
       exam_mode: 'standard' as 'standard' | 'quantity_takeoff',
-      questions: [] as QuestionFormData[],
    });
-
-   // Lifted setter so ExamQuestionComposer can mutate the draft questions list
-   // kept inside the form state (posted together with the exam fields).
-   const setQuestions: React.Dispatch<React.SetStateAction<QuestionFormData[]>> = (updater) => {
-      setData((prev) => ({
-         ...prev,
-         questions:
-            typeof updater === 'function'
-               ? (updater as (prev: QuestionFormData[]) => QuestionFormData[])(prev.questions)
-               : updater,
-      }));
-   };
 
    // Handle form submission
    const handleSubmit = (e: React.FormEvent) => {
@@ -377,9 +362,7 @@ const CreateExam = (props: Props) => {
                </div>
             </div>
 
-            {data.exam_mode === 'standard' ? (
-               <ExamQuestionComposer questions={data.questions} setQuestions={setQuestions} />
-            ) : (
+            {data.exam_mode === 'quantity_takeoff' && (
                <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
                   After creating this exam, upload the Excel answer key on the Quantity Take-Off tab and add reference drawings under
                   Resources.
@@ -390,9 +373,7 @@ const CreateExam = (props: Props) => {
                <p className="text-muted-foreground text-sm">
                   {data.exam_mode === 'quantity_takeoff'
                      ? 'Quantity take-off exams are graded automatically from your uploaded answer key.'
-                     : data.questions.length > 0
-                       ? `${data.questions.length} question${data.questions.length === 1 ? '' : 's'} will be created with this exam.`
-                       : 'You can create the exam now and add questions later on the Questions tab.'}
+                     : 'Create the exam first, then add questions on the Questions tab.'}
                </p>
                <LoadingButton loading={processing}>Create Exam</LoadingButton>
             </div>

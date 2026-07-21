@@ -42,6 +42,7 @@ class StoreLessonRequest extends FormRequest
             'lesson_provider' => 'nullable|string|max:255',
             'lesson_src' => 'nullable|string',
             'lesson_src_new' => 'nullable|string',
+            'bunny_video_id_new' => 'nullable|string|max:64',
             'duration' => 'nullable|regex:/^\d{2}:\d{2}:\d{2}$/',
             'is_free' => 'nullable|boolean',
             'description' => 'nullable|string',

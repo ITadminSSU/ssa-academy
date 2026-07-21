@@ -229,6 +229,13 @@ interface InputLang {
    mail_from_name: string;
    aws_access_key_id: string;
    aws_default_region: string;
+   aws_endpoint: string;
+   aws_use_path_style_endpoint: string;
+   bunny_stream_enabled: string;
+   bunny_stream_library_id: string;
+   bunny_stream_api_key: string;
+   bunny_stream_cdn_hostname: string;
+   bunny_stream_token_auth_key: string;
 
    // ==================================================
    // 08. Authentication & User Info Placeholder
@@ -404,4 +411,9 @@ interface InputLang {
    mail_from_name_placeholder: string;
    aws_access_key_id_placeholder: string;
    aws_default_region_placeholder: string;
+   aws_endpoint_placeholder: string;
+   bunny_stream_library_id_placeholder: string;
+   bunny_stream_api_key_placeholder: string;
+   bunny_stream_cdn_hostname_placeholder: string;
+   bunny_stream_token_auth_key_placeholder: string;
 }

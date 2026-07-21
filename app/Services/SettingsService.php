@@ -100,6 +100,13 @@ class SettingsService extends MediaService
         }, 5);
     }
 
+    public function bunnyStreamUpdate(array $data, string $id)
+    {
+        return DB::transaction(function () use ($data, $id) {
+            return Setting::find($id)->update(['fields' => $data]);
+        }, 5);
+    }
+
     public function authUpdate(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {

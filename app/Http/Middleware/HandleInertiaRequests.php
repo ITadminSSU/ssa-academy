@@ -129,6 +129,7 @@ class HandleInertiaRequests extends Middleware
             'locale' => $locale,
             'direction' => 'ltr',
             'cartCount' => $cartCount,
+            'bunnyStream' => fn(): array => $this->bunnyStreamPayload(),
             'translate' => [
                 'auth' => trans('auth'),
                 'button' => trans('button'),
@@ -201,5 +202,24 @@ class HandleInertiaRequests extends Middleware
         $system->fields = $fields;
 
         return $system;
+    }
+
+    /**
+     * @return array{enabled: bool}
+     */
+    private function bunnyStreamPayload(): array
+    {
+        if (!Schema::hasTable('settings')) {
+            return ['enabled' => false];
+        }
+
+        $bunnySetting = $this->settingsService->getSetting(['type' => 'bunny_stream']);
+        $fields = $bunnySetting?->fields ?? [];
+
+        setBunnyStreamConfig($fields);
+
+        return [
+            'enabled' => app(\App\Services\BunnyStreamService::class)->isEnabled(),
+        ];
     }
 }

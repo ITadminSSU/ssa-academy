@@ -1,4 +1,5 @@
 import ChunkedUploaderInput from '@/components/chunked-uploader-input';
+import BunnyVideoUploaderInput from '@/components/bunny-video-uploader-input';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import Tabs from '@/components/tabs';
@@ -47,7 +48,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
    const [isFileUploaded, setIsFileUploaded] = useState(false);
 
    const { props } = usePage<CourseUpdateProps>();
-   const { translate } = props;
+   const { translate, bunnyStream } = props;
    const { dashboard, input, button } = translate;
 
    const lessonTypes = getLessonTypes(translate);
@@ -62,6 +63,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
       lesson_provider: lesson ? lesson.lesson_provider : '',
       lesson_src: lesson ? lesson.lesson_src : '',
       lesson_src_new: null,
+      bunny_video_id_new: null as string | null,
       embed_source: lesson ? lesson.embed_source : '',
       duration: lesson ? lesson.duration : '00:00:00',
       summary: lesson ? lesson.summary : '',
@@ -74,6 +76,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
    });
 
    const isFileUpload = ['video', 'document', 'image'].includes(data.lesson_type);
+   const useBunnyForVideo = data.lesson_type === 'video' && Boolean(bunnyStream?.enabled);
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -117,6 +120,14 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
          setIsFileUploaded(false);
       }
    }, [data.lesson_src_new]);
+
+   useEffect(() => {
+      if (data.bunny_video_id_new && isFileUploaded) {
+         submitForm();
+         reset('bunny_video_id_new');
+         setIsFileUploaded(false);
+      }
+   }, [data.bunny_video_id_new]);
 
    useEffect(() => {
       if (!open) {
@@ -222,30 +233,59 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                  {input.select} {data.lesson_type}
                               </Label>
 
-                              <ChunkedUploaderInput
-                                 isSubmit={isSubmit}
-                                 courseId={data.course_id || ''}
-                                 sectionId={data.course_section_id || ''}
-                                 filetype={data.lesson_type}
-                                 delayUpload={true}
-                                 onFileSelected={(file) => {
-                                    setIsFileSelected(true);
-                                    getFileMetadata(file).then((metadata) => {
-                                       setData('title', metadata.name);
-                                       setData('duration', metadata.duration || '00:00:00');
-                                    });
-                                 }}
-                                 onFileUploaded={(fileData) => {
-                                    setIsFileUploaded(true);
-                                    setData('lesson_src_new', fileData.file_url);
-                                 }}
-                                 onError={(errors) => {
-                                    setIsSubmit(false);
-                                 }}
-                                 onCancelUpload={() => {
-                                    setIsSubmit(false);
-                                 }}
-                              />
+                              {useBunnyForVideo ? (
+                                 <BunnyVideoUploaderInput
+                                    isSubmit={isSubmit}
+                                    courseId={data.course_id || ''}
+                                    sectionId={data.course_section_id || ''}
+                                    delayUpload={true}
+                                    onFileSelected={(file) => {
+                                       setIsFileSelected(true);
+                                       getFileMetadata(file).then((metadata) => {
+                                          setData('title', metadata.name);
+                                          setData('duration', metadata.duration || '00:00:00');
+                                       });
+                                    }}
+                                    onFileUploaded={(fileData) => {
+                                       setIsFileUploaded(true);
+                                       setData('bunny_video_id_new', fileData.bunny_video_id);
+                                       if (fileData.duration) {
+                                          setData('duration', fileData.duration);
+                                       }
+                                    }}
+                                    onError={() => {
+                                       setIsSubmit(false);
+                                    }}
+                                    onCancelUpload={() => {
+                                       setIsSubmit(false);
+                                    }}
+                                 />
+                              ) : (
+                                 <ChunkedUploaderInput
+                                    isSubmit={isSubmit}
+                                    courseId={data.course_id || ''}
+                                    sectionId={data.course_section_id || ''}
+                                    filetype={data.lesson_type}
+                                    delayUpload={true}
+                                    onFileSelected={(file) => {
+                                       setIsFileSelected(true);
+                                       getFileMetadata(file).then((metadata) => {
+                                          setData('title', metadata.name);
+                                          setData('duration', metadata.duration || '00:00:00');
+                                       });
+                                    }}
+                                    onFileUploaded={(fileData) => {
+                                       setIsFileUploaded(true);
+                                       setData('lesson_src_new', fileData.file_url);
+                                    }}
+                                    onError={() => {
+                                       setIsSubmit(false);
+                                    }}
+                                    onCancelUpload={() => {
+                                       setIsSubmit(false);
+                                    }}
+                                 />
+                              )}
                            </div>
                         )}
 

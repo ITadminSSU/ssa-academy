@@ -57,6 +57,7 @@ export interface SharedData {
    learnerNav?: LearnerNav | null;
    branding: Branding;
    features: PlatformFeatures;
+   bunnyStream?: { enabled: boolean };
    customize: boolean;
    navbar: Navbar;
    footer: Footer;

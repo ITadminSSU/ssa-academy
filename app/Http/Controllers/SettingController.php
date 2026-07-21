@@ -19,6 +19,7 @@ use App\Http\Requests\UpdateAuthRequest;
 use App\Http\Requests\UpdateCustomPageRequest;
 use App\Http\Requests\UpdateInstructorProfileRequest;
 use App\Http\Requests\UpdateSmtpSettingsRequest;
+use App\Http\Requests\UpdateBunnyStreamRequest;
 use App\Http\Requests\UpdateStorageRequest;
 use App\Http\Requests\UpdateZoomConfigRequest;
 use Illuminate\Support\Facades\Auth;
@@ -184,6 +185,24 @@ class SettingController extends Controller
         $this->settingsService->storageUpdate($request->validated(), $id);
 
         return back()->with('success', 'Storage settings updated successfully');
+    }
+
+    public function bunny_stream(Request $request)
+    {
+        $bunnyStream = $this->settingsService->getSetting(['type' => 'bunny_stream']);
+
+        if (!$bunnyStream) {
+            abort(404, 'Bunny Stream settings are not installed. Run database migrations.');
+        }
+
+        return Inertia::render('dashboard/settings/bunny-stream', compact('bunnyStream'));
+    }
+
+    public function bunny_stream_update(UpdateBunnyStreamRequest $request, string $id)
+    {
+        $this->settingsService->bunnyStreamUpdate($request->validated(), $id);
+
+        return back()->with('success', 'Bunny Stream settings updated successfully');
     }
 
     /**

@@ -29,9 +29,7 @@ class VideoStreamController extends Controller
         $this->assertPlaybackAllowed($user, $lesson);
 
         if (!$this->protectedMedia->shouldSignLessonMedia($lesson)) {
-            $filePath = $this->protectedMedia->resolveLessonVideoPath($lesson);
-
-            if (!$filePath && in_array($lesson->lesson_type, ['video', 'video_url'], true)) {
+            if (!$this->protectedMedia->lessonVideoIsStreamable($lesson) && in_array($lesson->lesson_type, ['video', 'video_url'], true)) {
                 return response()->json([
                     'message' => 'Video file not found. Please re-upload this lesson video.',
                 ], 404);
@@ -46,7 +44,7 @@ class VideoStreamController extends Controller
             ]);
         }
 
-        if (!$this->protectedMedia->resolveLessonVideoPath($lesson)) {
+        if (!$this->protectedMedia->lessonVideoIsStreamable($lesson)) {
             return response()->json([
                 'message' => 'Video file not found. Please re-upload this lesson video.',
             ], 404);
@@ -74,15 +72,9 @@ class VideoStreamController extends Controller
         }
 
         $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
-        $filePath = $this->protectedMedia->resolveLessonVideoPath($lesson);
-
-        if (!$filePath) {
-            abort(404, 'Video file not found. Please re-upload this lesson video.');
-        }
-
         $mimeType = $this->protectedMedia->resolveMimeType($originalSrc, 'video/mp4');
 
-        return $this->protectedMedia->streamFileResponse($request, $filePath, $mimeType);
+        return $this->protectedMedia->streamMediaResponse($request, $originalSrc, $mimeType);
     }
 
     private function assertPlaybackAllowed($user, SectionLesson $lesson): void

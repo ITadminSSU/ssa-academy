@@ -1,5 +1,6 @@
 import { useSecureVideoStream } from '@/hooks/use-secure-video-stream';
 import { useVideoPlayerGuards } from '@/hooks/use-video-player-guards';
+import BunnyEmbedPlayer from '@/components/bunny-embed-player';
 import { cn } from '@/lib/utils';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Plyr, { APITypes } from 'plyr-react';
@@ -38,7 +39,7 @@ const VideoPlayer = ({
    const [playbackError, setPlaybackError] = useState<string | null>(null);
    const lastReportedSecond = useRef(-1);
 
-   const { playbackUrl, loading, error } = useSecureVideoStream({
+   const { playbackUrl, embedUrl, delivery, loading, error } = useSecureVideoStream({
       lessonId,
       initialSrc,
       secureStream,
@@ -301,6 +302,16 @@ const VideoPlayer = ({
          <div className="bg-muted flex min-h-[40vh] items-center justify-center p-8">
             <p>{error || playbackError}</p>
          </div>
+      );
+   }
+
+   if (delivery === 'bunny_embed' && embedUrl) {
+      return (
+         <BunnyEmbedPlayer
+            embedUrl={embedUrl}
+            onEnded={onEnded}
+            onWatchProgress={onWatchProgress}
+         />
       );
    }
 
