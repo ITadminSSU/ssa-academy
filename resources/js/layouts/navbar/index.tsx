@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/use-auth';
-import useScreen from '@/hooks/use-screen';
 import { resolveNavbarItemHref } from '@/lib/navbar';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -24,7 +23,6 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
    const { isLoggedIn } = useAuth();
    const [isSticky, setIsSticky] = useState(false);
    const [isMenuOpen, setIsMenuOpen] = useState(false);
-   const { screen } = useScreen();
 
    useEffect(() => {
       const handleScroll = () => {
@@ -47,20 +45,6 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
       if (item.active) {
          switch (item.type) {
             case 'url':
-               // Redirect "About Us" to smartsourcingusa.com/#about
-               if (item.title === 'About Us' || item.title === 'About' || item.value?.includes('/about')) {
-                  return (
-                     <a
-                        key={item.id}
-                        href="https://smartsourcingusa.com/#about"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-normal"
-                     >
-                        {item.title}
-                     </a>
-                  );
-               }
                if (item.title === 'Contact Us' || item.title === 'Contact' || item.value?.includes('/contact')) {
                   return (
                      <a
@@ -105,15 +89,37 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
       }
    };
 
-   const sortedItems = navbar.navbar_items.sort((a, b) => a.sort - b.sort);
+   const sortedItems = navbar.navbar_items
+      .filter((item) => item.active !== false)
+      .filter((item, index, items) => {
+         if (item.type !== 'url') {
+            return true;
+         }
+
+         const normalizedTitle = item.title?.trim().toLowerCase();
+         const normalizedValue = (item.value || '').trim().toLowerCase();
+
+         return (
+            items.findIndex((candidate) => {
+               if (candidate.type !== 'url') {
+                  return false;
+               }
+
+               const candidateTitle = candidate.title?.trim().toLowerCase();
+               const candidateValue = (candidate.value || '').trim().toLowerCase();
+
+               return candidateTitle === normalizedTitle || (normalizedValue !== '' && candidateValue === normalizedValue);
+            }) === index
+         );
+      })
+      .sort((a, b) => a.sort - b.sort);
 
    return (
       <>
          <div className={cn('ssu-nav-shell fixed top-0 z-30 w-full', isMenuOpen && 'bg-background', isSticky && 'ssu-nav-shell--sticky')}>
             <div
                className={cn(
-                  'container mt-0 flex min-h-16 items-center justify-between gap-1 !px-4 py-2 transition-all duration-200 md:gap-6',
-                  screen < 768 && 'min-h-16',
+                  'container mt-0 flex min-h-14 items-center justify-between gap-1 !px-4 py-1.5 transition-all duration-200 md:gap-6',
                )}
             >
                <div className="flex items-center gap-2">
@@ -123,7 +129,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                   </Button>
 
                   {/* Logo */}
-                  <Link href={route('home')} className="flex items-center">
+                  <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--nav">
                      <AppLogo className="ssu-nav-logo" />
                   </Link>
                </div>

@@ -6,6 +6,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\EnsureCanonicalHost;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -62,6 +63,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['appearance']);
 
+        $middleware->web(prepend: [
+            EnsureCanonicalHost::class,
+        ]);
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
@@ -106,8 +111,18 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (TokenMismatchException $e, Request $request) use ($inertiaLocation) {
+            $message = 'Your session expired. Please try again.';
+
             if ($request->header('X-Inertia')) {
-                return $inertiaLocation($request, route('login'));
+                $request->session()->flash('error', $message);
+
+                return $inertiaLocation($request, route('home'));
             }
+
+            return redirect()->route('home')->with('error', $message);
         });
-    })->create();
+    })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $schedule->command('courses:publish-scheduled')->everyFiveMinutes();
+    })
+    ->create();

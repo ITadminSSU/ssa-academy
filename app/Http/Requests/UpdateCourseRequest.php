@@ -6,10 +6,13 @@ use App\Enums\CourseAudience;
 use App\Enums\CourseBillingModel;
 use App\Enums\CoursePricingType;
 use App\Enums\ExpiryLimitType;
+use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCourseRequest extends FormRequest
 {
+    use NormalizesLaunchAt;
+
     protected function prepareForValidation()
     {
         $pricingType = request('pricing_type');
@@ -30,7 +33,11 @@ class UpdateCourseRequest extends FormRequest
             'course_category_id' => (int) request('course_category_id', 0),
             'course_category_child_id' => request('course_category_child_id') ? (int) request('course_category_child_id') : null,
             'final_exam_id' => request('final_exam_id') ? (int) request('final_exam_id') : null,
+            'allow_staff_preview' => filter_var(request('allow_staff_preview', true), FILTER_VALIDATE_BOOLEAN),
+            'allow_internal_preview' => filter_var(request('allow_internal_preview', false), FILTER_VALIDATE_BOOLEAN),
         ]);
+
+        $this->normalizeLaunchAtInput();
     }
 
     /**
@@ -55,6 +62,14 @@ class UpdateCourseRequest extends FormRequest
 
         // Merge with tab-specific rules
         return array_merge($rules, $this->getTabSpecificRules());
+    }
+
+    public function messages(): array
+    {
+        return [
+            'launch_at.after' => 'Launch date and time must be in the future.',
+            'launch_at.required_if' => 'Launch date is required for Coming Soon courses.',
+        ];
     }
 
     /**
@@ -86,6 +101,9 @@ class UpdateCourseRequest extends FormRequest
             'short_description' => 'required|string',
             'description' => 'nullable|string',
             'status' => 'required|string',
+            'launch_at' => 'nullable|date|required_if:status,upcoming|after:now',
+            'allow_staff_preview' => 'sometimes|boolean',
+            'allow_internal_preview' => 'sometimes|boolean',
             'level' => 'required|string',
             'language' => 'required|string|max:255',
             'instructor_id' => 'nullable|exists:instructors,id',

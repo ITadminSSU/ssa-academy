@@ -34,7 +34,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
    const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
    const canAccess = subscriptionLocked
       ? isCompleted
-      : quizzesUnlocked && (isCompleted || isCurrentLesson || isNext);
+      : isCompleted || (quizzesUnlocked && (isCurrentLesson || isNext));
 
    if (variant === 'simple') {
       const meta = quiz.duration ? `Quiz · ${quiz.duration}` : 'Quiz';
@@ -60,7 +60,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
                {content}
                {!quizzesUnlocked && !isCompleted ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Trainer approval required</p>
-               ) : subscriptionLocked && !isCompleted ? (
+               ) : subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Resubscribe to unlock</p>
                ) : null}
             </div>

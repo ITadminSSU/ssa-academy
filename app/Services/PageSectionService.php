@@ -129,6 +129,7 @@ class PageSectionService extends MediaService
          ])
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->launched()
          ->visibleInCatalog(Auth::user())
          ->orderBy('created_at', 'desc')
          ->limit($limit)
@@ -141,6 +142,7 @@ class PageSectionService extends MediaService
          ->select('id', 'title', 'slug', 'thumbnail', 'price', 'short_description', 'course_category_id')
          ->whereIn('id', $courseIds)
          ->where('status', 'approved')
+         ->launched()
          ->visibleInCatalog(Auth::user())
          ->with(['course_category' => function ($query) {
             $query->select('id', 'title');
@@ -165,6 +167,7 @@ class PageSectionService extends MediaService
          })
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->launched()
          ->visibleInCatalog(Auth::user())
          ->orderBy('created_at', 'desc')
          ->paginate($per_page);
@@ -195,6 +198,7 @@ class PageSectionService extends MediaService
          ])
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->launched()
          ->visibleInCatalog(Auth::user())
          ->orderBy('enrollments_count', 'desc')
          ->orderBy('created_at', 'desc')
@@ -202,6 +206,39 @@ class PageSectionService extends MediaService
          ->map(function ($course) {
             $course->average_rating = $course->reviews()->avg('rating') ?? 0;
             $course->reviews_count = $course->reviews()->count();
+            return $course;
+         });
+   }
+
+   public function getFeaturedCatalogCourses(int $limit = 6)
+   {
+      return Course::query()
+         ->with([
+            'sections' => function ($query) {
+               $query->select('id', 'course_id')
+                  ->with(['section_lessons' => function ($query) {
+                     $query->select('id', 'course_section_id', 'duration');
+                  }]);
+            },
+            'course_category' => function ($query) {
+               $query->select('id', 'title');
+            },
+         ])
+         ->withCount('enrollments')
+         ->listedInCatalog()
+         ->visibleInCatalog(Auth::user())
+         ->where(function ($query) {
+            $query->where(function ($approved) {
+               $approved->where('status', 'approved')->launched();
+            })->orWhere('status', 'upcoming');
+         })
+         ->orderByDesc('created_at')
+         ->limit($limit)
+         ->get()
+         ->map(function ($course) {
+            $course->average_rating = $course->reviews()->avg('rating') ?? 0;
+            $course->reviews_count = $course->reviews()->count();
+
             return $course;
          });
    }
@@ -229,6 +266,7 @@ class PageSectionService extends MediaService
          ])
          ->withCount('enrollments')
          ->where('status', 'approved')
+         ->launched()
          ->visibleInCatalog(Auth::user())
          ->orderBy('created_at', 'desc')
          ->limit($limit)

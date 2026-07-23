@@ -30,6 +30,10 @@ class ExternalCheckoutService
 
     public function userCanAccessCheckoutCourse(User $user, Course $course): bool
     {
+        if (!$course->isEnrollmentOpen()) {
+            return false;
+        }
+
         if ($course->audience === CourseAudience::INTERNAL && !$user->isEmployeeLearner()) {
             return false;
         }

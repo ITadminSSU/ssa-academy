@@ -1,4 +1,4 @@
-import { useSecureVideoStream } from '@/hooks/use-secure-video-stream';
+import { useSecureVideoStream, type SecureVideoPlayback } from '@/hooks/use-secure-video-stream';
 import { useVideoPlayerGuards } from '@/hooks/use-video-player-guards';
 import BunnyEmbedPlayer from '@/components/bunny-embed-player';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ interface Props {
    protectDownload?: boolean;
    secureStream?: boolean;
    lessonId?: number;
+   initialPlayback?: SecureVideoPlayback | null;
 }
 
 const VideoPlayer = ({
@@ -31,6 +32,7 @@ const VideoPlayer = ({
    protectDownload = false,
    secureStream = false,
    lessonId,
+   initialPlayback = null,
 }: Props) => {
    const playerRef = useRef<APITypes>(null);
    const containerRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,7 @@ const VideoPlayer = ({
       lessonId,
       initialSrc,
       secureStream,
+      initialPlayback,
    });
 
    useVideoPlayerGuards(containerRef, protectDownload);

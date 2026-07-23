@@ -39,11 +39,7 @@ const LandingFooter = () => {
                                        <li key={`item-${itemIndex}`}>{item.title}</li>
                                     ) : (
                                        <li key={`item-${itemIndex}`}>
-                                          {item.title === 'About Us' || item.title === 'About' || item.url?.includes('/about') ? (
-                                             <a href="https://smartsourcingusa.com/#about" target="_blank" rel="noopener noreferrer">
-                                                {item.title}
-                                             </a>
-                                          ) : item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact') ? (
+                                          {item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact') ? (
                                              <a href="https://smartsourcingusa.com/contact" target="_blank" rel="noopener noreferrer">
                                                 {item.title}
                                              </a>

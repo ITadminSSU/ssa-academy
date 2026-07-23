@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Enums\EnrollmentAccessStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Course\WatchHistory;
@@ -36,6 +37,10 @@ class SubscriptionAccessService
 
         if (!$enrollment) {
             return 'none';
+        }
+
+        if (!$course->usesSubscriptionBilling()) {
+            return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
         }
 
         if ($enrollment->hasFullAccess()) {

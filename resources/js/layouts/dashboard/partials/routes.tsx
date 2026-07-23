@@ -243,7 +243,7 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
          },
          {
             Icon: Users,
-            name: 'Users List',
+            name: 'User Management',
             path: route('users.index'),
             slug: routeLastSegment(route('users.index')),
             active: true,

@@ -36,7 +36,7 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::get('forum-questions', [TrainerForumQuestionsController::class, 'index'])->name('admin.forum-questions.index');
 
     // users
-    Route::resource('users', UsersController::class)->only(['index', 'update']);
+    Route::resource('users', UsersController::class)->only(['index', 'store', 'update']);
     Route::get('users/{id}/cv/download', [UsersController::class, 'downloadCv'])->name('users.cv.download');
     Route::get('users/{id}/cv/view', [UsersController::class, 'viewCv'])->name('users.cv.view');
 

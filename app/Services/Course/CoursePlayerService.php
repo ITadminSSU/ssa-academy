@@ -4,6 +4,7 @@ namespace App\Services\Course;
 
 use App\Models\Course\Course;
 use App\Models\Course\CourseCertificate;
+use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
@@ -238,6 +239,29 @@ class CoursePlayerService
          'completed_items' => $completedCount,
          'completion' => $completion,
       ];
+   }
+
+   public function syncPassedQuizzes(WatchHistory $watchHistory, int|string $userId): WatchHistory
+   {
+      $quizIds = SectionQuiz::query()
+         ->where('course_id', $watchHistory->course_id)
+         ->pluck('id');
+
+      if ($quizIds->isEmpty()) {
+         return $watchHistory;
+      }
+
+      $passedQuizIds = QuizSubmission::query()
+         ->where('user_id', $userId)
+         ->whereIn('section_quiz_id', $quizIds)
+         ->where('is_passed', true)
+         ->pluck('section_quiz_id');
+
+      foreach ($passedQuizIds as $quizId) {
+         $watchHistory = $this->markItemComplete($watchHistory, $quizId, 'quiz');
+      }
+
+      return $watchHistory;
    }
 
    public function markItemComplete(WatchHistory $watchHistory, string|int $itemId, string $itemType): WatchHistory

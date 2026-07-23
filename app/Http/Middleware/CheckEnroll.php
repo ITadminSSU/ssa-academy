@@ -76,7 +76,11 @@ class CheckEnroll
         }
 
         if ($enrollment) {
-            return back()->with('error', 'Your access to this course has expired. Resubscribe to continue.');
+            $message = $course->usesSubscriptionBilling()
+                ? 'Your access to this course has expired. Resubscribe to continue.'
+                : 'Your access to this course has expired.';
+
+            return back()->with('error', $message);
         }
 
         return back()->with('error', 'You are not enrolled in this course');

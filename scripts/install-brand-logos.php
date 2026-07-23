@@ -1,16 +1,35 @@
 <?php
 
-$assetsDir = 'C:/Users/ITSmartsourcing/.cursor/projects/c-Users-ITSmartsourcing-Downloads-SSU-Academy/assets';
-$destDir = dirname(__DIR__) . '/public/assets/branding';
+declare(strict_types=1);
 
-$matches = glob($assetsDir . '/*SMART_SOURCING_white_font*.png');
+$projectRoot = dirname(__DIR__);
+$source = $argv[1] ?? 'C:/Users/ITSmartsourcing/Downloads/Final logo SSA.png';
 
-if (empty($matches)) {
-    fwrite(STDERR, "Logo file not found in {$assetsDir}\n");
+if (!is_file($source)) {
+    fwrite(STDERR, "Source logo not found: {$source}\n");
+    fwrite(STDERR, "Usage: php scripts/install-brand-logos.php [path-to-logo.png]\n");
     exit(1);
 }
 
-$source = $matches[0];
-copy($source, $destDir . '/logo-light.png');
+$brandingDir = $projectRoot . '/public/assets/branding';
 
-echo "Installed logo-light.png from " . basename($source) . "\n";
+$wordmarkTargets = [
+    'ssa-academy-logo.png',
+    'logo-light.png',
+    'logo-dark.png',
+    'logo-icon.png',
+];
+
+foreach ($wordmarkTargets as $filename) {
+    $destination = $brandingDir . '/' . $filename;
+    if (!copy($source, $destination)) {
+        fwrite(STDERR, "Failed to copy logo to {$filename}\n");
+        exit(1);
+    }
+
+    echo "Installed {$filename}\n";
+}
+
+passthru('php ' . escapeshellarg($projectRoot . '/scripts/generate-favicons.php') . ' ' . escapeshellarg($source), $exitCode);
+
+exit($exitCode);

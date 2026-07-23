@@ -18,9 +18,9 @@ const Index = () => {
       <div className="overflow-hidden bg-[rgba(255,222,99,0.06)]">
          <div className="container space-y-9 pt-[60px] pb-5">
             <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
-               <div className="w-full space-y-5 md:max-w-[400px]">
+               <div className="w-full space-y-5 md:max-w-[min(560px,42%)]">
                   <div>
-                     <Link href={route('category.courses', { category: 'all' })} className="inline-flex items-center">
+                     <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
                         <AppLogo className="ssu-footer-logo" />
                      </Link>
                   </div>
@@ -67,11 +67,7 @@ const Index = () => {
                                  </li>
                               ) : (
                                  <li key={`item-${itemIndex}`}>
-                                    {item.title === 'About Us' || item.title === 'About' || item.url?.includes('/about') ? (
-                                       <a href="https://smartsourcingusa.com/#about" target="_blank" rel="noopener noreferrer">
-                                          {item.title}
-                                       </a>
-                                    ) : item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact') ? (
+                                    {item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact') ? (
                                        <a href="https://smartsourcingusa.com/contact" target="_blank" rel="noopener noreferrer">
                                           {item.title}
                                        </a>

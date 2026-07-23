@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
+import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
+import { isSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -22,6 +25,11 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const isWishlisted = wishlists?.find((wishlist) => wishlist.course_id === course.id);
    const currency = systemCurrency(props.system.fields['selling_currency']);
    const detailsUrl = route('course.details', { slug: course.slug, id: course.id });
+   const comingSoon = isCourseComingSoon(course);
+   const launchDate = formatCourseLaunchDate(course);
+   const countdownShort = comingSoon ? formatLaunchCountdownShort(course.launch_at) : null;
+   const showPreviewCta = Boolean(course.can_preview_before_launch) && comingSoon;
+   const isSubscription = isSubscriptionCourse(course);
 
    const handleWishlist = () => {
       if (isWishlisted) {
@@ -58,7 +66,23 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[oklch(0.22_0.04_255)]/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
+                  {comingSoon ? (
+                     <span className="absolute top-3 right-3 z-[1] rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-950 uppercase shadow-sm">
+                        {frontend.coming_soon ?? 'Coming Soon'}
+                     </span>
+                  ) : null}
+
                   {course.pricing_type === 'free' && <span className="ssu-course-card__badge">{common.free}</span>}
+                  {isSubscription && !comingSoon ? (
+                     <span className="absolute top-3 right-3 z-[1] rounded-full border border-white/20 bg-card/95 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[oklch(0.22_0.04_255)] uppercase backdrop-blur-sm">
+                        {frontend.subscription_monthly_label ?? 'Monthly'}
+                     </span>
+                  ) : null}
+                  {comingSoon && launchDate ? (
+                     <span className="absolute bottom-3 right-3 z-[1] rounded-full border border-amber-200/80 bg-amber-50/95 px-2 py-0.5 text-[10px] font-semibold text-amber-900 backdrop-blur-sm">
+                        {countdownShort ?? (frontend.launches_on ?? 'Launches {date}').replace('{date}', launchDate)}
+                     </span>
+                  ) : null}
                   {course.level && (
                      <span className="absolute bottom-3 left-3 rounded-full border border-white/20 bg-card/90 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[oklch(0.22_0.04_255)] uppercase backdrop-blur-sm">
                         {course.level}
@@ -114,35 +138,47 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                </Link>
             </CardContent>
 
-            <CardFooter className="mt-auto flex items-center justify-between gap-3 border-t border-border/60 p-5 pt-4">
-               <div className="ssu-course-card__price capitalize">
-                  {course.pricing_type === 'free' ? (
-                     common.free
-                  ) : course.discount ? (
-                     <>
+            <CardFooter className="mt-auto flex flex-col items-stretch gap-2 border-t border-border/60 p-5 pt-4">
+               <div className="flex items-center justify-between gap-3">
+                  <div className="ssu-course-card__price capitalize">
+                     {course.pricing_type === 'free' ? (
+                        common.free
+                     ) : isSubscription ? (
+                        <>
+                           <span>
+                              {currency?.symbol}
+                              {course.subscription_price ?? course.price}
+                           </span>
+                           <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">/month</span>
+                        </>
+                     ) : course.discount ? (
+                        <>
+                           <span>
+                              {currency?.symbol}
+                              {course.discount_price}
+                           </span>
+                           <span className="text-muted-foreground ml-2 text-sm font-medium line-through">
+                              {currency?.symbol}
+                              {course.price}
+                           </span>
+                        </>
+                     ) : (
                         <span>
-                           {currency?.symbol}
-                           {course.discount_price}
-                        </span>
-                        <span className="text-muted-foreground ml-2 text-sm font-medium line-through">
                            {currency?.symbol}
                            {course.price}
                         </span>
-                     </>
-                  ) : (
-                     <span>
-                        {currency?.symbol}
-                        {course.price}
-                     </span>
-                  )}
+                     )}
+                  </div>
+
+                  <Button asChild size="sm" className="rounded-full px-4">
+                     <Link href={detailsUrl}>
+                        {showPreviewCta ? (button.preview_course ?? 'Preview Course') : button.learn_more}
+                        <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                     </Link>
+                  </Button>
                </div>
 
-               <Button asChild size="sm" className="rounded-full px-4">
-                  <Link href={detailsUrl}>
-                     {button.learn_more}
-                     <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                  </Link>
-               </Button>
+               {isSubscription ? <SubscriptionBillingNotice course={course} variant="compact" /> : null}
             </CardFooter>
          </div>
       </article>

@@ -2,6 +2,7 @@
 
 namespace App\Services\Course;
 
+use App\Enums\CourseStatusType;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Instructor;
@@ -13,6 +14,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class CourseService extends MediaService
 {
@@ -54,10 +56,27 @@ class CourseService extends MediaService
                $course,
             );
 
+            $wasComingSoon = $course->isComingSoon();
+            $status = $data['status'] ?? $course->status;
+
+            if (!empty($data['launch_at'])) {
+               $launchAt = Carbon::parse($data['launch_at']);
+
+               if ($launchAt->isFuture() && in_array($status, [
+                  CourseStatusType::DRAFT->value,
+                  CourseStatusType::PENDING->value,
+               ], true)) {
+                  $status = CourseStatusType::UPCOMING->value;
+               }
+            }
+
             $course->update([
                ...$data,
+               'status' => $status,
                'slug' => Str::slug($data['title']),
             ]);
+
+            $this->notifyLaunchWaitlistIfPublished($course, $wasComingSoon, $status);
             break;
 
          case 'pricing':
@@ -96,7 +115,20 @@ class CourseService extends MediaService
             break;
 
          case 'status':
-            $course->update($data);
+            $wasComingSoon = $course->isComingSoon();
+            $payload = collect($data)->only(['status', 'launch_at', 'feedback'])->all();
+
+            if (($payload['status'] ?? null) === CourseStatusType::APPROVED->value && empty($payload['launch_at'])) {
+               $payload['launch_at'] = null;
+            }
+
+            $course->update($payload);
+
+            $this->notifyLaunchWaitlistIfPublished(
+               $course,
+               $wasComingSoon,
+               $payload['status'] ?? $course->status,
+            );
 
             if (array_key_exists('feedback', $data) && $data['feedback']) {
                $instructor = Instructor::find($course->instructor_id);
@@ -113,6 +145,15 @@ class CourseService extends MediaService
       }
 
       return $course;
+   }
+
+   private function notifyLaunchWaitlistIfPublished(Course $course, bool $wasComingSoon, string $newStatus): void
+   {
+      if (!$wasComingSoon || $newStatus !== CourseStatusType::APPROVED->value) {
+         return;
+      }
+
+      app(CourseLaunchNotificationService::class)->notifyWaitlist($course->fresh());
    }
 
    function getCourses(array $data, ?User $user = null, bool $paginate = false): LengthAwarePaginator|Collection
@@ -141,7 +182,7 @@ class CourseService extends MediaService
                $child->where('slug',  $data['category_child']);
             });
          })
-         ->when(array_key_exists('status', $data) && $data['status'] !== 'all', function ($query) use ($data) {
+         ->when(array_key_exists('status', $data) && $data['status'] !== 'all' && empty($data['catalog']), function ($query) use ($data) {
             return $query->where('status', $data['status']);
          })
          ->when(array_key_exists('level', $data) && $data['level'] !== 'all', function ($query) use ($data) {
@@ -157,7 +198,10 @@ class CourseService extends MediaService
             return $query->where('instructor_id', $user->instructor_id);
          })
          ->when(!empty($data['catalog']), function ($query) use ($user) {
-            return $query->visibleInCatalog($user);
+            return $query->listedInCatalog()->visibleInCatalog($user);
+         })
+         ->when(!empty($data['enrollment_open']), function ($query) {
+            return $query->enrollmentOpen();
          })
          ->orderBy('created_at', 'desc');
 

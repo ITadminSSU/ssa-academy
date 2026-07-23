@@ -21,7 +21,7 @@ const FooterPreview = () => {
             <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
                <div className="w-full space-y-5 md:max-w-[400px]">
                   <div>
-                     <Link href="/">
+                     <Link href="/" className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
                         <AppLogo className="ssu-footer-logo" />
                      </Link>
                   </div>

@@ -29,9 +29,15 @@ class PaymentController extends Controller
 
             if ($course) {
                 if (!$this->externalCheckout->userCanAccessCheckoutCourse($user, $course)) {
+                    $message = $course->isComingSoon()
+                        ? ($course->launch_at
+                            ? 'This course launches on ' . $course->launch_at->timezone(config('app.timezone'))->format('M j, Y') . '.'
+                            : 'This course is coming soon.')
+                        : 'This course is only available to internal employees.';
+
                     return redirect()
                         ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
-                        ->with('error', 'This course is only available to internal employees.');
+                        ->with('error', $message);
                 }
 
                 if ($user->qualifiesForFreeCourseAccess()) {

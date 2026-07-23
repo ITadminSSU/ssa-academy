@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 type SecureVideoDelivery = 'direct' | 'signed' | 'blob' | 'bunny_embed';
 
-interface SecureVideoPlayback {
+export interface SecureVideoPlayback {
    protected: boolean;
    stream_url: string;
    embed_url?: string;
@@ -16,13 +16,34 @@ interface UseSecureVideoStreamOptions {
    lessonId?: number;
    initialSrc?: string;
    secureStream?: boolean;
+   initialPlayback?: SecureVideoPlayback | null;
 }
 
-export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream = false }: UseSecureVideoStreamOptions) {
-   const [playbackUrl, setPlaybackUrl] = useState<string | null>(secureStream ? null : initialSrc || null);
-   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
-   const [delivery, setDelivery] = useState<SecureVideoDelivery | null>(secureStream ? null : 'direct');
-   const [loading, setLoading] = useState(secureStream);
+const applyPlaybackPayload = (payload: SecureVideoPlayback) => ({
+   delivery: payload.delivery,
+   embedUrl: payload.delivery === 'bunny_embed' ? payload.embed_url || payload.stream_url : null,
+   playbackUrl: payload.delivery === 'bunny_embed' ? null : payload.stream_url,
+});
+
+export function useSecureVideoStream({
+   lessonId,
+   initialSrc = '',
+   secureStream = false,
+   initialPlayback = null,
+}: UseSecureVideoStreamOptions) {
+   const hasInitialPlayback = Boolean(
+      secureStream && initialPlayback && (initialPlayback.stream_url || initialPlayback.embed_url),
+   );
+   const initialState = hasInitialPlayback ? applyPlaybackPayload(initialPlayback!) : null;
+
+   const [playbackUrl, setPlaybackUrl] = useState<string | null>(
+      initialState?.playbackUrl ?? (secureStream ? null : initialSrc || null),
+   );
+   const [embedUrl, setEmbedUrl] = useState<string | null>(initialState?.embedUrl ?? null);
+   const [delivery, setDelivery] = useState<SecureVideoDelivery | null>(
+      initialState?.delivery ?? (secureStream ? null : 'direct'),
+   );
+   const [loading, setLoading] = useState(secureStream && !hasInitialPlayback);
    const [error, setError] = useState<string | null>(null);
 
    useEffect(() => {
@@ -30,6 +51,16 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
          setPlaybackUrl(initialSrc || null);
          setEmbedUrl(null);
          setDelivery('direct');
+         setLoading(false);
+         setError(null);
+         return;
+      }
+
+      if (hasInitialPlayback && initialPlayback) {
+         const next = applyPlaybackPayload(initialPlayback);
+         setDelivery(next.delivery);
+         setEmbedUrl(next.embedUrl);
+         setPlaybackUrl(next.playbackUrl);
          setLoading(false);
          setError(null);
          return;
@@ -85,24 +116,20 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
                throw new Error('No secure stream was returned for this lesson.');
             }
 
-            setDelivery(payload.delivery);
-
-            if (payload.delivery === 'bunny_embed') {
-               setEmbedUrl(payload.embed_url || payload.stream_url);
-               setPlaybackUrl(null);
-               setLoading(false);
-               return;
-            }
-
-            const playbackHeaders: HeadersInit = {
-               'X-Requested-With': 'XMLHttpRequest',
-            };
-
-            if (payload.playback_token) {
-               playbackHeaders['X-Playback-Token'] = payload.playback_token;
-            }
+            const next = applyPlaybackPayload(payload);
+            setDelivery(next.delivery);
+            setEmbedUrl(next.embedUrl);
+            setPlaybackUrl(next.playbackUrl);
 
             if (payload.delivery === 'blob') {
+               const playbackHeaders: HeadersInit = {
+                  'X-Requested-With': 'XMLHttpRequest',
+               };
+
+               if (payload.playback_token) {
+                  playbackHeaders['X-Playback-Token'] = payload.playback_token;
+               }
+
                const videoResponse = await fetch(payload.stream_url, {
                   credentials: 'same-origin',
                   headers: playbackHeaders,
@@ -115,8 +142,6 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
                const blob = await videoResponse.blob();
                objectUrl = URL.createObjectURL(blob);
                setPlaybackUrl(objectUrl);
-            } else {
-               setPlaybackUrl(payload.stream_url);
             }
          } catch (streamError) {
             if (!cancelled) {
@@ -138,7 +163,7 @@ export function useSecureVideoStream({ lessonId, initialSrc = '', secureStream =
             URL.revokeObjectURL(objectUrl);
          }
       };
-   }, [lessonId, initialSrc, secureStream]);
+   }, [lessonId, initialSrc, secureStream, initialPlayback?.delivery, initialPlayback?.stream_url, initialPlayback?.embed_url]);
 
    return {
       playbackUrl,

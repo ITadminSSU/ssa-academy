@@ -22,6 +22,7 @@ export interface CourseDetailsProps extends SharedData {
    reviews: Pagination<CourseReview>;
    totalReviews: CourseTotalReview;
    subscriptionAccess?: SubscriptionAccess | null;
+   launchNotifySubscribed?: boolean;
 }
 
 const Show = ({ course, system, translate }: CourseDetailsProps & { translate: any }) => {

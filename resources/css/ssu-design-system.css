@@ -85,12 +85,33 @@
       @apply border-primary/15 shadow-sm;
    }
 
-   .ssu-nav-logo {
-      @apply h-14 w-auto max-w-[300px];
+   .ssu-logo-frame {
+      @apply flex items-center leading-none;
    }
 
+   .ssu-logo-frame--nav {
+      height: 3rem;
+      max-width: min(400px, 58vw);
+   }
+
+   .ssu-logo-frame--footer {
+      height: 8rem;
+      max-width: min(560px, 92vw);
+   }
+
+   @media (min-width: 768px) {
+      .ssu-logo-frame--nav {
+         height: 3.25rem;
+      }
+
+      .ssu-logo-frame--footer {
+         height: 10rem;
+      }
+   }
+
+   .ssu-nav-logo,
    .ssu-footer-logo {
-      @apply h-24 w-auto max-w-[400px] object-contain;
+      @apply block h-full w-auto max-w-full object-contain object-left;
    }
 
    .ssu-header-logo {
@@ -119,9 +140,7 @@
    }
 
    .ssu-sidebar-brand .dashboard-sidebar-logo {
-      @apply mx-auto block h-auto w-full object-contain;
-      min-height: 4rem;
-      max-height: 8rem;
+      @apply mx-auto block h-16 w-full max-h-16 object-contain object-center md:h-[4.5rem] md:max-h-[4.5rem];
    }
 
    .ssu-sidebar-brand a {
@@ -232,9 +251,14 @@
    .ssu-player-header {
       @apply relative z-50 h-16 shrink-0 overflow-hidden border-b border-white/10 bg-[oklch(0.22_0.04_255)] text-white shadow-sm;
 
+      .ssu-logo-frame--nav {
+         height: 3.25rem;
+         max-width: 300px;
+      }
+
       .ssu-nav-logo,
       .ssu-player-logo {
-         @apply h-14 w-auto max-w-[300px] object-contain;
+         @apply h-full w-auto max-w-full object-contain object-left;
          filter: none !important;
       }
 

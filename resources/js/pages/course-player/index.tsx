@@ -4,6 +4,8 @@ import Main from '@/layouts/main';
 import { getCompletedContents, getCourseCompletion } from '@/lib/utils';
 import Footer from '@/pages/course-player/layout/footer';
 import { CoursePlayerProps } from '@/types/page';
+import { isVideoLesson } from '@/lib/lesson';
+import { preloadPlayerJs } from '@/lib/bunny-player-js';
 import { useEffect, useState } from 'react';
 import '../../../css/content-protection.css';
 import Navbar from './layout/navbar';
@@ -21,6 +23,12 @@ const Index = (props: CoursePlayerProps) => {
 
    const completed = getCompletedContents(watchHistory);
    const completion = getCourseCompletion(props.course, completed);
+
+   useEffect(() => {
+      if (type === 'lesson' && watching && isVideoLesson(watching as SectionLesson)) {
+         void preloadPlayerJs();
+      }
+   }, [type, watching?.id]);
 
    useEffect(() => {
       const handleResize = () => {

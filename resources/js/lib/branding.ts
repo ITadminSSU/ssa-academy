@@ -4,9 +4,9 @@ export const BRAND_AUTHOR = import.meta.env.VITE_BRAND_AUTHOR || 'Smart Sourcing
 export const BRAND_TAGLINE = import.meta.env.VITE_BRAND_TAGLINE || 'Enterprise training for teams and professionals within the construction industry.';
 
 export const BRAND_LOGOS = {
-   icon: '/assets/branding/logo-icon.png',
-   dark: '/assets/branding/logo-dark.png',
-   light: '/assets/branding/logo-light.png',
+   icon: '/assets/branding/favicon-ssa.png',
+   dark: '/assets/branding/ssa-academy-logo.png',
+   light: '/assets/branding/ssa-academy-logo.png',
    favicon: '/favicon.png',
 } as const;
 

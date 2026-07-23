@@ -144,13 +144,11 @@ class ChunkedUploadController extends Controller
     public function complete(Request $request, $id)
     {
         try {
-            // Determine upload service based on the stored disk type
-            $uploaderService = $this->getUploadService($upload->disk);
-
-            // Find the upload record
             $upload = ChunkedUpload::where('id', $id)
                 ->where('user_id', Auth::id())
                 ->firstOrFail();
+
+            $uploaderService = $this->getUploadService($upload->disk);
 
             if ($upload->status === 'completed') {
                 return response()->json([
@@ -182,6 +180,7 @@ class ChunkedUploadController extends Controller
 
             // Complete the upload
             $uploaderService->completeUpload($upload, $parts);
+            $upload->refresh();
 
             // After successful completion
             DB::table('chunked_upload_parts')

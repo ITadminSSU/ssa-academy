@@ -73,6 +73,7 @@ export interface SharedData {
    locale: string;
    direction: 'ltr';
    cartCount: number;
+   appTimezone?: string;
    translate: LanguageTranslations;
    [key: string]: unknown;
 }

@@ -2,29 +2,82 @@ import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatCourseLaunchDateTime, isCourseComingSoon, minDateTimeLocalValue, toDateTimeLocalValue } from '@/lib/course-launch';
 import { cn } from '@/lib/utils';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 import { CourseUpdateProps } from '../update';
 
+function ScheduleLaunchDateField({
+   value,
+   error,
+   min,
+   onChange,
+}: {
+   value: string;
+   error?: string;
+   min?: string;
+   onChange: (value: string) => void;
+}) {
+   return (
+      <div>
+         <Label>Launch date *</Label>
+         <Input
+            type="datetime-local"
+            value={value}
+            min={min}
+            onChange={(e) => onChange(e.target.value)}
+            required
+         />
+         <p className="text-muted-foreground mt-1 text-xs">
+            The course appears in the catalog with a Coming Soon badge until this date.
+         </p>
+         <InputError message={error} />
+      </div>
+   );
+}
+
 const CourseUpdateHeader = () => {
    const [open, setOpen] = useState(false);
+   const [scheduleOpen, setScheduleOpen] = useState(false);
    const { props } = usePage<CourseUpdateProps>();
-   const { translate } = props;
-   const { dashboard, button, input, common } = translate;
+   const { translate, appTimezone } = props;
+   const { dashboard, button, input, common, frontend } = translate;
    const user = props.auth.user;
-   const { course, watchHistory, approvalStatus } = props;
+   const { course, watchHistory, approvalStatus, launchNotificationCount = 0 } = props;
    const statuses = props.statuses.filter((status) => status !== course.status);
    const { approve_able, validation_messages, counts } = approvalStatus;
+   const launchLabel = formatCourseLaunchDateTime(course);
 
    const { data, put, setData, processing, errors, reset } = useForm({
       status: '',
       feedback: '',
    });
+
+   const {
+      data: scheduleData,
+      put: putSchedule,
+      setData: setScheduleData,
+      processing: scheduleProcessing,
+      errors: scheduleErrors,
+   } = useForm({
+      status: course.status === 'upcoming' || course.status === 'approved' ? course.status : 'upcoming',
+      launch_at: toDateTimeLocalValue(course.launch_at, appTimezone),
+   });
+
+   useEffect(() => {
+      if (scheduleOpen) {
+         setScheduleData({
+            status: course.status === 'upcoming' || course.status === 'approved' ? course.status : 'upcoming',
+            launch_at: toDateTimeLocalValue(course.launch_at, appTimezone),
+         });
+      }
+   }, [scheduleOpen, course.launch_at, course.status, appTimezone, setScheduleData]);
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -37,9 +90,125 @@ const CourseUpdateHeader = () => {
       });
    };
 
+   const handleScheduleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+
+      putSchedule(route('course.status', { id: course.id }), {
+         preserveScroll: true,
+         onSuccess: () => {
+            setScheduleOpen(false);
+         },
+      });
+   };
+
+   const scheduleLaunchField = (
+      <ScheduleLaunchDateField
+         value={scheduleData.launch_at}
+         error={scheduleErrors.launch_at}
+         min={minDateTimeLocalValue(appTimezone)}
+         onChange={(value) => setScheduleData('launch_at', value)}
+      />
+   );
+
+   const renderLaunchDateEditor = () => (
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+         <DialogTrigger asChild>
+            <Button variant="outline">{button.edit_launch_date ?? 'Edit Launch Date'}</Button>
+         </DialogTrigger>
+         <DialogContent>
+            <DialogHeader>
+               <DialogTitle>{button.edit_launch_date ?? 'Edit Launch Date'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleScheduleSubmit} className="space-y-4">
+               {scheduleLaunchField}
+               <LoadingButton loading={scheduleProcessing} className="w-full">
+                  {button.submit}
+               </LoadingButton>
+            </form>
+         </DialogContent>
+      </Dialog>
+   );
+
+   const renderTrainerStatusActions = () => {
+      if (course.status === 'approved') {
+         return (
+            <>
+               {isCourseComingSoon(course) && launchLabel ? (
+                  <span className="text-muted-foreground text-sm">
+                     {(frontend.launches_on ?? 'Launches on {date}').replace('{date}', launchLabel)}
+                  </span>
+               ) : null}
+               {isCourseComingSoon(course) ? renderLaunchDateEditor() : null}
+               <Button
+                  variant="outline"
+                  onClick={() => router.put(route('course.status', { id: course.id }), { status: 'draft' })}
+               >
+                  {button.unpublish_course ?? 'Unpublish'}
+               </Button>
+            </>
+         );
+      }
+
+      if (course.status === 'upcoming') {
+         return (
+            <>
+               {launchLabel ? (
+                  <span className="text-muted-foreground text-sm">
+                     {(frontend.launches_on ?? 'Launches on {date}').replace('{date}', launchLabel)}
+                  </span>
+               ) : null}
+               {launchNotificationCount > 0 ? (
+                  <span className="text-muted-foreground text-sm">
+                     {(frontend.launch_notify_count ?? '{count} waiting to be notified').replace(
+                        '{count}',
+                        String(launchNotificationCount),
+                     )}
+                  </span>
+               ) : null}
+               <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'approved' })}>
+                  {button.publish_now ?? 'Publish Now'}
+               </Button>
+               {renderLaunchDateEditor()}
+               <Button
+                  variant="outline"
+                  onClick={() => router.put(route('course.status', { id: course.id }), { status: 'draft' })}
+               >
+                  {button.unpublish_course ?? 'Unpublish'}
+               </Button>
+            </>
+         );
+      }
+
+      return (
+         <>
+            <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'approved' })}>
+               {button.publish_course ?? 'Publish Course'}
+            </Button>
+            <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+               <DialogTrigger asChild>
+                  <Button variant="outline" className="border-amber-500/40 text-amber-900 hover:bg-amber-50">
+                     {button.schedule_coming_soon ?? 'Schedule Coming Soon'}
+                  </Button>
+               </DialogTrigger>
+               <DialogContent>
+                  <DialogHeader>
+                     <DialogTitle>{button.schedule_coming_soon ?? 'Schedule Coming Soon'}</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleScheduleSubmit} className="space-y-4">
+                     {scheduleLaunchField}
+                     <LoadingButton loading={scheduleProcessing} className="w-full">
+                        {button.submit}
+                     </LoadingButton>
+                  </form>
+               </DialogContent>
+            </Dialog>
+         </>
+      );
+   };
+
    return (
       <div className="flex flex-wrap items-center gap-4 md:gap-6">
-         <Button>
+         <Button asChild>
             <Link
                href={route('course.details', {
                   slug: course.slug,
@@ -50,12 +219,12 @@ const CourseUpdateHeader = () => {
             </Link>
          </Button>
 
-         <Button variant="outline">
-            <Link href={route('student-progress.show', course.id)}>{button.view_progress}</Link>
+         <Button asChild variant="outline">
+            <Link href={route('student-progress.show', course.id)}>{button.view_progress ?? 'View Progress'}</Link>
          </Button>
 
          {course.final_exam_id ? (
-            <Button variant="outline">
+            <Button asChild variant="outline">
                <Link href={route('exams.edit', { exam: course.final_exam_id, tab: 'attempts' })}>
                   {button.view_final_exam_attempts ?? 'Final Exam Attempts'}
                </Link>
@@ -63,7 +232,7 @@ const CourseUpdateHeader = () => {
          ) : null}
 
          {watchHistory ? (
-            <Button>
+            <Button asChild>
                <Link
                   href={route('course.player', {
                      type: watchHistory.current_watching_type,
@@ -81,35 +250,35 @@ const CourseUpdateHeader = () => {
          )}
 
          <Button
-            className={cn('capitalize', course.status === 'approved' ? 'bg-green-500' : course.status === 'rejected' ? 'bg-red-500' : 'bg-muted')}
+            className={cn(
+               'capitalize',
+               course.status === 'approved'
+                  ? 'bg-green-500'
+                  : course.status === 'upcoming'
+                    ? 'bg-amber-400 text-amber-950'
+                    : course.status === 'rejected'
+                      ? 'bg-red-500'
+                      : 'bg-muted',
+            )}
             disabled
          >
             {course.status}
          </Button>
 
          {approve_able ? (
-            user.role === 'instructor' ? (
-               course.status === 'approved' ? (
-                  <Button
-                     variant="outline"
-                     onClick={() => router.put(route('course.status', { id: course.id }), { status: 'draft' })}
-                  >
-                     {button.unpublish_course ?? 'Unpublish'}
-                  </Button>
-               ) : (
-                  <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'approved' })}>
-                     {button.publish_course ?? 'Publish Course'}
-                  </Button>
-               )
-            ) : (
-               <Dialog open={open} onOpenChange={setOpen}>
-                  <DialogTrigger asChild>
-                     <Button className="capitalize">{button.approval_status}</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                           <Label>{common.status}</Label>
+            <>
+               {(user.role === 'instructor' || user.role === 'admin') && renderTrainerStatusActions()}
+               {user.role === 'admin' ? (
+                  <Dialog open={open} onOpenChange={setOpen}>
+                     <DialogTrigger asChild>
+                        <Button variant="outline" className="capitalize">
+                           {button.approval_status}
+                        </Button>
+                     </DialogTrigger>
+                     <DialogContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                           <div>
+                              <Label>{common.status}</Label>
                            <Select required value={data.status} onValueChange={(value) => setData('status', value as any)}>
                               <SelectTrigger className="capitalize">
                                  <SelectValue placeholder={common.select_the_approval_status} />
@@ -154,8 +323,9 @@ const CourseUpdateHeader = () => {
                         </LoadingButton>
                      </form>
                   </DialogContent>
-               </Dialog>
-            )
+                  </Dialog>
+               ) : null}
+            </>
          ) : (
             <Dialog open={open} onOpenChange={setOpen}>
                <DialogTrigger>

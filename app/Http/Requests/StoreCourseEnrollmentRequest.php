@@ -86,6 +86,10 @@ class StoreCourseEnrollmentRequest extends FormRequest
             ) {
                 $validator->errors()->add('enrollment_type', 'Paid courses require payment for external learners.');
             }
+
+            if (!isAdmin() && !$course->isEnrollmentOpen()) {
+                $validator->errors()->add('course_id', 'This course is not available for enrollment yet.');
+            }
         });
     }
 }

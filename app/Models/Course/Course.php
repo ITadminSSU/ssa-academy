@@ -4,6 +4,7 @@ namespace App\Models\Course;
 
 use App\Enums\CourseAudience;
 use App\Enums\CourseBillingModel;
+use App\Enums\CourseStatusType;
 use App\Models\Instructor;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 use Modules\Exam\Models\Exam;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -25,6 +27,9 @@ class Course extends Model implements HasMedia
         'slug',
         'course_type',
         'status',
+        'launch_at',
+        'allow_staff_preview',
+        'allow_internal_preview',
         'level',
         'short_description',
         'description',
@@ -66,6 +71,15 @@ class Course extends Model implements HasMedia
         'audience' => CourseAudience::class,
         'billing_model' => CourseBillingModel::class,
         'subscription_price' => 'decimal:2',
+        'launch_at' => 'datetime',
+        'allow_staff_preview' => 'boolean',
+        'allow_internal_preview' => 'boolean',
+    ];
+
+    protected $appends = [
+        'is_coming_soon',
+        'is_enrollment_open',
+        'can_preview_before_launch',
     ];
 
     protected function thumbnail(): Attribute
@@ -93,6 +107,111 @@ class Course extends Model implements HasMedia
             CourseAudience::PUBLIC->value,
             CourseAudience::BOTH->value,
         ]);
+    }
+
+    public function scopeListedInCatalog(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            CourseStatusType::APPROVED->value,
+            CourseStatusType::UPCOMING->value,
+        ]);
+    }
+
+    public function scopeLaunched(Builder $query): Builder
+    {
+        return $query->where(function (Builder $builder) {
+            $builder->whereNull('launch_at')
+                ->orWhere('launch_at', '<=', now());
+        });
+    }
+
+    public function scopeEnrollmentOpen(Builder $query): Builder
+    {
+        return $query
+            ->where('status', CourseStatusType::APPROVED->value)
+            ->launched();
+    }
+
+    public function isComingSoon(): bool
+    {
+        if ($this->status === CourseStatusType::UPCOMING->value) {
+            return true;
+        }
+
+        return $this->launch_at !== null && $this->launch_at->isFuture();
+    }
+
+    public function isEnrollmentOpen(): bool
+    {
+        if ($this->status !== CourseStatusType::APPROVED->value) {
+            return false;
+        }
+
+        if ($this->launch_at && $this->launch_at->isFuture()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function canPreviewBeforeLaunch(?User $user = null): bool
+    {
+        $user ??= Auth::user();
+
+        if (!$user || !$this->isComingSoon()) {
+            return false;
+        }
+
+        if ($this->allow_internal_preview && $user->isEmployeeLearner()) {
+            return true;
+        }
+
+        if (!($this->allow_staff_preview ?? true)) {
+            return false;
+        }
+
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $user->role === 'instructor'
+            && (int) $user->instructor_id === (int) $this->instructor_id;
+    }
+
+    public function getCanPreviewBeforeLaunchAttribute(): bool
+    {
+        return $this->canPreviewBeforeLaunch();
+    }
+
+    public function isCatalogListed(): bool
+    {
+        return in_array($this->status, [
+            CourseStatusType::APPROVED->value,
+            CourseStatusType::UPCOMING->value,
+        ], true);
+    }
+
+    public function isPubliclyViewable(?User $user = null): bool
+    {
+        if (!$this->isVisibleToUser($user)) {
+            return false;
+        }
+
+        if ($this->isCatalogListed()) {
+            return true;
+        }
+
+        return $user !== null && in_array($user->role, ['admin', 'instructor'], true);
+    }
+
+    public function getIsComingSoonAttribute(): bool
+    {
+        return $this->isComingSoon();
+    }
+
+    public function getIsEnrollmentOpenAttribute(): bool
+    {
+        return $this->isEnrollmentOpen();
     }
 
     public static function catalogViewerCanSeeInternal(?User $user): bool
@@ -185,6 +304,11 @@ class Course extends Model implements HasMedia
     public function reviews(): HasMany
     {
         return $this->hasMany(CourseReview::class)->orderBy('created_at', 'desc');
+    }
+
+    public function launchNotifications(): HasMany
+    {
+        return $this->hasMany(CourseLaunchNotification::class);
     }
 
     public function coupons(): HasMany

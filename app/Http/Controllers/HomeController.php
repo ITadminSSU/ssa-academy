@@ -7,9 +7,11 @@ use App\Http\Requests\UpdatePageSectionRequest;
 use App\Models\Page;
 use App\Services\Course\CourseCategoryService;
 use App\Services\JobCircularService;
+use App\Services\AuthService;
 use App\Services\PageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class HomeController extends Controller
@@ -18,10 +20,15 @@ class HomeController extends Controller
       protected PageService $pageService,
       protected JobCircularService $jobCircularService,
       protected CourseCategoryService $categoryService,
+      protected AuthService $authService,
    ) {}
 
    public function index(Request $request)
    {
+      if (Auth::check()) {
+         return redirect($this->authService->homeUrlFor(Auth::user()));
+      }
+
       $page = app('intro_page');
 
       if (!$page || $page->slug !== 'ssu-home') {
@@ -42,6 +49,13 @@ class HomeController extends Controller
          'page' => $page,
          'type' => 'intro',
          ...$sections,
+      ]);
+   }
+
+   public function about(Request $request)
+   {
+      return Inertia::render('intro/ssu-about', [
+         'type' => 'intro',
       ]);
    }
 

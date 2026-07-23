@@ -68,18 +68,12 @@ const IntroNavbar = () => {
                      </Link>
                      {navbar &&
                         navbar.properties.array.map((item) => {
-                           // Redirect "About Us" to smartsourcingusa.com/#about
+
                            if (item.title === 'About Us' || item.title === 'About' || item.url?.includes('/about')) {
                               return (
-                                 <a
-                                    key={item.url}
-                                    href="https://smartsourcingusa.com/#about"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm font-normal"
-                                 >
+                                 <Link key={item.url} href={route('about')} className="text-sm font-normal">
                                     {item.title}
-                                 </a>
+                                 </Link>
                               );
                            }
                            if (item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact')) {
@@ -182,18 +176,12 @@ const IntroNavbar = () => {
 
                      {navbar &&
                         navbar.properties.array.map((item) => {
-                           // Redirect "About Us" to smartsourcingusa.com/#about
+
                            if (item.title === 'About Us' || item.title === 'About' || item.url?.includes('/about')) {
                               return (
-                                 <a
-                                    key={item.url}
-                                    href="https://smartsourcingusa.com/#about"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm font-normal"
-                                 >
+                                 <Link key={item.url} href={route('about')} className="text-sm font-normal">
                                     {item.title}
-                                 </a>
+                                 </Link>
                               );
                            }
                            if (item.title === 'Contact Us' || item.title === 'Contact' || item.url?.includes('/contact')) {

@@ -24,8 +24,12 @@ class AuthenticatedSessionController extends Controller
     /**
      * Show the login page.
      */
-    public function create(Request $request): Response
+    public function create(Request $request): Response|RedirectResponse
     {
+        if (Auth::check()) {
+            return redirect($this->authService->homeUrlFor($request->user()));
+        }
+
         if ($request->filled('redirect') && $this->isSafeRedirect($request->query('redirect'))) {
             $request->session()->put('url.intended', $request->query('redirect'));
         }

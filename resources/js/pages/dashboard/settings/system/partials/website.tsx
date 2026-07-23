@@ -147,6 +147,11 @@ const Website = () => {
                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
                      <Label>Logo Dark</Label>
+                     {data.logo_dark ? (
+                        <div className="ssu-logo-frame ssu-logo-frame--nav border-border/60 mb-3 rounded-lg border bg-white p-3">
+                           <img src={data.logo_dark} alt="Current dark logo preview" className="ssu-nav-logo" />
+                        </div>
+                     ) : null}
                      <Input
                         type="file"
                         name="new_logo_dark"
@@ -154,11 +159,19 @@ const Website = () => {
                         onChange={(e) => onHandleChange(e, setData)}
                         placeholder="Select Logo"
                      />
+                     <p className="text-muted-foreground mt-2 text-xs">
+                        Use a wide wordmark with minimal empty space above and below for the best navbar fit.
+                     </p>
                      <InputError message={errors.new_logo_dark} />
                   </div>
 
                   <div>
                      <Label>Logo Light</Label>
+                     {data.logo_light ? (
+                        <div className="ssu-logo-frame ssu-logo-frame--nav border-border/60 mb-3 rounded-lg border bg-[oklch(0.22_0.04_255)] p-3">
+                           <img src={data.logo_light} alt="Current light logo preview" className="ssu-nav-logo" />
+                        </div>
+                     ) : null}
                      <Input
                         type="file"
                         name="new_logo_light"
@@ -166,11 +179,19 @@ const Website = () => {
                         onChange={(e) => onHandleChange(e, setData)}
                         placeholder="Select Logo"
                      />
+                     <p className="text-muted-foreground mt-2 text-xs">
+                        Upload the same wordmark for light backgrounds if you only have one logo file.
+                     </p>
                      <InputError message={errors.new_logo_light} />
                   </div>
 
                   <div>
                      <Label>Favicon</Label>
+                     {data.favicon ? (
+                        <div className="border-border/60 mb-3 inline-flex rounded-lg border bg-white p-3">
+                           <img src={data.favicon} alt="Current favicon preview" className="h-12 w-12 object-contain" />
+                        </div>
+                     ) : null}
                      <Input
                         type="file"
                         name="new_favicon"
@@ -178,6 +199,7 @@ const Website = () => {
                         onChange={(e) => onHandleChange(e, setData)}
                         placeholder="Select Favicon"
                      />
+                     <p className="text-muted-foreground mt-2 text-xs">Square SSA icon works best. Recommended size: 512x512 PNG.</p>
                      <InputError message={errors.new_favicon} />
                   </div>
 

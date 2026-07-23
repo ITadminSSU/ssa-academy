@@ -144,6 +144,7 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                protectDownload
                secureStream={Boolean(lesson.stream_protected)}
                lessonId={lesson.id}
+               initialPlayback={lesson.video_playback ?? null}
                source={{
                   type: 'video' as const,
                   sources: [

@@ -129,6 +129,7 @@ class HandleInertiaRequests extends Middleware
             'locale' => $locale,
             'direction' => 'ltr',
             'cartCount' => $cartCount,
+            'appTimezone' => config('app.timezone'),
             'bunnyStream' => fn(): array => $this->bunnyStreamPayload(),
             'translate' => [
                 'auth' => trans('auth'),

@@ -34,6 +34,12 @@ interface Course extends TableCommon {
    short_description: string;
    course_type: string;
    status: 'draft' | 'upcoming' | 'pending' | 'rejected' | 'approved';
+   launch_at?: string | null;
+   is_coming_soon?: boolean;
+   is_enrollment_open?: boolean;
+   allow_staff_preview?: boolean;
+   allow_internal_preview?: boolean;
+   can_preview_before_launch?: boolean;
    level: string;
    language?: string;
    pricing_type: string;
@@ -109,6 +115,16 @@ interface LessonActivitySubmission extends TableCommon {
    grader?: User;
 }
 
+interface LessonVideoPlayback {
+   protected: boolean;
+   stream_url: string;
+   embed_url?: string;
+   delivery: 'direct' | 'signed' | 'blob' | 'bunny_embed';
+   expires_at: string | null;
+   mime_type?: string;
+   playback_token?: string | null;
+}
+
 interface SectionLesson extends TableCommon {
    title: string;
    sort: number;
@@ -122,6 +138,7 @@ interface SectionLesson extends TableCommon {
    lesson_src?: string;
    bunny_video_id?: string | null;
    stream_protected?: boolean;
+   video_playback?: LessonVideoPlayback | null;
    lesson_provider?: string;
    embed_source?: string;
    thumbnail?: string;

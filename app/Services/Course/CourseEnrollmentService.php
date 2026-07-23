@@ -58,6 +58,11 @@ class CourseEnrollmentService extends MediaService
       return DB::transaction(function () use ($data) {
          $courseId = $data['course_id'];
          $course = Course::findOrFail($data['course_id']);
+
+         if (!$course->isEnrollmentOpen() && !isAdmin()) {
+            throw new \InvalidArgumentException('This course is not available for enrollment yet.');
+         }
+
          $courseSectionService = new CourseSectionService();
 
          // Calculate expiry date based on duration from enrollment time

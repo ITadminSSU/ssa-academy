@@ -65,9 +65,13 @@ class CourseEnrollmentController extends Controller
             return back()->with('error', 'Accept the Terms & Conditions and NDA before enrolling in courses.');
         }
 
-        $this->courseEnrollment->createCourseEnroll($request->validated());
+        try {
+            $this->courseEnrollment->createCourseEnroll($request->validated());
 
-        return back()->with('success', 'Enrollment is successfully done in this course');
+            return back()->with('success', 'Enrollment is successfully done in this course');
+        } catch (\InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
     }
 
     /**

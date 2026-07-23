@@ -72,6 +72,8 @@ return [
     'add_to_wishlist' => 'Add to Wishlist',
     'remove_from_wishlist' => 'Remove from Wishlist',
     'learn_more' => 'Learn More',
+    'preview_course' => 'Preview Course',
+    'notify_me' => 'Notify me',
     'continue' => 'Continue',
     'course_details' => 'Course Details',
     'continue_to_payment' => 'Continue to payment',
@@ -108,7 +110,10 @@ return [
     'submit_for_approval' => 'Submit for Approval',
     'approval_status' => 'Approval Status',
     'publish_course' => 'Publish Course',
+    'publish_now' => 'Publish Now',
     'unpublish_course' => 'Unpublish',
+    'schedule_coming_soon' => 'Schedule Coming Soon',
+    'edit_launch_date' => 'Edit Launch Date',
 
     // ==================================================
     // 04. Authentication Buttons
@@ -185,6 +190,7 @@ return [
     'manage_enrollments' => 'Manage Enrollments',
     'add_new_enrollment' => 'Add New Enrollment',
     'add_new_instructor' => 'Add New Instructor',
+    'create_account' => 'Create Account',
     'manage_instructors' => 'Manage Instructors',
     'create_instructor' => 'Create Instructor',
     'applications' => 'Applications',

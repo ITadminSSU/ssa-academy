@@ -14,6 +14,7 @@ use App\Services\Course\CourseService;
 use App\Services\Course\CourseSectionService;
 use App\Services\Course\LessonWatchProgressService;
 use App\Services\Course\ProtectedMediaService;
+use App\Services\Course\VideoPlaybackTokenService;
 use App\Services\LiveClass\ZoomLiveService;
 use App\Services\Payment\SubscriptionAccessService;
 use Illuminate\Http\Request;
@@ -34,6 +35,7 @@ class PlayerController extends Controller
         protected CourseCertificateIssuanceService $certificateIssuance,
         protected CourseFinalExamService $courseFinalExamService,
         protected SubscriptionAccessService $subscriptionAccess,
+        protected VideoPlaybackTokenService $playbackTokens,
     ) {}
 
     public function index(Request $request)
@@ -51,6 +53,16 @@ class PlayerController extends Controller
             'lesson_id' => 'nullable|exists:section_lessons,id',
             'panel' => 'nullable|string|in:forum,review,resource,summery',
         ]);
+
+        $course = \App\Models\Course\Course::findOrFail($validated['course_id']);
+
+        if (!$course->isEnrollmentOpen() && !$course->canPreviewBeforeLaunch($user)) {
+            $message = $course->launch_at
+                ? 'This course launches on ' . $course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A') . '.'
+                : 'This course is coming soon.';
+
+            return back()->with('error', $message);
+        }
 
         $watchHistory = $this->sectionService->initWatchHistory($validated['course_id'], 'lesson', $user->id);
 
@@ -78,17 +90,25 @@ class PlayerController extends Controller
             $course = $this->courseService->getUserCourseById($watch_history->course_id, $user);
 
             if (!$this->subscriptionAccess->canAccessPlayer($user, $course)) {
+                $message = $course->usesSubscriptionBilling()
+                    ? 'Your access to this course has expired. Resubscribe to continue.'
+                    : 'Your access to this course has expired.';
+
                 return redirect()
                     ->route('courses.show', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('error', 'Your access to this course has expired. Resubscribe to continue.');
+                    ->with('error', $message);
             }
+
+            $watch_history = $this->coursePlay->syncPassedQuizzes($watch_history, $user->id);
 
             $subscriptionAccess = $this->subscriptionAccess->toFrontendPayload($user, $course);
 
             if ($type === 'quiz' && !$this->courseCompletionGateService->canAccessQuiz($course, $user->id, $lesson_id, $watch_history)) {
-                $errorMessage = $subscriptionAccess['mode'] === 'completed_only'
+                $errorMessage = $subscriptionAccess['mode'] === 'completed_only' && $course->usesSubscriptionBilling()
                     ? 'This quiz is locked. Resubscribe to continue learning.'
-                    : 'Complete and receive trainer approval on all assignments before taking quizzes.';
+                    : ($subscriptionAccess['mode'] === 'completed_only'
+                        ? 'This quiz is locked.'
+                        : 'Complete and receive trainer approval on all assignments before taking quizzes.');
 
                 return redirect()
                     ->route('student.course.show', ['id' => $course->id, 'tab' => $subscriptionAccess['mode'] === 'completed_only' ? 'quizzes' : 'assignments'])
@@ -96,9 +116,11 @@ class PlayerController extends Controller
             }
 
             if ($type === 'lesson' && !$this->courseCompletionGateService->canAccessLesson($course, $user->id, $lesson_id, $watch_history)) {
-                $errorMessage = $subscriptionAccess['mode'] === 'completed_only'
+                $errorMessage = $subscriptionAccess['mode'] === 'completed_only' && $course->usesSubscriptionBilling()
                     ? 'This lesson is locked. Resubscribe to continue learning.'
-                    : 'Complete the previous lesson before continuing.';
+                    : ($subscriptionAccess['mode'] === 'completed_only'
+                        ? 'This lesson is locked.'
+                        : 'Complete the previous lesson before continuing.');
                 return redirect()
                     ->route('course.player', [
                         'type' => $watch_history->current_watching_type,
@@ -118,6 +140,17 @@ class PlayerController extends Controller
 
             if ($type === 'lesson' && $watching instanceof SectionLesson) {
                 $watching = $this->protectedMedia->protectLessonForPlayer($watching, $user);
+
+                if (
+                    in_array($watching->lesson_type, ['video', 'video_url'], true)
+                    && $watching->stream_protected
+                    && $this->protectedMedia->lessonVideoIsStreamable($watching)
+                ) {
+                    $playbackToken = $this->playbackTokens->issue($user->id, $watching->id);
+                    $playback = $this->protectedMedia->createVideoPlaybackPayload($watching, $playbackToken);
+                    $playback['playback_token'] = $playbackToken;
+                    $watching->setAttribute('video_playback', $playback);
+                }
             }
 
             $reviews = $this->reviewService->getReviews(['course_id' => $course->id, ...$request->all()], true);

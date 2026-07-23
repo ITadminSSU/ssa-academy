@@ -49,11 +49,11 @@ class CourseCategoryService extends MediaService
             // category that already has catalog-visible published courses.
             $query->where('show_in_nav', true)
                ->orWhereHas('courses', function ($courses) use ($user) {
-                  $courses->where('status', 'approved')->visibleInCatalog($user);
+                  $courses->listedInCatalog()->visibleInCatalog($user);
                });
          })
          ->with(['courses' => function ($query) use ($user) {
-            $query->where('status', 'approved')
+            $query->listedInCatalog()
                ->visibleInCatalog($user)
                ->select('id', 'title', 'slug', 'course_category_id')
                ->orderBy('title', 'asc');

@@ -71,7 +71,6 @@ class StudentController extends Controller
             ...$request->all(),
             'per_page' => 12,
             'category' => $category,
-            'status' => 'approved',
             'catalog' => true,
         ], $user, true);
 

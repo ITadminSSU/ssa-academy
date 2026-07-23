@@ -25,6 +25,7 @@ interface User extends TableCommon {
    email_verified_at: string | null;
    password: string;
    instructor_id: number | null;
+   instructor?: Instructor | null;
    remember_token?: string;
    professional_type_id: number | null;
    professional_type_other: string | null;

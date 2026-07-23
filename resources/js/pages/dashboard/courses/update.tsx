@@ -40,6 +40,7 @@ export interface CourseUpdateProps extends SharedData {
    billingModels?: { value: string; label?: string }[] | string[];
    stripeActive?: boolean;
    stripeSynced?: boolean;
+   launchNotificationCount?: number;
 }
 
 const Update = (props: CourseUpdateProps) => {

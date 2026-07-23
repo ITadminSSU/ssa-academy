@@ -1,7 +1,9 @@
 import CourseBannerPlaceholder from '@/components/course-banner-placeholder';
+import CourseLaunchCountdown from '@/components/course-launch-countdown';
 import RatingStars from '@/components/rating-stars';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import courseLanguages from '@/data/course-languages';
+import { canPreviewCourseBeforeLaunch, formatCourseLaunchDate, isCourseComingSoon } from '@/lib/course-launch';
 import { getCourseDuration } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, usePage } from '@inertiajs/react';
@@ -20,6 +22,9 @@ const CourseHero = ({ course }: { course: Course }) => {
    const { title, short_description, instructor, average_rating } = course;
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
    const backdrop = course.banner || course.thumbnail;
+   const comingSoon = isCourseComingSoon(course);
+   const launchDate = formatCourseLaunchDate(course);
+   const staffPreview = canPreviewCourseBeforeLaunch(course);
 
    return (
       <section className="relative isolate overflow-hidden bg-gradient-to-br from-[oklch(0.20_0.003_255)] via-[oklch(0.24_0.003_257)] to-[oklch(0.30_0.004_255)] text-white">
@@ -41,6 +46,32 @@ const CourseHero = ({ course }: { course: Course }) => {
          <div className="relative container py-14 md:py-20">
             <div className="max-w-3xl space-y-5">
                {course.course_category?.title && <p className="ssu-kicker !text-white/70">{course.course_category.title}</p>}
+
+               {comingSoon ? (
+                  <div className="space-y-3">
+                     <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex rounded-full bg-amber-400 px-3 py-1 text-xs font-bold tracking-wide text-amber-950 uppercase">
+                           {frontend.coming_soon ?? 'Coming Soon'}
+                        </span>
+                        {staffPreview ? (
+                           <span className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-white uppercase">
+                              {frontend.staff_preview ?? 'Staff preview'}
+                           </span>
+                        ) : null}
+                        {launchDate ? (
+                           <span className="text-sm font-medium text-amber-100">
+                              {(frontend.launches_on ?? 'Launches {date}').replace('{date}', launchDate)}
+                           </span>
+                        ) : null}
+                     </div>
+                     {course.launch_at ? (
+                        <div className="space-y-2">
+                           <p className="text-xs font-semibold tracking-wide text-white/70 uppercase">{frontend.starts_in ?? 'Starts in'}</p>
+                           <CourseLaunchCountdown launchAt={course.launch_at} />
+                        </div>
+                     ) : null}
+                  </div>
+               ) : null}
 
                <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">{title}</h1>
 

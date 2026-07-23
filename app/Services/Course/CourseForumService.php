@@ -9,6 +9,7 @@ use App\Models\Course\CourseForumReply;
 use App\Models\User;
 use App\Notifications\ForumNotification;
 use App\Services\MediaService;
+use App\Support\RichText\InlineImageProcessor;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -16,6 +17,7 @@ class CourseForumService extends MediaService
 {
    public function __construct(
       private CommunityDiscussionService $communityDiscussion,
+      private InlineImageProcessor $inlineImages,
    ) {}
 
    function getForums(array $data, bool $paginate = false): LengthAwarePaginator|Collection
@@ -44,6 +46,10 @@ class CourseForumService extends MediaService
 
    function createForum(array $data): CourseForum
    {
+      if (isset($data['description'])) {
+         $data['description'] = $this->inlineImages->process($data['description'], 'forum-images');
+      }
+
       $forum = CourseForum::create($data);
 
       if (User::find($data['user_id'])->role == 'student') {
@@ -56,6 +62,11 @@ class CourseForumService extends MediaService
    function createForumReply(array $data): CourseForumReply
    {
       $replyData = Arr::except($data, 'course_forum_user_id');
+
+      if (isset($replyData['description'])) {
+         $replyData['description'] = $this->inlineImages->process($replyData['description'], 'forum-images');
+      }
+
       $reply = CourseForumReply::create($replyData);
 
       $forum = CourseForum::with('course.instructor:id,user_id')->find($data['course_forum_id']);
@@ -73,11 +84,19 @@ class CourseForumService extends MediaService
 
    function updateForum(string $id, array $data): CourseForum
    {
+      if (isset($data['description'])) {
+         $data['description'] = $this->inlineImages->process($data['description'], 'forum-images');
+      }
+
       return CourseForum::find($id)->update($data);
    }
 
    function updateForumReply(string $id, array $data): CourseForumReply
    {
+      if (isset($data['description'])) {
+         $data['description'] = $this->inlineImages->process($data['description'], 'forum-images');
+      }
+
       return CourseForumReply::find($id)->update($data);
    }
 

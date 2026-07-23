@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAdminUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use App\Services\Admin\AdminUserProvisioningService;
+use App\Support\MasterAdmin;
 use App\Services\UserService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -14,7 +17,10 @@ use Inertia\Inertia;
 
 class UsersController extends Controller
 {
-    public function __construct(protected UserService $userService) {}
+    public function __construct(
+        protected UserService $userService,
+        protected AdminUserProvisioningService $adminUserProvisioning,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -24,9 +30,20 @@ class UsersController extends Controller
         $users = $this->userService->getUsers([
             ...$request->all(),
             'paginate' => true,
+            'include_all_roles' => true,
+            'role_filter' => $request->string('role_filter')->toString() ?: 'all',
         ]);
 
-        return Inertia::render('dashboard/users/index', compact('users'));
+        return Inertia::render('dashboard/users/index', [
+            'users' => $users,
+            'roleFilters' => $this->userService->roleFilterOptions(),
+            'roleCounts' => $this->userService->getRoleCounts(),
+            'filters' => [
+                'role_filter' => $request->string('role_filter')->toString() ?: 'all',
+                'search' => $request->string('search')->toString(),
+            ],
+            'protectedUserId' => MasterAdmin::userId(),
+        ]);
     }
 
     /**
@@ -76,13 +93,37 @@ class UsersController extends Controller
     }
 
     /**
+     * Create a new admin, internal employee, or trainer account (admin-provisioned).
+     */
+    public function store(StoreAdminUserRequest $request)
+    {
+        $user = $this->adminUserProvisioning->provision($request->validated(), $request);
+
+        $label = match ($user->role) {
+            'admin' => 'Admin',
+            'instructor' => 'Trainer',
+            default => 'Internal employee',
+        };
+
+        return redirect()->back()->with('success', "{$label} account created for {$user->email}.");
+    }
+
+    /**
      * Update the user's account.
      */
-    public function update(UpdateUserRequest $request, string $id)
+    public function update(UpdateUserRequest $request, string $user)
     {
-        $this->userService->updateUser($id, $request->validated());
+        $this->userService->updateUser($user, $request->validated());
 
-        return redirect()->back()->with('success', 'User updated successfully');
+        $updated = User::findOrFail($user);
+
+        $label = match ($updated->role) {
+            'admin' => 'Admin',
+            'instructor' => 'Trainer',
+            default => 'User',
+        };
+
+        return redirect()->back()->with('success', "{$label} account updated successfully.");
     }
 
     /**

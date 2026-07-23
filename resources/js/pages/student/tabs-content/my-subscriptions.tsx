@@ -1,4 +1,5 @@
 import SsuCheckoutButton from '@/components/ssu-checkout-button';
+import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,6 +67,8 @@ const MySubscriptions = () => {
                </Button>
             ) : null}
          </div>
+
+         <SubscriptionBillingNotice variant="manage" forceShow />
 
          {subscriptions.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -183,7 +186,8 @@ const MySubscriptions = () => {
                   <div>
                      <p className="font-medium">Stripe Customer Portal</p>
                      <p className="text-muted-foreground text-sm">
-                        Update your card, view invoices, or cancel subscriptions securely through Stripe.
+                        Update your card, view invoices, or cancel subscriptions securely through Stripe. Cancellation is
+                        self-service — you must cancel here before your next billing date.
                      </p>
                   </div>
                   <Button asChild>

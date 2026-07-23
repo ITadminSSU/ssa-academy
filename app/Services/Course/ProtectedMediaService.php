@@ -46,7 +46,8 @@ class ProtectedMediaService
         $lesson->lesson_src = URL::temporarySignedRoute(
             'course.player.media',
             now()->addHours(self::SIGNED_URL_TTL_HOURS),
-            ['lesson' => $lesson->id]
+            ['lesson' => $lesson->id],
+            absolute: false,
         );
 
         return $lesson;
@@ -59,7 +60,7 @@ class ProtectedMediaService
     {
         $expiresAt = now()->addMinutes(self::VIDEO_SIGNED_URL_TTL_MINUTES);
 
-        if ($lesson->bunny_video_id) {
+        if ($this->bunnyVideoIsDeliverable($lesson)) {
             $embedUrl = $this->bunnyStream->signedEmbedUrl($lesson->bunny_video_id, $expiresAt);
 
             return [
@@ -100,7 +101,8 @@ class ProtectedMediaService
             'stream_url' => URL::temporarySignedRoute(
                 'course.player.video.stream',
                 $expiresAt,
-                $routeParams
+                $routeParams,
+                absolute: false,
             ),
             'delivery' => $delivery,
             'expires_at' => $expiresAt->toIso8601String(),
@@ -197,13 +199,18 @@ class ProtectedMediaService
 
     public function lessonVideoIsStreamable(SectionLesson $lesson): bool
     {
-        if ($lesson->bunny_video_id) {
-            return $this->bunnyStream->videoIsPlayable($lesson->bunny_video_id);
+        if ($this->bunnyVideoIsDeliverable($lesson)) {
+            return true;
         }
 
         $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
 
         return $this->resolveMediaForStreaming($originalSrc) !== null;
+    }
+
+    private function bunnyVideoIsDeliverable(SectionLesson $lesson): bool
+    {
+        return (bool) $lesson->bunny_video_id && $this->bunnyStream->isEnabled();
     }
 
     /**
@@ -493,6 +500,56 @@ class ProtectedMediaService
         }
 
         return $media['path'];
+    }
+
+    public function streamStoredFileDownload(?string $url, string $fallbackFilename): Response
+    {
+        $media = $this->resolveMediaForStreaming($url);
+
+        if (!$media) {
+            abort(404, 'File not found');
+        }
+
+        $chunkedUpload = $this->findChunkedUpload($url);
+        $mimeType = $this->resolveMimeType($url);
+        $filename = $chunkedUpload?->original_filename
+            ?: ($chunkedUpload?->filename ?? $fallbackFilename);
+
+        if ($media['type'] === 'local') {
+            return response()->streamDownload(
+                function () use ($media) {
+                    $stream = fopen($media['path'], 'r');
+                    fpassthru($stream);
+                    fclose($stream);
+                },
+                $filename,
+                [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                ],
+            );
+        }
+
+        $client = S3CompatibleStorage::makeClient();
+        $bucket = (string) config('filesystems.disks.s3.bucket');
+        $object = $client->getObject([
+            'Bucket' => $bucket,
+            'Key' => $media['key'],
+        ]);
+        $body = $object['Body'];
+
+        return response()->streamDownload(
+            function () use ($body) {
+                while (!$body->eof()) {
+                    echo $body->read(8192);
+                }
+            },
+            $filename,
+            [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ],
+        );
     }
 
     public function resourceIsStreamable(LessonResource $resource): bool

@@ -22,20 +22,6 @@ const NavbarPreview = ({ auth, navbar }: NavbarPreviewProps) => {
 
       switch (item.type) {
          case 'url':
-            // Redirect "About Us" to smartsourcingusa.com/#about
-            if (item.title === 'About Us' || item.title === 'About' || item.value?.includes('/about')) {
-               return (
-                  <a
-                     key={item.id}
-                     href="https://smartsourcingusa.com/#about"
-                     target="_blank"
-                     rel="noopener noreferrer"
-                     className="py-1 text-sm font-normal"
-                  >
-                     {item.title}
-                  </a>
-               );
-            }
             if (item.title === 'Contact Us' || item.title === 'Contact' || item.value?.includes('/contact')) {
                return (
                   <a
@@ -109,7 +95,7 @@ const NavbarPreview = ({ auth, navbar }: NavbarPreviewProps) => {
          <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-10">
-               <Link href={route('category.courses', { category: 'all' })}>
+               <Link href={route('category.courses', { category: 'all' })} className="ssu-logo-frame ssu-logo-frame--nav">
                   <AppLogo className="ssu-nav-logo" />
                </Link>
 

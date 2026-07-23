@@ -20,6 +20,7 @@ use App\Services\Course\CourseCategoryService;
 use App\Services\Course\CourseFinalExamService;
 use App\Services\Course\CourseService;
 use App\Services\Course\CourseSectionService;
+use App\Services\Course\CourseLaunchNotificationService;
 use App\Services\Course\CoursePlayerService;
 use App\Services\Course\CourseWishlistService;
 use App\Services\Course\CourseReviewService;
@@ -48,6 +49,7 @@ class CourseController extends Controller
         protected SubscriptionAccessService $subscriptionAccess,
         protected StripeCustomerService $stripeCustomer,
         protected CourseStripeSyncService $courseStripeSync,
+        protected CourseLaunchNotificationService $launchNotifications,
     ) {}
 
     public function index(Request $request)
@@ -72,7 +74,7 @@ class CourseController extends Controller
         }
         
         $user = Auth::user() ? Auth::user() : null;
-        $query = [...$request->all(), 'per_page' => 12, 'category' => $category, 'category_child' => $category_child, 'status' => 'approved', 'catalog' => true];
+        $query = [...$request->all(), 'per_page' => 12, 'category' => $category, 'category_child' => $category_child, 'catalog' => true];
 
         $levels = CourseLevelType::cases();
         $prices = CoursePricingType::cases();
@@ -197,8 +199,18 @@ class CourseController extends Controller
         // course details
         $course = $this->courseService->getGuestCourseById($id);
 
-        if (!$course || !$course->isVisibleToUser($user)) {
+        if (!$course) {
             abort(404);
+        }
+
+        if (!$course->isPubliclyViewable($user)) {
+            $message = $course->isCatalogListed()
+                ? 'You do not have access to view this course.'
+                : 'This course is not published yet. Set the status to Upcoming or Approved to make it visible.';
+
+            return redirect()
+                ->route('category.courses', ['category' => 'all'])
+                ->with('error', $message);
         }
 
         $enrollment = $this->courseService->getCourseEnroll($course->id);
@@ -236,6 +248,11 @@ class CourseController extends Controller
                     'reviews' => $reviews,
                     'totalReviews' => $totalReviews,
                     'subscriptionAccess' => $subscriptionAccess,
+                    'launchNotifySubscribed' => $this->launchNotifications->isSubscribed(
+                        $course,
+                        $user,
+                        $user?->email,
+                    ),
                 ]
             )->withViewData([
                 'metaTitle' => $pageTitle,
@@ -322,6 +339,7 @@ class CourseController extends Controller
                     ->values(),
                 'stripeActive' => $this->stripeCustomer->isStripeActive(),
                 'stripeSynced' => $this->courseStripeSync->isSynced($course),
+                'launchNotificationCount' => $this->launchNotifications->pendingCountForCourse($course),
             ]
         );
     }

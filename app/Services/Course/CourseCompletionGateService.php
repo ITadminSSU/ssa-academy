@@ -100,6 +100,10 @@ class CourseCompletionGateService
         int|string|null $quizId = null,
         ?WatchHistory $watchHistory = null,
     ): bool {
+        if ($quizId && $this->hasPassedQuiz($userId, $quizId)) {
+            return true;
+        }
+
         $watchHistory ??= WatchHistory::query()
             ->where('course_id', $course->id)
             ->where('user_id', $userId)
@@ -133,7 +137,7 @@ class CourseCompletionGateService
 
     public function canAccessLesson(Course $course, int $userId, int|string $lessonId, ?WatchHistory $watchHistory = null): bool
     {
-        $course->loadMissing(['sections.section_lessons']);
+        $course->loadMissing(['sections.section_lessons', 'sections.section_quizzes']);
         $watchHistory ??= WatchHistory::query()
             ->where('course_id', $course->id)
             ->where('user_id', $userId)
@@ -161,8 +165,10 @@ class CourseCompletionGateService
             return $this->isFirstLesson($course, $lessonId);
         }
 
-        $flatLessons = $this->getOrderedLessons($course);
-        $targetIndex = $flatLessons->search(fn ($lesson) => (string) $lesson->id === (string) $lessonId);
+        $allItems = $this->getOrderedCurriculumItems($course);
+        $targetIndex = $allItems->search(
+            fn ($item) => $item['type'] === 'lesson' && (string) $item['id'] === (string) $lessonId
+        );
 
         if ($targetIndex === false) {
             return false;
@@ -173,8 +179,8 @@ class CourseCompletionGateService
         }
 
         for ($i = 0; $i < $targetIndex; $i++) {
-            $lesson = $flatLessons[$i];
-            if (!$this->isLessonComplete($watchHistory, $lesson)) {
+            $item = $allItems[$i];
+            if (!$this->isCurriculumItemComplete($watchHistory, $item, $userId)) {
                 return false;
             }
         }
@@ -340,6 +346,68 @@ class CourseCompletionGateService
             ->first();
     }
 
+    private function hasPassedQuiz(int $userId, int|string $quizId): bool
+    {
+        return QuizSubmission::where('section_quiz_id', $quizId)
+            ->where('user_id', $userId)
+            ->where('is_passed', true)
+            ->exists();
+    }
+
+    private function getOrderedCurriculumItems(Course $course)
+    {
+        $items = collect();
+
+        foreach ($course->sections as $section) {
+            foreach ($section->section_lessons->sortBy('lesson_number') as $lesson) {
+                $items->push([
+                    'id' => $lesson->id,
+                    'type' => 'lesson',
+                ]);
+            }
+
+            foreach ($section->section_quizzes as $quiz) {
+                $items->push([
+                    'id' => $quiz->id,
+                    'type' => 'quiz',
+                ]);
+            }
+        }
+
+        return $items->values();
+    }
+
+    private function isCurriculumItemComplete(WatchHistory $watchHistory, array $item, int $userId): bool
+    {
+        if ($item['type'] === 'quiz') {
+            return $this->isQuizComplete($watchHistory, $item['id'], $userId);
+        }
+
+        return $this->isLessonComplete($watchHistory, (object) ['id' => $item['id']]);
+    }
+
+    private function isQuizComplete(WatchHistory $watchHistory, int|string $quizId, int $userId): bool
+    {
+        if ($this->isItemInCompletedWatching($watchHistory, $quizId, 'quiz')) {
+            return true;
+        }
+
+        return $this->hasPassedQuiz($userId, $quizId);
+    }
+
+    private function isItemInCompletedWatching(WatchHistory $watchHistory, int|string $itemId, string $itemType): bool
+    {
+        $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
+
+        foreach ($completedItems as $item) {
+            if ((string) $item['id'] === (string) $itemId && $item['type'] === $itemType) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function getOrderedLessons(Course $course)
     {
         return $course->sections
@@ -356,14 +424,6 @@ class CourseCompletionGateService
 
     private function isLessonComplete(WatchHistory $watchHistory, $lesson): bool
     {
-        $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
-
-        foreach ($completedItems as $item) {
-            if ((string) $item['id'] === (string) $lesson->id && $item['type'] === 'lesson') {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->isItemInCompletedWatching($watchHistory, $lesson->id, 'lesson');
     }
 }

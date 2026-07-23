@@ -7,24 +7,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import courseLanguages from '@/data/course-languages';
 import { courseAudienceFieldLabel, courseAudienceOptionLabel } from '@/lib/course-audience-labels';
+import { minDateTimeLocalValue, toDateTimeLocalValue } from '@/lib/course-launch';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { onHandleChange } from '@/lib/inertia';
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 import { CourseUpdateProps } from '../update';
 
 const Basic = () => {
    const { props } = usePage<CourseUpdateProps>();
-   const { auth, system, tab, labels, audiences, categories, course, instructors, instructorExams = [], translate } = props;
-   const { input, button, common } = translate;
+   const { auth, system, labels, audiences, categories, course, instructors, instructorExams = [], launchNotificationCount = 0, appTimezone, translate } = props;
+   const { input, button, common, dashboard } = translate;
 
    const { data, setData, post, errors, processing } = useForm({
-      tab: tab,
+      tab: 'basic',
       title: course.title,
       short_description: course.short_description,
       description: course.description,
@@ -37,7 +39,14 @@ const Basic = () => {
       audience: course.audience || 'public',
       final_exam_id: course.final_exam_id ?? '',
       training_hours: course.training_hours ?? '',
+      launch_at: toDateTimeLocalValue(course.launch_at, appTimezone),
+      allow_staff_preview: course.allow_staff_preview ?? true,
+      allow_internal_preview: course.allow_internal_preview ?? false,
    });
+
+   useEffect(() => {
+      setData('launch_at', toDateTimeLocalValue(course.launch_at, appTimezone));
+   }, [course.launch_at, appTimezone, setData]);
 
    // Handle form submission
    const handleSubmit = (e: React.FormEvent) => {
@@ -236,6 +245,83 @@ const Basic = () => {
                   />
                   <p className="text-muted-foreground mt-1 text-xs">Shown on the completion certificate. Free text, e.g. "40 Hours".</p>
                   {errors.training_hours && <InputError message={errors.training_hours} />}
+               </div>
+
+               <div className="md:col-span-2">
+                  <Label>{common.status ?? 'Status'}</Label>
+                  <Select value={data.status} onValueChange={(value) => setData('status', value)}>
+                     <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="draft">Draft</SelectItem>
+                        <SelectItem value="upcoming">Upcoming (Coming Soon)</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                     </SelectContent>
+                  </Select>
+                  <InputError message={errors.status} />
+               </div>
+
+               <div className="md:col-span-2">
+                  <Label>Launch date (for Coming Soon courses)</Label>
+                  <Input
+                     type="datetime-local"
+                     name="launch_at"
+                     value={(data.launch_at as string) ?? ''}
+                     min={minDateTimeLocalValue(appTimezone)}
+                     onChange={(e) => setData('launch_at', e.target.value)}
+                  />
+                  <p className="text-muted-foreground mt-1 text-xs">
+                     Set when this course becomes available. Use status <strong>Upcoming</strong> to show it in the catalog before launch.
+                  </p>
+                  <InputError message={errors.launch_at} />
+               </div>
+
+               {(data.status === 'upcoming' || course.status === 'upcoming') && (
+                  <div className="md:col-span-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                     <p className="font-medium">{dashboard.launch_notify_list ?? 'Launch notify list'}</p>
+                     <p className="text-muted-foreground mt-1 text-sm">
+                        {(dashboard.launch_notify_count ?? '{count} people waiting to be notified when this course launches.').replace(
+                           '{count}',
+                           String(launchNotificationCount),
+                        )}
+                     </p>
+                  </div>
+               )}
+
+               <div className="md:col-span-2 space-y-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <div>
+                     <p className="font-medium">Pre-launch preview</p>
+                     <p className="text-muted-foreground mt-1 text-xs">
+                        Control who can open the course player before the public launch date.
+                     </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                     <div>
+                        <Label htmlFor="allow_staff_preview">Allow trainer &amp; admin preview</Label>
+                        <p className="text-muted-foreground text-xs">Course owner, trainers, and admins can preview before launch.</p>
+                     </div>
+                     <Switch
+                        id="allow_staff_preview"
+                        checked={Boolean(data.allow_staff_preview)}
+                        onCheckedChange={(checked) => setData('allow_staff_preview', checked)}
+                     />
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                     <div>
+                        <Label htmlFor="allow_internal_preview">Allow internal employee preview</Label>
+                        <p className="text-muted-foreground text-xs">Internal learners can preview before the public launch date.</p>
+                     </div>
+                     <Switch
+                        id="allow_internal_preview"
+                        checked={Boolean(data.allow_internal_preview)}
+                        onCheckedChange={(checked) => setData('allow_internal_preview', checked)}
+                     />
+                  </div>
+                  <InputError message={errors.allow_staff_preview} />
+                  <InputError message={errors.allow_internal_preview} />
                </div>
 
                <div className="md:col-span-2">

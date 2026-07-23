@@ -53,6 +53,7 @@ class StoreCourseRequest extends FormRequest
             'short_description' => 'required|string',
             'description' => 'nullable|string',
             'status' => 'required|string',
+            'launch_at' => 'nullable|date|required_if:status,upcoming',
             'level' => 'required|string',
             'language' => 'required|string|max:255',
             'pricing_type' => "required|string|in:$free,$paid",

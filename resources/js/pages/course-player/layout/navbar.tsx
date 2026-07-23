@@ -24,7 +24,7 @@ const Navbar = () => {
       <header className="ssu-player-header sticky top-0 z-50 overflow-hidden">
          <div className="flex h-16 items-center gap-3 px-4 md:gap-4 md:px-6">
             <div className="flex min-w-0 items-center gap-3 md:gap-4">
-               <Link href={route('home')} className="flex shrink-0 items-center">
+               <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--nav shrink-0">
                   <AppLogo theme="dark" className="ssu-nav-logo" />
                </Link>
 

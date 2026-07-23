@@ -1,6 +1,7 @@
 import SsuCheckoutButton from '@/components/ssu-checkout-button';
 import { Button } from '@/components/ui/button';
 import { canEnrollCourseWithoutPayment, requiresCoursePayment } from '@/lib/learner-access';
+import { canPreviewCourseBeforeLaunch, formatCourseLaunchDateTime, isCourseComingSoon } from '@/lib/course-launch';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -86,6 +87,49 @@ const checkoutLabel = (course: Course, resubscribe: boolean) => {
    return course.billing_model === 'subscription' ? 'Subscribe now' : undefined;
 };
 
+const ComingSoonButton = () => {
+   const { course, translate } = usePage<CourseDetailsProps>().props;
+   const { frontend } = translate;
+   const launchLabel = formatCourseLaunchDateTime(course);
+
+   return (
+      <Button disabled size="lg" className="w-full">
+         {launchLabel
+            ? (frontend.available_on ?? 'Available on {date}').replace('{date}', launchLabel)
+            : (frontend.coming_soon ?? 'Coming Soon')}
+      </Button>
+   );
+};
+
+const StaffPreviewButton = () => {
+   const { course, watchHistory, translate } = usePage<CourseDetailsProps>().props;
+   const { frontend, button } = translate;
+   const [loading, setLoading] = useState(false);
+
+   if (watchHistory) {
+      return <EnabledPlayButton watchHistory={watchHistory} />;
+   }
+
+   return (
+      <div className="space-y-3">
+         <p className="text-muted-foreground text-center text-sm">
+            {frontend.staff_preview_note ?? 'Staff preview — learners cannot access this course until launch.'}
+         </p>
+         <Button
+            size="lg"
+            className="w-full"
+            disabled={loading}
+            onClick={() => {
+               setLoading(true);
+               router.post(route('player.init.watch-history'), { course_id: course.id }, { onFinish: () => setLoading(false) });
+            }}
+         >
+            {button.preview_course ?? 'Preview Course'}
+         </Button>
+      </div>
+   );
+};
+
 // Enrollment/Buy button component
 const EnrollmentButton = () => {
    const { auth, course, translate, wishlists, subscriptionAccess } = usePage<CourseDetailsProps>().props;
@@ -143,6 +187,17 @@ const EnrollOrPlayerButton = () => {
    const isEnrolled = !!enrollment;
    const hasWatchHistory = !!watchHistory;
    const isAdminOrInstructor = auth.user && ['admin', 'instructor'].includes(auth.user.role);
+   const comingSoon = isCourseComingSoon(course);
+   const canStaffPreview = canPreviewCourseBeforeLaunch(course);
+
+   if (comingSoon && canStaffPreview) {
+      return <StaffPreviewButton />;
+   }
+
+   if (comingSoon) {
+      return <ComingSoonButton />;
+   }
+
    const canPlay = hasWatchHistory && (isAdminOrInstructor || (isEnrolled && subscriptionAccess?.mode !== 'none'));
    const showResubscribe = subscriptionAccess?.can_resubscribe ?? false;
 

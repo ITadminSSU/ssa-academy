@@ -72,7 +72,7 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
          return (
             <div className="text-muted-foreground px-4 py-3">
                {content}
-               {subscriptionLocked && !isCompleted ? (
+               {subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Resubscribe to unlock</p>
                ) : null}
             </div>

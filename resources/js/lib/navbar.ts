@@ -15,6 +15,10 @@ export function resolveNavbarItemHref(item: NavbarLinkItem): string {
       return route('exams.browse');
    }
 
+   if (item.slug === 'about-us' || path === '/about-us' || path === '/about') {
+      return route('about');
+   }
+
    if (item.slug === 'home' || path === '/' || path === '/home') {
       return route('home');
    }

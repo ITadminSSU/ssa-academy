@@ -54,6 +54,22 @@
             href="{{ public_asset_url(app('system_settings')->fields['favicon']) }}"
             type="image/png"
          >
+         <link
+            rel="icon"
+            href="{{ asset('favicon-32x32.png') }}"
+            sizes="32x32"
+            type="image/png"
+         >
+         <link
+            rel="icon"
+            href="{{ asset('favicon-16x16.png') }}"
+            sizes="16x16"
+            type="image/png"
+         >
+         <link
+            rel="apple-touch-icon"
+            href="{{ asset('apple-touch-icon.png') }}"
+         >
       @elseif (!empty(app('system_settings')->fields['logo_light']))
          <link
             rel="icon"
@@ -179,77 +195,6 @@
       </style>
    @endif
 
-   {{-- Redirect "About Us" to smartsourcingusa.com/#about --}}
-   <script>
-      (function() {
-         const ABOUT_URL = 'https://smartsourcingusa.com/#about';
-         
-         // Intercept clicks on "About Us" links using capture phase (before Inertia)
-         document.addEventListener('click', function(e) {
-            let target = e.target;
-            let link = null;
-            
-            // Find the link element
-            if (target.tagName === 'A') {
-               link = target;
-            } else {
-               link = target.closest('a');
-            }
-            
-            if (!link) return;
-            
-            // Check if this is an "About Us" link
-            const linkText = link.textContent.trim();
-            const href = link.getAttribute('href') || '';
-            const isAboutUs = linkText === 'About Us' || 
-                             linkText === 'About' ||
-                             href.includes('/about-us') ||
-                             href.includes('/about');
-            
-            if (isAboutUs) {
-               e.preventDefault();
-               e.stopImmediatePropagation();
-               e.stopPropagation();
-               
-               window.location.href = ABOUT_URL;
-               return false;
-            }
-         }, true); // Capture phase - runs before Inertia
-         
-         // Also update href attributes as backup
-         function updateAboutUsLinks() {
-            const navLinks = document.querySelectorAll('header a, nav a, div[class*="navbar"] a, div[class*="container"] a');
-            navLinks.forEach(function(link) {
-               const linkText = link.textContent.trim();
-               const href = link.getAttribute('href') || '';
-               
-               if (linkText === 'About Us' || 
-                   linkText === 'About' ||
-                   href.includes('/about-us') ||
-                   href.includes('/about')) {
-                  link.href = ABOUT_URL;
-                  link.target = '_blank';
-                  link.rel = 'noopener noreferrer';
-               }
-            });
-         }
-         
-         // Run on load and mutations
-         if (document.body) {
-            updateAboutUsLinks();
-            const observer = new MutationObserver(updateAboutUsLinks);
-            observer.observe(document.body, {
-               childList: true,
-               subtree: true
-            });
-         }
-         
-         // Also run after delays
-         setTimeout(updateAboutUsLinks, 100);
-         setTimeout(updateAboutUsLinks, 500);
-         setTimeout(updateAboutUsLinks, 1000);
-      })();
-   </script>
 </body>
 
 </html>

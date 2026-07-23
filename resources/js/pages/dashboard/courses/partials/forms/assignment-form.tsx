@@ -1,3 +1,4 @@
+import ChunkedUploaderInput from '@/components/chunked-uploader-input';
 import { DateTimePicker } from '@/components/datetime-picker';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
@@ -7,9 +8,10 @@ import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogT
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { onHandleChange } from '@/lib/inertia';
 import { useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 import { CourseUpdateProps } from '../../update';
@@ -22,11 +24,16 @@ interface Props {
 
 const AssignmentForm = ({ title, assignment, handler }: Props) => {
    const [open, setOpen] = useState(false);
+   const [isSubmit, setIsSubmit] = useState(false);
+   const [isFileUploaded, setIsFileUploaded] = useState(false);
+   const [hasNewFile, setHasNewFile] = useState(false);
+   const [resourceError, setResourceError] = useState('');
+
    const { props } = usePage<CourseUpdateProps>();
    const { translate } = props;
    const { dashboard, input, button } = translate;
 
-   const { data, setData, post, put, reset, errors, processing } = useForm({
+   const { data, setData, post, put, reset, errors, processing, clearErrors } = useForm({
       title: assignment?.title || '',
       course_id: props.course.id,
       total_mark: assignment?.total_mark || '',
@@ -41,14 +48,20 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
       late_deadline: assignment?.late_deadline ? new Date(assignment.late_deadline) : '',
    });
 
-   const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
+   const submitForm = () => {
+      clearErrors();
+      setResourceError('');
 
       if (assignment) {
          put(route('assignment.update', assignment.id), {
             onSuccess: () => {
                reset();
                setOpen(false);
+               setIsSubmit(false);
+               setHasNewFile(false);
+            },
+            onError: () => {
+               setIsSubmit(false);
             },
          });
       } else {
@@ -56,9 +69,51 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
             onSuccess: () => {
                reset();
                setOpen(false);
+               setIsSubmit(false);
+               setHasNewFile(false);
+            },
+            onError: () => {
+               setIsSubmit(false);
             },
          });
       }
+   };
+
+   const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (data.sample_project_type === 'file') {
+         const needsUpload = hasNewFile || !data.sample_project_path;
+
+         if (needsUpload && !hasNewFile) {
+            setResourceError('Please select a file to upload.');
+            return;
+         }
+
+         if (needsUpload) {
+            setIsSubmit(true);
+            return;
+         }
+      }
+
+      submitForm();
+   };
+
+   useEffect(() => {
+      if (data.sample_project_path && isFileUploaded) {
+         submitForm();
+         setIsFileUploaded(false);
+      }
+   }, [data.sample_project_path, isFileUploaded]);
+
+   const handleResourceTypeChange = (type: 'url' | 'file') => {
+      setData((prev) => ({
+         ...prev,
+         sample_project_type: type,
+         sample_project_path: type === prev.sample_project_type ? prev.sample_project_path : '',
+      }));
+      setHasNewFile(false);
+      setResourceError('');
    };
 
    return (
@@ -117,27 +172,73 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
                      </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4 rounded-lg border p-4">
                      <div>
-                        <Label>Sample Project Type</Label>
-                        <Input
-                           type="text"
-                           value={data.sample_project_type}
-                           onChange={(e) => setData('sample_project_type', e.target.value as 'url' | 'file')}
-                           placeholder="url or file"
-                        />
+                        <Label className="text-foreground">Student Resource (optional)</Label>
+                        <p className="text-muted-foreground mt-1 text-sm">
+                           Upload a PDF or file students can download before submitting their work.
+                        </p>
+                     </div>
+
+                     <div>
+                        <Label>Resource Type</Label>
+                        <Select value={data.sample_project_type} onValueChange={(value) => handleResourceTypeChange(value as 'url' | 'file')}>
+                           <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select resource type" />
+                           </SelectTrigger>
+                           <SelectContent>
+                              <SelectItem value="url">External URL</SelectItem>
+                              <SelectItem value="file">Upload File</SelectItem>
+                           </SelectContent>
+                        </Select>
                         <InputError message={errors.sample_project_type} />
                      </div>
-                     <div>
-                        <Label>Sample Project URL / Path</Label>
-                        <Input
-                           type="text"
-                           value={data.sample_project_path}
-                           onChange={(e) => setData('sample_project_path', e.target.value)}
-                           placeholder="https://... or storage path"
-                        />
-                        <InputError message={errors.sample_project_path} />
-                     </div>
+
+                     {data.sample_project_type === 'url' ? (
+                        <div>
+                           <Label>Resource URL</Label>
+                           <Input
+                              type="url"
+                              value={data.sample_project_path}
+                              onChange={(e) => setData('sample_project_path', e.target.value)}
+                              placeholder="https://example.com/sample-project.pdf"
+                           />
+                           <InputError message={errors.sample_project_path} />
+                        </div>
+                     ) : (
+                        <div className="space-y-2">
+                           <Label>Upload Resource File</Label>
+
+                           {assignment?.sample_project_path && !hasNewFile && (
+                              <p className="text-muted-foreground text-sm">
+                                 A resource file is already attached. Choose a new file below to replace it.
+                              </p>
+                           )}
+
+                           <ChunkedUploaderInput
+                              isSubmit={isSubmit}
+                              courseId={props.course.id}
+                              filetype="document"
+                              delayUpload={true}
+                              onFileSelected={() => {
+                                 setHasNewFile(true);
+                                 setResourceError('');
+                              }}
+                              onFileUploaded={(fileData) => {
+                                 setIsFileUploaded(true);
+                                 setData('sample_project_path', fileData.file_url);
+                              }}
+                              onError={() => {
+                                 setIsSubmit(false);
+                              }}
+                              onCancelUpload={() => {
+                                 setIsSubmit(false);
+                              }}
+                           />
+                           <InputError message={errors.sample_project_path || resourceError} />
+                           <p className="text-muted-foreground text-xs">Formats: PDF, DOC, DOCX, PNG, JPEG, ZIP (max 20 MB)</p>
+                        </div>
+                     )}
                   </div>
 
                   <div>
@@ -210,7 +311,7 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
                         </Button>
                      </DialogClose>
 
-                     <LoadingButton loading={processing}>{button.submit}</LoadingButton>
+                     <LoadingButton loading={processing || isSubmit}>{button.submit}</LoadingButton>
                   </DialogFooter>
                </form>
             </ScrollArea>

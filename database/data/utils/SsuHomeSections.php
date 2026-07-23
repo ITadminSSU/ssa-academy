@@ -13,9 +13,9 @@ class SsuHomeSections
             [
                 'name' => 'Hero',
                 'slug' => 'hero',
-                'title' => 'SMART SOURCING USA ACADEMY',
-                'sub_title' => 'Train your team. Certify your skills. Scale with confidence.',
-                'description' => 'Structured learning paths for internal teams and external professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
+                'title' => 'SMART SOURCING ACADEMY',
+                'sub_title' => 'Upskill. Certify your skills. Scale with confidence.',
+                'description' => 'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
                 'thumbnail' => null,
                 'flags' => [
                     'title' => true,
@@ -32,7 +32,7 @@ class SsuHomeSections
             [
                 'name' => 'Value Pillars',
                 'slug' => 'pillars',
-                'title' => 'Why SSU Academy',
+                'title' => 'Why SMART SOURCING ACADEMY',
                 'flags' => [
                     'title' => true,
                 ],
@@ -40,19 +40,19 @@ class SsuHomeSections
                     'array' => [
                         ['icon' => '', 'title' => '', 'description' => ''],
                         [
-                            'icon' => 'users',
-                            'title' => 'Internal Training',
-                            'description' => 'Role-based paths for your organization with trainer oversight and real-time progress tracking.',
+                            'icon' => 'book-open',
+                            'title' => 'Structured Learning Paths',
+                            'description' => 'Step-by-step courses with video lessons, assignments, and quizzes — designed to build skills you can apply on the job.',
                         ],
                         [
-                            'icon' => 'globe',
-                            'title' => 'External Programs',
-                            'description' => 'Professional development courses for individuals and partner teams outside your organization.',
+                            'icon' => 'clock',
+                            'title' => 'Learn at Your Pace',
+                            'description' => 'Access training anytime, track your progress, and pick up exactly where you left off — on desktop or mobile.',
                         ],
                         [
                             'icon' => 'badge-check',
                             'title' => 'Verified Certification',
-                            'description' => 'Complete video, assignment, and quiz gates to earn SSU-verified credentials with reference numbers.',
+                            'description' => 'Complete every lesson, assignment, and quiz to earn SSU-verified credentials with unique reference numbers.',
                         ],
                     ],
                 ],
@@ -62,7 +62,7 @@ class SsuHomeSections
                 'slug' => 'top_courses',
                 'title' => 'Featured Programs',
                 'sub_title' => 'Start learning today',
-                'description' => 'Explore assigned and open-enrollment courses curated for Smart Sourcing USA teams and partners.',
+                'description' => 'Explore assigned and open-enrollment courses curated for Smart Sourcing Academy teams and partners.',
                 'flags' => [
                     'title' => true,
                     'sub_title' => true,
@@ -76,8 +76,8 @@ class SsuHomeSections
                 'name' => 'Call to Action',
                 'slug' => 'call_to_action',
                 'title' => 'Ready to start learning?',
-                'sub_title' => 'Join SSU Academy today',
-                'description' => 'Create your account, accept our terms, and begin your assigned learning path.',
+                'sub_title' => 'Join Smart Sourcing Academy Today',
+                'description' => 'Create your free account, explore the catalog, and start your next course today.',
                 'flags' => [
                     'title' => true,
                     'sub_title' => true,

@@ -1,12 +1,15 @@
 import CourseBannerPlaceholder from '@/components/course-banner-placeholder';
+import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
+import { isSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { BarChart3, Calendar, Clock, Languages, Mail, Play, Users } from 'lucide-react';
 import { CourseDetailsProps } from '../show';
 import SsuEnrollmentPanel from '@/components/ssu-enrollment-panel';
+import CourseLaunchNotifyForm from '@/components/course-launch-notify-form';
 import EnrollOrPlayerButton from './course-player-button';
 
 const CoursePreview = () => {
@@ -14,6 +17,7 @@ const CoursePreview = () => {
    const { frontend } = translate;
    const currency = systemCurrency(system.fields['selling_currency']);
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
+   const isSubscription = isSubscriptionCourse(course);
 
    return (
       <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
@@ -82,9 +86,13 @@ const CoursePreview = () => {
                )}
             </h2>
 
-            <SsuEnrollmentPanel>
+            {isSubscription ? <SubscriptionBillingNotice course={course} variant="detail" /> : null}
+
+            <SsuEnrollmentPanel isSubscription={isSubscription}>
                <EnrollOrPlayerButton />
             </SsuEnrollmentPanel>
+
+            <CourseLaunchNotifyForm />
          </div>
 
          <div className="divide-border/60 mt-1 divide-y border-t pt-1">

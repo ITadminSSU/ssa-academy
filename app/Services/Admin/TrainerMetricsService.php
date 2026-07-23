@@ -101,12 +101,12 @@ class TrainerMetricsService
 
         $sortBy = $data['sort_by'] ?? 'enrollments';
 
-        return match ($sortBy) {
+        return (match ($sortBy) {
             'completion' => $metrics->sortByDesc(fn ($row) => $row['avg_completion_percent'] ?? -1),
             'courses' => $metrics->sortByDesc('courses_count'),
             'name' => $metrics->sortBy(fn ($row) => strtolower($row['instructor']->user->name ?? '')),
             default => $metrics->sortByDesc('enrollment_count'),
-        }->values();
+        })->values();
     }
 
     public function getPlatformSummary(): array

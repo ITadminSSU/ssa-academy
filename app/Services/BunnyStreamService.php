@@ -122,14 +122,18 @@ class BunnyStreamService
 
     public function signedEmbedUrl(string $videoId, ?\DateTimeInterface $expiresAt = null): string
     {
+        $baseUrl = 'https://player.mediadelivery.net/embed/' . $this->libraryId() . '/' . $videoId;
+        $query = 'autoplay=false&preload=true&playerjs=true';
+
+        if ($this->tokenAuthKey() === '') {
+            return $baseUrl . '?' . $query;
+        }
+
         $expiresAt ??= now()->addHour();
         $expires = $expiresAt->getTimestamp();
         $token = $this->signToken($videoId, $expires);
 
-        return 'https://iframe.mediadelivery.net/embed/' . $this->libraryId() . '/' . $videoId
-            . '?token=' . $token
-            . '&expires=' . $expires
-            . '&autoplay=false&preload=true';
+        return $baseUrl . '?token=' . $token . '&expires=' . $expires . '&' . $query;
     }
 
     public function formatDuration(int $seconds): string
