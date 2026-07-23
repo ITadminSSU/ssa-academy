@@ -140,7 +140,7 @@
    }
 
    .ssu-sidebar-brand .dashboard-sidebar-logo {
-      @apply mx-auto block h-16 w-full max-h-16 object-contain object-center md:h-[4.5rem] md:max-h-[4.5rem];
+      @apply mx-auto block h-24 w-full max-h-24 object-contain object-center md:h-28 md:max-h-28;
    }
 
    .ssu-sidebar-brand a {
