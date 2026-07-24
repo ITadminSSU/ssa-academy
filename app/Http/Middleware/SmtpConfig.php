@@ -28,7 +28,7 @@ class SmtpConfig
             'mail.mailers.smtp.encryption' => $smtp['mail_encryption'],
             'mail.mailers.smtp.username' => $smtp['mail_username'],
             'mail.mailers.smtp.password' => $smtp['mail_password'],
-            'mail.mailers.smtp.timeout' => null,
+            'mail.mailers.smtp.timeout' => (int) env('MAIL_TIMEOUT', 15),
             // 'mail.mailers.smtp.local_domain' => $_SERVER['SERVER_NAME'],
             'mail.from.name' => $smtp['mail_from_name'],
             'mail.from.address' => $smtp['mail_from_address'],

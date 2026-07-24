@@ -8,7 +8,7 @@ use App\Models\ProfessionalType;
 use App\Services\AuthService;
 use App\Services\LearnerTypeResolver;
 use App\Services\LegalAgreementService;
-use Illuminate\Auth\Events\Registered;
+use App\Jobs\SendRegistrationNotificationsJob;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -96,35 +96,26 @@ class RegisteredUserController extends Controller
             ->withCustomProperties(['name' => 'cv_resume'])
             ->toMediaCollection('cv_resume');
 
-        // Check if SMTP is configured before sending verification email
         $smtpConfigured = $this->isSmtpConfigured();
-        
-        if ($smtpConfigured) {
-            try {
-        event(new Registered($user));
-            } catch (\Exception $e) {
-                // If email sending fails, auto-verify the email to allow registration
-                Log::warning('Email verification failed during registration, auto-verifying user', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-                
-                $user->email_verified_at = now();
-                $user->save();
-            }
-        } else {
-            // If SMTP is not configured, auto-verify the email to allow registration
+
+        if (! $smtpConfigured) {
             $user->email_verified_at = now();
             $user->save();
-            
+
             Log::info('User registered without email verification due to missing SMTP configuration', [
                 'user_id' => $user->id,
                 'email' => $user->email,
             ]);
         }
 
-        $this->legalAgreement->recordAcceptance($user, $request, $smtpConfigured);
+        // Record legal acceptance in the database only; emails are sent after the HTTP response.
+        $this->legalAgreement->recordAcceptance($user, $request, false);
+
+        if ($smtpConfigured) {
+            SendRegistrationNotificationsJob::dispatch($user->id)
+                ->onConnection('sync')
+                ->afterResponse();
+        }
 
         Auth::login($user);
 
