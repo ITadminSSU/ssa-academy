@@ -64,7 +64,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                         target.src = '/assets/images/blank-image.jpg';
                      }}
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[oklch(0.22_0.04_255)]/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-primary/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
                   {comingSoon ? (
                      <span className="absolute top-3 right-3 z-[1] rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-950 uppercase shadow-sm">
@@ -74,7 +74,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
 
                   {course.pricing_type === 'free' && <span className="ssu-course-card__badge">{common.free}</span>}
                   {isSubscription && !comingSoon ? (
-                     <span className="absolute top-3 right-3 z-[1] rounded-full border border-white/20 bg-card/95 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[oklch(0.22_0.04_255)] uppercase backdrop-blur-sm">
+                     <span className="text-primary absolute top-3 right-3 z-[1] rounded-full border border-white/20 bg-card/95 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase backdrop-blur-sm">
                         {frontend.subscription_monthly_label ?? 'Monthly'}
                      </span>
                   ) : null}
@@ -84,7 +84,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      </span>
                   ) : null}
                   {course.level && (
-                     <span className="absolute bottom-3 left-3 rounded-full border border-white/20 bg-card/90 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[oklch(0.22_0.04_255)] uppercase backdrop-blur-sm">
+                     <span className="text-primary absolute bottom-3 left-3 rounded-full border border-white/20 bg-card/90 px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase backdrop-blur-sm">
                         {course.level}
                      </span>
                   )}

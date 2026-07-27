@@ -64,7 +64,7 @@ const Actions = ({ language }: { language: boolean }) => {
                <Button asChild variant="outline" className="">
                   <Link href={route('register')}>{translate.button.sign_up}</Link>
                </Button>
-               <Button asChild className="">
+               <Button asChild variant="brand" className="">
                   <Link href={route('login')}>{translate.button.log_in}</Link>
                </Button>
             </div>

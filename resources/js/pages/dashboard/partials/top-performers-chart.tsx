@@ -45,7 +45,7 @@ const TopPerformersChart = () => {
                      formatter={(value) => [`${value}%`, 'Average score']}
                      labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
                   />
-                  <Bar dataKey="score" fill="oklch(0.20 0.003 255)" radius={[0, 6, 6, 0]} barSize={18} />
+                  <Bar dataKey="score" fill="#002370" radius={[0, 6, 6, 0]} barSize={18} />
                </BarChart>
             </ResponsiveContainer>
          ) : (

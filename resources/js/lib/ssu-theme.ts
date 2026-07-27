@@ -1,7 +1,7 @@
 export const SSU_STAT_TONES = [
    { bg: 'bg-primary/10', text: 'text-primary' },
-   { bg: 'bg-[color:var(--sidebar-accent)]/40', text: 'text-foreground' },
-   { bg: 'bg-[color:var(--brand-red)]/10', text: 'text-[color:var(--brand-red)]' },
+   { bg: 'bg-accent/10', text: 'text-accent' },
+   { bg: 'bg-muted', text: 'text-muted-foreground' },
 ] as const;
 
 export function ssuStatTone(index: number) {
@@ -10,8 +10,8 @@ export function ssuStatTone(index: number) {
 
 export const SSU_BADGE_TONES = [
    'bg-primary/10 text-primary border-primary/20 hover:bg-primary/10',
-   'bg-muted text-foreground border-border/60 hover:bg-muted',
-   'bg-[color:var(--brand-red)]/10 text-[color:var(--brand-red)] border-[color:var(--brand-red)]/20 hover:bg-[color:var(--brand-red)]/10',
+   'bg-accent/10 text-accent border-accent/20 hover:bg-accent/10',
+   'bg-muted text-muted-foreground border-border/60 hover:bg-muted',
 ] as const;
 
 export function ssuBadgeTone(index: number) {

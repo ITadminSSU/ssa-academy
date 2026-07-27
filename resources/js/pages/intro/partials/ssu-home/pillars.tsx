@@ -71,7 +71,7 @@ const Pillars = () => {
 
                      <div key={index} className="ssu-surface-card relative overflow-hidden p-6">
 
-                        <div className="bg-primary/10 text-primary mb-4 inline-flex rounded-xl p-3">
+                        <div className="bg-accent/10 text-accent mb-4 inline-flex rounded-xl p-3">
 
                            <Icon className="h-6 w-6" />
 

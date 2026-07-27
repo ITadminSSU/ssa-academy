@@ -35,12 +35,12 @@ const FeaturedCourses = () => {
    }, [api]);
 
    return (
-      <section className="border-border/60 border-y bg-[oklch(0.97_0.01_255)] py-20 dark:bg-muted/20">
+      <section className="border-border/60 border-y bg-[color:var(--brand-grey)] py-20 dark:bg-muted/20">
          <div className="container space-y-8 px-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                <div className="space-y-2">
                   <p className="ssu-kicker">{coursesSection?.sub_title || 'Start learning today'}</p>
-                  <h2 className="font-display text-2xl font-bold md:text-3xl">{coursesSection?.title || 'Featured Programs'}</h2>
+                  <h2 className="font-display text-primary text-2xl font-bold md:text-3xl">{coursesSection?.title || 'Featured Programs'}</h2>
                   <p className="text-muted-foreground max-w-2xl text-sm md:text-base">
                      {coursesSection?.description ||
                         'Explore assigned and open-enrollment courses curated for Smart Sourcing Academy teams and partners.'}

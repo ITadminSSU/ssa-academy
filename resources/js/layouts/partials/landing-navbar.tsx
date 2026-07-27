@@ -143,7 +143,7 @@ const LandingNavbar = () => {
                         <Button asChild variant="outline" className="h-auto rounded-sm px-5 py-2.5 shadow-none">
                            <Link href={route('register')}>Sign Up</Link>
                         </Button>
-                        <Button asChild className="h-auto rounded-sm px-5 py-2.5 shadow-none">
+                        <Button asChild variant="brand" className="h-auto rounded-sm px-5 py-2.5 shadow-none">
                            <Link href={route('login')}>Log In</Link>
                         </Button>
                      </div>

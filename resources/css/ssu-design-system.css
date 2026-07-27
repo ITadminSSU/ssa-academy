@@ -18,9 +18,10 @@
  *
  * COLOR PALETTE (locked)
  * ----------------------
- * Dark Grey — `--primary` / #1A1B1B — chrome, headers, sidebars, primary actions
- * Grey tint — `--sidebar-primary` / #3A3B3B — active/selected states on dark surfaces
- * Red  — `--brand-red` / #E94448 — alerts, emphasis, tertiary accents
+ * Deep Navy  — `--primary` / #002370 — chrome, headers, sidebars, dark surfaces
+ * Corp. Red  — `--accent` / `--brand-red` / #8C2A23 — CTAs, icons, emphasis
+ * Slate      — `--muted-foreground` / #8C97A8 — secondary text
+ * Light Grey — `--muted` / #F1F1F1 — section backgrounds, footer
  *
  * Stat/icon backgrounds: rotate dark grey / red only (`ssu-theme.ts`)
  *
@@ -66,7 +67,7 @@
    }
 
    .ssu-page-shell {
-      @apply bg-[oklch(0.98_0.008_255)] dark:bg-background min-h-full;
+      @apply bg-[color:var(--brand-grey)] dark:bg-background min-h-full;
    }
 
    .ssu-surface-card {
@@ -74,7 +75,7 @@
    }
 
    .ssu-kicker {
-      @apply text-xs font-semibold tracking-[0.18em] uppercase text-[oklch(0.32_0.06_255)] dark:text-primary;
+      @apply text-xs font-semibold tracking-[0.18em] uppercase text-accent;
    }
 
    .ssu-nav-shell {
@@ -119,7 +120,7 @@
    }
 
    .ssu-dashboard-header .ssu-header-logo {
-      @apply rounded-lg bg-[oklch(0.20_0.003_255)] px-3 py-1.5;
+      @apply rounded-lg bg-primary px-3 py-1.5;
    }
 
    .ssu-dashboard-header {
@@ -132,7 +133,7 @@
 
    .ssu-stat-card::before {
       content: '';
-      @apply bg-primary absolute top-0 left-0 h-full w-1;
+      @apply bg-accent absolute top-0 left-0 h-full w-1;
    }
 
    .ssu-sidebar-brand {
@@ -159,12 +160,12 @@
 
    /* Sidebar hover for non-active items: subtle lift off the dark grey */
    [data-sidebar='menu-button']:not([data-active='true']):hover {
-      background-color: oklch(0.26 0.004 255);
-      color: oklch(0.98 0 0);
+      background-color: var(--sidebar-primary);
+      color: var(--sidebar-primary-foreground);
    }
 
    [data-sidebar='menu-button']:not([data-active='true']):hover svg {
-      color: oklch(0.98 0 0);
+      color: var(--sidebar-primary-foreground);
    }
 
    .ssu-course-card {
@@ -188,7 +189,7 @@
    }
 
    .ssu-auth-hero {
-      @apply relative hidden flex-col overflow-hidden bg-[oklch(0.20_0.003_255)] p-10 text-white lg:flex lg:min-h-svh;
+      @apply relative hidden flex-col overflow-hidden bg-primary p-10 text-white lg:flex lg:min-h-svh;
    }
 
    .ssu-auth-hero__logo {
@@ -220,7 +221,7 @@
    }
 
    .ssu-auth-mobile-brand {
-      @apply rounded-2xl bg-[oklch(0.20_0.003_255)] px-5 py-4 shadow-sm;
+      @apply rounded-2xl bg-primary px-5 py-4 shadow-sm;
    }
 
    .ssu-auth-mobile-brand .ssu-auth-logo-mobile img,
@@ -237,7 +238,7 @@
    }
 
    .ssu-enrollment-panel {
-      @apply border-border/60 rounded-xl border bg-[oklch(0.97_0.01_255)] p-4 dark:bg-muted/20;
+      @apply border-border/60 rounded-xl border bg-[color:var(--brand-grey)] p-4 dark:bg-muted/20;
    }
 
    .ssu-checkout-button {
@@ -245,11 +246,11 @@
    }
 
    .ssu-player-shell {
-      @apply bg-[oklch(0.98_0.008_255)] dark:bg-background;
+      @apply bg-[color:var(--brand-grey)] dark:bg-background;
    }
 
    .ssu-player-header {
-      @apply relative z-50 h-16 shrink-0 overflow-hidden border-b border-white/10 bg-[oklch(0.22_0.04_255)] text-white shadow-sm;
+      @apply relative z-50 h-16 shrink-0 overflow-hidden border-b border-white/10 bg-primary text-white shadow-sm;
 
       .ssu-logo-frame--nav {
          height: 3.25rem;

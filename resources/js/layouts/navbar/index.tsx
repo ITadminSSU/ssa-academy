@@ -165,7 +165,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                            <Button asChild variant="outline" className="w-full rounded-sm shadow-none sm:px-5 md:h-10">
                               <Link href={route('register')}>{translate.button.sign_up}</Link>
                            </Button>
-                           <Button asChild className="w-full rounded-sm shadow-none sm:px-5 md:h-10">
+                           <Button asChild variant="brand" className="w-full rounded-sm shadow-none sm:px-5 md:h-10">
                               <Link href={route('login')}>{translate.button.log_in}</Link>
                            </Button>
                         </div>

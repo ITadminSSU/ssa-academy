@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { DashboardProps } from '../index';
 
-const COLORS = ['oklch(0.20 0.003 255)', 'oklch(0.62 0.20 25)', 'oklch(0.34 0.004 255)'];
+const COLORS = ['#002370', '#8C2A23', '#8C97A8'];
 
 const StudentProgressOverview = () => {
    const { props } = usePage<DashboardProps>();

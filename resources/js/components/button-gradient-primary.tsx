@@ -22,7 +22,7 @@ const ButtonGradientPrimary = ({ children, className, shadow = false, shadowClas
 
          <Button
             className={cn(
-               'from-[oklch(0.64_0.13_250)] to-primary hover:from-primary hover:to-primary-dark font-display relative z-10 h-auto bg-gradient-to-r px-5 py-2.5 text-white shadow-sm transition-all hover:shadow-md',
+               'from-accent to-primary hover:from-primary hover:to-primary-dark font-display relative z-10 h-auto bg-gradient-to-r px-5 py-2.5 text-white shadow-sm transition-all hover:shadow-md',
                className,
             )}
             {...props}

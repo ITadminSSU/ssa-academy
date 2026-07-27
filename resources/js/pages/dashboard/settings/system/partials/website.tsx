@@ -168,7 +168,7 @@ const Website = () => {
                   <div>
                      <Label>Logo Light</Label>
                      {data.logo_light ? (
-                        <div className="ssu-logo-frame ssu-logo-frame--nav border-border/60 mb-3 rounded-lg border bg-[oklch(0.22_0.04_255)] p-3">
+                        <div className="ssu-logo-frame ssu-logo-frame--nav border-border/60 mb-3 rounded-lg border bg-primary p-3">
                            <img src={data.logo_light} alt="Current light logo preview" className="ssu-nav-logo" />
                         </div>
                      ) : null}

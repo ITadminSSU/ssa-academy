@@ -27,11 +27,11 @@ const CourseHero = ({ course }: { course: Course }) => {
    const staffPreview = canPreviewCourseBeforeLaunch(course);
 
    return (
-      <section className="relative isolate overflow-hidden bg-gradient-to-br from-[oklch(0.20_0.003_255)] via-[oklch(0.24_0.003_257)] to-[oklch(0.30_0.004_255)] text-white">
+      <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary text-white">
          {backdrop ? (
             <>
                <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
-               <div className="absolute inset-0 bg-gradient-to-r from-[oklch(0.20_0.003_255)]/95 via-[oklch(0.22_0.003_255)]/85 to-[oklch(0.22_0.003_255)]/60" />
+               <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/85 to-primary/60" />
             </>
          ) : (
             <div

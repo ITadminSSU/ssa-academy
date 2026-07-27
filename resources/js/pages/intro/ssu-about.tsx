@@ -47,10 +47,10 @@ const SsuAbout = ({ system }: IntroPageProps) => {
          <Head title={`About Us | ${system.fields.name}`} />
 
          <div className="ssu-page-shell">
-            <section className="relative overflow-hidden bg-[oklch(0.22_0.04_255)] text-white">
+            <section className="relative overflow-hidden bg-primary text-white">
                <div className="pointer-events-none absolute inset-0">
-                  <div className="bg-primary/25 absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl" />
-                  <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-[oklch(0.55_0.18_25)]/30 blur-3xl" />
+                  <div className="bg-accent/20 absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl" />
+                  <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
                </div>
 
                <div className="relative container grid items-center gap-10 px-4 py-20 md:grid-cols-2 md:gap-16 md:py-28">
@@ -63,7 +63,7 @@ const SsuAbout = ({ system }: IntroPageProps) => {
                         Smart Sourcing Academy is a professional learning platform for individuals and teams who want structured
                         training, hands-on practice, and verified certification — all in one place.
                      </p>
-                     <Button asChild size="lg" className="bg-primary hover:bg-primary/90 rounded-full px-8">
+                     <Button asChild size="lg" className="rounded-full px-8">
                         <Link href={route('category.courses', { category: 'all' })}>Explore programs</Link>
                      </Button>
                   </div>
@@ -97,7 +97,7 @@ const SsuAbout = ({ system }: IntroPageProps) => {
                   </div>
 
                   <div className="ssu-surface-card p-8">
-                     <div className="bg-primary/10 text-primary mb-4 inline-flex rounded-xl p-3">
+                     <div className="bg-accent/10 text-accent mb-4 inline-flex rounded-xl p-3">
                         <Users className="h-6 w-6" />
                      </div>
                      <h3 className="font-display mb-3 text-xl font-semibold">Who we serve</h3>
@@ -110,7 +110,7 @@ const SsuAbout = ({ system }: IntroPageProps) => {
                </div>
             </section>
 
-            <section className="border-border/60 border-y bg-[oklch(0.97_0.01_255)] py-20 dark:bg-muted/20">
+            <section className="border-border/60 border-y bg-[color:var(--brand-grey)] py-20 dark:bg-muted/20">
                <div className="container space-y-10 px-4">
                   <div className="mx-auto max-w-2xl text-center">
                      <p className="ssu-kicker">What we stand for</p>
@@ -120,7 +120,7 @@ const SsuAbout = ({ system }: IntroPageProps) => {
                   <div className="grid gap-6 md:grid-cols-3">
                      {values.map(({ icon: Icon, title, description }) => (
                         <div key={title} className="ssu-surface-card p-6">
-                           <div className="bg-primary/10 text-primary mb-4 inline-flex rounded-xl p-3">
+                           <div className="bg-accent/10 text-accent mb-4 inline-flex rounded-xl p-3">
                               <Icon className="h-6 w-6" />
                            </div>
                            <h3 className="font-display mb-2 text-lg font-semibold">{title}</h3>

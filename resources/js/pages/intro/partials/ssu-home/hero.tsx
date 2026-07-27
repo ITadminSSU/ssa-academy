@@ -52,10 +52,10 @@ const Hero = () => {
    const secondaryLink = heroSection?.properties?.secondary_button_link || route('login');
 
    return (
-      <section className="relative overflow-hidden bg-[oklch(0.22_0.04_255)] text-white">
+      <section className="relative overflow-hidden bg-primary text-white">
          <div className="pointer-events-none absolute inset-0">
-            <div className="bg-primary/25 absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl" />
-            <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-[oklch(0.55_0.18_25)]/30 blur-3xl" />
+            <div className="bg-accent/20 absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl" />
+            <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
          </div>
 
          <div className={cn('relative container flex flex-col items-center gap-10 px-4 py-20 md:flex-row md:gap-16 md:py-28')}>
@@ -67,7 +67,7 @@ const Hero = () => {
                <p className="text-base leading-relaxed text-white/80 md:text-lg">{description}</p>
 
                <div className="flex flex-wrap gap-3 pt-2">
-                  <Button asChild size="lg" className="bg-primary hover:bg-primary/90 rounded-full px-8">
+                  <Button asChild size="lg" className="rounded-full px-8">
                      <Link href={primaryLink}>{primaryText}</Link>
                   </Button>
 
@@ -92,7 +92,7 @@ const Hero = () => {
                            key={highlightTitle}
                            className="rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:bg-white/10"
                         >
-                           <div className="mb-3 inline-flex rounded-lg bg-white/20 p-2.5 text-white">
+                           <div className="bg-accent/20 text-accent mb-3 inline-flex rounded-lg p-2.5">
                               <Icon className="h-5 w-5" strokeWidth={2} />
                            </div>
                            <p className="mb-1 text-sm font-semibold text-white">{highlightTitle}</p>
