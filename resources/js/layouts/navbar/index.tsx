@@ -119,7 +119,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
          <div className={cn('ssu-nav-shell fixed top-0 z-30 w-full', isMenuOpen && 'bg-background', isSticky && 'ssu-nav-shell--sticky')}>
             <div
                className={cn(
-                  'ssu-nav-bar container mt-0 flex min-h-14 items-center justify-between gap-1 !px-4 py-1.5 transition-all duration-200 md:gap-6',
+                  'container mt-0 flex min-h-14 items-center justify-between gap-1 !px-4 py-1.5 transition-all duration-200 md:gap-6',
                )}
             >
                <div className="flex items-center gap-2">
@@ -148,6 +148,8 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                   <Actions language={language} />
                </div>
             </div>
+
+            <div className="ssu-nav-accent" aria-hidden />
 
             {/* Mobile Menu */}
             {isMenuOpen && (

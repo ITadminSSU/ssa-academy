@@ -86,8 +86,8 @@
       @apply shadow-sm;
    }
 
-   .ssu-nav-bar {
-      @apply border-b-[3px] border-accent;
+   .ssu-nav-accent {
+      @apply h-[3px] w-full shrink-0 bg-accent;
    }
 
    .ssu-logo-frame {
