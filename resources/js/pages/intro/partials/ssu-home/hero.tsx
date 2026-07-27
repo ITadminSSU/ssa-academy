@@ -1,8 +1,7 @@
-import { Button } from '@/components/ui/button';
 import { getPageSection } from '@/lib/page';
 import { cn } from '@/lib/utils';
 import { IntroPageProps } from '@/types/page';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { BadgeCheck, ClipboardCheck, PlayCircle, Trophy } from 'lucide-react';
 
 const defaultHero = {
@@ -10,10 +9,6 @@ const defaultHero = {
    title: 'Upskill. Certify your skills. Scale with confidence.',
    description:
       'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
-   primaryText: 'Browse Courses',
-   primaryLink: '/courses/all',
-   secondaryText: 'Sign In',
-   secondaryLink: '/login',
 };
 
 const heroHighlights = [
@@ -46,10 +41,6 @@ const Hero = () => {
    const kicker = heroSection?.title || defaultHero.kicker;
    const title = heroSection?.sub_title || defaultHero.title;
    const description = heroSection?.description || defaultHero.description;
-   const primaryText = heroSection?.properties?.button_text || defaultHero.primaryText;
-   const primaryLink = heroSection?.properties?.button_link || route('category.courses', { category: 'all' });
-   const secondaryText = heroSection?.properties?.secondary_button_text || defaultHero.secondaryText;
-   const secondaryLink = heroSection?.properties?.secondary_button_link || route('login');
 
    return (
       <section className="relative overflow-hidden bg-primary text-white">
@@ -65,21 +56,6 @@ const Hero = () => {
                <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-5xl lg:leading-[1.15]">{title}</h1>
 
                <p className="text-base leading-relaxed text-white/80 md:text-lg">{description}</p>
-
-               <div className="flex flex-wrap gap-3 pt-2">
-                  <Button asChild size="lg" className="rounded-full px-8">
-                     <Link href={primaryLink}>{primaryText}</Link>
-                  </Button>
-
-                  <Button
-                     asChild
-                     size="lg"
-                     variant="outline"
-                     className="rounded-full border-white/30 bg-transparent px-8 text-white hover:bg-white/10 hover:text-white"
-                  >
-                     <Link href={secondaryLink}>{secondaryText}</Link>
-                  </Button>
-               </div>
             </div>
 
             <div className="relative w-full max-w-lg">

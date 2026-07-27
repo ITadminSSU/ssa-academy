@@ -32,7 +32,7 @@ class SsuHomeSections
             [
                 'name' => 'Value Pillars',
                 'slug' => 'pillars',
-                'title' => 'Why SMART SOURCING ACADEMY',
+                'title' => 'Why Smart Sourcing Academy',
                 'flags' => [
                     'title' => true,
                 ],
