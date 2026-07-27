@@ -27,7 +27,8 @@ class LegalAgreementService
         return Page::query()
             ->where('slug', $this->termsPageSlug())
             ->where('active', true)
-            ->first();
+            ->first()
+            ?? Page::query()->where('slug', $this->termsPageSlug())->first();
     }
 
     public function getNdaPage(): ?Page
@@ -35,7 +36,8 @@ class LegalAgreementService
         return Page::query()
             ->where('slug', $this->ndaPageSlug())
             ->where('active', true)
-            ->first();
+            ->first()
+            ?? Page::query()->where('slug', $this->ndaPageSlug())->first();
     }
 
     public function currentVersion(): string
@@ -164,6 +166,11 @@ class LegalAgreementService
             ipAddress: $ip ?? $user->legal_agreement_ip,
             agreementVersion: $this->currentVersion(),
         ));
+
+        $user->forceFill([
+            'legal_confirmation_email_sent_at' => now(),
+            'legal_confirmation_email_last_error' => null,
+        ])->save();
     }
 
     private function formatDocument(?Page $page, string $type): array

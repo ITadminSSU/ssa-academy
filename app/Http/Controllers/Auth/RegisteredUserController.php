@@ -96,12 +96,10 @@ class RegisteredUserController extends Controller
             ->withCustomProperties(['name' => 'cv_resume'])
             ->toMediaCollection('cv_resume');
 
-        // Record legal acceptance in the database; confirmation email is sent after the HTTP response.
+        // Record legal acceptance in the database; confirmation email is queued for delivery.
         $this->legalAgreement->recordAcceptance($user, $request, false);
 
-        SendRegistrationNotificationsJob::dispatch($user->id)
-            ->onConnection('sync')
-            ->afterResponse();
+        SendRegistrationNotificationsJob::dispatch($user->id)->afterResponse();
 
         Auth::login($user);
 

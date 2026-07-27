@@ -23,6 +23,8 @@ const SMTP = ({ smtp }: Props) => {
       ...smtp.fields,
    });
 
+   const isResendApi = data.mail_mailer === 'resend';
+
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
@@ -37,6 +39,13 @@ const SMTP = ({ smtp }: Props) => {
          </div>
 
          <Card className="p-4 sm:p-6">
+            {isResendApi && (
+               <p className="text-muted-foreground mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                  Resend API uses HTTPS (port 443) and is recommended for production servers where SMTP ports are blocked.
+                  Use your Resend API key in the password field below.
+               </p>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
                {/* Mail Server Settings */}
                <div className="border-b pb-6">
@@ -51,12 +60,13 @@ const SMTP = ({ smtp }: Props) => {
                            </SelectTrigger>
                            <SelectContent>
                               <SelectItem value="smtp">SMTP</SelectItem>
+                              <SelectItem value="resend">Resend API (recommended)</SelectItem>
                            </SelectContent>
                         </Select>
                         <InputError message={errors.mail_mailer} />
                      </div>
 
-                     <div>
+                     <div className={isResendApi ? 'hidden' : ''}>
                         <Label>{input.mail_host} *</Label>
                         <Input
                            name="mail_host"
@@ -67,7 +77,7 @@ const SMTP = ({ smtp }: Props) => {
                         <InputError message={errors.mail_host} />
                      </div>
 
-                     <div>
+                     <div className={isResendApi ? 'hidden' : ''}>
                         <Label>{input.mail_port} *</Label>
                         <Input
                            name="mail_port"
@@ -78,7 +88,7 @@ const SMTP = ({ smtp }: Props) => {
                         <InputError message={errors.mail_port} />
                      </div>
 
-                     <div>
+                     <div className={isResendApi ? 'hidden' : ''}>
                         <Label>{input.mail_encryption}</Label>
                         <Select value={data.mail_encryption} onValueChange={(value) => setData('mail_encryption' as keyof SmtpFormData, value)}>
                            <SelectTrigger>
@@ -92,7 +102,7 @@ const SMTP = ({ smtp }: Props) => {
                         <InputError message={errors.mail_encryption} />
                      </div>
 
-                     <div>
+                     <div className={isResendApi ? 'hidden' : ''}>
                         <Label>{input.mail_username} *</Label>
                         <Input
                            name="mail_username"
@@ -104,12 +114,12 @@ const SMTP = ({ smtp }: Props) => {
                      </div>
 
                      <div>
-                        <Label>{input.mail_password} *</Label>
+                        <Label>{isResendApi ? 'Resend API key' : `${input.mail_password} *`}</Label>
                         <Input
                            name="mail_password"
                            value={data.mail_password || ''}
                            onChange={(e) => setData(e.target.name, e.target.value)}
-                           placeholder={input.mail_password_placeholder}
+                           placeholder={isResendApi ? 're_...' : input.mail_password_placeholder}
                            type="password"
                         />
                         <InputError message={errors.mail_password} />

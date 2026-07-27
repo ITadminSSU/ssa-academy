@@ -87,8 +87,12 @@ class VerifyIntegrationsCommand extends Command
             return false;
         }
 
-        $this->line('  Host: '.$fields['mail_host']);
-        $this->line('  Port: '.$fields['mail_port'].' ('.($fields['mail_encryption'] ?: 'no encryption').')');
+        if ($mailer === 'resend') {
+            $this->line('  Driver: Resend API (HTTPS)');
+        } else {
+            $this->line('  Host: '.$fields['mail_host']);
+            $this->line('  Port: '.$fields['mail_port'].' ('.($fields['mail_encryption'] ?: 'no encryption').')');
+        }
         $this->line('  From: '.$fields['mail_from_name'].' <'.$fields['mail_from_address'].'>');
 
         $recipient = $this->option('email') ?: $fields['mail_from_address'];
@@ -107,7 +111,8 @@ class VerifyIntegrationsCommand extends Command
         } catch (\Throwable $exception) {
             $this->error('  SMTP send failed: '.$exception->getMessage());
             $this->line('  Common fixes:');
-            $this->line('    • Resend: host smtp.resend.com, port 587, encryption TLS, username resend');
+            $this->line('    • Resend API: set mail driver to "resend" and use your re_ API key');
+            $this->line('    • Resend SMTP: host smtp.resend.com, port 587, encryption TLS, username resend');
             $this->line('    • Port 465 timeouts on cloud servers often mean the port is blocked — try 587 + TLS');
             $this->line('    • Port 587 → encryption TLS');
             $this->line('    • Port 465 → encryption SSL');

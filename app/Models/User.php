@@ -48,6 +48,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'legal_agreement_accepted_at',
         'legal_agreement_version',
         'legal_agreement_ip',
+        'legal_confirmation_email_sent_at',
+        'legal_confirmation_email_last_error',
     ];
 
     /**
@@ -72,6 +74,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'candidate_status' => CandidateStatus::class,
         'candidate_status_updated_at' => 'datetime',
         'legal_agreement_accepted_at' => 'datetime',
+        'legal_confirmation_email_sent_at' => 'datetime',
     ];
 
     protected function photo(): Attribute
