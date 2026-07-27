@@ -13,7 +13,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -89,6 +88,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'professional_type_id' => $request->professional_type_id,
             'professional_type_other' => $request->professional_type_other,
+            'email_verified_at' => now(),
         ]);
 
         // Handle CV/Resume upload
@@ -96,56 +96,15 @@ class RegisteredUserController extends Controller
             ->withCustomProperties(['name' => 'cv_resume'])
             ->toMediaCollection('cv_resume');
 
-        $smtpConfigured = $this->isSmtpConfigured();
-
-        if (! $smtpConfigured) {
-            $user->email_verified_at = now();
-            $user->save();
-
-            Log::info('User registered without email verification due to missing SMTP configuration', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-            ]);
-        }
-
-        // Record legal acceptance in the database only; emails are sent after the HTTP response.
+        // Record legal acceptance in the database; confirmation email is sent after the HTTP response.
         $this->legalAgreement->recordAcceptance($user, $request, false);
 
-        if ($smtpConfigured) {
-            SendRegistrationNotificationsJob::dispatch($user->id)
-                ->onConnection('sync')
-                ->afterResponse();
-        }
+        SendRegistrationNotificationsJob::dispatch($user->id)
+            ->onConnection('sync')
+            ->afterResponse();
 
         Auth::login($user);
 
         return redirect()->intended($this->authService->homeUrlFor($user));
-    }
-
-    /**
-     * Check if SMTP is properly configured
-     */
-    private function isSmtpConfigured(): bool
-    {
-        if (config('mail.default') !== 'smtp') {
-            return false;
-        }
-
-        $required = [
-            config('mail.mailers.smtp.host'),
-            config('mail.mailers.smtp.port'),
-            config('mail.mailers.smtp.username'),
-            config('mail.mailers.smtp.password'),
-            config('mail.from.address'), // Check for "From" address
-        ];
-
-        // All required fields must be present and non-empty
-        foreach ($required as $field) {
-            if (empty($field)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }

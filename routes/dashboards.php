@@ -21,14 +21,14 @@ Route::middleware(['auth'])->group(function () {
         return redirect(app(AuthService::class)->homeUrlFor(auth()->user()));
     })->name('dashboard');
 
-    Route::middleware(['verified', 'legalAgreement', 'learnerDashboard:internal'])->group(function () {
+    Route::middleware(['legalAgreement', 'learnerDashboard:internal'])->group(function () {
         Route::get('/dashboard/internal/{tab?}', [StudentController::class, 'index'])
             ->where('tab', 'home|courses|exams|certificates|announcements|community|professional-development|project-library|resources|help-center|wishlist|profile|settings|subscriptions')
             ->defaults('tab', 'home')
             ->name('dashboard.internal');
     });
 
-    Route::middleware(['verified', 'legalAgreement', 'learnerDashboard:external'])->group(function () {
+    Route::middleware(['legalAgreement', 'learnerDashboard:external'])->group(function () {
         Route::get('/dashboard/external/{tab?}', [StudentController::class, 'index'])
             ->where('tab', 'home|courses|exams|certificates|announcements|community|professional-development|project-library|resources|help-center|wishlist|profile|settings|subscriptions')
             ->defaults('tab', 'home')

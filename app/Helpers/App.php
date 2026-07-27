@@ -52,16 +52,30 @@ function setStorageConfig(array $storage): void
 
 function setSmtpConfig(array $config)
 {
+   $mailer = $config['mail_mailer'] ?? 'smtp';
+   $encryption = $config['mail_encryption'] ?? null;
+
+   if ($encryption === '') {
+      $encryption = null;
+   }
+
    config([
-      'mail.default' => $config['mail_mailer'] ?? 'smtp',
+      'mail.default' => $mailer,
       'mail.mailers.smtp.host' => $config['mail_host'] ?? '',
       'mail.mailers.smtp.port' => $config['mail_port'] ?? '',
-      'mail.mailers.smtp.encryption' => $config['mail_encryption'] ?? '',
+      'mail.mailers.smtp.encryption' => $encryption,
       'mail.mailers.smtp.username' => $config['mail_username'] ?? null,
       'mail.mailers.smtp.password' => $config['mail_password'] ?? null,
+      'mail.mailers.smtp.timeout' => (int) env('MAIL_TIMEOUT', 15),
       'mail.from.address' => $config['mail_from_address'],
       'mail.from.name' => $config['mail_from_name'] ?? 'System',
    ]);
+
+   if ($mailer === 'resend') {
+      config([
+         'services.resend.key' => $config['mail_password'] ?? env('RESEND_KEY'),
+      ]);
+   }
 }
 
 function testSmtpConnection(array $config)

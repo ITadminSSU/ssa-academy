@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/auth-layout';
@@ -11,10 +11,18 @@ export default function Recaptcha({ status }: { status?: string }) {
    const { auth, button } = props.translate;
    const { post, processing } = useForm({});
 
+   useEffect(() => {
+      if (props.auth.user?.email_verified_at && props.auth.dashboardUrl) {
+         router.visit(props.auth.dashboardUrl);
+      }
+   }, [props.auth.dashboardUrl, props.auth.user?.email_verified_at]);
+
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
 
-      post(route('verification.send'));
+      post(route('verification.send'), {
+         onSuccess: () => router.reload({ only: ['auth'] }),
+      });
    };
 
    return (

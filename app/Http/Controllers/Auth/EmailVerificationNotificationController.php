@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateEmailRequest;
+use App\Jobs\SendEmailVerificationNotificationJob;
 use App\Services\AccountService;
 use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
@@ -26,7 +27,9 @@ class EmailVerificationNotificationController extends Controller
             return redirect()->intended($this->authService->homeUrlFor($request->user()));
         }
 
-        $request->user()->sendEmailVerificationNotification();
+        SendEmailVerificationNotificationJob::dispatch($request->user()->id)
+            ->onConnection('sync')
+            ->afterResponse();
 
         return back()->with('status', 'verification-link-sent');
     }

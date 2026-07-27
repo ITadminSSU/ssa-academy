@@ -145,7 +145,14 @@ class LegalAgreementService
         $terms ??= $this->getTermsPage();
         $nda ??= $this->getNdaPage();
 
-        if (!$terms || !$nda) {
+        if (! $terms || ! $nda) {
+            Log::warning('Legal agreement email skipped because CMS pages are missing', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'terms_found' => (bool) $terms,
+                'nda_found' => (bool) $nda,
+            ]);
+
             return;
         }
 

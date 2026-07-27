@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Setting;
 use App\Services\SettingsService;
+use App\Support\MailConfigurator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -72,29 +73,9 @@ class VerifyIntegrationsCommand extends Command
         }
 
         $fields = $setting->fields ?? [];
-        setSmtpConfig($fields);
-        config(['mail.mailers.smtp.timeout' => (int) env('MAIL_TIMEOUT', 15)]);
 
-        $required = [
-            'mail_mailer' => 'Mail driver',
-            'mail_host' => 'Host',
-            'mail_port' => 'Port',
-            'mail_username' => 'Username',
-            'mail_password' => 'Password',
-            'mail_from_address' => 'From address',
-            'mail_from_name' => 'From name',
-        ];
-
-        $missing = [];
-
-        foreach ($required as $key => $label) {
-            if (empty($fields[$key])) {
-                $missing[] = $label;
-            }
-        }
-
-        if ($missing !== []) {
-            $this->error('  Missing: '.implode(', ', $missing));
+        if (! MailConfigurator::applyFromSetting($setting)) {
+            $this->error('  Mail settings are incomplete or invalid.');
             $this->line('  Fix in Admin → Settings → SMTP');
 
             return false;
@@ -126,6 +107,8 @@ class VerifyIntegrationsCommand extends Command
         } catch (\Throwable $exception) {
             $this->error('  SMTP send failed: '.$exception->getMessage());
             $this->line('  Common fixes:');
+            $this->line('    • Resend: host smtp.resend.com, port 587, encryption TLS, username resend');
+            $this->line('    • Port 465 timeouts on cloud servers often mean the port is blocked — try 587 + TLS');
             $this->line('    • Port 587 → encryption TLS');
             $this->line('    • Port 465 → encryption SSL');
             $this->line('    • Gmail/Microsoft → use an app password, not your login password');
