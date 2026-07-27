@@ -4,12 +4,14 @@ import TableHeader from '@/components/table/table-header';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import DashboardLayout from '@/layouts/dashboard/layout';
+import { getQueryParams } from '@/lib/route';
 import { SharedData } from '@/types/global';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import * as React from 'react';
 import { ReactNode } from 'react';
 import CreateForm from './Partials/create-form';
+import RegistrationDateFilter from './Partials/registration-date-filter';
 import RoleStats from './Partials/role-stats';
 import TableColumn from './Partials/table-columns';
 
@@ -33,6 +35,8 @@ interface Props extends SharedData {
    filters: {
       role_filter?: string;
       search?: string;
+      registered_from?: string;
+      registered_to?: string;
    };
    protectedUserId?: number | null;
 }
@@ -41,6 +45,10 @@ const Index = (props: Props) => {
    const [sorting, setSorting] = React.useState<SortingState>([]);
    const { translate } = props;
    const { dashboard } = translate;
+   const page = usePage<SharedData>();
+   const urlParams = getQueryParams(page.url);
+   const activeRoleFilter = (urlParams['role_filter'] as string) ?? props.filters.role_filter ?? 'all';
+   const canExport = activeRoleFilter === 'external' || activeRoleFilter === 'internal_employee';
 
    const text = (value: string | undefined, fallback: string) => value?.trim() || fallback;
 
@@ -76,12 +84,25 @@ const Index = (props: Props) => {
             <RoleStats roleCounts={props.roleCounts} roleFilters={props.roleFilters} routeName="users.index" />
 
             <Card>
+               <RegistrationDateFilter
+                  routeName="users.index"
+                  labels={{
+                     registeredFrom: text(dashboard.registered_from, 'Registered from'),
+                     registeredTo: text(dashboard.registered_to, 'Registered to'),
+                     today: text(dashboard.date_preset_today, 'Today'),
+                     last7Days: text(dashboard.date_preset_last_7_days, 'Last 7 days'),
+                     thisMonth: text(dashboard.date_preset_this_month, 'This month'),
+                     clearDates: text(dashboard.clear_date_filter, 'Clear dates'),
+                  }}
+               />
+
                <TableFilter
                   data={props.users}
                   title={text(dashboard.all_users, 'All Users')}
                   globalSearch={true}
                   tablePageSizes={[10, 15, 20, 25]}
                   routeName="users.index"
+                  exportPath={canExport ? 'users.export' : undefined}
                />
 
                <Table className="border-border border-y">

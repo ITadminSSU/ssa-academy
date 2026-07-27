@@ -37,6 +37,7 @@ Route::prefix('dashboard/admin')->group(function () {
 
     // users
     Route::resource('users', UsersController::class)->only(['index', 'store', 'update']);
+    Route::get('users/export/csv', [UsersController::class, 'export'])->name('users.export');
     Route::get('users/{id}/cv/download', [UsersController::class, 'downloadCv'])->name('users.cv.download');
     Route::get('users/{id}/cv/view', [UsersController::class, 'viewCv'])->name('users.cv.view');
 

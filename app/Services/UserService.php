@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\LearnerUserType;
 use App\Models\User;
 use App\Support\MasterAdmin;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserService
 {
@@ -38,6 +40,12 @@ class UserService
                     $inner->where('name', 'LIKE', '%' . $search . '%')
                         ->orWhere('email', 'LIKE', '%' . $search . '%');
                 });
+            })
+            ->when(!empty($data['registered_from']), function ($query) use ($data) {
+                return $query->whereDate('created_at', '>=', $data['registered_from']);
+            })
+            ->when(!empty($data['registered_to']), function ($query) use ($data) {
+                return $query->whereDate('created_at', '<=', $data['registered_to']);
             })
             ->orderBy('created_at', 'desc');
 
@@ -137,5 +145,80 @@ class UserService
             ['value' => 'external', 'label' => __('dashboard.role_filter_external')],
             ['value' => 'trainer', 'label' => __('dashboard.role_filter_trainer')],
         ];
+    }
+
+    public function exportUsersCsv(array $data): StreamedResponse
+    {
+        $roleFilter = $data['role_filter'] ?? '';
+        $users = $this->getUsers([
+            ...$data,
+            'paginate' => false,
+            'include_all_roles' => true,
+        ]);
+
+        $label = match ($roleFilter) {
+            'internal_employee' => 'internal-employees',
+            default => 'external-learners',
+        };
+
+        $filename = sprintf('%s-%s.csv', $label, now()->format('Y-m-d'));
+
+        return response()->streamDownload(function () use ($users) {
+            $handle = fopen('php://output', 'w');
+
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($handle, [
+                'Name',
+                'Email',
+                'Status',
+                'Role',
+                'Learner Type',
+                'Professional Type',
+                'Registered At',
+                'CV On File',
+            ]);
+
+            foreach ($users as $user) {
+                $professionalType = $user->professionalType?->name ?? '';
+                if ($professionalType === 'Other' && $user->professional_type_other) {
+                    $professionalType = 'Other (' . $user->professional_type_other . ')';
+                }
+
+                fputcsv($handle, [
+                    $user->name,
+                    $user->email,
+                    (int) $user->status === 1 ? 'Active' : 'Inactive',
+                    $this->exportRoleLabel($user->role),
+                    $this->exportLearnerTypeLabel($user),
+                    $professionalType,
+                    $user->created_at?->format('Y-m-d H:i:s') ?? '',
+                    $user->getFirstMedia('cv_resume') ? 'Yes' : 'No',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    private function exportRoleLabel(string $role): string
+    {
+        return match ($role) {
+            'admin' => 'Admin',
+            'instructor' => 'Trainer',
+            'student' => 'Student',
+            default => $role,
+        };
+    }
+
+    private function exportLearnerTypeLabel(User $user): string
+    {
+        if ($user->role !== 'student') {
+            return '';
+        }
+
+        return $user->user_type === LearnerUserType::EMPLOYEE ? 'Internal employee' : 'External learner';
     }
 }

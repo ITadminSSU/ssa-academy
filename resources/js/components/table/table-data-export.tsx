@@ -2,6 +2,9 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLang } from '@/hooks/use-lang';
+import { getQueryParams } from '@/lib/route';
+import { SharedData } from '@/types/global';
+import { usePage } from '@inertiajs/react';
 import { Download } from 'lucide-react';
 
 interface Props {
@@ -10,10 +13,14 @@ interface Props {
 }
 
 const TableDataExport = (props: Props) => {
-   const { className } = props;
+   const { className, route: exportRoute } = props;
    const { table } = useLang();
+   const page = usePage<SharedData>();
+   const urlParams = getQueryParams(page.url) as Record<string, string>;
 
-   const dataExport = () => {};
+   const dataExport = () => {
+      window.location.href = route(exportRoute, urlParams);
+   };
 
    return (
       <div className={`relative ml-3 ${className}`}>

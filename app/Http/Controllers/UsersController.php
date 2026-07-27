@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExportUsersRequest;
 use App\Http\Requests\StoreAdminUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -32,6 +33,8 @@ class UsersController extends Controller
             'paginate' => true,
             'include_all_roles' => true,
             'role_filter' => $request->string('role_filter')->toString() ?: 'all',
+            'registered_from' => $request->string('registered_from')->toString() ?: null,
+            'registered_to' => $request->string('registered_to')->toString() ?: null,
         ]);
 
         return Inertia::render('dashboard/users/index', [
@@ -41,9 +44,16 @@ class UsersController extends Controller
             'filters' => [
                 'role_filter' => $request->string('role_filter')->toString() ?: 'all',
                 'search' => $request->string('search')->toString(),
+                'registered_from' => $request->string('registered_from')->toString(),
+                'registered_to' => $request->string('registered_to')->toString(),
             ],
             'protectedUserId' => MasterAdmin::userId(),
         ]);
+    }
+
+    public function export(ExportUsersRequest $request)
+    {
+        return $this->userService->exportUsersCsv($request->validated());
     }
 
     /**

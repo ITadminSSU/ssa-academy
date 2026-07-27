@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import { ArrowUpDown, Download, ExternalLink, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import EditForm from './edit-form';
@@ -128,6 +129,24 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
                </div>
             );
          },
+      },
+      {
+         accessorKey: 'created_at',
+         header: ({ column }) => {
+            return (
+               <div className="flex items-center">
+                  <Button variant="ghost" className="p-0 hover:bg-transparent" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
+                     {text(dashboard.registered_date, 'Registered')}
+                     <ArrowUpDown />
+                  </Button>
+               </div>
+            );
+         },
+         cell: ({ row }) => (
+            <span className="text-sm whitespace-nowrap">
+               {row.original.created_at ? format(new Date(row.original.created_at), 'MMM d, yyyy h:mm a') : '—'}
+            </span>
+         ),
       },
       {
          id: 'cv_resume',

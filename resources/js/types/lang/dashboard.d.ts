@@ -180,6 +180,14 @@ interface DashboardLang {
    // Users
    user_role: string;
    provide_essential_user_details: string;
+   registered_date: string;
+   registered_from: string;
+   registered_to: string;
+   date_preset_today: string;
+   date_preset_last_7_days: string;
+   date_preset_this_month: string;
+   clear_date_filter: string;
+   export_users_csv: string;
 
    // Content Management
    media_library: string;
