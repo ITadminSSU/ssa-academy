@@ -99,7 +99,9 @@ class RegisteredUserController extends Controller
         // Record legal acceptance in the database; confirmation email is queued for delivery.
         $this->legalAgreement->recordAcceptance($user, $request, false);
 
-        SendRegistrationNotificationsJob::dispatch($user->id)->afterResponse();
+        SendRegistrationNotificationsJob::dispatch($user->id)
+            ->onConnection('sync')
+            ->afterResponse();
 
         Auth::login($user);
 

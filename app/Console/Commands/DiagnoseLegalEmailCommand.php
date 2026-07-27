@@ -8,8 +8,6 @@ use App\Services\SettingsService;
 use App\Support\MailConfigurator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\LegalAgreementAcceptedMail;
 
 class DiagnoseLegalEmailCommand extends Command
 {
@@ -111,14 +109,11 @@ class DiagnoseLegalEmailCommand extends Command
         $this->line('<fg=cyan>4. Sending legal agreement email</>');
 
         try {
-            Mail::to($user->email)->send(new LegalAgreementAcceptedMail(
-                user: $user,
-                terms: $terms,
-                nda: $nda,
-                acceptedAt: $user->legal_agreement_accepted_at ?? now(),
-                ipAddress: $user->legal_agreement_ip,
-                agreementVersion: $legalAgreement->currentVersion(),
-            ));
+            $apiKey = is_array($fields) ? ($fields['mail_password'] ?? null) : null;
+            $legalAgreement->deliverAcceptanceEmail(
+                $user,
+                resendApiKey: is_string($apiKey) ? $apiKey : null,
+            );
 
             $this->info("  Legal agreement email sent to {$user->email}");
             $this->line('  Check inbox and spam. Also check the Resend dashboard for delivery status.');

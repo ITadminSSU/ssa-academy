@@ -20,6 +20,10 @@ class MailConfigurator
 
         setSmtpConfig($fields);
 
+        if (! empty($fields['mail_password']) && str_starts_with((string) $fields['mail_password'], 're_')) {
+            config(['services.resend.key' => $fields['mail_password']]);
+        }
+
         return self::isConfigured();
     }
 

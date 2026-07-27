@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Setting;
 use App\Services\SettingsService;
 use App\Support\MailConfigurator;
+use App\Support\ResendHttpClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -76,26 +77,49 @@ class VerifyIntegrationsCommand extends Command
 
         if (! MailConfigurator::applyFromSetting($setting)) {
             $this->error('  Mail settings are incomplete or invalid.');
-            $this->line('  Fix in Admin → Settings → SMTP');
+            $this->line('  Fix in Admin → Settings → SMTP (use your Resend re_ API key).');
 
             return false;
         }
 
-        if (! filter_var($fields['mail_from_address'], FILTER_VALIDATE_EMAIL)) {
+        if (! filter_var($fields['mail_from_address'] ?? '', FILTER_VALIDATE_EMAIL)) {
             $this->error('  From address is not a valid email.');
 
             return false;
         }
 
-        if ($mailer === 'resend') {
-            $this->line('  Driver: Resend API (HTTPS)');
-        } else {
-            $this->line('  Host: '.$fields['mail_host']);
-            $this->line('  Port: '.$fields['mail_port'].' ('.($fields['mail_encryption'] ?: 'no encryption').')');
+        $mailer = (string) ($fields['mail_mailer'] ?? 'smtp');
+        $this->line('  Driver: '.$mailer);
+        $this->line('  From: '.($fields['mail_from_name'] ?? '').' <'.($fields['mail_from_address'] ?? '').'>');
+
+        if ($mailer === 'smtp') {
+            $this->line('  Host: '.($fields['mail_host'] ?? ''));
+            $this->line('  Port: '.($fields['mail_port'] ?? '').' ('.($fields['mail_encryption'] ?: 'none').')');
         }
-        $this->line('  From: '.$fields['mail_from_name'].' <'.$fields['mail_from_address'].'>');
 
         $recipient = $this->option('email') ?: $fields['mail_from_address'];
+        $apiKey = $fields['mail_password'] ?? null;
+
+        if (is_string($apiKey) && str_starts_with($apiKey, 're_')) {
+            config(['services.resend.key' => $apiKey]);
+        }
+
+        if (ResendHttpClient::isAvailable()) {
+            try {
+                ResendHttpClient::send([
+                    'from' => config('mail.from.name').' <'.config('mail.from.address').'>',
+                    'to' => [$recipient],
+                    'subject' => config('app.name').' SMTP test',
+                    'html' => '<p>This is a test email from '.e(config('app.name')).'. If you received it, mail delivery is working.</p>',
+                ]);
+
+                $this->info('  Test email sent via Resend API to '.$recipient);
+
+                return true;
+            } catch (\Throwable $exception) {
+                $this->error('  Resend API send failed: '.$exception->getMessage());
+            }
+        }
 
         try {
             Mail::raw(

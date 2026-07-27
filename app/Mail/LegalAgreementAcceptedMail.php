@@ -24,6 +24,7 @@ class LegalAgreementAcceptedMail extends Mailable
         public Carbon $acceptedAt,
         public ?string $ipAddress,
         public string $agreementVersion,
+        public bool $includePdfAttachments = true,
     ) {}
 
     public function envelope(): Envelope
@@ -42,6 +43,10 @@ class LegalAgreementAcceptedMail extends Mailable
 
     public function attachments(): array
     {
+        if (! $this->includePdfAttachments) {
+            return [];
+        }
+
         return [
             Attachment::fromData(
                 fn () => $this->renderPdf($this->terms->title, $this->terms->description ?? ''),

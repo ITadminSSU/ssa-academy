@@ -15,18 +15,16 @@ class SendRegistrationNotificationsJob implements ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 5;
+    public int $tries = 3;
 
     public int $timeout = 120;
 
     /** @var array<int, int> */
-    public array $backoff = [30, 60, 120, 300, 600];
+    public array $backoff = [15, 60, 180];
 
     public function __construct(
         public int $userId,
-    ) {
-        $this->onQueue('mail');
-    }
+    ) {}
 
     public function handle(LegalAgreementService $legalAgreement, SettingsService $settingsService): void
     {
@@ -41,17 +39,13 @@ class SendRegistrationNotificationsJob implements ShouldQueue
         }
 
         $smtpSetting = $settingsService->getSetting(['type' => 'smtp']);
+        $fields = $smtpSetting?->fields ?? [];
 
-        if (! MailConfigurator::applyFromSetting($smtpSetting)) {
-            throw new \RuntimeException('Mail is not configured. Set Admin → SMTP to Resend API before launch.');
-        }
+        MailConfigurator::applyFromSetting($smtpSetting);
 
-        $legalAgreement->sendAcceptanceEmail($user);
+        $apiKey = is_array($fields) ? ($fields['mail_password'] ?? null) : null;
 
-        $user->forceFill([
-            'legal_confirmation_email_sent_at' => now(),
-            'legal_confirmation_email_last_error' => null,
-        ])->save();
+        $legalAgreement->deliverAcceptanceEmail($user, resendApiKey: is_string($apiKey) ? $apiKey : null);
 
         Log::info('Legal agreement confirmation email sent after registration', [
             'user_id' => $user->id,
@@ -68,10 +62,6 @@ class SendRegistrationNotificationsJob implements ShouldQueue
         }
 
         $message = $exception?->getMessage() ?? 'Unknown mail queue failure';
-
-        $user->forceFill([
-            'legal_confirmation_email_last_error' => $message,
-        ])->save();
 
         Log::error('Registration legal email failed after all retries', [
             'user_id' => $user->id,
