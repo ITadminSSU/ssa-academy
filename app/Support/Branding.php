@@ -31,7 +31,7 @@ class Branding
 
     public static function description(): string
     {
-        return (string) config('branding.description', 'Enterprise training for teams and professionals within the construction industry.');
+        return (string) config('branding.description', 'Smart Sourcing Academy is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.');
     }
 
     public static function logos(): array

@@ -8,7 +8,7 @@ return [
     'keywords' => env('BRAND_KEYWORDS', 'SSU Academy, Smart Sourcing USA, corporate training, professional development, online courses'),
     'description' => env(
         'BRAND_DESCRIPTION',
-        'Enterprise training for teams and professionals within the construction industry.'
+        'Smart Sourcing Academy is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.'
     ),
     'support_email' => env('BRAND_SUPPORT_EMAIL', 'support@smartsourcingusa.com'),
     'contact_email' => env('BRAND_CONTACT_EMAIL', 'info@smartsourcingusa.com'),

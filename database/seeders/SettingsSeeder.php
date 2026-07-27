@@ -22,7 +22,7 @@ class SettingsSeeder extends Seeder
                     'name' => 'Smart Sourcing Academy',
                     'title' => 'Smart Sourcing Academy',
                     'keywords' => 'SSU Academy, Smart Sourcing USA, corporate training, professional development, online courses',
-                    'description' => 'Enterprise training for teams and professionals within the construction industry.',
+                    'description' => 'Smart Sourcing Academy is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.',
                     'logo_dark' => '/assets/branding/ssa-academy-logo.png',
                     'logo_light' => '/assets/branding/ssa-academy-logo.png',
                     'favicon' => '/favicon.png',
