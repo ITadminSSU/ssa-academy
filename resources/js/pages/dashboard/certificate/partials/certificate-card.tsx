@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link, router } from '@inertiajs/react';
-import { Award, Check, Edit, Trash2 } from 'lucide-react';
+import { Award, Check, Edit, Eye, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import CertificatePreview from './certificate-preview';
+import LiveCertificatePreviewDialog from './live-certificate-preview-dialog';
 
 interface CertificateCardProps {
    type: 'course' | 'exam';
@@ -14,6 +15,7 @@ interface CertificateCardProps {
 
 const CertificateCard = ({ type, template }: CertificateCardProps) => {
    const [previewTemplate, setPreviewTemplate] = useState<CertificateTemplate | null>(null);
+   const [livePreviewOpen, setLivePreviewOpen] = useState(false);
 
    const handleActivate = (templateId: number) => {
       router.post(
@@ -88,22 +90,29 @@ const CertificateCard = ({ type, template }: CertificateCardProps) => {
                </div>
 
                {/* Actions */}
-               <div className="flex gap-2">
-                  {!template.is_active && (
-                     <Button size="sm" variant="outline" className="flex-1" onClick={() => handleActivate(template.id as number)}>
-                        <Check className="mr-1 h-3 w-3" />
-                        Activate
+               <div className="flex flex-col gap-2">
+                  <Button size="sm" variant="secondary" className="w-full" onClick={() => setLivePreviewOpen(true)}>
+                     <Eye className="mr-1 h-3 w-3" />
+                     Preview live certificate
+                  </Button>
+
+                  <div className="flex gap-2">
+                     {!template.is_active && (
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => handleActivate(template.id as number)}>
+                           <Check className="mr-1 h-3 w-3" />
+                           Activate
+                        </Button>
+                     )}
+                     <Button asChild size="sm" variant="outline" className="flex-1">
+                        <Link href={route('certificate.templates.edit', template.id)}>
+                           <Edit className="mr-1 h-3 w-3" />
+                           Edit
+                        </Link>
                      </Button>
-                  )}
-                  <Button asChild size="sm" variant="outline" className="flex-1">
-                     <Link href={route('certificate.templates.edit', template.id)}>
-                        <Edit className="mr-1 h-3 w-3" />
-                        Edit
-                     </Link>
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(template.id as number)}>
-                     <Trash2 className="h-3 w-3" />
-                  </Button>
+                     <Button size="sm" variant="destructive" onClick={() => handleDelete(template.id as number)}>
+                        <Trash2 className="h-3 w-3" />
+                     </Button>
+                  </div>
                </div>
             </CardContent>
          </Card>
@@ -115,7 +124,7 @@ const CertificateCard = ({ type, template }: CertificateCardProps) => {
                   <ScrollArea className="max-h-[90vh]">
                      <div className="p-6">
                         <DialogHeader className="mb-6">
-                           <DialogTitle>Preview: {previewTemplate?.name}</DialogTitle>
+                           <DialogTitle>Custom style preview: {previewTemplate?.name}</DialogTitle>
                         </DialogHeader>
 
                         <CertificatePreview
@@ -129,6 +138,8 @@ const CertificateCard = ({ type, template }: CertificateCardProps) => {
                </DialogContent>
             </Dialog>
          )}
+
+         <LiveCertificatePreviewDialog template={template} open={livePreviewOpen} onOpenChange={setLivePreviewOpen} />
       </>
    );
 };

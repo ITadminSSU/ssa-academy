@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
-import { Save } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, Save } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import CertificatePreview from './certificate-preview';
+import LiveCertificatePreviewDialog from './live-certificate-preview-dialog';
 
 const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate | null }) => {
    const [logoPreview, setLogoPreview] = useState(template?.logo_path);
+   const [livePreviewOpen, setLivePreviewOpen] = useState(false);
 
    const { data, setData, post, processing, errors } = useForm({
       type: template?.type || 'course',
@@ -46,6 +48,21 @@ const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate |
          post(route('certificate.templates.store'));
       }
    };
+
+   const livePreviewTemplate = useMemo<CertificateTemplate>(
+      () => ({
+         id: template?.id ?? 0,
+         type: data.type as 'course' | 'exam',
+         name: data.name,
+         logo_path: template?.logo_path ?? null,
+         background_image_path: template?.background_image_path ?? null,
+         template_data: data.template_data,
+         is_active: template?.is_active ?? false,
+         created_at: template?.created_at ?? new Date().toISOString(),
+         updated_at: template?.updated_at ?? new Date().toISOString(),
+      }),
+      [template, data.type, data.name, data.template_data],
+   );
 
    return (
       <div className="grid gap-6 lg:grid-cols-2">
@@ -272,11 +289,11 @@ const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate |
          </div>
 
          {/* Preview Section */}
-         <div className="lg:sticky lg:top-6">
+         <div className="lg:sticky lg:top-6 space-y-4">
             <Card>
                <CardHeader>
-                  <CardTitle>Live Preview</CardTitle>
-                  <CardDescription>See how your certificate will look</CardDescription>
+                  <CardTitle>Custom style preview</CardTitle>
+                  <CardDescription>Color and text settings for the admin template record (not shown to learners)</CardDescription>
                </CardHeader>
                <CardContent>
                   <CertificatePreview
@@ -288,7 +305,19 @@ const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate |
                   />
                </CardContent>
             </Card>
+
+            <Button type="button" variant="secondary" className="w-full" onClick={() => setLivePreviewOpen(true)}>
+               <Eye className="mr-2 h-4 w-4" />
+               Preview live certificate
+            </Button>
          </div>
+
+         <LiveCertificatePreviewDialog
+            template={livePreviewTemplate}
+            open={livePreviewOpen}
+            onOpenChange={setLivePreviewOpen}
+            logoUrl={logoPreview}
+         />
       </div>
    );
 };

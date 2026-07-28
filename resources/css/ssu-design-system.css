@@ -110,13 +110,13 @@
    }
 
    .ssu-logo-frame--footer {
-      height: 11rem;
-      max-width: min(320px, 92vw);
+      height: 8rem;
+      max-width: min(280px, 92vw);
    }
 
    .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
       height: auto;
-      min-height: 11rem;
+      min-height: 8rem;
       padding: 0.5rem 0.75rem;
       border-radius: 0.75rem;
    }
@@ -127,11 +127,11 @@
       }
 
       .ssu-logo-frame--footer {
-         height: 12rem;
+         height: 9rem;
       }
 
       .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
-         min-height: 12rem;
+         min-height: 9rem;
       }
    }
 
