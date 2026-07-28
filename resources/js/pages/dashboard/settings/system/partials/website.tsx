@@ -13,7 +13,18 @@ import BrandLogosSection from '@/pages/dashboard/settings/system/partials/brand-
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { SystemProps } from '..';
+
+const LOGO_UPLOAD_FIELDS = [
+   'new_logo_navbar',
+   'new_logo_footer',
+   'new_logo_auth',
+   'new_logo_dashboard',
+   'new_logo_certificate',
+   'new_favicon',
+   'new_banner',
+] as const;
 
 interface MediaFields {
    new_logo_navbar: null | File;
@@ -53,7 +64,21 @@ const Website = () => {
 
       post(route('settings.system.update', { id: props.system.id }), {
          forceFormData: true,
+         transform: (formData) => {
+            const payload = { ...formData } as Record<string, unknown>;
+
+            LOGO_UPLOAD_FIELDS.forEach((field) => {
+               if (!(payload[field] instanceof File)) {
+                  delete payload[field];
+               }
+            });
+
+            return payload;
+         },
          onSuccess: () => setLogoPreviews({}),
+         onError: () => {
+            toast.error('Save failed. If the image is large, try cropping it again or upload one logo at a time.');
+         },
       });
    };
 

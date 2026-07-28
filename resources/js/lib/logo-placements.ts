@@ -31,7 +31,7 @@ export const LOGO_PLACEMENT_CONFIG: Record<LogoPlacement, LogoPlacementConfig> =
    navbar: {
       placement: 'navbar',
       label: 'Navbar logo',
-      description: 'Shown in the public site header (white bar with black logo frame).',
+      description: 'Shown in the public site header on the white navigation bar.',
       field: 'logo_navbar',
       uploadField: 'new_logo_navbar',
       recommended: 'Use the BLACK wordmark with minimal padding for the best fit.',

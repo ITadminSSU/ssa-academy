@@ -95,7 +95,7 @@ const NavbarPreview = ({ auth, navbar }: NavbarPreviewProps) => {
          <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-10">
-               <Link href={route('category.courses', { category: 'all' })} className="ssu-logo-frame ssu-logo-frame--nav ssu-logo-frame--dark-mark">
+               <Link href={route('category.courses', { category: 'all' })} className="ssu-logo-frame ssu-logo-frame--nav">
                   <AppLogo className="ssu-nav-logo" placement="navbar" theme="dark" />
                </Link>
 

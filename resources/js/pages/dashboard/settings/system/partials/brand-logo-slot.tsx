@@ -36,7 +36,7 @@ const PlacementMockup = ({
          <div className="border-border/60 overflow-hidden rounded-lg border bg-white">
             <div className="bg-accent h-1 w-full" />
             <div className="flex h-14 items-center gap-3 px-4">
-               <div className="ssu-logo-frame ssu-logo-frame--nav ssu-logo-frame--dark-mark" style={{ height: `${Math.min(size.height + 8, 56)}px` }}>
+               <div className="ssu-logo-frame ssu-logo-frame--nav" style={{ height: `${Math.min(size.height + 8, 56)}px` }}>
                   {src ? <img src={src} alt="" className="ssu-nav-logo block object-contain" style={imageStyle} /> : <div className="bg-muted h-8 w-20 rounded" />}
                </div>
                <div className="bg-muted hidden h-2 flex-1 rounded sm:block" />
@@ -49,7 +49,7 @@ const PlacementMockup = ({
    if (placement === 'footer') {
       return (
          <div className="border-border/60 rounded-lg border bg-[color:var(--brand-grey)] p-4">
-            <div className="ssu-logo-frame ssu-logo-frame--footer ssu-logo-frame--dark-mark inline-flex" style={{ minHeight: `${size.height}px` }}>
+            <div className="ssu-logo-frame ssu-logo-frame--footer inline-flex" style={{ minHeight: `${size.height}px` }}>
                {src ? <img src={src} alt="" className="ssu-footer-logo block object-contain" style={imageStyle} /> : <div className="bg-muted h-16 w-28 rounded" />}
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
@@ -218,6 +218,7 @@ const BrandLogoSlot = ({ placement, currentUrl, previewUrl, size, error, onFileS
             open={cropOpen}
             imageSrc={cropSource}
             fileName={pendingFileName}
+            placement={placement}
             onOpenChange={setCropOpen}
             onConfirm={(file, url) => onFileSelect(config.uploadField, file, url)}
          />

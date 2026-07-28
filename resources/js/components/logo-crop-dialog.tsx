@@ -1,19 +1,22 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { blobToFile, getCroppedImageBlob, getFullImageCropArea, type CropArea } from '@/lib/crop-image';
+import { blobToFile, getCroppedImageBlob, getFullImageCropArea, getLogoExportLimits, type CropArea } from '@/lib/crop-image';
+import type { LogoPlacement } from '@/lib/logo-placements';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import Cropper, { type Area } from 'react-easy-crop';
 
 interface LogoCropDialogProps {
    open: boolean;
    imageSrc: string | null;
    fileName?: string;
+   placement: LogoPlacement;
    onOpenChange: (open: boolean) => void;
    onConfirm: (file: File, previewUrl: string) => void;
 }
 
-const LogoCropDialog = ({ open, imageSrc, fileName = 'logo.png', onOpenChange, onConfirm }: LogoCropDialogProps) => {
+const LogoCropDialog = ({ open, imageSrc, fileName = 'logo.png', placement, onOpenChange, onConfirm }: LogoCropDialogProps) => {
    const [crop, setCrop] = useState({ x: 0, y: 0 });
    const [zoom, setZoom] = useState(1);
    const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(null);
@@ -47,11 +50,14 @@ const LogoCropDialog = ({ open, imageSrc, fileName = 'logo.png', onOpenChange, o
 
       try {
          const cropArea = croppedAreaPixels ?? (await getFullImageCropArea(imageSrc));
-         const blob = await getCroppedImageBlob(imageSrc, cropArea);
-         const file = blobToFile(blob, fileName.replace(/\.[^.]+$/, '') + '.png');
+         const limits = getLogoExportLimits(placement);
+         const blob = await getCroppedImageBlob(imageSrc, cropArea, limits);
+         const file = blobToFile(blob, fileName);
          const previewUrl = URL.createObjectURL(file);
          onConfirm(file, previewUrl);
          onOpenChange(false);
+      } catch {
+         toast.error('Could not process that image. Try a smaller PNG, JPG, or WebP file.');
       } finally {
          setProcessing(false);
       }
