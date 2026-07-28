@@ -130,7 +130,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
 
                   {/* Logo */}
                   <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--nav ssu-logo-frame--dark-mark">
-                     <AppLogo className="ssu-nav-logo" theme="dark" />
+                     <AppLogo className="ssu-nav-logo" placement="navbar" theme="dark" />
                   </Link>
                </div>
 

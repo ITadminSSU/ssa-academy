@@ -8,13 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import currencies from '@/data/currencies';
 import { onHandleChange } from '@/lib/inertia';
+import { mergeLogoSizes, type LogoPlacement } from '@/lib/logo-placements';
+import BrandLogosSection from '@/pages/dashboard/settings/system/partials/brand-logos-section';
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import { SystemProps } from '..';
 
 interface MediaFields {
-   new_logo_dark: null | File;
-   new_logo_light: null | File;
+   new_logo_navbar: null | File;
+   new_logo_footer: null | File;
+   new_logo_auth: null | File;
+   new_logo_dashboard: null | File;
+   new_logo_certificate: null | File;
    new_favicon: null | File;
    new_banner: null | File;
 }
@@ -23,16 +29,21 @@ const Website = () => {
    const { props } = usePage<SharedData & SystemProps>();
    const { translate } = props;
    const { input, settings } = translate;
+   const [logoPreviews, setLogoPreviews] = useState<Partial<Record<LogoPlacement, string | null>>>({});
 
    const mediaFields: MediaFields = {
-      new_logo_dark: null,
-      new_logo_light: null,
+      new_logo_navbar: null,
+      new_logo_footer: null,
+      new_logo_auth: null,
+      new_logo_dashboard: null,
+      new_logo_certificate: null,
       new_favicon: null,
       new_banner: null,
    };
 
    const { data, setData, post, errors, processing } = useForm({
       ...(props.system.fields as SystemFields),
+      logo_sizes: mergeLogoSizes(props.system.fields.logo_sizes),
       direction: 'none',
       ...(mediaFields as MediaFields),
    });
@@ -40,7 +51,14 @@ const Website = () => {
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
-      post(route('settings.system.update', { id: props.system.id }));
+      post(route('settings.system.update', { id: props.system.id }), {
+         forceFormData: true,
+         onSuccess: () => setLogoPreviews({}),
+      });
+   };
+
+   const setLogoPreview = (placement: LogoPlacement, url: string | null) => {
+      setLogoPreviews((current) => ({ ...current, [placement]: url }));
    };
 
    return (
@@ -140,76 +158,7 @@ const Website = () => {
                </div>
             </div>
 
-            {/* Media Settings */}
-            <div className="border-b pb-6">
-               <h2 className="mb-4 text-xl font-semibold">Media</h2>
-
-               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                     <Label>Logo Dark</Label>
-                     {data.logo_dark ? (
-                        <div className="ssu-logo-frame ssu-logo-frame--nav border-border/60 mb-3 rounded-lg border bg-white p-3">
-                           <img src={data.logo_dark} alt="Current dark logo preview" className="ssu-nav-logo" />
-                        </div>
-                     ) : null}
-                     <Input
-                        type="file"
-                        name="new_logo_dark"
-                        accept="image/*"
-                        onChange={(e) => onHandleChange(e, setData)}
-                        placeholder="Select Logo"
-                     />
-                     <p className="text-muted-foreground mt-2 text-xs">
-                        Use a wide wordmark with minimal empty space above and below for the best navbar fit.
-                     </p>
-                     <InputError message={errors.new_logo_dark} />
-                  </div>
-
-                  <div>
-                     <Label>Logo Light</Label>
-                     {data.logo_light ? (
-                        <div className="ssu-logo-frame ssu-logo-frame--nav border-border/60 mb-3 rounded-lg border bg-primary p-3">
-                           <img src={data.logo_light} alt="Current light logo preview" className="ssu-nav-logo" />
-                        </div>
-                     ) : null}
-                     <Input
-                        type="file"
-                        name="new_logo_light"
-                        accept="image/*"
-                        onChange={(e) => onHandleChange(e, setData)}
-                        placeholder="Select Logo"
-                     />
-                     <p className="text-muted-foreground mt-2 text-xs">
-                        Upload the same wordmark for light backgrounds if you only have one logo file.
-                     </p>
-                     <InputError message={errors.new_logo_light} />
-                  </div>
-
-                  <div>
-                     <Label>Favicon</Label>
-                     {data.favicon ? (
-                        <div className="border-border/60 mb-3 inline-flex rounded-lg border bg-white p-3">
-                           <img src={data.favicon} alt="Current favicon preview" className="h-12 w-12 object-contain" />
-                        </div>
-                     ) : null}
-                     <Input
-                        type="file"
-                        name="new_favicon"
-                        accept="image/*"
-                        onChange={(e) => onHandleChange(e, setData)}
-                        placeholder="Select Favicon"
-                     />
-                     <p className="text-muted-foreground mt-2 text-xs">Square SSA icon works best. Recommended size: 512x512 PNG.</p>
-                     <InputError message={errors.new_favicon} />
-                  </div>
-
-                  <div>
-                     <Label>Banner</Label>
-                     <Input type="file" name="new_banner" accept="image/*" onChange={(e) => onHandleChange(e, setData)} placeholder="Select Banner" />
-                     <InputError message={errors.new_banner} />
-                  </div>
-               </div>
-            </div>
+            <BrandLogosSection data={data} errors={errors} previews={logoPreviews} setData={setData} setPreview={setLogoPreview} />
 
             <div>
                <h2 className="mb-4 text-xl font-semibold">Additional Settings</h2>

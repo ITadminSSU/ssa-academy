@@ -59,7 +59,7 @@ const AttemptNavbar = ({ attempt, questionIndex }: NavbarProps) => {
                <div className="container flex items-center justify-between">
                   <div className="flex h-16 items-center gap-2">
                      <Link href={route('category.courses', { category: 'all' })} className="ssu-logo-frame ssu-logo-frame--nav">
-                        <AppLogo className="ssu-nav-logo" />
+                        <AppLogo className="ssu-nav-logo" placement="navbar" />
                      </Link>
                   </div>
 

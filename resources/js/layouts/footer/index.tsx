@@ -21,7 +21,7 @@ const Index = () => {
                <div className="w-full space-y-5 md:max-w-[min(560px,42%)]">
                   <div>
                      <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer ssu-logo-frame--dark-mark inline-flex">
-                        <AppLogo variant="footer" className="ssu-footer-logo" />
+                        <AppLogo variant="footer" placement="footer" className="ssu-footer-logo" />
                      </Link>
                   </div>
 

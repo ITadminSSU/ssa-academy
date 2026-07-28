@@ -13,6 +13,7 @@ const DashboardSidebarBrand = ({ compact = false }: Props) => (
          <SidebarMenuItem className={cn(compact && 'flex justify-center')}>
             <DashboardLogoLink
                theme="dark"
+               placement="dashboard"
                variant={compact ? 'icon' : 'wordmark'}
                className={compact ? 'h-10 w-10' : 'dashboard-sidebar-logo w-full'}
             />
