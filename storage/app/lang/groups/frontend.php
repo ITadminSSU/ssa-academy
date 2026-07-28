@@ -155,7 +155,7 @@ return [
             'blog_list_alt' => 'Blog List',
             'blog_page_description' => 'Read :total+ articles and tutorials from our instructors and team. Stay updated with insights, news, and how‑to guides.',
             'blog_page_keywords' => 'blogs, articles, tutorials, news, posts, learning, education',
-            'default_site_name' => 'Smart Sourcing Academy',
+            'default_site_name' => 'SMARTSOURCING USA ACADEMY',
         ]
     ],
 
@@ -248,7 +248,7 @@ return [
         'slug' => 'course_details',
         'properties' => [
             'learn_comprehensive_course' => 'Learn with our comprehensive course',
-            'online_course_learning_lms' => 'online course, professional training, SSU Academy',
+            'online_course_learning_lms' => 'online course, professional training, SMARTSOURCING USA ACADEMY',
             'default_author' => 'Smart Sourcing USA',
             'course_certificate' => 'Course Certificate',
             'enrolled_students' => 'Enrolled Students',

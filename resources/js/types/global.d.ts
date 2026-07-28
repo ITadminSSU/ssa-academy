@@ -23,6 +23,8 @@ export interface Branding {
       icon?: string;
       dark?: string;
       light?: string;
+      footer?: string;
+      certificate?: string;
       favicon?: string;
    };
 }

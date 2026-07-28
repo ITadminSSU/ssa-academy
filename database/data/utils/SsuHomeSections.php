@@ -13,7 +13,7 @@ class SsuHomeSections
             [
                 'name' => 'Hero',
                 'slug' => 'hero',
-                'title' => 'SMART SOURCING ACADEMY',
+                'title' => 'SMARTSOURCING USA ACADEMY',
                 'sub_title' => 'Upskill. Certify your skills. Scale with confidence.',
                 'description' => 'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
                 'thumbnail' => null,
@@ -32,7 +32,7 @@ class SsuHomeSections
             [
                 'name' => 'Value Pillars',
                 'slug' => 'pillars',
-                'title' => 'Why Smart Sourcing Academy',
+                'title' => 'Why SMARTSOURCING USA ACADEMY',
                 'flags' => [
                     'title' => true,
                 ],
@@ -62,7 +62,7 @@ class SsuHomeSections
                 'slug' => 'top_courses',
                 'title' => 'Featured Programs',
                 'sub_title' => 'Start learning today',
-                'description' => 'Explore assigned and open-enrollment courses curated for Smart Sourcing Academy teams and partners.',
+                'description' => 'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA ACADEMY teams and partners.',
                 'flags' => [
                     'title' => true,
                     'sub_title' => true,
@@ -76,7 +76,7 @@ class SsuHomeSections
                 'name' => 'Call to Action',
                 'slug' => 'call_to_action',
                 'title' => 'Ready to start learning?',
-                'sub_title' => 'Join Smart Sourcing Academy Today',
+                'sub_title' => 'Join SMARTSOURCING USA ACADEMY Today',
                 'description' => 'Create your free account, explore the catalog, and start your next course today.',
                 'flags' => [
                     'title' => true,

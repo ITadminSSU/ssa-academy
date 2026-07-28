@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Smart Sourcing Academy'),
+    'name' => env('APP_NAME', 'SMARTSOURCING USA ACADEMY'),
 
     /*
     |--------------------------------------------------------------------------

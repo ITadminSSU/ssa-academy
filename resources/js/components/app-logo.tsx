@@ -7,7 +7,7 @@ const stripHeightClasses = (className?: string) => className?.replace(/\bh-(?:\[
 
 const normalizeLogoUrl = (url?: string | null) => (url ? url.split('?')[0] : '');
 
-const AppLogo = ({ className, theme, variant = 'wordmark' }: { theme?: 'light' | 'dark'; className?: string; variant?: 'wordmark' | 'icon' }) => {
+const AppLogo = ({ className, theme, variant = 'wordmark' }: { theme?: 'light' | 'dark'; className?: string; variant?: 'wordmark' | 'icon' | 'footer' }) => {
    const { system, branding } = usePage<SharedData>().props;
    const siteName = resolveSiteName(system?.fields?.name);
 
@@ -46,11 +46,17 @@ const AppLogo = ({ className, theme, variant = 'wordmark' }: { theme?: 'light' |
 
    const logoDark = variant === 'icon' ? resolveLogo(branding?.logos?.icon || system?.fields?.logo_dark, 'icon') : resolveLogo(system?.fields?.logo_dark, 'dark');
    const logoLight = variant === 'icon' ? resolveLogo(branding?.logos?.icon || system?.fields?.logo_light, 'icon') : resolveLogo(system?.fields?.logo_light, 'light');
+   const logoFooter = resolveLogo(branding?.logos?.footer, 'footer');
    const usesSameLogo = Boolean(logoDark && logoLight && normalizeLogoUrl(logoDark) === normalizeLogoUrl(logoLight));
 
    const renderLogoImage = (src: string, visibilityClassName?: string) => (
       <img src={src} alt={siteName} className={cn(logoClassName, visibilityClassName)} style={imgStyle} />
    );
+
+   if (variant === 'footer') {
+      const src = logoFooter || logoLight || logoDark;
+      return src ? renderLogoImage(src) : renderPlaceholder();
+   }
 
    if (theme === 'dark') {
       return logoLight ? renderLogoImage(logoLight) : renderPlaceholder();

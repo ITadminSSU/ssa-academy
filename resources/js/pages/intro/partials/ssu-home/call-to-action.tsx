@@ -16,7 +16,7 @@ const CallToAction = () => {
 
 
 
-   const kicker = ctaSection?.sub_title || 'Join Smart Sourcing Academy Today';
+   const kicker = ctaSection?.sub_title || 'Join SMARTSOURCING USA ACADEMY Today';
 
    const title = ctaSection?.title || 'Ready to start learning?';
 

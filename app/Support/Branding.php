@@ -6,7 +6,7 @@ class Branding
 {
     public static function name(): string
     {
-        return (string) config('branding.name', 'Smart Sourcing Academy');
+        return (string) config('branding.name', 'SMARTSOURCING USA ACADEMY');
     }
 
     public static function shortName(): string
@@ -31,7 +31,7 @@ class Branding
 
     public static function description(): string
     {
-        return (string) config('branding.description', 'Smart Sourcing Academy is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.');
+        return (string) config('branding.description', 'SMARTSOURCING USA ACADEMY is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.');
     }
 
     public static function logos(): array
@@ -102,6 +102,8 @@ class Branding
                 'icon' => self::versionPublicPath((string) ($logos['icon'] ?? '')),
                 'dark' => self::versionPublicPath((string) ($logos['dark'] ?? '')),
                 'light' => self::versionPublicPath((string) ($logos['light'] ?? '')),
+                'footer' => self::versionPublicPath((string) ($logos['footer'] ?? $logos['light'] ?? $logos['dark'] ?? '')),
+                'certificate' => self::versionPublicPath((string) ($logos['certificate'] ?? $logos['dark'] ?? $logos['light'] ?? '')),
                 'favicon' => self::versionPublicPath((string) ($logos['favicon'] ?? '')),
             ],
         ];

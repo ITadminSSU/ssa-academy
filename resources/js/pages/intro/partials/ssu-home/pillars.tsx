@@ -45,7 +45,7 @@ const Pillars = () => {
 
    const items = pillars.length ? pillars : defaultPillars;
 
-   const sectionTitle = pillarsSection?.title || 'Why Smart Sourcing Academy';
+   const sectionTitle = pillarsSection?.title || 'Why SMARTSOURCING USA ACADEMY';
 
 
 

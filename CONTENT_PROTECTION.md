@@ -1,4 +1,4 @@
-# Smart Sourcing Academy — Course Player Content Protection
+# SMARTSOURCING USA ACADEMY — Course Player Content Protection
 
 This document describes Layer 1 (client-side hardening) and Layer 2 (signed media streaming) for the course player.
 

@@ -49,7 +49,7 @@ class AdminUserProvisioningService
                 $instructor = Instructor::create([
                     'user_id' => $user->id,
                     'skills' => ['Training', 'Course delivery'],
-                    'biography' => $data['name'] . ' is a Smart Sourcing Academy trainer delivering courses and supporting learners.',
+                    'biography' => $data['name'] . ' is a SMARTSOURCING USA ACADEMY trainer delivering courses and supporting learners.',
                     'resume' => '',
                     'designation' => $data['designation'],
                     'status' => 'approved',

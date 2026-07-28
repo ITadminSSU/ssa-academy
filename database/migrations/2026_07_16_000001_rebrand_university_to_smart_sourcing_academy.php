@@ -17,7 +17,7 @@ return new class extends Migration
             ->where('slug', 'terms-and-conditions')
             ->update([
                 'description' => InnerSections::getTermsAndConditionsDescription(),
-                'meta_description' => 'Read Smart Sourcing Academy Terms and Conditions to understand your rights and responsibilities while using our platform.',
+                'meta_description' => 'Read SMARTSOURCING USA ACADEMY Terms and Conditions to understand your rights and responsibilities while using our platform.',
                 'updated_at' => now(),
             ]);
 
@@ -25,7 +25,7 @@ return new class extends Migration
             ->where('slug', 'non-disclosure-agreement')
             ->update([
                 'description' => InnerSections::getNdaDescription(),
-                'meta_description' => 'Read the Smart Sourcing Academy Non-Disclosure Agreement governing confidentiality of proprietary training materials.',
+                'meta_description' => 'Read the SMARTSOURCING USA ACADEMY Non-Disclosure Agreement governing confidentiality of proprietary training materials.',
                 'updated_at' => now(),
             ]);
     }

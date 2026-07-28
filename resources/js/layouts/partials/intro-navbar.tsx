@@ -49,7 +49,9 @@ const IntroNavbar = () => {
             <div className="flex min-h-[72px] items-center justify-between py-2">
                {/* Logo */}
                <div className="flex items-center gap-0 sm:gap-4">
-                  <DashboardLogoLink className="ssu-nav-logo" />
+                  <div className="ssu-logo-frame ssu-logo-frame--nav ssu-logo-frame--dark-mark">
+                     <DashboardLogoLink className="ssu-nav-logo" theme="dark" />
+                  </div>
                </div>
 
                {/* Desktop Navigation */}

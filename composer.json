@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "smartsourcing/ssu-academy",
     "type": "project",
-    "description": "Smart Sourcing Academy — enterprise learning platform.",
+    "description": "SMARTSOURCING USA ACADEMY — enterprise learning platform.",
     "keywords": [
         "laravel",
         "react",

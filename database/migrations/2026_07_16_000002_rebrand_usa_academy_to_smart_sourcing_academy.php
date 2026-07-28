@@ -9,7 +9,7 @@ return new class extends Migration
 {
     private string $from = 'Smart Sourcing USA Academy';
 
-    private string $to = 'Smart Sourcing Academy';
+    private string $to = 'SMARTSOURCING USA ACADEMY';
 
     public function up(): void
     {

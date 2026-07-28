@@ -1,6 +1,6 @@
-# Smart Sourcing Academy
+# SMARTSOURCING USA ACADEMY
 
-Smart Sourcing Academy is an enterprise learning platform built with Laravel 12 and React (Inertia), designed for internal employee training and external professional development.
+SMARTSOURCING USA ACADEMY is an enterprise learning platform built with Laravel 12 and React (Inertia), designed for internal employee training and external professional development.
 
 ## Features
 

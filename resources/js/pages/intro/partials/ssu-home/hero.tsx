@@ -5,7 +5,7 @@ import { usePage } from '@inertiajs/react';
 import { BadgeCheck, ClipboardCheck, PlayCircle, Trophy } from 'lucide-react';
 
 const defaultHero = {
-   kicker: 'SMART SOURCING ACADEMY',
+   kicker: 'SMARTSOURCING USA ACADEMY',
    title: 'Upskill. Certify your skills. Scale with confidence.',
    description:
       'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',

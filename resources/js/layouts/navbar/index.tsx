@@ -129,8 +129,8 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                   </Button>
 
                   {/* Logo */}
-                  <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--nav">
-                     <AppLogo className="ssu-nav-logo" />
+                  <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--nav ssu-logo-frame--dark-mark">
+                     <AppLogo className="ssu-nav-logo" theme="dark" />
                   </Link>
                </div>
 

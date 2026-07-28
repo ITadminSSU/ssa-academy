@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    private string $legacyDescription = 'Smart Sourcing Academy is the enterprise learning platform for employee training, certifications, assignments, and talent development.';
+    private string $legacyDescription = 'SMARTSOURCING USA ACADEMY is the enterprise learning platform for employee training, certifications, assignments, and talent development.';
 
     public function up(): void
     {

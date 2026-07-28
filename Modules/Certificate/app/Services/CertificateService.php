@@ -3,6 +3,7 @@
 namespace Modules\Certificate\Services;
 
 use App\Services\MediaService;
+use App\Support\Branding;
 use Modules\Certificate\Models\CertificateTemplate;
 use Modules\Certificate\Models\MarksheetTemplate;
 
@@ -78,7 +79,8 @@ class CertificateService extends MediaService
          return [
             'id' => 0,
             'name' => 'Default Template',
-            'logo_path' => null,
+            'type' => $type,
+            'logo_path' => $this->resolveCertificateLogo(null),
             'background_image_path' => null,
             'template_data' => [
                'primaryColor' => '#3730a3',
@@ -94,6 +96,8 @@ class CertificateService extends MediaService
             'is_active' => false,
          ];
       }
+
+      $template->logo_path = $this->resolveCertificateLogo($template->logo_path);
 
       return $template;
    }
@@ -123,5 +127,14 @@ class CertificateService extends MediaService
       }
 
       return $template;
+   }
+
+   private function resolveCertificateLogo(?string $logoPath): string
+   {
+      if (empty($logoPath) || Branding::isLegacyLogo($logoPath)) {
+         return Branding::resolveLogo(null, 'certificate');
+      }
+
+      return Branding::versionPublicPath($logoPath);
    }
 }

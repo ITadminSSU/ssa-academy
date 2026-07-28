@@ -43,7 +43,7 @@ const FeaturedCourses = () => {
                   <h2 className="font-display text-primary text-2xl font-bold md:text-3xl">{coursesSection?.title || 'Featured Programs'}</h2>
                   <p className="text-muted-foreground max-w-2xl text-sm md:text-base">
                      {coursesSection?.description ||
-                        'Explore assigned and open-enrollment courses curated for Smart Sourcing Academy teams and partners.'}
+                        'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA ACADEMY teams and partners.'}
                   </p>
                </div>
 

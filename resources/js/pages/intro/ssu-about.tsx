@@ -60,7 +60,7 @@ const SsuAbout = ({ system }: IntroPageProps) => {
                         Building skills that matter in the real world
                      </h1>
                      <p className="text-base leading-relaxed text-white/80 md:text-lg">
-                        Smart Sourcing Academy is a professional learning platform for individuals and teams who want structured
+                        SMARTSOURCING USA ACADEMY is a professional learning platform for individuals and teams who want structured
                         training, hands-on practice, and verified certification — all in one place.
                      </p>
                      <Button asChild size="lg" className="rounded-full px-8">
@@ -86,7 +86,7 @@ const SsuAbout = ({ system }: IntroPageProps) => {
                      <p className="ssu-kicker">Our mission</p>
                      <h2 className="font-display text-2xl font-bold md:text-3xl">Upskill. Certify. Grow.</h2>
                      <p className="text-muted-foreground leading-relaxed">
-                        We believe professional growth should be accessible, structured, and measurable. Smart Sourcing Academy
+                        We believe professional growth should be accessible, structured, and measurable. SMARTSOURCING USA ACADEMY
                         brings together video-based instruction, practical assignments, and gated assessments so learners can build
                         confidence — and prove it with credentials employers trust.
                      </p>

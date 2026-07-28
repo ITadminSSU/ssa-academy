@@ -1,4 +1,4 @@
-# Smart Sourcing Academy — Stakeholder Overview
+# SMARTSOURCING USA ACADEMY — Stakeholder Overview
 
 **Smart Sourcing USA | Enterprise Training Platform**  
 *One-page summary for non-technical audiences | June 2026*
@@ -7,7 +7,7 @@
 
 ## What is SSU Academy?
 
-Smart Sourcing Academy is Smart Sourcing USA’s online training platform. It supports **two audiences**:
+SMARTSOURCING USA ACADEMY is Smart Sourcing USA’s online training platform. It supports **two audiences**:
 
 1. **Internal employees** — company staff who train for free on internal and shared courses.  
 2. **External learners** — public registrants who can browse the catalog, pay for courses, and be tracked through a hiring pipeline.
@@ -106,7 +106,7 @@ Candidate Pipeline → Mark Hired → Process Refund (if applicable) → Update 
 
 ## Elevator pitch (30 seconds)
 
-> Smart Sourcing Academy is our training and hiring support platform. Employees train free on internal content. External learners pay through a public catalog. HR tracks candidates with CVs, scores, and hiring status, and can process refunds when someone is hired. Trainers see real progress, and course content is protected against casual copying while assignment materials stay downloadable.
+> SMARTSOURCING USA ACADEMY is our training and hiring support platform. Employees train free on internal content. External learners pay through a public catalog. HR tracks candidates with CVs, scores, and hiring status, and can process refunds when someone is hired. Trainers see real progress, and course content is protected against casual copying while assignment materials stay downloadable.
 
 ---
 

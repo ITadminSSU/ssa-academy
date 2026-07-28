@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
-    private string $newSubtitle = 'Join Smart Sourcing Academy Today';
+    private string $newSubtitle = 'Join SMARTSOURCING USA ACADEMY Today';
 
     private array $legacySubtitles = [
         'Join SSU Academy Today',

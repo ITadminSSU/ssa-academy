@@ -19,10 +19,10 @@ class SettingsSeeder extends Seeder
                 'sub_type' => TeachingType::COLLABORATIVE->value,
                 'title' => 'System Settings',
                 'fields' => [
-                    'name' => 'Smart Sourcing Academy',
-                    'title' => 'Smart Sourcing Academy',
-                    'keywords' => 'SSU Academy, Smart Sourcing USA, corporate training, professional development, online courses',
-                    'description' => 'Smart Sourcing Academy is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.',
+                    'name' => 'SMARTSOURCING USA ACADEMY',
+                    'title' => 'SMARTSOURCING USA ACADEMY',
+                    'keywords' => 'SMARTSOURCING USA ACADEMY, Smart Sourcing USA, corporate training, professional development, online courses',
+                    'description' => 'SMARTSOURCING USA ACADEMY is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.',
                     'logo_dark' => '/assets/branding/ssa-academy-logo.png',
                     'logo_light' => '/assets/branding/ssa-academy-logo.png',
                     'favicon' => '/favicon.png',
@@ -141,7 +141,7 @@ class SettingsSeeder extends Seeder
                     'mail_password' => '',
                     'mail_encryption' => 'ssl',
                     'mail_from_address' => '',
-                    'mail_from_name' => 'Smart Sourcing Academy',
+                    'mail_from_name' => 'SMARTSOURCING USA ACADEMY',
                 ],
             ],
             [

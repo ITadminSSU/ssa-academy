@@ -6,11 +6,11 @@ use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
-    private string $newTitle = 'Why Smart Sourcing Academy';
+    private string $newTitle = 'Why SMARTSOURCING USA ACADEMY';
 
     private array $legacyTitles = [
         'Why SSU Academy',
-        'Why SMART SOURCING ACADEMY',
+        'Why SMARTSOURCING USA ACADEMY',
         'Why Smart Sourcing USA Academy',
     ];
 

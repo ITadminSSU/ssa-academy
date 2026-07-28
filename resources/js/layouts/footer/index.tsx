@@ -20,8 +20,8 @@ const Index = () => {
             <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
                <div className="w-full space-y-5 md:max-w-[min(560px,42%)]">
                   <div>
-                     <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
-                        <AppLogo className="ssu-footer-logo" />
+                     <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer ssu-logo-frame--dark-mark inline-flex">
+                        <AppLogo variant="footer" className="ssu-footer-logo" />
                      </Link>
                   </div>
 

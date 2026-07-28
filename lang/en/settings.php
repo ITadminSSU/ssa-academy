@@ -68,7 +68,7 @@ return [
   'email_settings_description' => 'Configure your email sending settings',
   'storage_settings_description' => 'Configure your storage settings',
   'bunny_stream_settings_description' => 'Configure Bunny Stream for lesson video hosting and playback',
-  'system_settings_description' => 'Manage Smart Sourcing Academy platform identity, navigation, and global appearance.',
+  'system_settings_description' => 'Manage SMARTSOURCING USA ACADEMY platform identity, navigation, and global appearance.',
   'translation_description' => 'Translate Language Properties',
   'edit_custom_page' => 'Edit Custom Page',
   'translation_update' => 'Translation Update',

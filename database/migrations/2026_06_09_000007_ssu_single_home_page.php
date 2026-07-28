@@ -23,7 +23,7 @@ return new class extends Migration
                 'name' => 'SSU Academy Landing',
                 'slug' => 'ssu-home',
                 'type' => 'collaborative',
-                'title' => 'Smart Sourcing Academy',
+                'title' => 'SMARTSOURCING USA ACADEMY',
                 'description' => 'Enterprise training for internal teams and external professionals.',
                 'meta_description' => 'SSU Academy — structured learning paths with video, assignments, quizzes, and verified certification.',
                 'meta_keywords' => 'SSU Academy, Smart Sourcing USA, training, certification, online courses',
@@ -55,7 +55,7 @@ return new class extends Migration
             DB::table('pages')->where('id', $ssuHome->id)->update([
                 'active' => true,
                 'name' => 'SSU Academy Landing',
-                'title' => 'Smart Sourcing Academy',
+                'title' => 'SMARTSOURCING USA ACADEMY',
                 'updated_at' => now(),
             ]);
         }

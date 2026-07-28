@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'welcome' => 'SSU Academy Dashboard',
+    'welcome' => 'SMARTSOURCING USA ACADEMY Dashboard',
     'welcome_subtitle' => 'Manage training programs, courses, certifications, and learner progress.',
     'welcome_subtitle_admin' => 'Platform-wide overview of courses, top performers, learner progress, and recent activity.',
 

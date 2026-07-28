@@ -21,7 +21,7 @@ return new class extends Migration
                 'type' => 'inner_page',
                 'title' => 'Non-Disclosure Agreement (NDA)',
                 'description' => InnerSections::getNdaDescription(),
-                'meta_description' => 'Read the Smart Sourcing Academy Non-Disclosure Agreement governing confidentiality of proprietary training materials.',
+                'meta_description' => 'Read the SMARTSOURCING USA ACADEMY Non-Disclosure Agreement governing confidentiality of proprietary training materials.',
                 'meta_keywords' => 'nda, non-disclosure agreement, confidentiality, proprietary materials, academy agreement',
                 'active' => true,
             ]

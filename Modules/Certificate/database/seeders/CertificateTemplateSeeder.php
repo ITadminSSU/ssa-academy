@@ -17,7 +17,7 @@ class CertificateTemplateSeeder extends Seeder
             ['name' => 'Professional Blue'],
             [
                 'type' => 'course',
-                'logo_path' => null,
+                'logo_path' => '/assets/branding/ssa-academy-logo.png',
                 'template_data' => [
                     'primaryColor' => '#1e40af',
                     'secondaryColor' => '#475569',
@@ -38,7 +38,7 @@ class CertificateTemplateSeeder extends Seeder
             ['name' => 'Elegant Green'],
             [
                 'type' => 'course',
-                'logo_path' => null,
+                'logo_path' => '/assets/branding/ssa-academy-logo.png',
                 'template_data' => [
                     'primaryColor' => '#047857',
                     'secondaryColor' => '#1f2937',
@@ -59,7 +59,7 @@ class CertificateTemplateSeeder extends Seeder
             ['name' => 'Royal Purple'],
             [
                 'type' => 'course',
-                'logo_path' => null,
+                'logo_path' => '/assets/branding/ssa-academy-logo.png',
                 'template_data' => [
                     'primaryColor' => '#6b21a8',
                     'secondaryColor' => '#374151',
@@ -80,7 +80,7 @@ class CertificateTemplateSeeder extends Seeder
             ['name' => 'Classic Red Exam'],
             [
                 'type' => 'exam',
-                'logo_path' => null,
+                'logo_path' => '/assets/branding/ssa-academy-logo.png',
                 'template_data' => [
                     'primaryColor' => '#dc2626',
                     'secondaryColor' => '#1f2937',
@@ -101,7 +101,7 @@ class CertificateTemplateSeeder extends Seeder
             ['name' => 'Modern Orange Exam'],
             [
                 'type' => 'exam',
-                'logo_path' => null,
+                'logo_path' => '/assets/branding/ssa-academy-logo.png',
                 'template_data' => [
                     'primaryColor' => '#ea580c',
                     'secondaryColor' => '#374151',
@@ -122,7 +122,7 @@ class CertificateTemplateSeeder extends Seeder
             ['name' => 'Bold Teal Exam'],
             [
                 'type' => 'exam',
-                'logo_path' => null,
+                'logo_path' => '/assets/branding/ssa-academy-logo.png',
                 'template_data' => [
                     'primaryColor' => '#0d9488',
                     'secondaryColor' => '#1f2937',

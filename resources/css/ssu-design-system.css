@@ -3,7 +3,7 @@
  * SSU Academy Design System — APPROVED PATTERNS ONLY
  * =============================================================================
  *
- * This file is the single source of truth for Smart Sourcing Academy UI.
+ * This file is the single source of truth for SMARTSOURCING USA ACADEMY UI.
  * Do not introduce Mentor LMS template classes, ad-hoc colors, or legacy fonts.
  *
  * TYPOGRAPHY (locked)
@@ -99,9 +99,26 @@
       max-width: min(400px, 58vw);
    }
 
+   .ssu-logo-frame--dark-mark {
+      background-color: #000;
+      border-radius: 0.5rem;
+      padding: 0.125rem 0.375rem;
+   }
+
+   .ssu-logo-frame--nav.ssu-logo-frame--dark-mark {
+      max-width: min(7.5rem, 42vw);
+   }
+
    .ssu-logo-frame--footer {
-      height: 8rem;
-      max-width: min(560px, 92vw);
+      height: 11rem;
+      max-width: min(320px, 92vw);
+   }
+
+   .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
+      height: auto;
+      min-height: 11rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.75rem;
    }
 
    @media (min-width: 768px) {
@@ -110,7 +127,11 @@
       }
 
       .ssu-logo-frame--footer {
-         height: 10rem;
+         height: 12rem;
+      }
+
+      .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
+         min-height: 12rem;
       }
    }
 

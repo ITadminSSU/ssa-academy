@@ -37,8 +37,8 @@ const FIXED_TEXT = {
       subtitle: 'This certificate is proudly presented to',
       connective: 'for outstanding performance in the examination',
    },
-   footerName: 'SMART SOURCING UNIVERSITY',
-   footerTagline: 'Building Future Construction Professionals',
+   footerName: 'SMARTSOURCING USA ACADEMY',
+   footerTagline: 'Construction VA Academy by SMARTSOURCING USA',
    labels: {
       certificateId: 'Certificate ID:',
       dateIssued: 'Date Issued:',
@@ -60,7 +60,7 @@ const DynamicCertificate = ({
 }: DynamicCertificateProps) => {
    const [downloadFormat, setDownloadFormat] = useState('png');
    const previewRef = useRef<HTMLCanvasElement>(null);
-   const logoUrl = useMemo(() => resolveLogo(template.logo_path, 'dark'), [template.logo_path]);
+   const logoUrl = useMemo(() => resolveLogo(template.logo_path, 'certificate'), [template.logo_path]);
 
    const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
@@ -139,10 +139,10 @@ const DynamicCertificate = ({
       drawLCorner(ctx, 30, HEIGHT - 30, 1, -1); // bottom-left
       drawLCorner(ctx, WIDTH - 30, HEIGHT - 30, -1, -1); // bottom-right
 
-      // 4. Logo top-center (enlarged)
+      // 4. Logo top-center
       if (logoImage) {
-         const logoMaxHeight = 130;
-         const logoMaxWidth = 480;
+         const logoMaxHeight = 150;
+         const logoMaxWidth = 280;
          const aspect = logoImage.width / logoImage.height;
          let drawWidth = Math.min(logoMaxWidth, logoMaxHeight * aspect);
          let drawHeight = drawWidth / aspect;
