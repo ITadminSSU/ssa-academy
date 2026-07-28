@@ -48,22 +48,6 @@ class SettingsService extends MediaService
         return DB::transaction(function () use ($data, $id) {
             $setting = Setting::find($id);
 
-            $logoUploads = [
-                'new_logo_navbar' => 'logo_navbar',
-                'new_logo_footer' => 'logo_footer',
-                'new_logo_auth' => 'logo_auth',
-                'new_logo_dashboard' => 'logo_dashboard',
-                'new_logo_certificate' => 'logo_certificate',
-                'new_logo_dark' => 'logo_dark',
-                'new_logo_light' => 'logo_light',
-            ];
-
-            foreach ($logoUploads as $uploadKey => $fieldKey) {
-                if (array_key_exists($uploadKey, $data) && $data[$uploadKey]) {
-                    $data[$fieldKey] = $this->addNewDeletePrev($setting, $data[$uploadKey], $fieldKey);
-                }
-            }
-
             if (array_key_exists('new_favicon', $data) && $data['new_favicon']) {
                 $data['favicon'] = $this->addNewDeletePrev($setting, $data['new_favicon'], "favicon");
             }
@@ -72,39 +56,15 @@ class SettingsService extends MediaService
                 $data['banner'] = $this->addNewDeletePrev($setting, $data['new_banner'], "banner");
             }
 
-            if (!empty($data['logo_navbar'])) {
-                $data['logo_dark'] = $data['logo_navbar'];
-            }
-
-            if (!empty($data['logo_dashboard'])) {
-                $data['logo_light'] = $data['logo_dashboard'];
-            } elseif (!empty($data['logo_auth'])) {
-                $data['logo_light'] = $data['logo_auth'];
-            }
-
-            if (isset($data['logo_sizes']) && is_string($data['logo_sizes'])) {
-                $decoded = json_decode($data['logo_sizes'], true);
-                if (is_array($decoded)) {
-                    $data['logo_sizes'] = $decoded;
-                }
-            }
-
-            if (isset($data['logo_sizes']) && is_array($data['logo_sizes'])) {
-                $data['logo_sizes'] = $this->normalizeLogoSizes($data['logo_sizes']);
-            } else {
-                $existing = is_array($setting->fields) ? ($setting->fields['logo_sizes'] ?? null) : null;
-                $data['logo_sizes'] = $this->normalizeLogoSizes($existing);
-            }
-
             $filteredData = Arr::except($data, [
                 'new_logo',
+                'new_logo_dark',
+                'new_logo_light',
                 'new_logo_navbar',
                 'new_logo_footer',
                 'new_logo_auth',
                 'new_logo_dashboard',
                 'new_logo_certificate',
-                'new_logo_dark',
-                'new_logo_light',
                 'new_favicon',
                 'new_banner',
                 'direction',
@@ -552,32 +512,5 @@ class SettingsService extends MediaService
             $item->update(['active' => !$item->active]);
             return $item->fresh();
         }, 5);
-    }
-
-    private function normalizeLogoSizes(mixed $sizes): array
-    {
-        $defaults = [
-            'navbar' => ['height' => 48, 'maxWidth' => 120],
-            'footer' => ['height' => 96, 'maxWidth' => 280],
-            'auth' => ['height' => 200, 'maxWidth' => 576],
-            'dashboard' => ['height' => 112, 'maxWidth' => 240],
-            'certificate' => ['height' => 80, 'maxWidth' => 200],
-        ];
-
-        if (!is_array($sizes)) {
-            return $defaults;
-        }
-
-        $normalized = [];
-
-        foreach ($defaults as $placement => $default) {
-            $configured = is_array($sizes[$placement] ?? null) ? $sizes[$placement] : [];
-            $normalized[$placement] = [
-                'height' => max(24, min(400, (int) ($configured['height'] ?? $default['height']))),
-                'maxWidth' => max(80, min(800, (int) ($configured['maxWidth'] ?? $default['maxWidth']))),
-            ];
-        }
-
-        return $normalized;
     }
 }

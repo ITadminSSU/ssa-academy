@@ -22,7 +22,7 @@ const FooterPreview = () => {
                <div className="w-full space-y-5 md:max-w-[400px]">
                   <div>
                      <Link href="/" className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
-                        <AppLogo variant="footer" placement="footer" className="ssu-footer-logo" />
+                        <AppLogo variant="footer" className="ssu-footer-logo" />
                      </Link>
                   </div>
 

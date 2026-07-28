@@ -1,5 +1,4 @@
 import { Toaster } from '@/components/ui/sonner';
-import LogoSizeStyles from '@/components/logo-size-styles';
 import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
 import { PropsWithChildren, useEffect } from 'react';
@@ -20,7 +19,6 @@ const Main = ({ children }: PropsWithChildren) => {
 
    return (
       <>
-         <LogoSizeStyles />
          <Toaster />
 
          {children}

@@ -73,16 +73,6 @@ class SettingController extends Controller
      */
     public function system_update(Request $request, string $id)
     {
-        $request->validate([
-            'new_logo_navbar' => ['nullable', 'image', 'max:2048'],
-            'new_logo_footer' => ['nullable', 'image', 'max:2048'],
-            'new_logo_auth' => ['nullable', 'image', 'max:2048'],
-            'new_logo_dashboard' => ['nullable', 'image', 'max:2048'],
-            'new_logo_certificate' => ['nullable', 'image', 'max:2048'],
-            'new_favicon' => ['nullable', 'image', 'max:1024'],
-            'new_banner' => ['nullable', 'image', 'max:5120'],
-        ]);
-
         $this->settingsService->systemUpdate($request->all(), $id);
 
         return back()->with('success', 'System settings updated successfully');

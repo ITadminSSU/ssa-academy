@@ -95,8 +95,8 @@
    }
 
    .ssu-logo-frame--nav {
-      height: var(--ssu-logo-nav-height, 3rem);
-      max-width: min(var(--ssu-logo-nav-max-width, 400px), 58vw);
+      height: 3rem;
+      max-width: min(400px, 58vw);
    }
 
    .ssu-logo-frame--dark-mark {
@@ -110,28 +110,28 @@
    }
 
    .ssu-logo-frame--footer {
-      height: var(--ssu-logo-footer-height, 8rem);
-      max-width: min(var(--ssu-logo-footer-max-width, 280px), 92vw);
+      height: 8rem;
+      max-width: min(280px, 92vw);
    }
 
    .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
       height: auto;
-      min-height: var(--ssu-logo-footer-height, 8rem);
+      min-height: 8rem;
       padding: 0.5rem 0.75rem;
       border-radius: 0.75rem;
    }
 
    @media (min-width: 768px) {
       .ssu-logo-frame--nav {
-         height: var(--ssu-logo-nav-height, 3.25rem);
+         height: 3.25rem;
       }
 
       .ssu-logo-frame--footer {
-         height: var(--ssu-logo-footer-height, 9rem);
+         height: 9rem;
       }
 
       .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
-         min-height: var(--ssu-logo-footer-height, 9rem);
+         min-height: 9rem;
       }
    }
 
@@ -166,10 +166,7 @@
    }
 
    .ssu-sidebar-brand .dashboard-sidebar-logo {
-      @apply mx-auto block w-full object-contain object-center;
-      height: var(--ssu-logo-dashboard-height, 6rem);
-      max-height: var(--ssu-logo-dashboard-height, 6rem);
-      max-width: var(--ssu-logo-dashboard-max-width, 100%);
+      @apply mx-auto block h-24 w-full max-h-24 object-contain object-center md:h-28 md:max-h-28;
    }
 
    .ssu-sidebar-brand a {
@@ -234,26 +231,18 @@
 
    .ssu-auth-logo img,
    .ssu-auth-logo > div {
-      @apply mx-auto h-auto w-full object-contain;
-      max-height: var(--ssu-logo-auth-height, 24rem);
-      min-height: min(var(--ssu-logo-auth-height, 24rem), 14rem);
-      max-width: min(var(--ssu-logo-auth-max-width, 36rem), 100%);
+      @apply mx-auto h-auto w-full max-h-[24rem] min-h-[14rem] max-w-[36rem] object-contain;
    }
 
    .ssu-auth-logo-colored img,
    .ssu-auth-logo-colored > div {
-      @apply mx-auto h-auto w-full object-contain;
-      max-height: var(--ssu-logo-auth-height, 24rem);
-      min-height: min(var(--ssu-logo-auth-height, 24rem), 14rem);
-      max-width: min(var(--ssu-logo-auth-max-width, 36rem), 100%);
+      @apply mx-auto h-auto w-full max-h-[24rem] min-h-[14rem] max-w-[36rem] object-contain;
       filter: none;
    }
 
    .ssu-auth-logo-mobile img,
    .ssu-auth-logo-mobile > div {
-      @apply mx-auto h-auto w-full object-contain;
-      max-height: min(var(--ssu-logo-auth-height, 24rem), 6rem);
-      min-height: min(var(--ssu-logo-auth-height, 24rem), 4rem);
+      @apply mx-auto h-auto w-full max-h-24 min-h-16 object-contain;
    }
 
    .ssu-auth-mobile-brand {

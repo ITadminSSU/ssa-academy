@@ -13,21 +13,6 @@ interface PaymentFields {
    test_mode: boolean;
 }
 
-interface LogoSizeConfig {
-   height: number;
-   maxWidth: number;
-}
-
-type LogoPlacement = 'navbar' | 'footer' | 'auth' | 'dashboard' | 'certificate';
-
-interface LogoSizes {
-   navbar: LogoSizeConfig;
-   footer: LogoSizeConfig;
-   auth: LogoSizeConfig;
-   dashboard: LogoSizeConfig;
-   certificate: LogoSizeConfig;
-}
-
 interface SystemFields {
    name: string;
    title: string;
@@ -35,12 +20,6 @@ interface SystemFields {
    description: string;
    logo_dark: string;
    logo_light: string;
-   logo_navbar: string;
-   logo_footer: string;
-   logo_auth: string;
-   logo_dashboard: string;
-   logo_certificate: string;
-   logo_sizes: LogoSizes;
    favicon: string | null;
    banner: string | null;
    author: string;

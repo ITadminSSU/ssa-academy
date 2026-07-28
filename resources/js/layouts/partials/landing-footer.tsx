@@ -21,7 +21,7 @@ const LandingFooter = () => {
             <div className="mb-11 flex flex-col items-start justify-between gap-10 md:flex-row">
                <div className="w-full">
                   <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
-                     <AppLogo variant="footer" placement="footer" className="ssu-footer-logo" />
+                     <AppLogo variant="footer" className="ssu-footer-logo" />
                   </Link>
 
                   <p className="mt-5 text-sm max-w-[300px]">{system.fields.description}</p>

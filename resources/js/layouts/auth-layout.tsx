@@ -23,7 +23,7 @@ const AuthLayout = ({ children, title, description }: Props) => {
 
                <div className="ssu-auth-hero__logo relative z-10">
                   <Link href={route('home')} className="ssu-auth-logo block">
-                     <AppLogo className="ssu-auth-logo-colored" placement="auth" theme="dark" />
+                     <AppLogo className="ssu-auth-logo-colored" theme="dark" />
                   </Link>
                </div>
 
@@ -44,7 +44,7 @@ const AuthLayout = ({ children, title, description }: Props) => {
                   href={route('home')}
                   className="ssu-auth-mobile-brand mb-8 block w-full max-w-sm lg:hidden"
                >
-                  <AppLogo className="ssu-auth-logo-mobile ssu-auth-logo-colored w-full" placement="auth" theme="dark" />
+                  <AppLogo className="ssu-auth-logo-mobile ssu-auth-logo-colored w-full" theme="dark" />
                </Link>
 
                <div className="ssu-auth-panel">

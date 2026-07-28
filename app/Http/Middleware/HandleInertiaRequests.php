@@ -177,19 +177,7 @@ class HandleInertiaRequests extends Middleware
 
         $fields = $system->fields;
 
-        foreach ([
-            'logo_dark',
-            'logo_light',
-            'logo_navbar',
-            'logo_footer',
-            'logo_auth',
-            'logo_dashboard',
-            'logo_certificate',
-            'favicon',
-            'banner',
-            'hero_image',
-            'og_image',
-        ] as $key) {
+        foreach (['logo_dark', 'logo_light', 'favicon', 'banner', 'hero_image', 'og_image'] as $key) {
             if (!empty($fields[$key])) {
                 $fields[$key] = public_asset_url($fields[$key]);
             }
@@ -200,12 +188,6 @@ class HandleInertiaRequests extends Middleware
         $fields['author'] = Branding::resolveAuthor($fields['author'] ?? null);
         $fields['logo_dark'] = Branding::resolveLogo($fields['logo_dark'] ?? null, 'dark');
         $fields['logo_light'] = Branding::resolveLogo($fields['logo_light'] ?? null, 'light');
-        $fields['logo_navbar'] = Branding::resolveLogo($fields['logo_navbar'] ?? $fields['logo_dark'] ?? null, 'dark');
-        $fields['logo_footer'] = Branding::resolveLogo($fields['logo_footer'] ?? null, 'footer');
-        $fields['logo_auth'] = Branding::resolveLogo($fields['logo_auth'] ?? $fields['logo_light'] ?? null, 'light');
-        $fields['logo_dashboard'] = Branding::resolveLogo($fields['logo_dashboard'] ?? $fields['logo_light'] ?? null, 'light');
-        $fields['logo_certificate'] = Branding::resolveLogo($fields['logo_certificate'] ?? null, 'certificate');
-        $fields['logo_sizes'] = $this->normalizeLogoSizes($fields['logo_sizes'] ?? null);
         $fields['favicon'] = Branding::isLegacyLogo($fields['favicon'] ?? null)
             ? (Branding::logo('favicon') ?? Branding::logo('icon'))
             : ($fields['favicon'] ?? Branding::logo('favicon'));
@@ -221,33 +203,6 @@ class HandleInertiaRequests extends Middleware
         $system->fields = $fields;
 
         return $system;
-    }
-
-    private function normalizeLogoSizes(mixed $sizes): array
-    {
-        $defaults = [
-            'navbar' => ['height' => 48, 'maxWidth' => 120],
-            'footer' => ['height' => 96, 'maxWidth' => 280],
-            'auth' => ['height' => 200, 'maxWidth' => 576],
-            'dashboard' => ['height' => 112, 'maxWidth' => 240],
-            'certificate' => ['height' => 80, 'maxWidth' => 200],
-        ];
-
-        if (!is_array($sizes)) {
-            return $defaults;
-        }
-
-        $normalized = [];
-
-        foreach ($defaults as $placement => $default) {
-            $configured = is_array($sizes[$placement] ?? null) ? $sizes[$placement] : [];
-            $normalized[$placement] = [
-                'height' => max(24, min(400, (int) ($configured['height'] ?? $default['height']))),
-                'maxWidth' => max(80, min(800, (int) ($configured['maxWidth'] ?? $default['maxWidth']))),
-            ];
-        }
-
-        return $normalized;
     }
 
     /**

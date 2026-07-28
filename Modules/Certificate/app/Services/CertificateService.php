@@ -131,17 +131,10 @@ class CertificateService extends MediaService
 
    private function resolveCertificateLogo(?string $logoPath): string
    {
-      if (!empty($logoPath) && !Branding::isLegacyLogo($logoPath)) {
-         return Branding::versionPublicPath($logoPath);
+      if (empty($logoPath) || Branding::isLegacyLogo($logoPath)) {
+         return Branding::resolveLogo(null, 'certificate');
       }
 
-      $system = app('system_settings');
-      $configured = is_array($system->fields ?? null) ? ($system->fields['logo_certificate'] ?? null) : null;
-
-      if (!empty($configured) && !Branding::isLegacyLogo($configured)) {
-         return Branding::versionPublicPath($configured);
-      }
-
-      return Branding::resolveLogo(null, 'certificate');
+      return Branding::versionPublicPath($logoPath);
    }
 }
