@@ -43,3 +43,14 @@ export async function getCroppedImageBlob(imageSrc: string, crop: CropArea, mime
 export function blobToFile(blob: Blob, filename: string): File {
    return new File([blob], filename, { type: blob.type || 'image/png' });
 }
+
+export async function getFullImageCropArea(imageSrc: string): Promise<CropArea> {
+   const image = await createImage(imageSrc);
+
+   return {
+      x: 0,
+      y: 0,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+   };
+}

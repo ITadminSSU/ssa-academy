@@ -1,6 +1,5 @@
 import LogoCropDialog from '@/components/logo-crop-dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { LOGO_PLACEMENT_CONFIG, type LogoPlacement, type LogoSizeConfig } from '@/lib/logo-placements';
@@ -174,7 +173,13 @@ const BrandLogoSlot = ({ placement, currentUrl, previewUrl, size, error, onFileS
             ) : null}
          </div>
 
-         <Input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+         <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={handleFileChange}
+         />
 
          <div className="space-y-4">
             <div className="space-y-2">

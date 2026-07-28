@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { blobToFile, getCroppedImageBlob, type CropArea } from '@/lib/crop-image';
-import { useCallback, useState } from 'react';
+import { blobToFile, getCroppedImageBlob, getFullImageCropArea, type CropArea } from '@/lib/crop-image';
+import { useCallback, useEffect, useState } from 'react';
 import Cropper, { type Area } from 'react-easy-crop';
 
 interface LogoCropDialogProps {
@@ -23,15 +23,31 @@ const LogoCropDialog = ({ open, imageSrc, fileName = 'logo.png', onOpenChange, o
       setCroppedAreaPixels(pixels);
    }, []);
 
+   useEffect(() => {
+      if (!open) {
+         setCrop({ x: 0, y: 0 });
+         setZoom(1);
+         setCroppedAreaPixels(null);
+         return;
+      }
+
+      if (!imageSrc) {
+         return;
+      }
+
+      void getFullImageCropArea(imageSrc).then(setCroppedAreaPixels);
+   }, [open, imageSrc]);
+
    const handleConfirm = async () => {
-      if (!imageSrc || !croppedAreaPixels) {
+      if (!imageSrc) {
          return;
       }
 
       setProcessing(true);
 
       try {
-         const blob = await getCroppedImageBlob(imageSrc, croppedAreaPixels);
+         const cropArea = croppedAreaPixels ?? (await getFullImageCropArea(imageSrc));
+         const blob = await getCroppedImageBlob(imageSrc, cropArea);
          const file = blobToFile(blob, fileName.replace(/\.[^.]+$/, '') + '.png');
          const previewUrl = URL.createObjectURL(file);
          onConfirm(file, previewUrl);
