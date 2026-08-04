@@ -24,7 +24,7 @@ class UpdateInstructorProfileRequest extends FormRequest
         // Base validation rules for all users
         $rules = [
             'name' => 'required|string|max:255',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:1024',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
             'social_links' => 'nullable',
         ];
 

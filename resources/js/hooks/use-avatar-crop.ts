@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/jpg'];
-const MAX_FILE_SIZE = 1024 * 1024;
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 type UseAvatarCropOptions = {
    onPhotoReady: (file: File, previewUrl: string) => void;
@@ -35,7 +35,7 @@ export function useAvatarCrop({ onPhotoReady, invalidTypeMessage, tooLargeMessag
          }
 
          if (file.size > MAX_FILE_SIZE) {
-            toast.error(tooLargeMessage ?? 'Image must be smaller than 1MB.');
+            toast.error(tooLargeMessage ?? 'Image must be smaller than 15MB.');
             resetFileInput();
             return;
          }

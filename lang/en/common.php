@@ -110,7 +110,7 @@ return [
    'file_too_large' => 'File is too large. Please select a smaller file.',
    'invalid_file' => 'Invalid file format. Please upload a valid .zip file.',
    'invalid_image_type' => 'Please upload a JPG or PNG image.',
-   'image_too_large' => 'Image must be smaller than 1MB.',
+   'image_too_large' => 'Image must be smaller than 15MB.',
    'crop_image_failed' => 'Failed to crop image. Please try again.',
    'required_field' => 'This field is required.',
 
