@@ -32,8 +32,10 @@ class ChangeEmailVerification extends Mailable
      */
     public function envelope(): Envelope
     {
+        $appName = config('branding.short_name', config('app.name'));
+
         return new Envelope(
-            subject: 'Changed Email Verification',
+            subject: "Confirm your new email for {$appName}",
         );
     }
 
@@ -43,7 +45,7 @@ class ChangeEmailVerification extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.email-change-verification',
+            html: 'mail.email-change-verification',
         );
     }
 

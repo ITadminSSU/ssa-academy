@@ -112,11 +112,19 @@ class AccountMailService
             'verificationUrl' => $verificationUrl,
         ])->render();
 
+        $text = view('mail.email-change-verification-text', [
+            'user' => $user,
+            'verificationUrl' => $verificationUrl,
+        ])->render();
+
+        $appName = config('branding.short_name', config('app.name'));
+
         ResendHttpClient::send([
             'from' => $this->fromAddress(),
             'to' => [$newEmail],
-            'subject' => 'Changed Email Verification',
+            'subject' => "Confirm your new email for {$appName}",
             'html' => $html,
+            'text' => $text,
         ]);
     }
 

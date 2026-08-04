@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\EmailChangeToken;
 use App\Models\User;
+use App\Support\EmailChangeUrl;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -38,7 +39,7 @@ class AccountService extends MediaService
                 ->delete();
 
             $token = Str::random(60);
-            $url = route('account.save-email', ['token' => $token]);
+            $url = EmailChangeUrl::verificationLink($user, $token);
 
             EmailChangeToken::create([
                 'user_id' => $user->id,
@@ -71,6 +72,7 @@ class AccountService extends MediaService
 
             if ($withinWindow) {
                 $user->email = $emailChange->new_email;
+                $user->email_verified_at = now();
                 $user->save();
             }
 

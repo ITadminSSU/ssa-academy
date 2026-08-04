@@ -58,6 +58,11 @@ const ChangeEmail = () => {
             </div>
 
             <LoadingButton loading={processing}>{button.get_email_change_link}</LoadingButton>
+
+            <p className="text-muted-foreground mt-4 text-sm">
+               After submitting, check your new email inbox and spam folder for the verification link. Click the link to
+               finish updating your email (you do not need to stay logged in).
+            </p>
          </form>
       </Card>
    );

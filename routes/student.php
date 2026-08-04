@@ -115,7 +115,6 @@ Route::middleware('smtpConfig', 'checkSmtp')->prefix('settings/account')->group(
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('account.forgot-password');
 
     Route::post('change-email', [EmailVerificationNotificationController::class, 'update'])->name('account.change-email');
-    Route::get('change-email/save', [EmailVerificationNotificationController::class, 'save'])->name('account.save-email');
 });
 
 Route::put('settings/account/change-password', [PasswordResetLinkController::class, 'update'])->name('account.change-password');

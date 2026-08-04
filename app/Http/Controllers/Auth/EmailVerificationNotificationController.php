@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateEmailRequest;
 use App\Jobs\SendEmailVerificationNotificationJob;
+use App\Models\User;
 use App\Services\AccountService;
 use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
@@ -54,25 +55,49 @@ class EmailVerificationNotificationController extends Controller
             );
         }
 
-        return back()->with('success', 'We have sent a verification link to your new email address.');
+        return back()->with(
+            'success',
+            'We sent a verification link to your new email address. Check your inbox and spam folder, then click the link to confirm the change.'
+        );
     }
 
     /**
-     * Update the specified resource in storage.
+     * Confirm a pending email change (signed link; login not required).
      */
-    public function save(Request $request)
+    public function save(Request $request): RedirectResponse
     {
-        $user = Auth::user();
-        $saved = $this->accountService->saveChangedEmail($request->token, $user->id);
-        $flash = $saved ? 'success' : 'error';
-        $message = $saved ? 'New email successfully changed.' : 'Verification link is invalid or has expired. Please request a new email change link.';
-
-        if ($user->role == 'student') {
-            return redirect()->to($this->authService->homeUrlFor($user, ['tab' => 'settings']))
-                ->with($flash, $message);
+        if (! $request->hasValidSignature()) {
+            return redirect()->route('login')
+                ->with('error', 'This verification link is invalid or has expired. Please request a new email change link from account settings.');
         }
 
-        return redirect()->route('settings.account')
-            ->with($flash, $message);
+        $userId = $request->query('user');
+        $token = $request->query('token');
+
+        if (! is_numeric($userId) || ! is_string($token) || $token === '') {
+            return redirect()->route('login')
+                ->with('error', 'This verification link is invalid. Please request a new email change link.');
+        }
+
+        $saved = $this->accountService->saveChangedEmail($token, (string) $userId);
+        $user = User::query()->find((int) $userId);
+
+        if (! $saved || ! $user) {
+            return redirect()->route('login')
+                ->with('error', 'This verification link is invalid or has expired. Please request a new email change link.');
+        }
+
+        if (Auth::check() && Auth::id() === $user->id) {
+            if ($user->role === 'student') {
+                return redirect()->to($this->authService->homeUrlFor($user, ['tab' => 'settings']))
+                    ->with('success', 'Your email address has been updated successfully.');
+            }
+
+            return redirect()->route('settings.account', ['tab' => 'change-email'])
+                ->with('success', 'Your email address has been updated successfully.');
+        }
+
+        return redirect()->route('login')
+            ->with('success', 'Your email address has been updated. Please log in with your new email address.');
     }
 }

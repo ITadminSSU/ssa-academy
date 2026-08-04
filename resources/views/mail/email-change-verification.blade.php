@@ -53,10 +53,9 @@
    </p>
 
    <p style="margin-bottom: 1.5em;">
-      We received a request to update the email address for your {{ config('mail.from.name') }} account. To complete
-      this change, please verify your new email address by clicking the button below:
+      We received a request to update the email address for your {{ config('mail.from.name') }} account. Click
+      the button below to confirm your new email address. You do not need to be logged in.
    </p>
-
 
    <a
       href="{{ $verificationUrl }}"
@@ -65,7 +64,12 @@
       Verify New Email Address
    </a>
 
-
+   <p style="margin-bottom: 0.5em; font-size: 0.9em; color: #444;">
+      If the button does not work, copy and paste this link into your browser:
+   </p>
+   <p style="margin-bottom: 1.5em; font-size: 0.85em; word-break: break-all; color: #0969da;">
+      {{ $verificationUrl }}
+   </p>
    <p style="margin-bottom: 1em;">
       This verification link will expire in {{ (int) config('account.email_change_token_expiry_minutes', 60) }} minutes.
    </p>
