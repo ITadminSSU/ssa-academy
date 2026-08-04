@@ -14,6 +14,8 @@ interface FrontendLang {
    grid_view: string;
    list_view: string;
    notification_list: string;
+   notifications_page_description: string;
+   no_notifications: string;
    no_unread_notifications: string;
    closed: string;
    company_fallback: string;

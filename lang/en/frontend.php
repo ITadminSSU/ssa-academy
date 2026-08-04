@@ -27,6 +27,8 @@ return [
     'grid_view' => 'Grid View',
     'list_view' => 'List View',
     'notification_list' => 'Notification List',
+    'notifications_page_description' => 'Course updates, enrollments, and account activity.',
+    'no_notifications' => 'No notifications yet.',
     'no_unread_notifications' => 'No unread notifications',
     'closed' => 'Closed',
     'company_fallback' => 'TechCorp Inc.',

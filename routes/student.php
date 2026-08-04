@@ -96,8 +96,10 @@ Route::controller(PlayerController::class)->middleware(['checkEnroll'])->group(f
     Route::get('play-course/finish/{watch_history}', 'finish_course')->name('course.player.finish');
 });
 
-Route::resource('notifications', NotificationController::class)->only(['index', 'show']);
-Route::put('notifications/mark-as-read/all', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+Route::middleware('auth')->group(function () {
+    Route::resource('notifications', NotificationController::class)->only(['index', 'show']);
+    Route::put('notifications/mark-as-read/all', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+});
 
 Route::resource('course-forums', CourseForumController::class)->only(['store', 'update', 'destroy']);
 Route::resource('course-forum-replies', CourseForumReplyController::class)->only(['store', 'update', 'destroy']);
