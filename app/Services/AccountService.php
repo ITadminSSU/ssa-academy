@@ -66,6 +66,10 @@ class AccountService extends MediaService
                 return false;
             }
 
+            if (! hash_equals($emailChange->token, $token)) {
+                return false;
+            }
+
             $expiryMinutes = (int) config('account.email_change_token_expiry_minutes', 60);
             $withinWindow = $emailChange->created_at !== null
                 && $emailChange->created_at->diffInMinutes(Carbon::now()) <= $expiryMinutes;

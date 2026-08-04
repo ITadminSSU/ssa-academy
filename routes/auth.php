@@ -27,7 +27,6 @@ Route::post('password-reset', [NewPasswordController::class, 'store'])
     ->middleware('checkSmtp');
 
 Route::get('settings/account/change-email/save', [EmailVerificationNotificationController::class, 'save'])
-    ->middleware('signed:relative')
     ->name('account.save-email');
 
 Route::middleware(['guest', 'authConfig'])->group(function () {

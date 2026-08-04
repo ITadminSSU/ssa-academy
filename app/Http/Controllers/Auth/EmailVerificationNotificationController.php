@@ -62,15 +62,10 @@ class EmailVerificationNotificationController extends Controller
     }
 
     /**
-     * Confirm a pending email change (signed link; login not required).
+     * Confirm a pending email change (login not required; validated via DB token).
      */
     public function save(Request $request): RedirectResponse
     {
-        if (! $request->hasValidSignature()) {
-            return redirect()->route('login')
-                ->with('error', 'This verification link is invalid or has expired. Please request a new email change link from account settings.');
-        }
-
         $userId = $request->query('user');
         $token = $request->query('token');
 
@@ -83,6 +78,11 @@ class EmailVerificationNotificationController extends Controller
         $user = User::query()->find((int) $userId);
 
         if (! $saved || ! $user) {
+            Log::warning('Email change confirmation failed', [
+                'user_id' => $userId,
+                'token_prefix' => substr($token, 0, 8),
+            ]);
+
             return redirect()->route('login')
                 ->with('error', 'This verification link is invalid or has expired. Please request a new email change link.');
         }
