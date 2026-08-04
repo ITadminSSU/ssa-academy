@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\PasswordResetToken;
+use App\Models\EmailChangeToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -33,17 +33,18 @@ class AccountService extends MediaService
         DB::transaction(function () use ($data, $id) {
             $user = User::find($id);
 
+            EmailChangeToken::query()
+                ->where('user_id', $user->id)
+                ->delete();
+
             $token = Str::random(60);
             $url = route('account.save-email', ['token' => $token]);
 
-            $reset = PasswordResetToken::where('email', $data['new_email'])->first();
-            if ($reset) {
-                $reset->delete();
-            }
-
-            PasswordResetToken::create([
-                'email' => $data['new_email'],
+            EmailChangeToken::create([
+                'user_id' => $user->id,
+                'new_email' => $data['new_email'],
                 'token' => $token,
+                'created_at' => now(),
             ]);
 
             app(AccountMailService::class)->sendChangeEmailVerification($user, $data['new_email'], $url);
@@ -53,30 +54,27 @@ class AccountService extends MediaService
     public function saveChangedEmail(string $token, string $id): bool
     {
         return DB::transaction(function () use ($token, $id) {
-            $user = User::find($id); // Retrieve the authenticated user
+            $user = User::find($id);
 
-            $reset = PasswordResetToken::where('token', $token)->first();
+            $emailChange = EmailChangeToken::query()
+                ->where('user_id', $user->id)
+                ->where('token', $token)
+                ->first();
 
-            // Validate if the reset token exists
-            if (!$reset) {
-                return false;
-            }
-
-            // Verify the token securely
-            if (!hash_equals($reset->token, $token)) {
+            if (! $emailChange) {
                 return false;
             }
 
             $expiryMinutes = (int) config('account.email_change_token_expiry_minutes', 60);
-            $withinWindow = $reset->created_at !== null
-                && $reset->created_at->diffInMinutes(Carbon::now()) <= $expiryMinutes;
+            $withinWindow = $emailChange->created_at !== null
+                && $emailChange->created_at->diffInMinutes(Carbon::now()) <= $expiryMinutes;
 
             if ($withinWindow) {
-                $user->email = $reset->email;
+                $user->email = $emailChange->new_email;
                 $user->save();
             }
 
-            $reset->delete();
+            $emailChange->delete();
 
             return $withinWindow;
         }, 5);

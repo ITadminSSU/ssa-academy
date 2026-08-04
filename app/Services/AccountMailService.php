@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\ChangeEmailVerification;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
+use App\Support\PasswordResetUrl;
 use App\Support\ResendHttpClient;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -88,10 +89,7 @@ class AccountMailService
 
     private function sendPasswordResetViaResendHttp(User $user, string $token): void
     {
-        $url = url(route('password.reset', [
-            'token' => $token,
-            'email' => $user->getEmailForPasswordReset(),
-        ], false));
+        $url = PasswordResetUrl::forUser($user, $token);
 
         $html = view('mail.reset-password', [
             'url' => $url,

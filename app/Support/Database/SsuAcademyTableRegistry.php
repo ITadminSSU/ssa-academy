@@ -81,6 +81,7 @@ class SsuAcademyTableRegistry
             'page_sections',
             'pages',
             'password_reset_tokens',
+            'email_change_tokens',
             'payment_gateway_refund_attempts',
             'payment_histories',
             'payment_refund_audit_logs',

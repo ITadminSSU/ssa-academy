@@ -23,9 +23,14 @@ type ResetPasswordForm = {
 export default function ResetPassword({ token, email }: ResetPasswordProps) {
    const { props } = usePage<SharedData>();
    const { auth, input, button } = props.translate;
+
+   const emailFromQuery =
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('email') ?? '' : '';
+   const initialEmail = email || emailFromQuery;
+
    const { data, setData, post, processing, errors, reset } = useForm<Required<ResetPasswordForm>>({
       token: token,
-      email: email,
+      email: initialEmail,
       password: '',
       password_confirmation: '',
    });
