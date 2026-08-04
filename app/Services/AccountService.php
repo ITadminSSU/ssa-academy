@@ -41,12 +41,16 @@ class AccountService extends MediaService
             $token = Str::random(60);
             $url = EmailChangeUrl::verificationLink($user, $token);
 
-            EmailChangeToken::create([
+            $emailChange = EmailChangeToken::create([
                 'user_id' => $user->id,
                 'new_email' => $data['new_email'],
                 'token' => $token,
                 'created_at' => now(),
             ]);
+
+            if ($emailChange->created_at === null) {
+                $emailChange->forceFill(['created_at' => now()])->save();
+            }
 
             app(AccountMailService::class)->sendChangeEmailVerification($user, $data['new_email'], $url);
         }, 5);
@@ -75,18 +79,24 @@ class AccountService extends MediaService
             }
 
             $expiryMinutes = (int) config('account.email_change_token_expiry_minutes', 60);
-            $withinWindow = $emailChange->created_at !== null
-                && $emailChange->created_at->diffInMinutes(Carbon::now()) <= $expiryMinutes;
 
-            if ($withinWindow) {
-                $user->email = $emailChange->new_email;
-                $user->email_verified_at = now();
-                $user->save();
+            // Null created_at can happen from older inserts; treat those as still usable.
+            $withinWindow = $emailChange->created_at === null
+                || $emailChange->created_at->diffInMinutes(Carbon::now(), true) <= $expiryMinutes;
+
+            if (! $withinWindow) {
+                $emailChange->delete();
+
+                return false;
             }
+
+            $user->email = $emailChange->new_email;
+            $user->email_verified_at = now();
+            $user->save();
 
             $emailChange->delete();
 
-            return $withinWindow;
+            return true;
         }, 5);
     }
 }

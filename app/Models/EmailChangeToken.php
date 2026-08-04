@@ -13,6 +13,7 @@ class EmailChangeToken extends Model
         'user_id',
         'new_email',
         'token',
+        'created_at',
     ];
 
     protected function casts(): array
