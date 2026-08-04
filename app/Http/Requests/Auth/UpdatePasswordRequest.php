@@ -28,20 +28,16 @@ class UpdatePasswordRequest extends FormRequest
         return [
             'current_password' => [
                 'required',
-                'min:6',
-                'max:20',
                 function ($attribute, $value, $fail) use ($user) {
-                    if (!Hash::check($value, $user->password)) {
+                    if (! Hash::check($value, $user->password)) {
                         $fail('The current password is incorrect.');
                     }
                 },
             ],
             'password' => [
                 'required',
-                'min:6',
-                'max:20',
                 'confirmed',
-                Rules\Password::defaults(), // Ensure the Password Rule is configured properly
+                Rules\Password::defaults(),
             ],
         ];
     }

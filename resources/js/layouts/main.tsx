@@ -15,6 +15,10 @@ const Main = ({ children }: PropsWithChildren) => {
       if (props.flash.success || props.flash.warning) {
          toast.success(props.flash.success || props.flash.warning);
       }
+
+      if (props.flash.status) {
+         toast.success(props.flash.status);
+      }
    }, [props.flash]);
 
    return (

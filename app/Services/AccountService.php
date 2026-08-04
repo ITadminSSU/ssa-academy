@@ -2,12 +2,10 @@
 
 namespace App\Services;
 
-use App\Mail\ChangeEmailVerification;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class AccountService extends MediaService
@@ -30,33 +28,25 @@ class AccountService extends MediaService
         }, 5);
     }
 
-    public function changeEmail(array $data, string $id)
+    public function changeEmail(array $data, string $id): void
     {
         DB::transaction(function () use ($data, $id) {
-            $app = app('system_settings');
             $user = User::find($id);
 
-            // Generate a unique token for email verification
             $token = Str::random(60);
             $url = route('account.save-email', ['token' => $token]);
 
-            // Delete any existing tokens for this email
             $reset = PasswordResetToken::where('email', $data['new_email'])->first();
             if ($reset) {
                 $reset->delete();
             }
 
-            // Create new token
             PasswordResetToken::create([
                 'email' => $data['new_email'],
                 'token' => $token,
             ]);
 
-            $user->updated_at = now();
-            $user->save();
-
-            // Send an email with the verification link to the new email
-            Mail::to($data['new_email'])->send(new ChangeEmailVerification($user, $app, $url));
+            app(AccountMailService::class)->sendChangeEmailVerification($user, $data['new_email'], $url);
         }, 5);
     }
 
@@ -77,16 +67,18 @@ class AccountService extends MediaService
                 return false;
             }
 
-            // Check if the user was updated within 5 minutes
-            $within5Minutes = $user->updated_at->diffInMinutes(Carbon::now()) <= 5;
+            $expiryMinutes = (int) config('account.email_change_token_expiry_minutes', 60);
+            $withinWindow = $reset->created_at !== null
+                && $reset->created_at->diffInMinutes(Carbon::now()) <= $expiryMinutes;
 
-            if ($within5Minutes) {
+            if ($withinWindow) {
                 $user->email = $reset->email;
                 $user->save();
             }
 
-            $reset->delete(); // Delete the token after use
-            return $within5Minutes;
+            $reset->delete();
+
+            return $withinWindow;
         }, 5);
     }
 }

@@ -70,6 +70,7 @@ export interface SharedData {
       error: string;
       warning: string;
       success: string;
+      status: string;
    };
    langs: Language[];
    locale: string;

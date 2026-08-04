@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateEmailRequest extends FormRequest
 {
@@ -22,8 +23,20 @@ class UpdateEmailRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_email' => 'required|string|email|max:55||exists:users,email',
-            'new_email' => 'required|string|email|max:55|unique:users,email',
+            'current_email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::in([$this->user()?->email]),
+            ],
+            'new_email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+            ],
         ];
     }
 }

@@ -113,11 +113,12 @@ Route::resource('course-reviews', CourseReviewController::class)->only(['store',
 // settings
 Route::middleware('smtpConfig', 'checkSmtp')->prefix('settings/account')->group(function () {
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('account.forgot-password');
-    Route::put('change-password', [PasswordResetLinkController::class, 'update'])->name('account.change-password');
 
     Route::post('change-email', [EmailVerificationNotificationController::class, 'update'])->name('account.change-email');
     Route::get('change-email/save', [EmailVerificationNotificationController::class, 'save'])->name('account.save-email');
 });
+
+Route::put('settings/account/change-password', [PasswordResetLinkController::class, 'update'])->name('account.change-password');
 
 // Live class routes accessible to both instructors and students
 Route::get('live-class/start/{id}', [LiveClassController::class, 'index'])->name('live-class.start');

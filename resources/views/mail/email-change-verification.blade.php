@@ -67,7 +67,7 @@
 
 
    <p style="margin-bottom: 1em;">
-      This verification link will expire in 5 minutes.
+      This verification link will expire in {{ (int) config('account.email_change_token_expiry_minutes', 60) }} minutes.
    </p>
 
    <p style="margin-bottom: 1em;">

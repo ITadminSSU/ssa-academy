@@ -10,6 +10,7 @@ use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class EmailVerificationNotificationController extends Controller
 {
@@ -39,9 +40,21 @@ class EmailVerificationNotificationController extends Controller
      */
     public function update(UpdateEmailRequest $request)
     {
-        $this->accountService->changeEmail($request->validated(), Auth::user()->id);
+        try {
+            $this->accountService->changeEmail($request->validated(), Auth::user()->id);
+        } catch (\Throwable $exception) {
+            Log::error('Account email change verification failed', [
+                'user_id' => Auth::id(),
+                'error' => $exception->getMessage(),
+            ]);
 
-        return back()->with('success', 'We have sent a email verification link to your new email account.');
+            return back()->with(
+                'error',
+                'We could not send the verification email. Please verify mail settings (Resend API recommended) or try again later.'
+            );
+        }
+
+        return back()->with('success', 'We have sent a verification link to your new email address.');
     }
 
     /**
@@ -52,7 +65,7 @@ class EmailVerificationNotificationController extends Controller
         $user = Auth::user();
         $saved = $this->accountService->saveChangedEmail($request->token, $user->id);
         $flash = $saved ? 'success' : 'error';
-        $message = $saved ? "New email successfully changed." : "Verification token didn't match or expire.";
+        $message = $saved ? 'New email successfully changed.' : 'Verification link is invalid or has expired. Please request a new email change link.';
 
         if ($user->role == 'student') {
             return redirect()->to($this->authService->homeUrlFor($user, ['tab' => 'settings']))
