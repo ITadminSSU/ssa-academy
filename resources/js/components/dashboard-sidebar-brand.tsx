@@ -8,7 +8,7 @@ interface Props {
 
 /** Shared navy sidebar logo — trainer, admin, and learner dashboards */
 const DashboardSidebarBrand = ({ compact = false }: Props) => (
-   <SidebarHeader className={cn('ssu-sidebar-brand', compact ? 'px-2 py-3' : 'px-3 py-5')}>
+   <SidebarHeader className="ssu-sidebar-brand px-2 py-3">
       <SidebarMenu>
          <SidebarMenuItem className={cn(compact && 'flex justify-center')}>
             <DashboardLogoLink
