@@ -95,8 +95,8 @@
    }
 
    .ssu-logo-frame--nav {
-      height: 3rem;
-      max-width: min(400px, 58vw);
+      height: 3.75rem;
+      max-width: min(480px, 70vw);
    }
 
    .ssu-logo-frame--dark-mark {
@@ -110,28 +110,29 @@
    }
 
    .ssu-logo-frame--footer {
-      height: 8rem;
-      max-width: min(280px, 92vw);
+      height: 11rem;
+      max-width: min(400px, 92vw);
    }
 
    .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
       height: auto;
-      min-height: 8rem;
+      min-height: 11rem;
       padding: 0.5rem 0.75rem;
       border-radius: 0.75rem;
    }
 
    @media (min-width: 768px) {
       .ssu-logo-frame--nav {
-         height: 3.25rem;
+         height: 4.75rem;
       }
 
       .ssu-logo-frame--footer {
-         height: 9rem;
+         height: 13rem;
+         max-width: min(440px, 92vw);
       }
 
       .ssu-logo-frame--footer.ssu-logo-frame--dark-mark {
-         min-height: 9rem;
+         min-height: 13rem;
       }
    }
 
@@ -226,23 +227,23 @@
    }
 
    .ssu-auth-logo {
-      @apply w-full max-w-[min(100%,48rem)];
+      @apply w-full max-w-[min(100%,56rem)];
    }
 
    .ssu-auth-logo img,
    .ssu-auth-logo > div {
-      @apply mx-auto h-auto w-full max-h-[24rem] min-h-[14rem] max-w-[36rem] object-contain;
+      @apply mx-auto h-auto w-full max-h-[32rem] min-h-[18rem] max-w-[48rem] object-contain;
    }
 
    .ssu-auth-logo-colored img,
    .ssu-auth-logo-colored > div {
-      @apply mx-auto h-auto w-full max-h-[24rem] min-h-[14rem] max-w-[36rem] object-contain;
+      @apply mx-auto h-auto w-full max-h-[32rem] min-h-[18rem] max-w-[48rem] object-contain;
       filter: none;
    }
 
    .ssu-auth-logo-mobile img,
    .ssu-auth-logo-mobile > div {
-      @apply mx-auto h-auto w-full max-h-24 min-h-16 object-contain;
+      @apply mx-auto h-auto w-full max-h-32 min-h-20 object-contain;
    }
 
    .ssu-auth-mobile-brand {
@@ -251,7 +252,7 @@
 
    .ssu-auth-mobile-brand .ssu-auth-logo-mobile img,
    .ssu-auth-mobile-brand .ssu-auth-logo-mobile > div {
-      @apply mx-auto max-h-24 min-h-16 object-contain;
+      @apply mx-auto max-h-32 min-h-20 object-contain;
    }
 
    .ssu-auth-panel {
