@@ -96,23 +96,24 @@
 
    .ssu-logo-frame--nav {
       height: 3.5rem;
-      max-width: min(380px, 62vw);
-      overflow: hidden;
+      max-width: min(520px, 72vw);
+      overflow: visible;
    }
 
    .ssu-logo-frame--nav a {
-      @apply flex h-full w-full items-center;
+      @apply flex h-full w-full items-center overflow-visible;
    }
 
-   /* Scale the mark inside a fixed frame so it reads larger without growing the navbar */
+   /* Fill navbar height without clipping the wordmark */
    .ssu-logo-frame--nav img,
    .ssu-logo-frame--nav .ssu-nav-logo {
       height: 100% !important;
       width: auto !important;
       max-height: none !important;
-      max-width: none !important;
-      transform: scale(1.45);
-      transform-origin: left center;
+      max-width: 100% !important;
+      transform: none;
+      object-fit: contain;
+      object-position: left center;
    }
 
    .ssu-logo-frame--dark-mark {
