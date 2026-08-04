@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\CertificateVerificationController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\Course\CourseLaunchNotificationController;
@@ -12,11 +11,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('about-us', [HomeController::class, 'about'])->name('about');
-
-// Public email-change confirmation (no login required). Short path for reliable mobile/email links.
-Route::get('confirm-email-change', [EmailVerificationNotificationController::class, 'save'])
-    ->name('account.save-email');
-Route::get('settings/account/change-email/save', [EmailVerificationNotificationController::class, 'save']);
 
 // Certificate verification — restricted to admin & trainer for verification purposes.
 Route::middleware(['auth', 'role:admin,instructor'])->group(function () {

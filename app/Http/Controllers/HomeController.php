@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Requests\UpdatePageSectionRequest;
 use App\Models\Page;
 use App\Services\Course\CourseCategoryService;
@@ -87,6 +88,10 @@ class HomeController extends Controller
 
    public function inner_page(Request $request)
    {
+      if ($request->slug === 'confirm-email-change') {
+         return app(EmailVerificationNotificationController::class)->save($request);
+      }
+
       if ($request->slug === 'contact-us') {
          return redirect()->away('https://smartsourcingusa.com/contact');
       }

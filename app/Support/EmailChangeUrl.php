@@ -8,7 +8,7 @@ class EmailChangeUrl
 {
     public static function verificationLink(User $user, string $token): string
     {
-        return url('/confirm-email-change', [
+        return route('account.save-email', [
             'user' => $user->id,
             'token' => $token,
         ]);

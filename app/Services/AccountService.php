@@ -57,6 +57,10 @@ class AccountService extends MediaService
         return DB::transaction(function () use ($token, $id) {
             $user = User::find($id);
 
+            if (! $user) {
+                return false;
+            }
+
             $emailChange = EmailChangeToken::query()
                 ->where('user_id', $user->id)
                 ->where('token', $token)

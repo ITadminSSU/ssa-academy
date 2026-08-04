@@ -12,6 +12,11 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\LegalAgreementController;
 use Illuminate\Support\Facades\Route;
 
+// Public email-change confirmation (no login). Registered here so it is never swallowed by the /{slug} catch-all.
+Route::get('confirm-email-change', [EmailVerificationNotificationController::class, 'save'])
+    ->name('account.save-email');
+Route::get('settings/account/change-email/save', [EmailVerificationNotificationController::class, 'save']);
+
 Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
     ->name('password.request');
 
