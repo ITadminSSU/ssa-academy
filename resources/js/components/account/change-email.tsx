@@ -25,7 +25,9 @@ const ChangeEmail = () => {
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
 
-      post(route('account.change-email'));
+      post(route('account.change-email'), {
+         preserveScroll: true,
+      });
    };
 
    return (

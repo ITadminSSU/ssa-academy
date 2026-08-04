@@ -8,7 +8,7 @@ class EmailChangeUrl
 {
     public static function verificationLink(User $user, string $token): string
     {
-        return url('/settings/account/change-email/save', [
+        return url('/confirm-email-change', [
             'user' => $user->id,
             'token' => $token,
         ]);

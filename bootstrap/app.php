@@ -110,16 +110,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (TokenMismatchException $e, Request $request) use ($inertiaLocation) {
-            $message = 'Your session expired. Please try again.';
+        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            $message = 'Your session expired. Please refresh the page and try again.';
 
             if ($request->header('X-Inertia')) {
-                $request->session()->flash('error', $message);
-
-                return $inertiaLocation($request, route('home'));
+                return redirect()->back(fallback: route('login'))->with('error', $message);
             }
 
-            return redirect()->route('home')->with('error', $message);
+            return redirect()->back(fallback: route('login'))->with('error', $message);
         });
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {

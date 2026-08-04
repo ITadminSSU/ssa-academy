@@ -21,7 +21,9 @@ const ForgetPassword = () => {
       e.preventDefault();
       clearErrors();
 
-      post(route('account.forgot-password'));
+      post(route('account.forgot-password'), {
+         preserveScroll: true,
+      });
    };
 
    return (

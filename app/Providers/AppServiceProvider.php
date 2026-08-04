@@ -70,8 +70,8 @@ class AppServiceProvider extends ServiceProvider
             return env('FRONTEND_URL') . '/reset-password?token=' . $token . '&email=' . $user->email;
         });
 
-        // Trust proxies when behind ngrok, Docker, or nginx so URLs/schemes resolve correctly.
-        if (app()->environment('local') || request()->hasHeader('X-Forwarded-Proto')) {
+        // Trust reverse proxies (Forge, nginx, Cloudflare) so sessions and URLs stay consistent.
+        if (! app()->runningInConsole()) {
             request()->setTrustedProxies(
                 ['*'],
                 \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
@@ -80,6 +80,10 @@ class AppServiceProvider extends ServiceProvider
                     \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
                     \Illuminate\Http\Request::HEADER_X_FORWARDED_PREFIX
             );
+        }
+
+        if (! app()->environment('local') && config('session.secure') === null) {
+            config(['session.secure' => true]);
         }
 
         if (str_starts_with((string) config('app.url'), 'https://')
