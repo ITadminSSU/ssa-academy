@@ -24,7 +24,7 @@ const MyExams = () => {
       <Card className="flex flex-col items-center justify-center gap-4 p-10 text-center">
          <p className="text-muted-foreground">You haven't enrolled in any exams yet.</p>
          <Button asChild>
-            <Link href={route('exams.browse')}>Browse Exams</Link>
+            <Link href={route('student.category.courses', { category: 'all' })}>Browse Courses</Link>
          </Button>
       </Card>
    );

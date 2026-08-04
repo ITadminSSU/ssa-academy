@@ -2,8 +2,6 @@
 
 namespace Modules\Exam\Http\Controllers;
 
-use App\Enums\CourseLevelType;
-use App\Enums\CoursePricingType;
 use App\Http\Controllers\Controller;
 use App\Services\InstructorService;
 use Modules\Exam\Models\Exam;
@@ -43,22 +41,17 @@ class ExamController extends Controller
     }
 
     /**
-     * Display published exams for browsing
+     * Legacy browse URL — redirect to the course catalog (exams browse UI is deprecated).
      */
-    public function browse_exams(Request $request): Response
+    public function browse_exams(Request $request): RedirectResponse
     {
-        $levels = CourseLevelType::cases();
-        $prices = CoursePricingType::cases();
-        $query = [...$request->all(), 'per_page' => 12, 'status' => 'published'];
+        $query = array_filter($request->query());
 
-        $exams = $this->exam->getAllExams($query, null, true);
-        $metadata = $this->exam->getExamsBrowseMetadata($exams);
+        if (Auth::check()) {
+            return redirect()->route('student.category.courses', array_merge(['category' => 'all'], $query));
+        }
 
-        return Inertia::render('exams/index', [
-            'levels' => $levels,
-            'prices' => $prices,
-            'exams' => $exams,
-        ])->withViewData($metadata);
+        return redirect()->route('category.courses', array_merge(['category' => 'all'], $query));
     }
 
     /**

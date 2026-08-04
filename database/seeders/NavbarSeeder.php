@@ -32,7 +32,7 @@ class NavbarSeeder extends Seeder
                 'type' => 'url',
                 'slug' => 'exams',
                 'title' => 'Exams',
-                'value' => '/exams/all',
+                'value' => '/courses/all',
             ],
             [
                 'type' => 'url',

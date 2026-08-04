@@ -12,7 +12,7 @@ export function resolveNavbarItemHref(item: NavbarLinkItem): string {
    }
 
    if (item.slug === 'exams' || path === '/exams/all' || path === '/browse/exams') {
-      return route('exams.browse');
+      return route('category.courses', { category: 'all' });
    }
 
    if (item.slug === 'about-us' || path === '/about-us' || path === '/about') {

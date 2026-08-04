@@ -92,7 +92,7 @@ class PagesDataSeeder extends Seeder
                     'navbar_id' => $navbar->id,
                     'type' => 'url',
                     'title' => 'Exams',
-                    'value' => '/exams/all',
+                    'value' => '/courses/all',
                 ]
             );
             NavbarItem::firstOrCreate(
