@@ -1,7 +1,9 @@
+import AvatarCropDialog from '@/components/avatar-crop-dialog';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAvatarCrop } from '@/hooks/use-avatar-crop';
 import { onHandleChange } from '@/lib/inertia';
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
@@ -86,95 +88,127 @@ const MyProfile = () => {
       setData('social_links', formatSocialLinks(socialLinks));
    }, [socialLinks, formatSocialLinks, setData]);
 
+   const handlePhotoReady = useCallback(
+      (file: File, previewUrl: string) => {
+         setData('photo', file);
+         setUserPhoto(previewUrl);
+      },
+      [setData],
+   );
+
+   const { fileInputRef, cropOpen, cropImageSrc, handleFileSelect, handleCropCancel, handleCropApply } = useAvatarCrop({
+      onPhotoReady: handlePhotoReady,
+      invalidTypeMessage: common.invalid_image_type,
+      tooLargeMessage: common.image_too_large,
+   });
+
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       post(route('student.profile.update'));
    };
 
-   const onImageChange = (name: string, value: unknown) => {
-      setData(name as any, value as any);
-      setUserPhoto(URL.createObjectURL(value as File));
-   };
-
    return (
-      <form onSubmit={handleSubmit} className="bg-card grid grid-cols-1 gap-6 rounded-lg p-6 md:grid-cols-2">
-         <div className="col-span-full space-y-1">
-            <div className="border-border h-[150px] w-[150px] rounded-full border border-dashed p-1.5">
-               <div className="border-border relative h-full w-full overflow-hidden rounded-full border">
-                  <img
-                     alt={`${auth.user.name}'s profile`}
-                     src={userPhoto || '/assets/icons/avatar.png'}
-                     className="h-full w-full content-center object-cover"
-                  />
+      <>
+         <form onSubmit={handleSubmit} className="bg-card grid grid-cols-1 gap-6 rounded-lg p-6 md:grid-cols-2">
+            <div className="col-span-full space-y-1">
+               <div className="border-border h-[150px] w-[150px] rounded-full border border-dashed p-1.5">
+                  <div className="border-border relative h-full w-full overflow-hidden rounded-full border">
+                     <img
+                        alt={`${auth.user.name}'s profile`}
+                        src={userPhoto || '/assets/icons/avatar.png'}
+                        className="h-full w-full content-center object-cover"
+                     />
 
-                  <label
-                     htmlFor="formFile"
-                     className="text-primary-foreground absolute right-0 bottom-0 flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 hover:opacity-100"
-                  >
-                     <Camera className="h-7 w-7" />
-                     <span className="text-xs">{button.upload}</span>
-                  </label>
+                     <label
+                        htmlFor="formFile"
+                        className="text-primary-foreground absolute right-0 bottom-0 flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity duration-300 hover:opacity-100"
+                     >
+                        <Camera className="h-7 w-7" />
+                        <span className="text-xs">{button.upload}</span>
+                     </label>
 
-                  <input hidden type="file" id="formFile" name="photo" onChange={(e) => onHandleChange(e, onImageChange)} />
+                     <input
+                        ref={fileInputRef}
+                        hidden
+                        type="file"
+                        id="formFile"
+                        name="photo"
+                        accept="image/jpeg,image/png,image/jpg"
+                        onChange={handleFileSelect}
+                     />
+                  </div>
                </div>
+
+               {errors.photo && <p className="mt-1 text-sm text-red-500">{errors.photo}</p>}
             </div>
 
-            {errors.photo && <p className="mt-1 text-sm text-red-500">{errors.photo}</p>}
-         </div>
+            <div className="space-y-4">
+               <Label>{input.name}</Label>
+               <Input type="text" name="name" value={data.name} onChange={(e) => onHandleChange(e, setData)} placeholder={input.full_name_placeholder} />
+               <InputError message={errors.name} />
+            </div>
 
-         <div className="space-y-4">
-            <Label>{input.name}</Label>
-            <Input type="text" name="name" value={data.name} onChange={(e) => onHandleChange(e, setData)} placeholder={input.full_name_placeholder} />
-            <InputError message={errors.name} />
-         </div>
+            <div className="space-y-4">
+               <Label>{input.website}</Label>
+               <Input
+                  type="url"
+                  name="website"
+                  value={socialLinks.website}
+                  onChange={(e) => updateSocialLink('website', e.target.value)}
+                  placeholder={input.https_placeholder}
+               />
+            </div>
 
-         <div className="space-y-4">
-            <Label>{input.website}</Label>
-            <Input
-               type="url"
-               name="website"
-               value={socialLinks.website}
-               onChange={(e) => updateSocialLink('website', e.target.value)}
-               placeholder={input.https_placeholder}
-            />
-         </div>
+            <div>
+               <Label>{input.facebook}</Label>
+               <Input
+                  type="url"
+                  value={socialLinks.facebook}
+                  onChange={(e) => updateSocialLink('facebook', e.target.value)}
+                  placeholder={input.https_placeholder}
+               />
+            </div>
 
-         <div>
-            <Label>{input.facebook}</Label>
-            <Input
-               type="url"
-               value={socialLinks.facebook}
-               onChange={(e) => updateSocialLink('facebook', e.target.value)}
-               placeholder={input.https_placeholder}
-            />
-         </div>
+            <div>
+               <Label>{input.twitter}</Label>
+               <Input
+                  type="url"
+                  value={socialLinks.twitter}
+                  onChange={(e) => updateSocialLink('twitter', e.target.value)}
+                  placeholder={input.https_placeholder}
+               />
+            </div>
 
-         <div>
-            <Label>{input.twitter}</Label>
-            <Input
-               type="url"
-               value={socialLinks.twitter}
-               onChange={(e) => updateSocialLink('twitter', e.target.value)}
-               placeholder={input.https_placeholder}
-            />
-         </div>
+            <div>
+               <Label>{input.linkedin}</Label>
+               <Input
+                  type="url"
+                  value={socialLinks.linkedin}
+                  onChange={(e) => updateSocialLink('linkedin', e.target.value)}
+                  placeholder={input.https_placeholder}
+               />
+            </div>
 
-         <div>
-            <Label>{input.linkedin}</Label>
-            <Input
-               type="url"
-               value={socialLinks.linkedin}
-               onChange={(e) => updateSocialLink('linkedin', e.target.value)}
-               placeholder={input.https_placeholder}
-            />
-         </div>
+            <div className="col-span-full flex items-center justify-end pt-2">
+               <LoadingButton loading={processing} className="col-span-full">
+                  {button.update}
+               </LoadingButton>
+            </div>
+         </form>
 
-         <div className="col-span-full flex items-center justify-end pt-2">
-            <LoadingButton loading={processing} className="col-span-full">
-               {button.update}
-            </LoadingButton>
-         </div>
-      </form>
+         <AvatarCropDialog
+            open={cropOpen}
+            imageSrc={cropImageSrc}
+            onCancel={handleCropCancel}
+            onApply={handleCropApply}
+            title={common.crop_photo_title}
+            description={common.crop_photo_description}
+            zoomLabel={common.zoom}
+            applyLabel={button.apply}
+            cancelLabel={button.cancel}
+            cropFailedMessage={common.crop_image_failed}
+         />
+      </>
    );
 };
 

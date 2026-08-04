@@ -95,7 +95,15 @@ interface CommonLang {
    // Common Error Messages
    file_too_large: string;
    invalid_file: string;
+   invalid_image_type: string;
+   image_too_large: string;
+   crop_image_failed: string;
    required_field: string;
+
+   // Profile photo crop
+   crop_photo_title: string;
+   crop_photo_description: string;
+   zoom: string;
 
    // Common Navigation
    home: string;

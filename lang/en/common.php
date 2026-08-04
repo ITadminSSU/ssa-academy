@@ -109,7 +109,15 @@ return [
    // Common Error Messages
    'file_too_large' => 'File is too large. Please select a smaller file.',
    'invalid_file' => 'Invalid file format. Please upload a valid .zip file.',
+   'invalid_image_type' => 'Please upload a JPG or PNG image.',
+   'image_too_large' => 'Image must be smaller than 1MB.',
+   'crop_image_failed' => 'Failed to crop image. Please try again.',
    'required_field' => 'This field is required.',
+
+   // Profile photo crop
+   'crop_photo_title' => 'Crop profile photo',
+   'crop_photo_description' => 'Drag to reposition and use the slider to zoom. Your photo will be saved as a 512×512 image when you click Update.',
+   'zoom' => 'Zoom',
 
    // Common Navigation
    'home' => 'Home',
