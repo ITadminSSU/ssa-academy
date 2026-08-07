@@ -370,7 +370,7 @@ class StudentService extends MediaService
             // the live Spatie media URL when present.
             $publicUrl = $this->addNewDeletePrev($user, $data['photo'], 'profile');
             $path = parse_url($publicUrl, PHP_URL_PATH) ?: $publicUrl;
-            $user->attributes['photo'] = $path;
+            $user->photo = $path;
             $user->unsetRelation('media');
          }
 
