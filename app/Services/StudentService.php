@@ -366,11 +366,9 @@ class StudentService extends MediaService
          }
 
          if (! empty($data['photo'])) {
-            // Persist a short relative path in users.photo; the accessor prefers
-            // the live Spatie media URL when present.
-            $publicUrl = $this->addNewDeletePrev($user, $data['photo'], 'profile');
-            $path = parse_url($publicUrl, PHP_URL_PATH) ?: $publicUrl;
-            $user->photo = $path;
+            // Spatie media is the source of truth for the avatar URL (esp. on S3).
+            $this->addNewDeletePrev($user, $data['photo'], 'profile');
+            $user->photo = null;
             $user->unsetRelation('media');
          }
 

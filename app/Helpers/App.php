@@ -192,6 +192,26 @@ function public_asset_url(?string $url): ?string
 }
 
 /**
+ * Build a browser-loadable URL for a Spatie media item.
+ * Cloud disks (S3) often store objects as private — use a temporary signed URL
+ * so profile photos do not render as a blank avatar.
+ */
+function media_public_url(\Spatie\MediaLibrary\MediaCollections\Models\Media $media): string
+{
+   $cloudDisks = ['s3'];
+
+   if (in_array($media->disk, $cloudDisks, true)) {
+      try {
+         return $media->getTemporaryUrl(now()->addDay());
+      } catch (\Throwable) {
+         return $media->getUrl();
+      }
+   }
+
+   return public_asset_url($media->getUrl()) ?? $media->getUrl();
+}
+
+/**
  * Collapse redundant slashes in a URL while preserving the scheme separator
  * (e.g. "https://"). Fixes malformed paths such as "//storage/app/public/x.jpg"
  * or "https://host//storage/x.jpg" that would otherwise 404.

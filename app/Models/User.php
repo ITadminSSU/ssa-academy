@@ -89,7 +89,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
                         ?? $this->getMedia('*', ['name' => 'profile'])->first();
 
                     if ($media) {
-                        return public_asset_url($media->getUrl());
+                        return media_public_url($media);
                     }
                 }
 

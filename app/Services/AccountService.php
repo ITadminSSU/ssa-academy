@@ -23,9 +23,8 @@ class AccountService extends MediaService
             }
 
             if (array_key_exists('photo', $data) && $data['photo']) {
-                $publicUrl = $this->addNewDeletePrev($user, $data['photo'], 'profile');
-                $path = parse_url($publicUrl, PHP_URL_PATH) ?: $publicUrl;
-                $user->photo = $path;
+                $this->addNewDeletePrev($user, $data['photo'], 'profile');
+                $user->photo = null;
                 $user->unsetRelation('media');
             }
 

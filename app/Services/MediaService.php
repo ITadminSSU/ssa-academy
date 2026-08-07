@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -14,7 +15,7 @@ class MediaService extends BaseService
     {
         $media = $model->getMedia('*', ['name' => $name])->first();
 
-        return $media ? public_asset_url($media->getUrl()) : null;
+        return $media ? media_public_url($media) : null;
     }
 
     public function addNewDeletePrev(Model $model, $image, ?string $name): string
@@ -34,16 +35,18 @@ class MediaService extends BaseService
             $newMedia = $this->addMediaSafely($model, $image, null);
         }
 
+        $this->ensureMediaPublic($newMedia);
         $model->unsetRelation('media');
 
-        return public_asset_url($newMedia->getUrl());
+        return media_public_url($newMedia);
     }
 
     public function addSingleFile(Model $model, $image, ?string $name)
     {
         $newMedia = $this->addMediaSafely($model, $image, $name);
+        $this->ensureMediaPublic($newMedia);
 
-        return public_asset_url($newMedia->getUrl());
+        return media_public_url($newMedia);
     }
 
     /**
@@ -108,5 +111,17 @@ class MediaService extends BaseService
         }
 
         throw new \InvalidArgumentException('Invalid photo upload.');
+    }
+
+    private function ensureMediaPublic(Media $media): void
+    {
+        try {
+            Storage::disk($media->disk)->setVisibility(
+                $media->getPathRelativeToRoot(),
+                'public'
+            );
+        } catch (\Throwable) {
+            // Private buckets can still be served via temporary URLs.
+        }
     }
 }
