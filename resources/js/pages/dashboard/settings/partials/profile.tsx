@@ -7,7 +7,7 @@ import { useAvatarCrop } from '@/hooks/use-avatar-crop';
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
 import { Camera } from 'lucide-react';
-import { FormEventHandler, useCallback, useState } from 'react';
+import { FormEventHandler, useCallback, useEffect, useState } from 'react';
 
 const Profile = () => {
    const { props } = usePage<SharedData>();
@@ -18,8 +18,14 @@ const Profile = () => {
 
    const { data, setData, post, errors, clearErrors, processing } = useForm({
       name: name,
-      photo: null,
+      photo: null as File | null,
    });
+
+   useEffect(() => {
+      if (!data.photo) {
+         setImageUrl(photo);
+      }
+   }, [photo, data.photo]);
 
    const handlePhotoReady = useCallback(
       (file: File, previewUrl: string) => {
@@ -38,7 +44,14 @@ const Profile = () => {
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
       clearErrors();
-      post(route('settings.profile'));
+      // Same endpoint trainers/admins use under Account → Profile Update
+      post(route('account.profile'), {
+         forceFormData: true,
+         preserveScroll: true,
+         onSuccess: () => {
+            setData('photo', null);
+         },
+      });
    };
 
    return (
@@ -48,7 +61,14 @@ const Profile = () => {
                <div className="flex w-full flex-col items-center text-center md:max-w-[250px]">
                   <div className="relative mb-4 h-[100px] w-[100px] md:h-[120px] md:w-[120px]">
                      {imageUrl ? (
-                        <img alt="item-1" src={imageUrl} className="h-[100px] w-[100px] rounded-full md:h-[120px] md:w-[120px]" />
+                        <img
+                           alt="profile"
+                           src={imageUrl}
+                           className="h-[100px] w-[100px] rounded-full object-cover md:h-[120px] md:w-[120px]"
+                           onError={(event) => {
+                              event.currentTarget.src = '/assets/icons/avatar.png';
+                           }}
+                        />
                      ) : (
                         <div className="h-[100px] w-[100px] rounded-full bg-muted md:h-[120px] md:w-[120px]"></div>
                      )}

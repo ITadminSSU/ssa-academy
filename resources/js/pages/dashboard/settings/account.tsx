@@ -91,6 +91,15 @@ const Account = ({ instructor, translate }: Props) => {
    );
 };
 
-Account.layout = (page: ReactNode) => <DashboardLayout children={page} />;
+Account.layout = (page: ReactNode) => {
+   const user = (page as any)?.props?.auth?.user;
+   const variant = user?.role === 'student' ? 'learner' : 'admin';
+
+   return (
+      <DashboardLayout variant={variant} headTitle="Account Settings">
+         {page}
+      </DashboardLayout>
+   );
+};
 
 export default Account;

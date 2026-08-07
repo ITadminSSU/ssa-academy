@@ -185,7 +185,9 @@ class StudentController extends Controller
      */
     public function update_profile(UpdateStudentProfileRequest $request)
     {
-        $this->studentService->updateProfile($request->validated(), Auth::user()->id);
+        $user = $this->studentService->updateProfile($request->validated(), Auth::user()->id);
+
+        Auth::setUser($user);
 
         return redirect()->back()->with('success', 'Profile updated successfully');
     }

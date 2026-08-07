@@ -10,7 +10,7 @@ class MediaService extends BaseService
     {
         $media = $model->getMedia('*', ['name' => $name])->first();
 
-        return $media ? public_asset_url($media->getFullUrl()) : null;
+        return $media ? public_asset_url($media->getUrl()) : null;
     }
 
     public function addNewDeletePrev(Model $model, $image, ?string $name): string
@@ -35,7 +35,7 @@ class MediaService extends BaseService
                 ->toMediaCollection();
         }
 
-        return public_asset_url($newMedia->getFullUrl());
+        return public_asset_url($newMedia->getUrl());
     }
 
     public function addSingleFile(Model $model, $image, ?string $name)
@@ -51,6 +51,6 @@ class MediaService extends BaseService
                 ->toMediaCollection();
         }
 
-        return public_asset_url($newMedia->getFullUrl());
+        return public_asset_url($newMedia->getUrl());
     }
 }

@@ -162,6 +162,10 @@ class InstructorService extends MediaService
       $user = Auth::user();
       $instructor = Instructor::find($id);
 
+      if (! $instructor) {
+         throw new \InvalidArgumentException('Instructor profile not found.');
+      }
+
       if (array_key_exists('resume', $data) && $data['resume']) {
          $data['resume'] = $this->addNewDeletePrev($instructor->user, $data['resume'], "resume");
       }
@@ -169,6 +173,9 @@ class InstructorService extends MediaService
       if (array_key_exists('skills', $data) && is_array($data['skills'])) {
          $data['skills'] = json_encode($data['skills']);
       }
+
+      // Do not overwrite user photo/name fields on the instructor row.
+      unset($data['name'], $data['photo'], $data['social_links'], $data['user_id']);
 
       $filteredData = array_filter($data, function ($value) {
          return $value !== null;
@@ -178,9 +185,11 @@ class InstructorService extends MediaService
          $instructor->update([...$filteredData, 'status' => 'pending']);
 
          $admin = User::where('role', 'admin')->first();
-         $admin->notify(new InstructorApprovalNotification([
-            'status' => $instructor->status,
-         ]));
+         if ($admin) {
+            $admin->notify(new InstructorApprovalNotification([
+               'status' => $instructor->status,
+            ]));
+         }
       }
 
       $instructor->update($filteredData);

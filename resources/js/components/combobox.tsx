@@ -58,13 +58,27 @@ const Combobox = ({ data, placeholder, onSelect, defaultValue, translate }: Prop
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                <Command>
+                <Command
+                    filter={(value, search) => {
+                        // Match against the full searchable string (label + code), not codes alone.
+                        if (!search.trim()) {
+                            return 1;
+                        }
+
+                        return value.toLowerCase().includes(search.toLowerCase().trim()) ? 1 : 0;
+                    }}
+                >
                     <CommandInput placeholder={translate?.input?.search_placeholder || "Search element..."} className="focus:border-none focus:ring-0 focus:outline-none" />
                     <CommandList>
                         <CommandEmpty>{translate?.frontend?.no_element_found || "No element found."}</CommandEmpty>
                         <CommandGroup className="max-h-[300px] overflow-y-auto">
                             {data.map((item) => (
-                                <CommandItem key={item.value} value={item.value} onSelect={() => handleSelect(item)}>
+                                <CommandItem
+                                    key={item.value}
+                                    // cmdk filters on `value`; include label so typing "English" works (not only "en").
+                                    value={`${item.label} ${item.value}`}
+                                    onSelect={() => handleSelect(item)}
+                                >
                                     {item.label}
                                     <Check className={cn('ml-auto', value === item.value ? 'opacity-100' : 'opacity-0')} />
                                 </CommandItem>

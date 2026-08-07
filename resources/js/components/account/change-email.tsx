@@ -13,13 +13,14 @@ const ChangeEmail = () => {
    const { errors, translate } = props;
    const { auth, button, input } = translate;
 
-   const { data, setData, post, processing } = useForm({
+   const { data, setData, post, processing, reset } = useForm({
       current_email: email,
+      current_password: '',
       new_email: '',
    });
 
-   const onHandleChange = (event: any) => {
-      setData(event.target.name, event.target.value);
+   const onHandleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      setData(event.target.name as 'current_email' | 'current_password' | 'new_email', event.target.value);
    };
 
    const submit: FormEventHandler = (e) => {
@@ -27,6 +28,9 @@ const ChangeEmail = () => {
 
       post(route('account.change-email'), {
          preserveScroll: true,
+         onSuccess: () => {
+            reset('current_password', 'new_email');
+         },
       });
    };
 
@@ -44,6 +48,22 @@ const ChangeEmail = () => {
                <InputError message={errors.current_email} className="mt-2" />
             </div>
 
+            <div className="pt-5">
+               <Label>{input.current_password}</Label>
+
+               <Input
+                  required
+                  type="password"
+                  name="current_password"
+                  value={data.current_password}
+                  placeholder={input.current_password_placeholder}
+                  onChange={onHandleChange}
+                  autoComplete="current-password"
+               />
+
+               <InputError message={errors.current_password} className="mt-2" />
+            </div>
+
             <div className="py-5">
                <Label>{input.new_email}</Label>
 
@@ -54,6 +74,7 @@ const ChangeEmail = () => {
                   value={data.new_email}
                   placeholder={input.new_email_placeholder}
                   onChange={onHandleChange}
+                  autoComplete="email"
                />
 
                <InputError message={errors.new_email} className="mt-2" />
@@ -62,8 +83,9 @@ const ChangeEmail = () => {
             <LoadingButton loading={processing}>{button.get_email_change_link}</LoadingButton>
 
             <p className="text-muted-foreground mt-4 text-sm">
-               After submitting, check your new email inbox and spam folder for the verification link. Click the link to
-               finish updating your email (you do not need to stay logged in).
+               Enter your current password to confirm this request. We will email a verification link to your new address
+               and send a security alert to your current email. After you confirm, you will need to log in again with the
+               new email.
             </p>
          </form>
       </Card>

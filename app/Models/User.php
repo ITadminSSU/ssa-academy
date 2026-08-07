@@ -79,7 +79,22 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     protected function photo(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => public_asset_url($value));
+        return Attribute::make(
+            get: function (?string $value) {
+                // Prefer the live Spatie media file so avatars still work after
+                // APP_URL / storage-path changes, and so the navbar matches Profile.
+                if ($this->exists) {
+                    $media = $this->getMedia('default')
+                        ->first(fn ($item) => $item->getCustomProperty('name') === 'profile');
+
+                    if ($media) {
+                        return public_asset_url($media->getUrl());
+                    }
+                }
+
+                return $value ? public_asset_url($value) : null;
+            }
+        );
     }
 
     protected static function booted(): void

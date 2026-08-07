@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\ChangeEmailAlert;
 use App\Mail\ChangeEmailVerification;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
@@ -87,6 +88,35 @@ class AccountMailService
         );
     }
 
+    /**
+     * Alert the current (old) email that a change was requested. Best-effort; failures are logged only.
+     */
+    public function sendChangeEmailAlert(User $user, string $newEmail): void
+    {
+        $oldEmail = $user->email;
+
+        if ($oldEmail === '' || strcasecmp($oldEmail, $newEmail) === 0) {
+            return;
+        }
+
+        try {
+            if (ResendHttpClient::isAvailable()) {
+                $this->sendChangeEmailAlertViaResendHttp($user, $oldEmail, $newEmail);
+
+                return;
+            }
+
+            Mail::to($oldEmail)->send(new ChangeEmailAlert($user, $newEmail));
+        } catch (\Throwable $exception) {
+            Log::warning('Change email alert to old address failed', [
+                'user_id' => $user->id,
+                'old_email' => $oldEmail,
+                'new_email' => $newEmail,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
     private function sendPasswordResetViaResendHttp(User $user, string $token): void
     {
         $url = PasswordResetUrl::forUser($user, $token);
@@ -123,6 +153,29 @@ class AccountMailService
             'from' => $this->fromAddress(),
             'to' => [$newEmail],
             'subject' => "Confirm your new email for {$appName}",
+            'html' => $html,
+            'text' => $text,
+        ]);
+    }
+
+    private function sendChangeEmailAlertViaResendHttp(User $user, string $oldEmail, string $newEmail): void
+    {
+        $html = view('mail.email-change-alert', [
+            'user' => $user,
+            'newEmail' => $newEmail,
+        ])->render();
+
+        $text = view('mail.email-change-alert-text', [
+            'user' => $user,
+            'newEmail' => $newEmail,
+        ])->render();
+
+        $appName = config('branding.short_name', config('app.name'));
+
+        ResendHttpClient::send([
+            'from' => $this->fromAddress(),
+            'to' => [$oldEmail],
+            'subject' => "Email change requested for your {$appName} account",
             'html' => $html,
             'text' => $text,
         ]);

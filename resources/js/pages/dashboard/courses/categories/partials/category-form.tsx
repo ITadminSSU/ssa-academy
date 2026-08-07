@@ -24,26 +24,50 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
    const [open, setOpen] = useState(false);
    const { input, button } = useLang();
 
-   const { data, setData, post, errors, processing, reset } = useForm({
+   const initialData = () => ({
       title: category ? category.title : '',
       sort: category ? category.sort : lastPosition + 1,
       status: category ? category.status : 1,
       show_in_nav: category ? !!category.show_in_nav : true,
-      description: category ? category.description : '',
-      thumbnail: null,
+      description: category ? category.description || '' : '',
+      thumbnail: null as File | null,
    });
+
+   const { data, setData, post, errors, processing, setDefaults } = useForm(initialData());
+
+   const syncFromProps = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      if (nextOpen) {
+         // Always start from the last saved server values.
+         syncFromProps();
+      } else {
+         // Discard unsaved edits when closing via Close, X, Escape, or overlay.
+         syncFromProps();
+      }
+
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
       if (category) {
          post(route('categories.update', category.id), {
+            forceFormData: true,
+            preserveScroll: true,
             onSuccess: () => setOpen(false),
          });
       } else {
          post(route('categories.store'), {
+            forceFormData: true,
+            preserveScroll: true,
             onSuccess: () => {
-               reset();
+               syncFromProps();
                setOpen(false);
             },
          });
@@ -51,7 +75,7 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">
@@ -104,7 +128,7 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
                   </div>
                   <div>
                      <Label>{input.thumbnail}</Label>
-                     <Input type="file" name="thumbnail" accept="image/*" onChange={(e) => setData('thumbnail', e.target.files?.[0] as any)} />
+                     <Input type="file" name="thumbnail" accept="image/*" onChange={(e) => setData('thumbnail', e.target.files?.[0] as File | null)} />
                      <InputError message={errors.thumbnail} />
                   </div>
 
@@ -115,7 +139,9 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
                         </Button>
                      </DialogClose>
 
-                     <LoadingButton loading={processing}>{button.save_changes}</LoadingButton>
+                     <LoadingButton type="submit" loading={processing}>
+                        {button.save_changes}
+                     </LoadingButton>
                   </DialogFooter>
                </form>
             </ScrollArea>

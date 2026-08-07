@@ -363,7 +363,7 @@ class StudentService extends MediaService
 
       $user->update($filteredData);
 
-      return $user;
+      return $user->fresh() ?? $user;
    }
 
    public function getEnrolledCourse(string $id, User $user): Course

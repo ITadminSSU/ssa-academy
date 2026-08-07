@@ -116,7 +116,9 @@ Route::resource('course-reviews', CourseReviewController::class)->only(['store',
 Route::middleware('smtpConfig', 'checkSmtp')->prefix('settings/account')->group(function () {
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('account.forgot-password');
 
-    Route::post('change-email', [EmailVerificationNotificationController::class, 'update'])->name('account.change-email');
+    Route::post('change-email', [EmailVerificationNotificationController::class, 'update'])
+        ->middleware('throttle:5,1')
+        ->name('account.change-email');
 });
 
 Route::put('settings/account/change-password', [PasswordResetLinkController::class, 'update'])->name('account.change-password');

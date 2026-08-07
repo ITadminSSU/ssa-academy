@@ -13,19 +13,22 @@ class AccountService extends MediaService
 {
     public function updateProfile(array $data, string $id)
     {
-        DB::transaction(function () use ($data, $id) {
+        return DB::transaction(function () use ($data, $id) {
             $user = User::find($id);
 
             $user->name = $data['name'];
-            $user->social_links = $data['social_links'];
+
+            if (array_key_exists('social_links', $data)) {
+                $user->social_links = $data['social_links'];
+            }
 
             if (array_key_exists('photo', $data) && $data['photo']) {
-                $fullUrl = $this->addNewDeletePrev($user, $data['photo'], 'profile');
-
-                $user->photo = $fullUrl;
+                $user->photo = $this->addNewDeletePrev($user, $data['photo'], 'profile');
             }
 
             $user->save();
+
+            return $user->fresh() ?? $user;
         }, 5);
     }
 
@@ -40,10 +43,11 @@ class AccountService extends MediaService
 
             $token = Str::random(60);
             $url = EmailChangeUrl::verificationLink($user, $token);
+            $newEmail = $data['new_email'];
 
             $emailChange = EmailChangeToken::create([
                 'user_id' => $user->id,
-                'new_email' => $data['new_email'],
+                'new_email' => $newEmail,
                 'token' => $token,
                 'created_at' => now(),
             ]);
@@ -52,7 +56,9 @@ class AccountService extends MediaService
                 $emailChange->forceFill(['created_at' => now()])->save();
             }
 
-            app(AccountMailService::class)->sendChangeEmailVerification($user, $data['new_email'], $url);
+            $mail = app(AccountMailService::class);
+            $mail->sendChangeEmailVerification($user, $newEmail, $url);
+            $mail->sendChangeEmailAlert($user, $newEmail);
         }, 5);
     }
 
@@ -80,9 +86,13 @@ class AccountService extends MediaService
 
             $expiryMinutes = (int) config('account.email_change_token_expiry_minutes', 60);
 
-            // Null created_at can happen from older inserts; treat those as still usable.
-            $withinWindow = $emailChange->created_at === null
-                || $emailChange->created_at->diffInMinutes(Carbon::now(), true) <= $expiryMinutes;
+            if ($emailChange->created_at === null) {
+                $emailChange->delete();
+
+                return false;
+            }
+
+            $withinWindow = $emailChange->created_at->diffInMinutes(Carbon::now(), true) <= $expiryMinutes;
 
             if (! $withinWindow) {
                 $emailChange->delete();
@@ -98,5 +108,19 @@ class AccountService extends MediaService
 
             return true;
         }, 5);
+    }
+
+    /**
+     * Drop all persisted sessions for the user so every device must sign in again.
+     */
+    public function invalidateUserSessions(int $userId): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        DB::table(config('session.table', 'sessions'))
+            ->where('user_id', $userId)
+            ->delete();
     }
 }

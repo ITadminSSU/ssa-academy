@@ -26,14 +26,32 @@ const CategoryChildForm = ({ title, handler, categoryId, categoryChild, lastChil
    const [openIcon, setOpenIcon] = useState(false);
    const { dashboard, input, button } = useLang();
 
-   const { data, setData, post, put, reset, errors, processing } = useForm({
+   const initialData = () => ({
       title: categoryChild ? categoryChild.title : '',
       icon: categoryChild ? categoryChild.icon : '',
       sort: categoryChild ? categoryChild.sort : lastChildPosition + 1,
       status: categoryChild ? categoryChild.status : 1,
-      description: categoryChild ? categoryChild.description : '',
+      description: categoryChild ? categoryChild.description || '' : '',
       course_category_id: categoryId,
    });
+
+   const { data, setData, post, put, errors, processing, setDefaults } = useForm(initialData());
+
+   const syncFromProps = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      if (nextOpen) {
+         syncFromProps();
+      } else {
+         syncFromProps();
+      }
+
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -44,13 +62,15 @@ const CategoryChildForm = ({ title, handler, categoryId, categoryChild, lastChil
                category_child: categoryChild.id,
             }),
             {
+               preserveScroll: true,
                onSuccess: () => setOpen(false),
             },
          );
       } else {
          post(route('category-child.store'), {
+            preserveScroll: true,
             onSuccess: () => {
-               reset();
+               syncFromProps();
                setOpen(false);
             },
          });
@@ -58,7 +78,7 @@ const CategoryChildForm = ({ title, handler, categoryId, categoryChild, lastChil
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">
@@ -114,13 +134,13 @@ const CategoryChildForm = ({ title, handler, categoryId, categoryChild, lastChil
 
                   <div>
                      <Label>{input.category_status}</Label>
-                     <Select value={JSON.stringify(data.status)} onValueChange={(e) => setData('status', JSON.parse(e))}>
+                     <Select value={String(data.status)} onValueChange={(value) => setData('status', Number(value))}>
                         <SelectTrigger>
                            <SelectValue placeholder={input.status_placeholder} />
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="1">Active</SelectItem>
-                           <SelectItem value="0">Deactive</SelectItem>
+                           <SelectItem value="0">Inactive</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -143,7 +163,9 @@ const CategoryChildForm = ({ title, handler, categoryId, categoryChild, lastChil
                         </Button>
                      </DialogClose>
 
-                     <LoadingButton loading={processing}>{button.submit}</LoadingButton>
+                     <LoadingButton type="submit" loading={processing}>
+                        {button.submit}
+                     </LoadingButton>
                   </DialogFooter>
                </form>
             </ScrollArea>

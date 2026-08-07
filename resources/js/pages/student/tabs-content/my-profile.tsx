@@ -63,6 +63,12 @@ const MyProfile = () => {
       parseSocialLinks(user.social_links);
    }, [user.social_links]);
 
+   useEffect(() => {
+      if (!data.photo) {
+         setUserPhoto(user.photo);
+      }
+   }, [user.photo, data.photo]);
+
    const formatSocialLinks = useCallback((links: SocialLinksMap): string => {
       const formattedLinks = Object.entries(links)
          .filter(([_, value]) => value)
@@ -104,7 +110,13 @@ const MyProfile = () => {
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      post(route('student.profile.update'));
+      post(route('student.profile.update'), {
+         forceFormData: true,
+         preserveScroll: true,
+         onSuccess: () => {
+            setData('photo', null);
+         },
+      });
    };
 
    return (
@@ -117,6 +129,9 @@ const MyProfile = () => {
                         alt={`${auth.user.name}'s profile`}
                         src={userPhoto || '/assets/icons/avatar.png'}
                         className="h-full w-full content-center object-cover"
+                        onError={(event) => {
+                           event.currentTarget.src = '/assets/icons/avatar.png';
+                        }}
                      />
 
                      <label

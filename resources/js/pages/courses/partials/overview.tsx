@@ -8,7 +8,7 @@ const Overview = ({ course }: { course: Course }) => {
          <Renderer value={course.description as string} />
 
          <Accordion type="single" collapsible>
-            <h6 className="mb-4 text-xl font-semibold">Faqs</h6>
+            <h6 className="mb-4 text-xl font-semibold">FAQs</h6>
 
             <div className="border-border border-y">
                {course.faqs?.map((faq) => (

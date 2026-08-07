@@ -67,6 +67,12 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
       parseSocialLinks(user.social_links);
    }, [user.social_links]);
 
+   useEffect(() => {
+      if (!data.photo) {
+         setUserPhoto(user.photo);
+      }
+   }, [user.photo, data.photo]);
+
    const formatSocialLinks = useCallback((links: SocialLinksMap): any[] => {
       const formattedLinks = Object.entries(links)
          .filter(([_, value]) => value)
@@ -116,7 +122,13 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      post(route('account.profile'));
+      post(route('account.profile'), {
+         forceFormData: true,
+         preserveScroll: true,
+         onSuccess: () => {
+            setData('photo', null);
+         },
+      });
    };
 
    return (
@@ -126,7 +138,14 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                <div className="flex w-full flex-col items-center space-y-3 text-center md:max-w-[160px]">
                   <div className="relative mb-4 h-[100px] w-[100px]">
                      {userPhoto ? (
-                        <img alt="item-1" src={userPhoto} className="h-[100px] w-[100px] rounded-full object-cover" />
+                        <img
+                           alt={`${user.name}'s profile`}
+                           src={userPhoto}
+                           className="h-[100px] w-[100px] rounded-full object-cover"
+                           onError={(event) => {
+                              event.currentTarget.src = '/assets/icons/avatar.png';
+                           }}
+                        />
                      ) : (
                         <div className="h-[100px] w-[100px] rounded-full bg-muted"></div>
                      )}
@@ -147,7 +166,7 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                      />
                   </div>
 
-                  <small className="text-xs text-muted-foreground">Allowed: JPG, JPEG, PNG. Maximum 1MB.</small>
+                  <small className="text-xs text-muted-foreground">Allowed: JPG, JPEG, PNG. Maximum 15MB (saved as 512×512).</small>
 
                   {errors.photo && <p className="mt-1 text-sm text-red-500">{errors.photo}</p>}
                </div>

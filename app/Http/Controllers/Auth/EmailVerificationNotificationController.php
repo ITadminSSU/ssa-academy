@@ -42,7 +42,7 @@ class EmailVerificationNotificationController extends Controller
     public function update(UpdateEmailRequest $request)
     {
         try {
-            $this->accountService->changeEmail($request->validated(), Auth::user()->id);
+            $this->accountService->changeEmail($request->validated(), (string) Auth::id());
         } catch (\Throwable $exception) {
             Log::error('Account email change verification failed', [
                 'user_id' => Auth::id(),
@@ -57,7 +57,7 @@ class EmailVerificationNotificationController extends Controller
 
         return back()->with(
             'success',
-            'We sent a verification link to your new email address. Check your inbox and spam folder, then click the link to confirm the change.'
+            'We sent a verification link to your new email and a security alert to your current email. Check both inboxes (and spam). After you confirm, you will need to log in with the new email.'
         );
     }
 
@@ -87,14 +87,12 @@ class EmailVerificationNotificationController extends Controller
                 ->with('error', 'This verification link is invalid or has expired. Please request a new email change link.');
         }
 
-        if (Auth::check() && Auth::id() === $user->id) {
-            if ($user->role === 'student') {
-                return redirect()->to($this->authService->homeUrlFor($user, ['tab' => 'settings']))
-                    ->with('success', 'Your email address has been updated successfully.');
-            }
+        $this->accountService->invalidateUserSessions((int) $user->id);
 
-            return redirect()->route('settings.account', ['tab' => 'change-email'])
-                ->with('success', 'Your email address has been updated successfully.');
+        if (Auth::check()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         return redirect()->route('login')

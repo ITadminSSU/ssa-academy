@@ -452,7 +452,7 @@ return [
     'course_content_summary' => 'Course Content Summary',
 
     // Course Info
-    'course_faqs' => 'Course Faqs',
+    'course_faqs' => 'Course FAQs',
     'requirements' => 'Requirements',
     'outcomes' => 'Outcomes',
     'sort_items' => 'Sort Items',
@@ -519,7 +519,7 @@ return [
     'enter_category_description' => 'Enter category description',
 
     // Course Management
-    'course_faqs' => 'Course Faqs',
+    'course_faqs' => 'Course FAQs',
     'requirements' => 'Requirements',
     'outcomes' => 'Outcomes',
     'live_classes' => 'Live Classes',
@@ -583,7 +583,7 @@ return [
 
     // Course Info Sections
     'outcomes' => 'Outcomes',
-    'course_faqs' => 'Course Faqs',
+    'course_faqs' => 'Course FAQs',
     'requirements' => 'Requirements',
     'section_title' => 'Section Title',
 

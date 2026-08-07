@@ -52,8 +52,14 @@ class SettingController extends Controller
     public function profile_update(UpdateInstructorProfileRequest $request)
     {
         $user = Auth::user();
-        $user = $this->studentService->updateProfile($request->validated(), $user->id);
-        $this->instructorService->updateInstructor($request->validated(), $user->instructor_id);
+        $user = $this->studentService->updateProfile($request->validated(), (string) $user->id);
+
+        // Admins may have no instructor profile; only trainers/instructor-linked admins update it.
+        if ($user->instructor_id) {
+            $this->instructorService->updateInstructor($request->validated(), (string) $user->instructor_id);
+        }
+
+        Auth::setUser($user->fresh() ?? $user);
 
         return back()->with('success', 'Profile updated successfully');
     }
