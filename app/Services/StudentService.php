@@ -28,6 +28,7 @@ use App\Services\Course\CourseWishlistService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Modules\Certificate\Models\CertificateTemplate;
 use Modules\Certificate\Models\MarksheetTemplate;
 use Modules\Exam\Services\ExamEnrollmentService;
@@ -351,19 +352,32 @@ class StudentService extends MediaService
 
    function updateProfile(array $data, string $id): User
    {
-      $user = User::find($id);
+      return DB::transaction(function () use ($data, $id) {
+         $user = User::findOrFail($id);
 
-      if (array_key_exists('photo', $data) && $data['photo']) {
-         $data['photo'] = $this->addNewDeletePrev($user, $data['photo'], "profile");
-      }
+         if (array_key_exists('name', $data) && $data['name'] !== null) {
+            $user->name = $data['name'];
+         }
 
-      $filteredData = array_filter($data, function ($value) {
-         return $value !== null;
-      });
+         if (array_key_exists('social_links', $data) && $data['social_links'] !== null) {
+            $user->social_links = is_string($data['social_links'])
+               ? json_decode($data['social_links'], true)
+               : $data['social_links'];
+         }
 
-      $user->update($filteredData);
+         if (! empty($data['photo'])) {
+            // Persist a short relative path in users.photo; the accessor prefers
+            // the live Spatie media URL when present.
+            $publicUrl = $this->addNewDeletePrev($user, $data['photo'], 'profile');
+            $path = parse_url($publicUrl, PHP_URL_PATH) ?: $publicUrl;
+            $user->attributes['photo'] = $path;
+            $user->unsetRelation('media');
+         }
 
-      return $user->fresh() ?? $user;
+         $user->save();
+
+         return $user->fresh(['media']) ?? $user;
+      }, 5);
    }
 
    public function getEnrolledCourse(string $id, User $user): Course

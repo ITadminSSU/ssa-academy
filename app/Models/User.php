@@ -85,7 +85,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
                 // APP_URL / storage-path changes, and so the navbar matches Profile.
                 if ($this->exists) {
                     $media = $this->getMedia('default')
-                        ->first(fn ($item) => $item->getCustomProperty('name') === 'profile');
+                        ->first(fn ($item) => $item->getCustomProperty('name') === 'profile')
+                        ?? $this->getMedia('*', ['name' => 'profile'])->first();
 
                     if ($media) {
                         return public_asset_url($media->getUrl());
@@ -93,7 +94,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
                 }
 
                 return $value ? public_asset_url($value) : null;
-            }
+            },
+            set: fn (?string $value) => ['photo' => $value],
         );
     }
 

@@ -51,15 +51,23 @@ class SettingController extends Controller
      */
     public function profile_update(UpdateInstructorProfileRequest $request)
     {
+        $data = $request->validated();
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo');
+        } else {
+            unset($data['photo']);
+        }
+
         $user = Auth::user();
-        $user = $this->studentService->updateProfile($request->validated(), (string) $user->id);
+        $user = $this->studentService->updateProfile($data, (string) $user->id);
 
         // Admins may have no instructor profile; only trainers/instructor-linked admins update it.
         if ($user->instructor_id) {
             $this->instructorService->updateInstructor($request->validated(), (string) $user->instructor_id);
         }
 
-        Auth::setUser($user->fresh() ?? $user);
+        Auth::setUser($user->fresh(['media']) ?? $user);
 
         return back()->with('success', 'Profile updated successfully');
     }

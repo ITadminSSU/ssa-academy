@@ -185,7 +185,15 @@ class StudentController extends Controller
      */
     public function update_profile(UpdateStudentProfileRequest $request)
     {
-        $user = $this->studentService->updateProfile($request->validated(), Auth::user()->id);
+        $data = $request->validated();
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo');
+        } else {
+            unset($data['photo']);
+        }
+
+        $user = $this->studentService->updateProfile($data, (string) Auth::id());
 
         Auth::setUser($user);
 

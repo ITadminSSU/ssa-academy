@@ -24,7 +24,8 @@ class UpdateStudentProfileRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
-            'social_links' => 'nullable|json',
+            // Accept JSON string or array from FormData; decode in the service.
+            'social_links' => 'nullable',
         ];
     }
 }

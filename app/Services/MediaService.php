@@ -24,7 +24,7 @@ class MediaService extends BaseService
             $newMedia = $model
                 ->addMedia($image)
                 ->withCustomProperties(['name' => $name])
-                ->toMediaCollection();
+                ->toMediaCollection('default');
         } else {
             if ($model->hasMedia()) {
                 $model->getMedia()->first()->delete();
@@ -32,8 +32,10 @@ class MediaService extends BaseService
 
             $newMedia = $model
                 ->addMedia($image)
-                ->toMediaCollection();
+                ->toMediaCollection('default');
         }
+
+        $model->unsetRelation('media');
 
         return public_asset_url($newMedia->getUrl());
     }

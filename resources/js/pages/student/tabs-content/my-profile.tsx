@@ -8,7 +8,8 @@ import { onHandleChange } from '@/lib/inertia';
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
 import { Camera } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface SocialLink {
    host: string;
@@ -27,6 +28,7 @@ const MyProfile = () => {
    const { button, input, common } = translate;
    const user = auth.user;
    const [userPhoto, setUserPhoto] = useState(user.photo);
+   const photoFileRef = useRef<File | null>(null);
    const [socialLinks, setSocialLinks] = useState<SocialLinksMap>({
       website: '',
       facebook: '',
@@ -85,7 +87,7 @@ const MyProfile = () => {
    });
 
    useEffect(() => {
-      if (!data.photo) {
+      if (!data.photo && !photoFileRef.current) {
          setUserPhoto(user.photo);
       }
    }, [user.photo, data.photo]);
@@ -96,6 +98,7 @@ const MyProfile = () => {
 
    const handlePhotoReady = useCallback(
       (file: File, previewUrl: string) => {
+         photoFileRef.current = file;
          setData('photo', file);
          setUserPhoto(previewUrl);
       },
@@ -110,11 +113,28 @@ const MyProfile = () => {
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      const photo = photoFileRef.current ?? data.photo;
+
       post(route('student.profile.update'), {
          forceFormData: true,
          preserveScroll: true,
-         onSuccess: () => {
+         transform: (form) => ({
+            ...form,
+            photo,
+            social_links: form.social_links ?? formatSocialLinks(socialLinks),
+         }),
+         onSuccess: (page) => {
+            photoFileRef.current = null;
             setData('photo', null);
+            const nextPhoto = (page.props as SharedData).auth?.user?.photo;
+            if (nextPhoto) {
+               setUserPhoto(nextPhoto);
+            }
+            toast.success('Profile updated successfully');
+         },
+         onError: (formErrors) => {
+            const message = formErrors.photo || formErrors.name || formErrors.social_links || 'Failed to update profile';
+            toast.error(message);
          },
       });
    };
