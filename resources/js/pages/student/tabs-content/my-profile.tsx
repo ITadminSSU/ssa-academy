@@ -61,13 +61,7 @@ const MyProfile = () => {
 
    useEffect(() => {
       parseSocialLinks(user.social_links);
-   }, [user.social_links]);
-
-   useEffect(() => {
-      if (!data.photo) {
-         setUserPhoto(user.photo);
-      }
-   }, [user.photo, data.photo]);
+   }, [user.social_links, parseSocialLinks]);
 
    const formatSocialLinks = useCallback((links: SocialLinksMap): string => {
       const formattedLinks = Object.entries(links)
@@ -89,6 +83,12 @@ const MyProfile = () => {
       photo: null as File | null,
       social_links: null as string | null,
    });
+
+   useEffect(() => {
+      if (!data.photo) {
+         setUserPhoto(user.photo);
+      }
+   }, [user.photo, data.photo]);
 
    useEffect(() => {
       setData('social_links', formatSocialLinks(socialLinks));

@@ -65,13 +65,7 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
 
    useEffect(() => {
       parseSocialLinks(user.social_links);
-   }, [user.social_links]);
-
-   useEffect(() => {
-      if (!data.photo) {
-         setUserPhoto(user.photo);
-      }
-   }, [user.photo, data.photo]);
+   }, [user.social_links, parseSocialLinks]);
 
    const formatSocialLinks = useCallback((links: SocialLinksMap): any[] => {
       const formattedLinks = Object.entries(links)
@@ -101,6 +95,12 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
       biography: instructor?.biography || '',
       resume: null,
    });
+
+   useEffect(() => {
+      if (!data.photo) {
+         setUserPhoto(user.photo);
+      }
+   }, [user.photo, data.photo]);
 
    useEffect(() => {
       setData('social_links', formatSocialLinks(socialLinks));
