@@ -1,6 +1,7 @@
 import AvatarCropDialog from '@/components/avatar-crop-dialog';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAvatarCrop } from '@/hooks/use-avatar-crop';
@@ -15,6 +16,7 @@ const Profile = () => {
    const { input, button, common, dashboard } = translate;
    const { name, photo } = props.auth.user;
    const [imageUrl, setImageUrl] = useState(photo);
+   const [removePhoto, setRemovePhoto] = useState(false);
 
    const { data, setData, post, errors, clearErrors, processing } = useForm({
       name: name,
@@ -22,18 +24,25 @@ const Profile = () => {
    });
 
    useEffect(() => {
-      if (!data.photo) {
+      if (!data.photo && !removePhoto) {
          setImageUrl(photo);
       }
-   }, [photo, data.photo]);
+   }, [photo, data.photo, removePhoto]);
 
    const handlePhotoReady = useCallback(
       (file: File, previewUrl: string) => {
+         setRemovePhoto(false);
          setData('photo', file);
          setImageUrl(previewUrl);
       },
       [setData],
    );
+
+   const handleRemovePhoto = useCallback(() => {
+      setData('photo', null);
+      setImageUrl(null);
+      setRemovePhoto(true);
+   }, [setData]);
 
    const { fileInputRef, cropOpen, cropImageSrc, handleFileSelect, handleCropCancel, handleCropApply } = useAvatarCrop({
       onPhotoReady: handlePhotoReady,
@@ -44,15 +53,22 @@ const Profile = () => {
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
       clearErrors();
-      // Same endpoint trainers/admins use under Account → Profile Update
       post(route('account.profile'), {
          forceFormData: true,
          preserveScroll: true,
+         transform: (form) => ({
+            ...form,
+            photo: removePhoto ? null : form.photo,
+            remove_photo: removePhoto ? 1 : 0,
+         }),
          onSuccess: () => {
             setData('photo', null);
+            setRemovePhoto(false);
          },
       });
    };
+
+   const showRemove = Boolean(imageUrl || photo);
 
    return (
       <>
@@ -87,6 +103,12 @@ const Profile = () => {
                         onChange={handleFileSelect}
                      />
                   </div>
+
+                  {showRemove && !removePhoto && (
+                     <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive mb-2" onClick={handleRemovePhoto}>
+                        {common.remove_photo}
+                     </Button>
+                  )}
 
                   <small className="text-muted-foreground">{dashboard.image_upload_requirements}</small>
 

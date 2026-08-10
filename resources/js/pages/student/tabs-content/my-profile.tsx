@@ -1,6 +1,7 @@
 import AvatarCropDialog from '@/components/avatar-crop-dialog';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAvatarCrop } from '@/hooks/use-avatar-crop';
@@ -29,6 +30,7 @@ const MyProfile = () => {
    const user = auth.user;
    const [userPhoto, setUserPhoto] = useState(user.photo);
    const photoFileRef = useRef<File | null>(null);
+   const [removePhoto, setRemovePhoto] = useState(false);
    const [socialLinks, setSocialLinks] = useState<SocialLinksMap>({
       website: '',
       facebook: '',
@@ -87,10 +89,10 @@ const MyProfile = () => {
    });
 
    useEffect(() => {
-      if (!data.photo && !photoFileRef.current) {
+      if (!data.photo && !photoFileRef.current && !removePhoto) {
          setUserPhoto(user.photo);
       }
-   }, [user.photo, data.photo]);
+   }, [user.photo, data.photo, removePhoto]);
 
    useEffect(() => {
       setData('social_links', formatSocialLinks(socialLinks));
@@ -99,11 +101,19 @@ const MyProfile = () => {
    const handlePhotoReady = useCallback(
       (file: File, previewUrl: string) => {
          photoFileRef.current = file;
+         setRemovePhoto(false);
          setData('photo', file);
          setUserPhoto(previewUrl);
       },
       [setData],
    );
+
+   const handleRemovePhoto = useCallback(() => {
+      photoFileRef.current = null;
+      setData('photo', null);
+      setUserPhoto(null);
+      setRemovePhoto(true);
+   }, [setData]);
 
    const { fileInputRef, cropOpen, cropImageSrc, handleFileSelect, handleCropCancel, handleCropApply } = useAvatarCrop({
       onPhotoReady: handlePhotoReady,
@@ -120,16 +130,15 @@ const MyProfile = () => {
          preserveScroll: true,
          transform: (form) => ({
             ...form,
-            photo,
+            photo: removePhoto ? null : photo,
+            remove_photo: removePhoto ? 1 : 0,
             social_links: form.social_links ?? formatSocialLinks(socialLinks),
          }),
          onSuccess: (page) => {
             photoFileRef.current = null;
+            setRemovePhoto(false);
             setData('photo', null);
-            const nextPhoto = (page.props as SharedData).auth?.user?.photo;
-            if (nextPhoto) {
-               setUserPhoto(nextPhoto);
-            }
+            setUserPhoto((page.props as SharedData).auth?.user?.photo ?? null);
             toast.success('Profile updated successfully');
          },
          onError: (formErrors) => {
@@ -139,10 +148,12 @@ const MyProfile = () => {
       });
    };
 
+   const showRemove = Boolean(userPhoto || photoFileRef.current || user.photo);
+
    return (
       <>
          <form onSubmit={handleSubmit} className="bg-card grid grid-cols-1 gap-6 rounded-lg p-6 md:grid-cols-2">
-            <div className="col-span-full space-y-1">
+            <div className="col-span-full space-y-2">
                <div className="border-border h-[150px] w-[150px] rounded-full border border-dashed p-1.5">
                   <div className="border-border relative h-full w-full overflow-hidden rounded-full border">
                      <img
@@ -173,6 +184,12 @@ const MyProfile = () => {
                      />
                   </div>
                </div>
+
+               {showRemove && !removePhoto && (
+                  <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive px-0" onClick={handleRemovePhoto}>
+                     {common.remove_photo}
+                  </Button>
+               )}
 
                {errors.photo && <p className="mt-1 text-sm text-red-500">{errors.photo}</p>}
             </div>

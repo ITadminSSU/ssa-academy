@@ -14,6 +14,15 @@ class UpdateInstructorProfileRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('remove_photo')) {
+            $this->merge([
+                'remove_photo' => filter_var($this->input('remove_photo'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,6 +34,7 @@ class UpdateInstructorProfileRequest extends FormRequest
         $rules = [
             'name' => 'required|string|max:255',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
+            'remove_photo' => 'nullable|boolean',
             'social_links' => 'nullable',
         ];
 

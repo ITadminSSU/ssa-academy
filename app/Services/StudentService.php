@@ -370,6 +370,10 @@ class StudentService extends MediaService
             $this->addNewDeletePrev($user, $data['photo'], 'profile');
             $user->photo = null;
             $user->unsetRelation('media');
+         } elseif (! empty($data['remove_photo'])) {
+            $this->removeProfilePhoto($user);
+            $user->photo = null;
+            $user->unsetRelation('media');
          }
 
          $user->save();

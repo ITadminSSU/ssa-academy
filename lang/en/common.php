@@ -117,6 +117,7 @@ return [
    // Profile photo crop
    'crop_photo_title' => 'Crop profile photo',
    'crop_photo_description' => 'Drag to reposition and use the slider to zoom. Your photo will be saved as a 512×512 image when you click Update.',
+   'remove_photo' => 'Remove photo',
    'zoom' => 'Zoom',
 
    // Common Navigation

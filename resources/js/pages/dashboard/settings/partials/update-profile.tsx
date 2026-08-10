@@ -2,6 +2,7 @@ import AvatarCropDialog from '@/components/avatar-crop-dialog';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import TagInput from '@/components/tag-input';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +31,7 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
    const { button, common } = translate;
    const user = auth.user;
    const [userPhoto, setUserPhoto] = useState(user.photo);
+   const [removePhoto, setRemovePhoto] = useState(false);
 
    const [socialLinks, setSocialLinks] = useState<SocialLinksMap>({
       website: '',
@@ -97,10 +99,10 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
    });
 
    useEffect(() => {
-      if (!data.photo) {
+      if (!data.photo && !removePhoto) {
          setUserPhoto(user.photo);
       }
-   }, [user.photo, data.photo]);
+   }, [user.photo, data.photo, removePhoto]);
 
    useEffect(() => {
       setData('social_links', formatSocialLinks(socialLinks));
@@ -108,11 +110,18 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
 
    const handlePhotoReady = useCallback(
       (file: File, previewUrl: string) => {
+         setRemovePhoto(false);
          setData('photo', file);
          setUserPhoto(previewUrl);
       },
       [setData],
    );
+
+   const handleRemovePhoto = useCallback(() => {
+      setData('photo', null);
+      setUserPhoto(null);
+      setRemovePhoto(true);
+   }, [setData]);
 
    const { fileInputRef, cropOpen, cropImageSrc, handleFileSelect, handleCropCancel, handleCropApply } = useAvatarCrop({
       onPhotoReady: handlePhotoReady,
@@ -125,11 +134,19 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
       post(route('account.profile'), {
          forceFormData: true,
          preserveScroll: true,
+         transform: (form) => ({
+            ...form,
+            photo: removePhoto ? null : form.photo,
+            remove_photo: removePhoto ? 1 : 0,
+         }),
          onSuccess: () => {
             setData('photo', null);
+            setRemovePhoto(false);
          },
       });
    };
+
+   const showRemove = Boolean(userPhoto || user.photo);
 
    return (
       <>
@@ -165,6 +182,12 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                         onChange={handleFileSelect}
                      />
                   </div>
+
+                  {showRemove && !removePhoto && (
+                     <Button type="button" variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={handleRemovePhoto}>
+                        {common.remove_photo}
+                     </Button>
+                  )}
 
                   <small className="text-xs text-muted-foreground">Allowed: JPG, JPEG, PNG. Maximum 15MB (saved as 512×512).</small>
 

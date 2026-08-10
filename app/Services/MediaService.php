@@ -49,6 +49,19 @@ class MediaService extends BaseService
         return media_public_url($newMedia);
     }
 
+    public function removeProfilePhoto(Model $model): void
+    {
+        $prevMedia = $model->getMedia('*', ['name' => 'profile'])->first()
+            ?? $model->getMedia('default')
+                ->first(fn ($item) => $item->getCustomProperty('name') === 'profile');
+
+        if ($prevMedia) {
+            $prevMedia->delete();
+        }
+
+        $model->unsetRelation('media');
+    }
+
     /**
      * Copy uploads out of PHP's volatile /tmp before Spatie reads them.
      * Forge (and some hosts) can clear upload temp files mid-request, which

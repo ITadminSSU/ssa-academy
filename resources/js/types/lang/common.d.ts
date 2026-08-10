@@ -103,6 +103,7 @@ interface CommonLang {
    // Profile photo crop
    crop_photo_title: string;
    crop_photo_description: string;
+   remove_photo: string;
    zoom: string;
 
    // Common Navigation
