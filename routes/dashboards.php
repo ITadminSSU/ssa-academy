@@ -19,16 +19,16 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return redirect(app(AuthService::class)->homeUrlFor(auth()->user()));
-    })->name('dashboard');
+    })->name('dashboard')->middleware('twoFactor');
 
-    Route::middleware(['legalAgreement', 'learnerDashboard:internal'])->group(function () {
+    Route::middleware(['twoFactor', 'legalAgreement', 'learnerDashboard:internal'])->group(function () {
         Route::get('/dashboard/internal/{tab?}', [StudentController::class, 'index'])
             ->where('tab', 'home|courses|exams|certificates|announcements|community|professional-development|project-library|resources|help-center|wishlist|profile|settings|subscriptions')
             ->defaults('tab', 'home')
             ->name('dashboard.internal');
     });
 
-    Route::middleware(['legalAgreement', 'learnerDashboard:external'])->group(function () {
+    Route::middleware(['twoFactor', 'legalAgreement', 'learnerDashboard:external'])->group(function () {
         Route::get('/dashboard/external/{tab?}', [StudentController::class, 'index'])
             ->where('tab', 'home|courses|exams|certificates|announcements|community|professional-development|project-library|resources|help-center|wishlist|profile|settings|subscriptions')
             ->defaults('tab', 'home')

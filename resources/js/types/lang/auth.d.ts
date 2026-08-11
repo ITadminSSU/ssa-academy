@@ -52,4 +52,20 @@ interface AuthLang {
    verify_description: string;
    verification_sent: string;
    change_email: string;
+
+   // Two-factor authentication
+   two_factor_title: string;
+   two_factor_description: string;
+   two_factor_recovery_hint: string;
+   two_factor_settings_description: string;
+   two_factor_optional_note: string;
+   two_factor_enabled: string;
+   two_factor_disabled: string;
+   two_factor_scan_title: string;
+   two_factor_scan_description: string;
+   two_factor_manual_secret: string;
+   two_factor_recovery_title: string;
+   two_factor_recovery_save: string;
+   two_factor_regenerate_description: string;
+   two_factor_disable_description: string;
 }

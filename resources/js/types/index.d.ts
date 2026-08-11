@@ -5,6 +5,8 @@ interface Auth {
    dashboardRoute?: string | null;
    legalAgreementRequired?: boolean;
    legalAgreementUrl?: string;
+   twoFactorEnabled?: boolean;
+   canManageTwoFactor?: boolean;
 }
 
 interface BreadcrumbItem {

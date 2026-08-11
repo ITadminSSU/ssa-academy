@@ -65,4 +65,20 @@ return [
     'verify_title' => 'Verify email',
     'verify_description' => 'Please verify your email address by clicking on the link we just emailed to you.',
     'verification_sent' => 'A new verification link has been sent to the email address you provided during registration.',
+
+    // Two-factor authentication
+    'two_factor_title' => 'Two-factor authentication',
+    'two_factor_description' => 'Enter the 6-digit code from your authenticator app, or a recovery code.',
+    'two_factor_recovery_hint' => 'You can also use one of your one-time recovery codes.',
+    'two_factor_settings_description' => 'Add an authenticator app for an extra layer of security on admin and trainer accounts.',
+    'two_factor_optional_note' => 'Optional for now. We recommend enabling it.',
+    'two_factor_enabled' => 'Two-factor authentication is enabled',
+    'two_factor_disabled' => 'Two-factor authentication is not enabled',
+    'two_factor_scan_title' => 'Scan this QR code',
+    'two_factor_scan_description' => 'Use Google Authenticator, Microsoft Authenticator, or Authy to scan the code, then enter the 6-digit code to confirm.',
+    'two_factor_manual_secret' => 'Or enter this secret manually:',
+    'two_factor_recovery_title' => 'Save your recovery codes',
+    'two_factor_recovery_save' => 'Store these codes somewhere safe. Each code can be used once if you lose access to your authenticator.',
+    'two_factor_regenerate_description' => 'Confirm your password and a current authenticator or recovery code to generate a new set of recovery codes.',
+    'two_factor_disable_description' => 'Confirm your password and a current authenticator or recovery code to disable two-factor authentication.',
 ];

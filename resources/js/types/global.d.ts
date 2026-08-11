@@ -71,6 +71,8 @@ export interface SharedData {
       warning: string;
       success: string;
       status: string;
+      two_factor_setup?: { secret: string; qr_url: string } | null;
+      two_factor_recovery_codes?: string[] | null;
    };
    langs: Language[];
    locale: string;

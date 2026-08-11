@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Support\Branding;
 use App\Support\Features;
+use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
 use App\Services\Course\CourseCategoryService;
@@ -28,8 +29,9 @@ class HandleInertiaRequests extends Middleware
         private SettingsService $settingsService,
         private LanguageService $languageService,
         private NotificationService $notificationService,
-        private LegalAgreementService $legalAgreement,
         private CourseCategoryService $courseCategoryService,
+        private LegalAgreementService $legalAgreement,
+        private TwoFactorAuthenticationService $twoFactor,
     ) {}
 
     /**
@@ -98,6 +100,8 @@ class HandleInertiaRequests extends Middleware
                 'dashboardRoute' => $user ? app(AuthService::class)->dashboardRouteNameFor($user) : null,
                 'legalAgreementRequired' => $user ? $this->legalAgreement->requiresAcceptance($user) : false,
                 'legalAgreementUrl' => route('legal.agreement.show'),
+                'twoFactorEnabled' => $user ? $this->twoFactor->isEnabled($user) : false,
+                'canManageTwoFactor' => $user ? $this->twoFactor->canUse($user) : false,
             ],
             'system' => $system,
             'branding' => Branding::payload(),
@@ -125,6 +129,8 @@ class HandleInertiaRequests extends Middleware
                 'warning' => fn() => $request->session()->get('warning'),
                 'success' => fn() => $request->session()->get('success'),
                 'status' => fn() => $request->session()->get('status'),
+                'two_factor_setup' => fn() => $request->session()->get('two_factor_setup'),
+                'two_factor_recovery_codes' => fn() => $request->session()->get('two_factor_recovery_codes'),
             ],
             'langs' => $langs,
             'locale' => $locale,

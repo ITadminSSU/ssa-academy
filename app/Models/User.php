@@ -60,6 +60,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -75,6 +77,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'candidate_status_updated_at' => 'datetime',
         'legal_agreement_accepted_at' => 'datetime',
         'legal_confirmation_email_sent_at' => 'datetime',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     protected function photo(): Attribute

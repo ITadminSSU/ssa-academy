@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Inertia\Inertia;
-use Inertia\Response;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class AuthenticatedSessionController extends Controller
@@ -19,6 +20,7 @@ class AuthenticatedSessionController extends Controller
     public function __construct(
         private AuthService $authService,
         private LegalAgreementService $legalAgreement,
+        private TwoFactorAuthenticationService $twoFactor,
     ) {}
 
     /**
@@ -27,7 +29,13 @@ class AuthenticatedSessionController extends Controller
     public function create(Request $request): Response|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect($this->authService->homeUrlFor($request->user()));
+            $user = $request->user();
+
+            if ($user && $this->twoFactor->isEnabled($user) && $request->session()->get('auth.two_factor_confirmed') !== true) {
+                return redirect()->route('two-factor.challenge');
+            }
+
+            return redirect($this->authService->homeUrlFor($user));
         }
 
         if ($request->filled('redirect') && $this->isSafeRedirect($request->query('redirect'))) {
@@ -58,6 +66,19 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        $request->session()->forget('auth.two_factor_confirmed');
+
+        $user = $request->user();
+
+        if ($user && $this->twoFactor->isEnabled($user)) {
+            $destination = route('two-factor.challenge');
+
+            if ($request->header('X-Inertia')) {
+                return Inertia::location($destination);
+            }
+
+            return redirect()->to($destination);
+        }
 
         $destination = $this->resolvePostLoginDestination($request);
 

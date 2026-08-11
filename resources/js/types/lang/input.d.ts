@@ -13,6 +13,8 @@ interface InputLang {
    new_password: string;
    confirm_password: string;
    confirm_new_password: string;
+   two_factor_code: string;
+   two_factor_code_placeholder: string;
    full_name: string;
    phone: string;
    username: string;

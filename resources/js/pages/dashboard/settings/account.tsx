@@ -1,6 +1,7 @@
 import ChangeEmail from '@/components/account/change-email';
 import ChangePassword from '@/components/account/change-password';
 import ForgetPassword from '@/components/account/forget-password';
+import TwoFactor from '@/components/account/two-factor';
 import Tabs from '@/components/tabs';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
@@ -16,9 +17,10 @@ interface Props extends SharedData {
 }
 
 const Account = ({ instructor, translate }: Props) => {
-   const page = usePage();
+   const page = usePage<SharedData>();
    const params = getQueryParams(page.url);
    const { button, settings } = translate;
+   const canManageTwoFactor = Boolean(page.props.auth.canManageTwoFactor);
 
    const tabs = [
       {
@@ -45,12 +47,16 @@ const Account = ({ instructor, translate }: Props) => {
          title: button.forget_password,
          Component: ForgetPassword,
       },
-      // {
-      //    id: nanoid(),
-      //    slug: 'delete-account',
-      //    title: 'Delete Account',
-      //    Component: DeleteUser,
-      // },
+      ...(canManageTwoFactor
+         ? [
+              {
+                 id: nanoid(),
+                 slug: 'two-factor',
+                 title: button.two_factor_authentication,
+                 Component: TwoFactor,
+              },
+           ]
+         : []),
    ];
 
    return (

@@ -40,13 +40,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 require base_path('routes/dashboards.php');
 
                 // Admin routes
-                Route::middleware(['auth', 'role:admin'])->group(base_path('routes/admin.php'));
+                Route::middleware(['auth', 'twoFactor', 'role:admin'])->group(base_path('routes/admin.php'));
 
                 // Instructor routes
-                Route::middleware(['auth', 'verified', 'legalAgreement', 'role:admin,instructor'])->group(base_path('routes/instructor.php'));
+                Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:admin,instructor'])->group(base_path('routes/instructor.php'));
 
                 // Student routes
-                Route::middleware(['auth', 'legalAgreement', 'role:student,instructor,admin'])->group(base_path('routes/student.php'));
+                Route::middleware(['auth', 'twoFactor', 'legalAgreement', 'role:student,instructor,admin'])->group(base_path('routes/student.php'));
 
                 Route::get('/{slug}', [HomeController::class, 'inner_page'])->name('inner.page');
             });
@@ -91,6 +91,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'learnerDashboard' => \App\Http\Middleware\EnsureLearnerDashboard::class,
             'legalAgreement' => \App\Http\Middleware\EnsureLegalAgreementAccepted::class,
+            'twoFactor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
             'installed' => \Modules\Installer\Http\Middleware\InstalledRoutes::class,
         ]);

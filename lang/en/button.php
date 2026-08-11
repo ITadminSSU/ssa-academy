@@ -135,6 +135,12 @@ return [
     'forget_password' => 'Forget Password',
     'get_email_change_link' => 'Get Email Change Link',
     'get_password_reset_link' => 'Get Password Reset Link',
+    'two_factor_authentication' => 'Two-Factor Auth',
+    'enable_two_factor' => 'Enable two-factor',
+    'disable_two_factor' => 'Disable two-factor',
+    'confirm_and_enable' => 'Confirm and enable',
+    'regenerate_recovery_codes' => 'Regenerate recovery codes',
+    'verify_and_continue' => 'Verify and continue',
 
     // ==================================================
     // 05. File Upload Buttons

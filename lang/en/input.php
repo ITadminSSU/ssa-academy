@@ -22,6 +22,8 @@ return [
    'new_password' => 'New Password',
    'confirm_password' => 'Confirm password',
    'confirm_new_password' => 'Confirm New Password',
+   'two_factor_code' => 'Authentication code',
+   'two_factor_code_placeholder' => '6-digit code or recovery code',
    'full_name' => 'Full Name',
    'phone' => 'Phone',
    'username' => 'Username',

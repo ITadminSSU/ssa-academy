@@ -129,6 +129,12 @@ interface ButtonLang {
    forget_password: string;
    get_email_change_link: string;
    get_password_reset_link: string;
+   two_factor_authentication: string;
+   enable_two_factor: string;
+   disable_two_factor: string;
+   confirm_and_enable: string;
+   regenerate_recovery_codes: string;
+   verify_and_continue: string;
 
    // ==================================================
    // 05. File Upload Buttons

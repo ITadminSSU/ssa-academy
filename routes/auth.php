@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\TwoFactorSettingsController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\LegalAgreementController;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +51,20 @@ Route::middleware(['guest', 'authConfig'])->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('legal/agreement', [LegalAgreementController::class, 'show'])->name('legal.agreement.show');
     Route::post('legal/agreement', [LegalAgreementController::class, 'store'])->name('legal.agreement.store');
+
+    Route::get('two-factor-challenge', [TwoFactorChallengeController::class, 'create'])
+        ->name('two-factor.challenge');
+    Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('two-factor.challenge.store');
+
+    Route::middleware(['twoFactor', 'role:admin,instructor'])->prefix('settings/account/two-factor')->group(function () {
+        Route::post('start', [TwoFactorSettingsController::class, 'start'])->name('two-factor.start');
+        Route::post('confirm', [TwoFactorSettingsController::class, 'confirm'])->name('two-factor.confirm');
+        Route::post('disable', [TwoFactorSettingsController::class, 'disable'])->name('two-factor.disable');
+        Route::post('recovery-codes', [TwoFactorSettingsController::class, 'regenerateRecoveryCodes'])
+            ->name('two-factor.recovery-codes');
+    });
 
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
