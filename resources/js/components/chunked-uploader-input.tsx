@@ -72,12 +72,17 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const fileRef = useRef<File | null>(null);
    const abortControllerRef = useRef<AbortController | null>(null);
    const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
-   // Binary multipart chunks stay under typical Nginx 1MB defaults.
-   const chunkSize = 512 * 1024;
+   // S3/R2 multipart requires every part except the last to be >= 5MB (EntityTooSmall otherwise).
+   const chunkSize = 5 * 1024 * 1024;
 
    const formatUploadError = (error: any, fallback: string): string => {
       if (error?.response?.status === 413) {
-         return 'Upload rejected (413): server upload limit is too low. In Forge Nginx set client_max_body_size 100M; or paste a YouTube/Vimeo URL instead.';
+         return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M (R2 needs 5MB chunks). Or paste a YouTube/Vimeo URL instead.';
+      }
+
+      const awsMessage = error?.response?.data?.message || error?.message || '';
+      if (typeof awsMessage === 'string' && awsMessage.includes('EntityTooSmall')) {
+         return 'Upload failed: Cloudflare R2 rejected parts smaller than 5MB. Redeploy with 5MB chunk size, or use a YouTube/Vimeo URL.';
       }
 
       return error?.response?.data?.message || error?.message || fallback;
