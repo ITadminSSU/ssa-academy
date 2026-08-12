@@ -60,7 +60,8 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    const [isMuted, setIsMuted] = useState(true);
    const [isHovering, setIsHovering] = useState(false);
    const [loadFailed, setLoadFailed] = useState(false);
-   const poster = posterUrl || DEFAULT_POSTER;
+   const [posterFailed, setPosterFailed] = useState(false);
+   const poster = (!posterFailed && posterUrl?.trim()) || DEFAULT_POSTER;
    const hasVideo = Boolean(videoUrl?.trim());
 
    const plyrSource = useMemo(() => {
@@ -101,8 +102,9 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    useEffect(() => {
       setIsMuted(true);
       setLoadFailed(false);
+      setPosterFailed(false);
       setIsHovering(false);
-   }, [videoUrl]);
+   }, [videoUrl, posterUrl]);
 
    useEffect(() => {
       if (!plyrSource) {
@@ -185,8 +187,17 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
 
    if (!hasVideo || !plyrSource) {
       return (
-         <div className={cn('overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-sm', className)}>
-            <img src={poster} alt="SSU Academy" className="aspect-video w-full object-cover" />
+         <div className={cn('h-full w-full overflow-hidden bg-black/30', className)}>
+            <img
+               src={poster}
+               alt="SSU Academy"
+               className="aspect-video h-full w-full object-cover"
+               onError={() => {
+                  if (!posterFailed) {
+                     setPosterFailed(true);
+                  }
+               }}
+            />
          </div>
       );
    }
@@ -194,7 +205,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    return (
       <div
          className={cn(
-            'ssu-hero-video group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-sm',
+            'ssu-hero-video group relative h-full w-full overflow-hidden bg-black/20',
             isHovering && 'ssu-hero-video--hover',
             className,
          )}
@@ -203,7 +214,6 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       >
          <Plyr ref={playerRef} options={plyrOptions} source={plyrSource} />
 
-         {/* Visible while muted so users can unmute; removed after sound is on */}
          {isMuted && (
             <button
                type="button"
