@@ -8,7 +8,7 @@ import Pillars from './partials/ssu-home/pillars';
 
 const SsuHome = ({ system }: IntroPageProps) => {
    return (
-      <LandingLayout navbarHeight={false} customizable={false}>
+      <LandingLayout navbarHeight={true} customizable={false}>
          <Head title={system.fields.name} />
 
          <div className="ssu-page-shell">

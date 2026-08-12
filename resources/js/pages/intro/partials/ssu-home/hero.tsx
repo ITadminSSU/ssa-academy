@@ -28,8 +28,8 @@ const Hero = () => {
 
          <div
             className={cn(
-               'relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-10 px-4 py-16 sm:px-6',
-               'md:flex-row md:items-center md:gap-10 md:py-20 lg:gap-14 lg:px-10 lg:py-24',
+               'relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-10 px-4 pt-10 pb-16 sm:px-6 sm:pt-12',
+               'md:flex-row md:items-center md:gap-10 md:pt-16 md:pb-20 lg:gap-14 lg:px-10 lg:pt-20 lg:pb-24',
             )}
          >
             <div className="w-full shrink-0 space-y-5 md:max-w-md lg:max-w-lg xl:max-w-xl">

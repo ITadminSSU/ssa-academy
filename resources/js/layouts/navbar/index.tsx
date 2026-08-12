@@ -1,4 +1,5 @@
 import AppLogo from '@/components/app-logo';
+import AppearanceToggleTab from '@/components/appearance-tabs';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -161,6 +162,11 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                      {sortedItems.map((item) => (
                         <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                      ))}
+
+                     <div className="border-border/60 space-y-3 border-t pt-4">
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Theme</p>
+                        <AppearanceToggleTab />
+                     </div>
 
                      {!isLoggedIn && (
                         <div className="block space-y-2 sm:hidden">
