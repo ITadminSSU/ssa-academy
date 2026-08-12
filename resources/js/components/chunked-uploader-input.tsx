@@ -72,7 +72,16 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const fileRef = useRef<File | null>(null);
    const abortControllerRef = useRef<AbortController | null>(null);
    const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
-   const chunkSize = 5 * 1024 * 1024;
+   // Keep chunks small enough that base64 JSON bodies stay under typical Nginx limits (~1MB).
+   const chunkSize = 512 * 1024;
+
+   const formatUploadError = (error: any, fallback: string): string => {
+      if (error?.response?.status === 413) {
+         return 'Upload rejected: file chunk is too large for the server. Ask your admin to raise Nginx client_max_body_size (e.g. 20M), or use a smaller MP4 / YouTube link instead.';
+      }
+
+      return error?.response?.data?.message || error?.message || fallback;
+   };
 
    // Configure axios to automatically handle CSRF tokens
    useEffect(() => {
@@ -165,8 +174,9 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
          }
       } catch (error: any) {
          setUploadStatus('error');
-         setErrorMessage(error.response?.data?.message || error.message || 'Failed to initialize upload');
-         if (onError) onError(error.response?.data?.message || error.message || 'Failed to initialize upload');
+         const message = formatUploadError(error, 'Failed to initialize upload');
+         setErrorMessage(message);
+         if (onError) onError(message);
       }
    };
 
@@ -252,8 +262,9 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
          }
 
          setUploadStatus('error');
-         setErrorMessage(error.response?.data?.message || error.message || 'Failed to upload file chunks');
-         if (onError) onError(error.response?.data?.message || error.message || 'Failed to upload file chunks');
+         const message = formatUploadError(error, 'Failed to upload file chunks');
+         setErrorMessage(message);
+         if (onError) onError(message);
       }
    };
 
