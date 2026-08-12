@@ -58,16 +58,17 @@ function buildPlyrSource(videoUrl: string) {
 const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    const playerRef = useRef<APITypes>(null);
    const [isMuted, setIsMuted] = useState(true);
+   const [loadFailed, setLoadFailed] = useState(false);
    const poster = posterUrl || DEFAULT_POSTER;
    const hasVideo = Boolean(videoUrl?.trim());
 
    const plyrSource = useMemo(() => {
-      if (!hasVideo || !videoUrl) {
+      if (!hasVideo || !videoUrl || loadFailed) {
          return null;
       }
 
       return buildPlyrSource(videoUrl);
-   }, [hasVideo, videoUrl]);
+   }, [hasVideo, videoUrl, loadFailed]);
 
    const plyrOptions = useMemo(
       () => ({
@@ -98,6 +99,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
 
    useEffect(() => {
       setIsMuted(true);
+      setLoadFailed(false);
    }, [videoUrl]);
 
    useEffect(() => {
@@ -113,6 +115,10 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          if (player) {
             setIsMuted(Boolean(player.muted));
          }
+      };
+
+      const handleError = () => {
+         setLoadFailed(true);
       };
 
       const bindPlayer = () => {
@@ -132,6 +138,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          player.muted = true;
          player.volume = 0;
          player.on('volumechange', handleVolumeChange);
+         player.on('error', handleError);
 
          const playPromise = player.play?.();
 
@@ -151,6 +158,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
 
          if (player && typeof player.off === 'function') {
             player.off('volumechange', handleVolumeChange);
+            player.off('error', handleError);
          }
       };
    }, [plyrSource]);

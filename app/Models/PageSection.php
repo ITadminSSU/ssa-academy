@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,6 +53,50 @@ class PageSection extends Model implements HasMedia
     }
 
     /**
+     * Private R2/S3 object URLs cannot play in the browser — sign them on read.
+     */
+    protected function videoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => S3CompatibleStorage::resolvePlaybackUrl($value),
+            set: fn (?string $value) => S3CompatibleStorage::normalizeStoredUrl($value),
+        );
+    }
+
+    /**
+     * Hero posters uploaded to R2 also need a signed URL when the bucket is private.
+     */
+    protected function thumbnail(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $value) {
+                $resolved = S3CompatibleStorage::resolvePlaybackUrl($value);
+
+                if ($resolved === null || $resolved === '') {
+                    return $resolved;
+                }
+
+                if (S3CompatibleStorage::isLocalPublicUrl($resolved) || ! str_starts_with($resolved, 'http')) {
+                    return public_asset_url($resolved) ?? $resolved;
+                }
+
+                return $resolved;
+            },
+            set: function (?string $value) {
+                if ($value === null || trim($value) === '') {
+                    return null;
+                }
+
+                if (S3CompatibleStorage::isLocalPublicUrl($value)) {
+                    return $value;
+                }
+
+                return S3CompatibleStorage::normalizeStoredUrl($value) ?? $value;
+            },
+        );
+    }
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
@@ -69,6 +115,6 @@ class PageSection extends Model implements HasMedia
     {
         $maxSort = static::query()->max('sort');
 
-        return is_null($maxSort) ? 1 : (int)$maxSort + 1;
+        return is_null($maxSort) ? 1 : (int) $maxSort + 1;
     }
 }

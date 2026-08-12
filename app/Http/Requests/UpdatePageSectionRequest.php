@@ -27,7 +27,8 @@ class UpdatePageSectionRequest extends FormRequest
             'sub_title' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'video_url' => 'nullable|string|max:2048',
+            // Signed R2/S3 playback URLs can exceed 2KB; DB column is TEXT.
+            'video_url' => 'nullable|string|max:5000',
             'background_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'background_color' => 'nullable|string|max:255',
             'properties' => 'array',
