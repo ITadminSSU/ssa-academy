@@ -344,6 +344,12 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   access: ['admin', 'collaborative', 'administrative'],
                },
                {
+                  name: 'Our Team',
+                  slug: routeLastSegment(route('settings.team-members.index')),
+                  path: route('settings.team-members.index'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
                   name: 'Pages',
                   slug: routeLastSegment(route('settings.pages')),
                   path: route('settings.pages'),

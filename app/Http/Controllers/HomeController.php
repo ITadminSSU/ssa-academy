@@ -10,6 +10,7 @@ use App\Services\Course\CourseCategoryService;
 use App\Services\JobCircularService;
 use App\Services\AuthService;
 use App\Services\PageService;
+use App\Services\TeamMemberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,7 @@ class HomeController extends Controller
       protected JobCircularService $jobCircularService,
       protected CourseCategoryService $categoryService,
       protected AuthService $authService,
+      protected TeamMemberService $teamMemberService,
    ) {}
 
    public function index(Request $request)
@@ -57,6 +59,7 @@ class HomeController extends Controller
    {
       return Inertia::render('intro/ssu-about', [
          'type' => 'intro',
+         'teamMembers' => $this->teamMemberService->listForPublic(),
       ]);
    }
 

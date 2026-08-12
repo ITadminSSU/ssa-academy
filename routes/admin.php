@@ -10,6 +10,7 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\Admin\CandidatePipelineController;
 use App\Http\Controllers\Admin\PaymentRefundController;
+use App\Http\Controllers\Admin\TeamMemberController;
 use App\Http\Controllers\Admin\ProfessionalTypeController;
 use App\Http\Controllers\Admin\PlatformToolsController;
 use App\Http\Controllers\Admin\TrainerMetricsController;
@@ -91,6 +92,10 @@ Route::prefix('dashboard/admin')->group(function () {
         Route::post('system/{id}', 'system_update')->name('settings.system.update');
 
         Route::get('pages', 'pages')->name('settings.pages');
+        Route::get('team-members', [TeamMemberController::class, 'index'])->name('settings.team-members.index');
+        Route::post('team-members', [TeamMemberController::class, 'store'])->name('settings.team-members.store');
+        Route::put('team-members/{teamMember}', [TeamMemberController::class, 'update'])->name('settings.team-members.update');
+        Route::delete('team-members/{teamMember}', [TeamMemberController::class, 'destroy'])->name('settings.team-members.destroy');
         Route::post('home-page/{id}', 'home_pages_update')->name('settings.home-page.update');
         Route::post('system-type', 'system_type_update')->name('settings.system-type.update');
 

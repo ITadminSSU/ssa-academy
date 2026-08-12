@@ -12,7 +12,13 @@ function createImage(url: string): Promise<HTMLImageElement> {
    });
 }
 
-export async function getCroppedImageFile(imageSrc: string, pixelCrop: Area, outputSize = OUTPUT_SIZE): Promise<File> {
+export async function getCroppedImageFile(
+   imageSrc: string,
+   pixelCrop: Area,
+   outputWidth = OUTPUT_SIZE,
+   outputHeight = outputWidth,
+   fileName = 'cropped-image.jpg',
+): Promise<File> {
    const image = await createImage(imageSrc);
    const canvas = document.createElement('canvas');
    const context = canvas.getContext('2d');
@@ -21,10 +27,10 @@ export async function getCroppedImageFile(imageSrc: string, pixelCrop: Area, out
       throw new Error('Could not get canvas context');
    }
 
-   canvas.width = outputSize;
-   canvas.height = outputSize;
+   canvas.width = outputWidth;
+   canvas.height = outputHeight;
 
-   context.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, outputSize, outputSize);
+   context.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, outputWidth, outputHeight);
 
    const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob((result) => resolve(result), 'image/jpeg', 0.92);
@@ -34,5 +40,5 @@ export async function getCroppedImageFile(imageSrc: string, pixelCrop: Area, out
       throw new Error('Failed to create image');
    }
 
-   return new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
+   return new File([blob], fileName, { type: 'image/jpeg' });
 }
