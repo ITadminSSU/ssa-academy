@@ -121,9 +121,15 @@ const TeamSettings = ({ teamMembers }: Props) => {
          return;
       }
 
+      createForm.transform((data) => ({
+         ...data,
+         is_active: data.is_active ? 1 : 0,
+      }));
+
       createForm.post(route('settings.team-members.store'), {
          forceFormData: true,
          onSuccess: () => {
+            createForm.transform((data) => data);
             setCreateOpen(false);
             createForm.reset();
             resetCreatePhoto();
@@ -138,17 +144,28 @@ const TeamSettings = ({ teamMembers }: Props) => {
          return;
       }
 
-      editForm
-         .transform((data) => ({
-            ...data,
-            _method: 'put',
-         }))
-         .post(route('settings.team-members.update', editingMember.id), {
-            forceFormData: true,
-            onSuccess: () => {
-               closeEdit();
-            },
-         });
+      editForm.transform((data) => {
+         const payload: Record<string, unknown> = {
+            name: data.name,
+            role: data.role,
+            sort_order: data.sort_order,
+            is_active: data.is_active ? 1 : 0,
+         };
+
+         if (data.photo) {
+            payload.photo = data.photo;
+         }
+
+         return payload;
+      });
+
+      editForm.post(route('settings.team-members.update', editingMember.id), {
+         forceFormData: true,
+         onSuccess: () => {
+            editForm.transform((data) => data);
+            closeEdit();
+         },
+      });
    };
 
    const renderPhotoField = (

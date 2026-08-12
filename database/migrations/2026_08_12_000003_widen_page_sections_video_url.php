@@ -13,7 +13,8 @@ return new class extends Migration
         }
 
         // Avoid ->change() which requires doctrine/dbal on Forge.
-        DB::statement('ALTER TABLE page_sections MODIFY video_url TEXT NULL');
+        $table = DB::getTablePrefix() . 'page_sections';
+        DB::statement("ALTER TABLE `{$table}` MODIFY `video_url` TEXT NULL");
     }
 
     public function down(): void
@@ -22,6 +23,7 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('ALTER TABLE page_sections MODIFY video_url VARCHAR(255) NULL');
+        $table = DB::getTablePrefix() . 'page_sections';
+        DB::statement("ALTER TABLE `{$table}` MODIFY `video_url` VARCHAR(255) NULL");
     }
 };

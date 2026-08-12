@@ -23,13 +23,7 @@ class TeamMemberController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
-            'photo' => 'required|image|mimes:jpeg,png,jpg|max:15360',
-            'sort_order' => 'integer|min:0',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $this->validatedMember($request, photoRequired: true);
 
         $this->teamMembers->create($validated, $request->file('photo'));
 
@@ -38,17 +32,31 @@ class TeamMemberController extends Controller
 
     public function update(Request $request, TeamMember $teamMember): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
-            'sort_order' => 'integer|min:0',
-            'is_active' => 'boolean',
-        ]);
+        $validated = $this->validatedMember($request, photoRequired: false);
 
         $this->teamMembers->update($teamMember, $validated, $request->file('photo'));
 
         return back()->with('success', 'Team member updated successfully.');
+    }
+
+    private function validatedMember(Request $request, bool $photoRequired): array
+    {
+        $request->merge([
+            'is_active' => $request->boolean('is_active'),
+            'sort_order' => (int) $request->input('sort_order', 0),
+        ]);
+
+        if (! $request->hasFile('photo')) {
+            $request->request->remove('photo');
+        }
+
+        return $request->validate([
+            'name' => 'required|string|max:255',
+            'role' => 'required|string|max:255',
+            'photo' => ($photoRequired ? 'required' : 'nullable').'|image|mimes:jpeg,png,jpg|max:15360',
+            'sort_order' => 'integer|min:0',
+            'is_active' => 'boolean',
+        ]);
     }
 
     public function destroy(TeamMember $teamMember): RedirectResponse

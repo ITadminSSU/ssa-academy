@@ -34,8 +34,7 @@ class TeamMemberService extends MediaService
         ]);
 
         if ($photo) {
-            $member->photo = $this->addNewDeletePrev($member, $photo, 'photo');
-            $member->save();
+            $this->storePhoto($member, $photo);
         }
 
         return $member->fresh();
@@ -51,12 +50,24 @@ class TeamMemberService extends MediaService
         ]);
 
         if ($photo) {
-            $member->photo = $this->addNewDeletePrev($member, $photo, 'photo');
+            $this->storePhoto($member, $photo);
         }
 
         $member->save();
 
         return $member->fresh();
+    }
+
+    private function storePhoto(TeamMember $member, UploadedFile $photo): void
+    {
+        $this->addNewDeletePrev($member, $photo, 'photo');
+
+        $media = $member->getMedia('default')
+            ->first(fn ($item) => $item->getCustomProperty('name') === 'photo')
+            ?? $member->getMedia('*', ['name' => 'photo'])->first();
+
+        $member->photo = $media?->getPathRelativeToRoot();
+        $member->save();
     }
 
     public function delete(TeamMember $member): void
