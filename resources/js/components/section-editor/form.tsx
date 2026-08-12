@@ -155,29 +155,43 @@ const EditForm = () => {
             )}
 
             {section.flags.video_url && (
-               <div className="space-y-2">
-                  <Label htmlFor="video_url">{input.preview_video}</Label>
+               <div className="space-y-4">
+                  <div className="space-y-2">
+                     <Label htmlFor="video_url">{input.video_url}</Label>
+                     <Input
+                        type="url"
+                        id="video_url"
+                        name="video_url"
+                        value={data.video_url || ''}
+                        onChange={(e) => onHandleChange(e, setData)}
+                        placeholder={input.video_url_placeholder}
+                     />
+                     <p className="text-muted-foreground text-xs">Paste a YouTube or Vimeo link, or upload an MP4 below.</p>
+                     {errors.video_url && <p className="mt-1 text-sm text-red-600">{errors.video_url}</p>}
+                  </div>
 
-                  <ChunkedUploaderInput
-                     isSubmit={isSubmit}
-                     filetype={'video'}
-                     delayUpload={false}
-                     onFileSelected={(file) => {
-                        setIsFileSelected(true);
-                     }}
-                     onFileUploaded={(fileData) => {
-                        setIsFileUploaded(true);
-                        setData('video_url', fileData.file_url);
-                     }}
-                     onError={(errors) => {
-                        setIsSubmit(false);
-                     }}
-                     onCancelUpload={() => {
-                        setIsSubmit(false);
-                     }}
-                  />
+                  <div className="space-y-2">
+                     <Label>{input.preview_video}</Label>
 
-                  {errors.video_url && <p className="mt-1 text-sm text-red-600">{errors.video_url}</p>}
+                     <ChunkedUploaderInput
+                        isSubmit={isSubmit}
+                        filetype={'video'}
+                        delayUpload={false}
+                        onFileSelected={() => {
+                           setIsFileSelected(true);
+                        }}
+                        onFileUploaded={(fileData) => {
+                           setIsFileUploaded(true);
+                           setData('video_url', fileData.file_url);
+                        }}
+                        onError={() => {
+                           setIsSubmit(false);
+                        }}
+                        onCancelUpload={() => {
+                           setIsSubmit(false);
+                        }}
+                     />
+                  </div>
                </div>
             )}
 

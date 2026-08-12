@@ -1,8 +1,8 @@
+import HeroVideoPlayer from '@/components/hero-video-player';
 import { getPageSection } from '@/lib/page';
 import { cn } from '@/lib/utils';
 import { IntroPageProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
-import { BadgeCheck, ClipboardCheck, PlayCircle, Trophy } from 'lucide-react';
 
 const defaultHero = {
    kicker: 'SMARTSOURCING USA ACADEMY',
@@ -10,29 +10,6 @@ const defaultHero = {
    description:
       'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
 };
-
-const heroHighlights = [
-   {
-      icon: PlayCircle,
-      title: 'Watch & learn',
-      description: 'Structured video lessons you can take at your own pace.',
-   },
-   {
-      icon: ClipboardCheck,
-      title: 'Practice & apply',
-      description: 'Assignments that turn concepts into real-world skills.',
-   },
-   {
-      icon: Trophy,
-      title: 'Prove your progress',
-      description: 'Quizzes and assessments that validate what you know.',
-   },
-   {
-      icon: BadgeCheck,
-      title: 'Earn credentials',
-      description: 'SSU-verified certificates with unique reference numbers.',
-   },
-];
 
 const Hero = () => {
    const { props } = usePage<IntroPageProps>();
@@ -59,24 +36,7 @@ const Hero = () => {
             </div>
 
             <div className="relative w-full max-w-lg">
-               <div className="rounded-2xl border border-white/10 bg-white/10 p-6 shadow-sm backdrop-blur-sm md:p-7">
-                  <p className="mb-5 text-sm font-semibold tracking-wide text-white/90 uppercase">Your path to certification</p>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                     {heroHighlights.map(({ icon: Icon, title: highlightTitle, description: highlightDescription }) => (
-                        <div
-                           key={highlightTitle}
-                           className="rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:bg-white/10"
-                        >
-                           <div className="bg-accent/20 text-accent mb-3 inline-flex rounded-lg p-2.5">
-                              <Icon className="h-5 w-5" strokeWidth={2} />
-                           </div>
-                           <p className="mb-1 text-sm font-semibold text-white">{highlightTitle}</p>
-                           <p className="text-xs leading-relaxed text-white/70">{highlightDescription}</p>
-                        </div>
-                     ))}
-                  </div>
-               </div>
+               <HeroVideoPlayer videoUrl={heroSection?.video_url} posterUrl={heroSection?.thumbnail} />
             </div>
          </div>
       </section>

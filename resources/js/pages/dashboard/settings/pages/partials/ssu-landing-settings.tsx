@@ -28,7 +28,7 @@ const SsuLandingSettings = ({ landingPage }: Props) => {
             <div>
                <h2 className="text-lg font-medium">SSU Academy Landing Page</h2>
                <p className="text-muted-foreground text-sm">
-                  Edit hero copy, value pillars, featured courses, and the bottom call-to-action. Preview at{' '}
+                  Edit hero copy, hero video/poster, value pillars, featured courses, and the bottom call-to-action. Preview at{' '}
                   <a href={route('home')} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                      the public home page
                   </a>
@@ -56,7 +56,7 @@ const SsuLandingSettings = ({ landingPage }: Props) => {
                      actionComponent={
                         <Button size="sm" variant="secondary">
                            <Pencil className="mr-2 h-4 w-4" />
-                           Edit copy
+                           Edit section
                         </Button>
                      }
                   />

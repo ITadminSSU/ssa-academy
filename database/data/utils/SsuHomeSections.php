@@ -16,11 +16,13 @@ class SsuHomeSections
                 'title' => 'SMARTSOURCING USA ACADEMY',
                 'sub_title' => 'Upskill. Certify your skills. Scale with confidence.',
                 'description' => 'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
-                'thumbnail' => null,
+                'thumbnail' => '/assets/images/ssu-about/about-hero.png',
                 'flags' => [
                     'title' => true,
                     'sub_title' => true,
                     'description' => true,
+                    'thumbnail' => true,
+                    'video_url' => true,
                 ],
                 'properties' => [
                     'button_text' => 'Browse Courses',

@@ -27,7 +27,7 @@ class UpdatePageSectionRequest extends FormRequest
             'sub_title' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'video_url' => 'nullable|string|max:255',
+            'video_url' => 'nullable|string|max:2048',
             'background_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'background_color' => 'nullable|string|max:255',
             'properties' => 'array',
