@@ -274,11 +274,11 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
 
                   {teamMembers.length > 0 && (
 
-                     <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                     <div className="mx-auto flex max-w-5xl flex-wrap justify-center gap-6">
 
                         {teamMembers.map((member) => (
 
-                           <div key={member.id} className="ssu-surface-card group mx-auto w-full max-w-[220px] overflow-hidden">
+                           <div key={member.id} className="ssu-surface-card group w-full max-w-[220px] shrink-0 overflow-hidden">
 
                               <div className="relative aspect-[3/4] w-full overflow-hidden bg-muted">
 
