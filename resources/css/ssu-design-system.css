@@ -95,9 +95,9 @@
    }
 
    .ssu-logo-frame--nav {
-      /* Tall enough that SMARTSOURCING USA / ACADEMY stay readable */
-      height: 4.75rem;
-      max-width: min(280px, 68vw);
+      /* Compact — smallest readable nav mark */
+      height: 3rem; /* 48px */
+      max-width: min(180px, 55vw);
       overflow: visible;
    }
 
@@ -141,8 +141,8 @@
 
    @media (min-width: 768px) {
       .ssu-logo-frame--nav {
-         height: 5.5rem;
-         max-width: min(320px, 42vw);
+         height: 3.5rem; /* 56px */
+         max-width: min(220px, 32vw);
       }
 
       .ssu-logo-frame--footer {
