@@ -283,6 +283,32 @@
    .lesson-container .plyr--video {
       @apply h-full w-full md:max-h-[calc(100vh-4rem)] md:min-h-[80vh];
    }
+
+   /* Homepage hero: hide volume bar unless hovering the video */
+   .ssu-hero-video .plyr__controls {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+   }
+
+   .ssu-hero-video:hover .plyr__controls,
+   .ssu-hero-video:focus-within .plyr__controls,
+   .ssu-hero-video.ssu-hero-video--hover .plyr__controls {
+      opacity: 1;
+      pointer-events: auto;
+   }
+
+   @media (hover: none) {
+      .ssu-hero-video .plyr__controls {
+         opacity: 0;
+      }
+
+      .ssu-hero-video:active .plyr__controls,
+      .ssu-hero-video:focus-within .plyr__controls {
+         opacity: 1;
+         pointer-events: auto;
+      }
+   }
 }
 
 [data-slot='dialog-content'] .ring-offset-background {

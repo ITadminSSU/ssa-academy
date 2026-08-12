@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Volume2, VolumeX } from 'lucide-react';
+import { VolumeX } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Plyr, { APITypes } from 'plyr-react';
 import 'plyr-react/plyr.css';
@@ -58,6 +58,7 @@ function buildPlyrSource(videoUrl: string) {
 const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    const playerRef = useRef<APITypes>(null);
    const [isMuted, setIsMuted] = useState(true);
+   const [isHovering, setIsHovering] = useState(false);
    const [loadFailed, setLoadFailed] = useState(false);
    const poster = posterUrl || DEFAULT_POSTER;
    const hasVideo = Boolean(videoUrl?.trim());
@@ -78,7 +79,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          loop: { active: true },
          playsinline: true,
          controls: ['mute', 'volume', 'fullscreen'],
-         hideControls: false,
+         hideControls: true,
          clickToPlay: true,
          poster,
          youtube: {
@@ -100,6 +101,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    useEffect(() => {
       setIsMuted(true);
       setLoadFailed(false);
+      setIsHovering(false);
    }, [videoUrl]);
 
    useEffect(() => {
@@ -190,9 +192,18 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    }
 
    return (
-      <div className={cn('group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-sm', className)}>
+      <div
+         className={cn(
+            'ssu-hero-video group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 shadow-sm',
+            isHovering && 'ssu-hero-video--hover',
+            className,
+         )}
+         onMouseEnter={() => setIsHovering(true)}
+         onMouseLeave={() => setIsHovering(false)}
+      >
          <Plyr ref={playerRef} options={plyrOptions} source={plyrSource} />
 
+         {/* Visible while muted so users can unmute; removed after sound is on */}
          {isMuted && (
             <button
                type="button"
@@ -203,13 +214,6 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
                <VolumeX className="h-4 w-4" />
                Tap for sound
             </button>
-         )}
-
-         {!isMuted && (
-            <div className="pointer-events-none absolute right-4 bottom-4 z-20 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-xs text-white/80 backdrop-blur-sm">
-               <Volume2 className="h-3.5 w-3.5" />
-               Sound on
-            </div>
          )}
       </div>
    );

@@ -161,7 +161,11 @@ function renderParagraph(text: string, key: string) {
 }
 
 const SsuFaqs = ({ system }: IntroPageProps) => {
-   const [openIndex, setOpenIndex] = useState<number | null>(0);
+   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+   const hexClip = 'polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%)';
+   const barClip =
+      'polygon(16px 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 16px 100%, 0% 50%)';
 
    return (
       <LandingLayout navbarHeight={true} customizable={false}>
@@ -206,15 +210,19 @@ const SsuFaqs = ({ system }: IntroPageProps) => {
 
                      return (
                         <div key={faq.question} className="w-full">
-                           <div className="flex items-stretch gap-2 sm:gap-3">
-                              <div
-                                 className="bg-accent relative mt-1 hidden h-11 w-11 shrink-0 sm:block md:h-12 md:w-12"
-                                 style={{
-                                    clipPath: 'polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%)',
-                                 }}
-                                 aria-hidden
-                              >
-                                 <span className="absolute top-1/2 -right-1 h-0 w-0 -translate-y-1/2 border-y-[6px] border-l-[8px] border-y-transparent border-l-accent" />
+                           <div className="relative flex items-center">
+                              {/* Red hexagon integrated into blue bar */}
+                              <div className="relative z-20 mr-[-10px] shrink-0 sm:mr-[-12px]">
+                                 <div
+                                    className="absolute -inset-[3px] bg-white"
+                                    style={{ clipPath: hexClip }}
+                                    aria-hidden
+                                 />
+                                 <div
+                                    className="bg-accent relative h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12"
+                                    style={{ clipPath: hexClip }}
+                                    aria-hidden
+                                 />
                               </div>
 
                               <button
@@ -222,14 +230,12 @@ const SsuFaqs = ({ system }: IntroPageProps) => {
                                  aria-expanded={isOpen}
                                  onClick={() => setOpenIndex(isOpen ? null : index)}
                                  className={cn(
-                                    'group relative flex min-h-12 flex-1 items-center bg-primary px-4 py-3 text-left transition sm:px-5 md:min-h-14 md:px-6',
+                                    'relative z-10 flex min-h-11 flex-1 items-center bg-primary py-3 pr-5 pl-6 text-left transition sm:min-h-12 sm:pr-6 sm:pl-7 md:min-h-14 md:pr-8 md:pl-8',
                                     'hover:bg-primary/95 focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                                  )}
-                                 style={{
-                                    clipPath: 'polygon(0 0, calc(100% - 22px) 0, 100% 50%, calc(100% - 22px) 100%, 0 100%)',
-                                 }}
+                                 style={{ clipPath: barClip }}
                               >
-                                 <span className="font-display pr-6 text-sm font-semibold text-white sm:text-base md:text-lg">
+                                 <span className="font-display pr-4 text-sm font-semibold text-white sm:text-base md:text-lg">
                                     {faq.question}
                                  </span>
                               </button>
@@ -242,10 +248,12 @@ const SsuFaqs = ({ system }: IntroPageProps) => {
                               )}
                            >
                               <div className="overflow-hidden">
-                                 <div className="pt-2 sm:pl-14 md:pl-[3.75rem]">
-                                    <div className="bg-primary px-5 py-5 text-sm text-white sm:px-6 sm:py-6 sm:text-base">
+                                 <div className="pt-2 pl-8 sm:pl-12 md:pl-14">
+                                    <div className="border border-white/20 bg-primary px-5 py-5 text-sm text-white sm:px-6 sm:py-6 sm:text-base">
                                        <div className="space-y-3">
-                                          {faq.paragraphs.map((paragraph, pIndex) => renderParagraph(paragraph, `${index}-p-${pIndex}`))}
+                                          {faq.paragraphs.map((paragraph, pIndex) =>
+                                             renderParagraph(paragraph, `${index}-p-${pIndex}`),
+                                          )}
 
                                           {faq.bullets && faq.bullets.length > 0 && (
                                              <ul className="list-disc space-y-1.5 pl-5 text-white/90">
@@ -255,7 +263,9 @@ const SsuFaqs = ({ system }: IntroPageProps) => {
                                              </ul>
                                           )}
 
-                                          {faq.after?.map((paragraph, aIndex) => renderParagraph(paragraph, `${index}-a-${aIndex}`))}
+                                          {faq.after?.map((paragraph, aIndex) =>
+                                             renderParagraph(paragraph, `${index}-a-${aIndex}`),
+                                          )}
                                        </div>
                                     </div>
                                  </div>

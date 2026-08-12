@@ -12,87 +12,83 @@ const defaultHero = {
       'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
 };
 
-/** Architectural wireframe / building-line backdrop */
+/** Subtle architectural wireframe — corner building / project lines */
 const BuildingLines = ({ className }: { className?: string }) => (
    <svg
       className={className}
-      viewBox="0 0 720 900"
+      viewBox="0 0 1600 900"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
       aria-hidden
    >
-      <g stroke="currentColor" strokeWidth="1.25" opacity="0.9">
-         {/* Ground / horizon guides */}
-         <path d="M40 820 H680" />
-         <path d="M80 780 H640" />
+      <g stroke="currentColor" strokeWidth="1.1" strokeLinecap="square">
+         {/* Left facade (receding) */}
+         <path d="M80 860 L520 120" opacity="0.55" />
+         <path d="M80 860 L520 860" opacity="0.35" />
+         {Array.from({ length: 14 }).map((_, i) => {
+            const t = (i + 1) / 15;
+            const x1 = 80 + (520 - 80) * t * 0.15;
+            const y = 860 - (860 - 120) * t;
+            const x2 = 80 + (520 - 80) * (0.55 + t * 0.45);
+            return <path key={`lf-${i}`} d={`M${x1} ${y} L${x2} ${y}`} opacity={0.28 + t * 0.2} />;
+         })}
+         {Array.from({ length: 8 }).map((_, i) => {
+            const t = (i + 1) / 9;
+            const x = 80 + (520 - 80) * t;
+            const yTop = 860 - (860 - 120) * t * 0.92;
+            return <path key={`lv-${i}`} d={`M${x} 860 L${x} ${yTop}`} opacity={0.22 + t * 0.25} />;
+         })}
 
-         {/* Left tower */}
-         <path d="M90 820 V260 H210 V820" />
-         <path d="M110 280 V800" />
-         <path d="M130 280 V800" />
-         <path d="M150 280 V800" />
-         <path d="M170 280 V800" />
-         <path d="M190 280 V800" />
-         <path d="M90 320 H210" />
-         <path d="M90 380 H210" />
-         <path d="M90 440 H210" />
-         <path d="M90 500 H210" />
-         <path d="M90 560 H210" />
-         <path d="M90 620 H210" />
-         <path d="M90 680 H210" />
-         <path d="M90 740 H210" />
-         <path d="M120 260 L150 210 L180 260" />
+         {/* Corner vertical */}
+         <path d="M520 120 V860" opacity="0.7" />
 
-         {/* Center tower */}
-         <path d="M250 820 V180 H400 V820" />
-         <path d="M275 200 V800" />
-         <path d="M300 200 V800" />
-         <path d="M325 200 V800" />
-         <path d="M350 200 V800" />
-         <path d="M375 200 V800" />
-         <path d="M250 240 H400" />
-         <path d="M250 300 H400" />
-         <path d="M250 360 H400" />
-         <path d="M250 420 H400" />
-         <path d="M250 480 H400" />
-         <path d="M250 540 H400" />
-         <path d="M250 600 H400" />
-         <path d="M250 660 H400" />
-         <path d="M250 720 H400" />
-         <path d="M290 180 L325 120 L360 180" />
+         {/* Right facade (front plane) */}
+         <path d="M520 120 H1480" opacity="0.5" />
+         <path d="M1480 120 V860" opacity="0.35" />
+         <path d="M520 860 H1480" opacity="0.4" />
 
-         {/* Right mid-rise */}
-         <path d="M440 820 V340 H560 V820" />
-         <path d="M460 360 V800" />
-         <path d="M480 360 V800" />
-         <path d="M500 360 V800" />
-         <path d="M520 360 V800" />
-         <path d="M540 360 V800" />
-         <path d="M440 400 H560" />
-         <path d="M440 460 H560" />
-         <path d="M440 520 H560" />
-         <path d="M440 580 H560" />
-         <path d="M440 640 H560" />
-         <path d="M440 700 H560" />
-         <path d="M440 760 H560" />
+         {Array.from({ length: 16 }).map((_, i) => {
+            const y = 120 + ((860 - 120) / 17) * (i + 1);
+            return <path key={`rh-${i}`} d={`M520 ${y} H1480`} opacity={0.18 + (i % 3 === 0 ? 0.12 : 0)} />;
+         })}
+         {Array.from({ length: 18 }).map((_, i) => {
+            const x = 520 + ((1480 - 520) / 19) * (i + 1);
+            return <path key={`rv-${i}`} d={`M${x} 120 V860`} opacity={0.16 + (i % 4 === 0 ? 0.1 : 0)} />;
+         })}
 
-         {/* Far right block */}
-         <path d="M590 820 V420 H680 V820" />
-         <path d="M610 440 V800" />
-         <path d="M630 440 V800" />
-         <path d="M650 440 V800" />
-         <path d="M590 480 H680" />
-         <path d="M590 540 H680" />
-         <path d="M590 600 H680" />
-         <path d="M590 660 H680" />
-         <path d="M590 720 H680" />
-         <path d="M590 780 H680" />
+         {/* Window bays on right facade */}
+         {Array.from({ length: 5 }).map((_, row) =>
+            Array.from({ length: 6 }).map((_, col) => {
+               const x = 580 + col * 140;
+               const y = 180 + row * 130;
+               return (
+                  <rect
+                     key={`w-${row}-${col}`}
+                     x={x}
+                     y={y}
+                     width="70"
+                     height="78"
+                     fill="none"
+                     opacity="0.22"
+                  />
+               );
+            }),
+         )}
 
-         {/* Perspective guides */}
-         <path d="M40 820 L325 120" opacity="0.45" />
-         <path d="M680 820 L325 120" opacity="0.35" />
-         <path d="M40 700 H680" opacity="0.35" />
-         <path d="M60 560 H660" opacity="0.25" />
+         {/* Setback upper floors */}
+         <path d="M620 120 V60 H1380 V120" opacity="0.45" />
+         <path d="M700 60 V20 H1300 V60" opacity="0.35" />
+         {Array.from({ length: 10 }).map((_, i) => {
+            const x = 700 + ((1300 - 700) / 11) * (i + 1);
+            return <path key={`top-${i}`} d={`M${x} 20 V60`} opacity="0.25" />;
+         })}
+
+         {/* Ground grid / site lines */}
+         {Array.from({ length: 7 }).map((_, i) => {
+            const y = 860 + i * 8;
+            return <path key={`g-${i}`} d={`M40 ${Math.min(y, 898)} H1560`} opacity={0.08} />;
+         })}
       </g>
    </svg>
 );
@@ -111,16 +107,16 @@ const Hero = () => {
          {/* Building-line / blueprint atmosphere */}
          <div className="pointer-events-none absolute inset-0" aria-hidden>
             <div
-               className="absolute inset-0 opacity-[0.07]"
+               className="absolute inset-0 opacity-[0.05]"
                style={{
                   backgroundImage:
-                     'linear-gradient(rgba(147,197,253,0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(147,197,253,0.55) 1px, transparent 1px)',
-                  backgroundSize: '56px 56px',
+                     'linear-gradient(rgba(147,197,253,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(147,197,253,0.5) 1px, transparent 1px)',
+                  backgroundSize: '64px 64px',
                }}
             />
-            <BuildingLines className="absolute top-0 left-0 h-full w-[58%] max-w-[720px] text-sky-200/35 md:w-[50%] lg:w-[46%]" />
-            <div className="absolute inset-y-0 left-0 w-[70%] bg-gradient-to-r from-primary via-primary/80 to-transparent" />
-            <div className="bg-accent/10 absolute -top-24 -right-24 h-72 w-72 rounded-full blur-3xl" />
+            <BuildingLines className="absolute inset-0 h-full w-full text-sky-200/[0.28]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-transparent to-primary/50" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/40 via-transparent to-primary/55" />
          </div>
 
          {/* Top: Welcome + logo | video */}
@@ -131,15 +127,17 @@ const Hero = () => {
                   'md:flex-row md:items-center md:justify-between md:gap-12 lg:gap-16',
                )}
             >
-               <div className="relative z-10 flex w-full flex-col items-center text-center md:max-w-md md:items-start md:text-left lg:max-w-lg">
-                  <p className="font-display mb-5 text-3xl font-bold tracking-[0.08em] text-white uppercase sm:text-4xl md:mb-6 md:text-5xl lg:text-6xl">
-                     Welcome to
-                  </p>
+               <div className="relative z-10 flex w-full flex-col items-center md:items-start">
+                  <div className="flex w-full max-w-[300px] flex-col items-stretch sm:max-w-[340px] md:max-w-[380px] lg:max-w-[420px]">
+                     <p className="font-display mb-4 w-full text-center text-[1.35rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-5 sm:text-[1.55rem] md:text-[1.7rem] lg:text-[1.9rem]">
+                        Welcome to
+                     </p>
 
-                  <AppLogo
-                     theme="dark"
-                     className="h-[130px] w-auto max-w-[300px] object-contain object-center sm:h-[150px] sm:max-w-[340px] md:h-[170px] md:max-w-[380px] md:object-left lg:h-[190px] lg:max-w-[420px]"
-                  />
+                     <AppLogo
+                        theme="dark"
+                        className="h-[130px] w-full object-contain object-center sm:h-[150px] md:h-[170px] md:object-left lg:h-[190px]"
+                     />
+                  </div>
                </div>
 
                <div className="relative z-10 w-full min-w-0 flex-1 md:max-w-[56%]">
@@ -159,14 +157,14 @@ const Hero = () => {
 
          {/* Bottom: tagline */}
          <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-10 pb-16 sm:px-6 sm:pt-12 md:pt-14 md:pb-20 lg:px-10 lg:pt-16 lg:pb-24">
-            <div className="mx-auto max-w-4xl space-y-4 text-center md:mx-0 md:max-w-3xl md:text-left">
+            <div className="mx-auto max-w-4xl space-y-4 text-center">
                <p className="ssu-kicker !text-sky-100/70">{kicker}</p>
 
                <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-[2.75rem] lg:leading-[1.15] xl:text-5xl">
                   {title}
                </h1>
 
-               <p className="text-base leading-relaxed text-white/90 md:text-lg lg:max-w-2xl lg:text-xl lg:leading-relaxed">
+               <p className="mx-auto max-w-2xl text-base leading-relaxed text-white/90 md:text-lg lg:text-xl lg:leading-relaxed">
                   {description}
                </p>
             </div>
