@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class ChunkUploadRequest extends FormRequest
 {
@@ -23,9 +24,20 @@ class ChunkUploadRequest extends FormRequest
     {
         return [
             'part_number' => 'required|integer|min:1',
-            'chunk_data' => 'required|string',
             'filename' => 'required|string',
             'mimetype' => 'required|string',
+            // Prefer binary multipart uploads; keep base64 for older clients.
+            'chunk' => 'nullable|file',
+            'chunk_data' => 'nullable|string',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if (! $this->hasFile('chunk') && blank($this->input('chunk_data'))) {
+                $validator->errors()->add('chunk', 'A chunk file or chunk_data payload is required.');
+            }
+        });
     }
 }

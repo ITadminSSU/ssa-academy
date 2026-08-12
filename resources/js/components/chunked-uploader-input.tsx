@@ -72,12 +72,12 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const fileRef = useRef<File | null>(null);
    const abortControllerRef = useRef<AbortController | null>(null);
    const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
-   // Keep chunks small enough that base64 JSON bodies stay under typical Nginx limits (~1MB).
+   // Binary multipart chunks stay under typical Nginx 1MB defaults.
    const chunkSize = 512 * 1024;
 
    const formatUploadError = (error: any, fallback: string): string => {
       if (error?.response?.status === 413) {
-         return 'Upload rejected: file chunk is too large for the server. Ask your admin to raise Nginx client_max_body_size (e.g. 20M), or use a smaller MP4 / YouTube link instead.';
+         return 'Upload rejected (413): server upload limit is too low. In Forge Nginx set client_max_body_size 100M; or paste a YouTube/Vimeo URL instead.';
       }
 
       return error?.response?.data?.message || error?.message || fallback;
@@ -200,39 +200,25 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
             const end = Math.min(start + chunkSize, activeFile.size);
             const chunk = activeFile.slice(start, end);
 
-            // Convert chunk to base64 string instead of sending as file
-            const reader = new FileReader();
+            // Send binary multipart FormData (avoids base64 inflation that triggers Nginx 413).
+            const formData = new FormData();
+            if (storage) {
+               formData.append('storage', storage);
+            }
+            formData.append('part_number', String(chunkIndex + 1));
+            formData.append('filename', activeFile.name);
+            formData.append('mimetype', mimetype);
+            formData.append('chunk', chunk, `chunk-${chunkIndex + 1}.bin`);
 
-            // Create a promise to handle FileReader async behavior
-            const readChunk = new Promise<string>((resolve, reject) => {
-               reader.onloadend = () => {
-                  const base64data = reader.result as string;
-                  resolve(base64data);
-               };
-               reader.onerror = () => reject(reader.error);
-               reader.readAsDataURL(chunk);
+            const response = await axios.post(`/dashboard/uploads/chunked/${uploadId}/chunk`, formData, {
+               signal: signal,
+               timeout: 120000,
+               maxContentLength: Infinity,
+               maxBodyLength: Infinity,
+               headers: {
+                  'Content-Type': 'multipart/form-data',
+               },
             });
-
-            // Wait for the chunk to be read as base64
-            const base64data = await readChunk;
-
-            // Send the chunk as base64 encoded data instead of FormData
-            const response = await axios.post(
-               `/dashboard/uploads/chunked/${uploadId}/chunk`,
-               {
-                  storage: storage,
-                  chunk_data: base64data,
-                  part_number: chunkIndex + 1,
-                  filename: activeFile.name,
-                  mimetype,
-               },
-               {
-                  signal: signal,
-                  timeout: 120000, // 2 minute timeout for chunk uploads
-                  maxContentLength: Infinity, // Allow large content
-                  maxBodyLength: Infinity, // Allow large body
-               },
-            );
 
             if (response.data.success) {
                uploadedChunks++;

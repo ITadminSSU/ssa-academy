@@ -91,18 +91,31 @@ class ChunkedUploadController extends Controller
             // Get part number
             $partNumber = $request->input('part_number');
 
-            // Process the base64 encoded data
-            // Remove the data URL prefix (e.g., "data:image/png;base64,")
-            $encodedData = $request->input('chunk_data');
-            $base64Content = substr($encodedData, strpos($encodedData, ',') + 1);
+            $chunk = null;
 
-            // Decode the base64 data
-            $chunk = base64_decode($base64Content);
+            if ($request->hasFile('chunk')) {
+                $uploadedChunk = $request->file('chunk');
 
-            if (!$chunk) {
+                if (! $uploadedChunk || ! $uploadedChunk->isValid()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid chunk upload.',
+                    ], 400);
+                }
+
+                $chunk = file_get_contents($uploadedChunk->getRealPath());
+            } else {
+                // Legacy base64 JSON payload
+                $encodedData = (string) $request->input('chunk_data');
+                $commaPos = strpos($encodedData, ',');
+                $base64Content = $commaPos === false ? $encodedData : substr($encodedData, $commaPos + 1);
+                $chunk = base64_decode($base64Content, true);
+            }
+
+            if ($chunk === false || $chunk === null || $chunk === '') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to decode base64 chunk data'
+                    'message' => 'Failed to read chunk data',
                 ], 400);
             }
 
