@@ -15,9 +15,9 @@ const Hero = () => {
    const { props } = usePage<IntroPageProps>();
    const heroSection = getPageSection(props.page, 'hero');
 
-   const kicker = heroSection?.title || defaultHero.kicker;
-   const title = heroSection?.sub_title || defaultHero.title;
-   const description = heroSection?.description || defaultHero.description;
+   const kicker = heroSection?.title?.trim() || defaultHero.kicker;
+   const title = heroSection?.sub_title?.trim() || defaultHero.title;
+   const description = heroSection?.description?.trim() || defaultHero.description;
 
    return (
       <section className="relative overflow-hidden bg-primary text-white">
@@ -26,17 +26,28 @@ const Hero = () => {
             <div className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
          </div>
 
-         <div className={cn('relative container flex flex-col items-center gap-10 px-4 py-20 md:flex-row md:gap-16 md:py-28')}>
-            <div className="w-full space-y-6 md:max-w-xl">
-               <p className="ssu-kicker text-primary-foreground/90 !text-white/80">{kicker}</p>
+         <div
+            className={cn(
+               'relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-10 px-4 py-16 sm:px-6',
+               'md:flex-row md:items-center md:gap-10 md:py-20 lg:gap-14 lg:px-10 lg:py-24',
+            )}
+         >
+            <div className="w-full shrink-0 space-y-5 md:max-w-md lg:max-w-lg xl:max-w-xl">
+               <p className="ssu-kicker !text-white/90">{kicker}</p>
 
-               <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-5xl lg:leading-[1.15]">{title}</h1>
+               <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-[2.75rem] lg:leading-[1.15] xl:text-5xl">
+                  {title}
+               </h1>
 
-               <p className="text-base leading-relaxed text-white/80 md:text-lg">{description}</p>
+               <p className="text-base leading-relaxed text-white md:text-lg lg:text-xl lg:leading-relaxed">{description}</p>
             </div>
 
-            <div className="relative w-full max-w-lg">
-               <HeroVideoPlayer videoUrl={heroSection?.video_url} posterUrl={heroSection?.thumbnail} />
+            <div className="relative w-full min-w-0 flex-1 md:max-w-none">
+               <HeroVideoPlayer
+                  videoUrl={heroSection?.video_url}
+                  posterUrl={heroSection?.thumbnail}
+                  className="w-full shadow-2xl shadow-black/30"
+               />
             </div>
          </div>
       </section>
