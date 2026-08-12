@@ -92,6 +92,12 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
 
    const sortedItems = navbar.navbar_items
       .filter((item) => item.active !== false)
+      .filter((item) => {
+         const title = item.title?.trim().toLowerCase() || '';
+         const value = (item.value || '').trim().toLowerCase();
+
+         return title !== 'faqs' && title !== 'faq' && !value.includes('/faqs');
+      })
       .filter((item, index, items) => {
          if (item.type !== 'url') {
             return true;
@@ -143,6 +149,9 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                   {sortedItems.map((item) => (
                      <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                   ))}
+                  <Link href={route('faqs')} className="hover:text-primary text-sm font-medium transition-colors">
+                     FAQs
+                  </Link>
                </div>
 
                <div className="flex items-center gap-2">
@@ -162,6 +171,9 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                      {sortedItems.map((item) => (
                         <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                      ))}
+                     <Link href={route('faqs')} className="text-sm font-normal" onClick={() => setIsMenuOpen(false)}>
+                        FAQs
+                     </Link>
 
                      <div className="border-border/60 space-y-3 border-t pt-4">
                         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">Theme</p>

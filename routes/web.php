@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('about-us', [HomeController::class, 'about'])->name('about');
+Route::get('faqs', [HomeController::class, 'faqs'])->name('faqs');
 
 // Certificate verification — restricted to admin & trainer for verification purposes.
 Route::middleware(['auth', 'role:admin,instructor'])->group(function () {

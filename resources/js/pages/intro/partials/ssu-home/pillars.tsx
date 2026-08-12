@@ -45,7 +45,10 @@ const Pillars = () => {
 
    const items = pillars.length ? pillars : defaultPillars;
 
-   const sectionTitle = pillarsSection?.title || 'Why SMARTSOURCING USA ACADEMY';
+   const rawTitle = pillarsSection?.title?.trim() || 'WHY SMARTSOURCING USA ACADEMY?';
+   const sectionTitle = /^why\b/i.test(rawTitle)
+      ? rawTitle.replace(/^why\b/i, 'WHY').replace(/\?*$/, '') + '?'
+      : rawTitle;
 
 
 

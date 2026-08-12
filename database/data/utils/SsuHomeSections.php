@@ -34,7 +34,7 @@ class SsuHomeSections
             [
                 'name' => 'Value Pillars',
                 'slug' => 'pillars',
-                'title' => 'Why SMARTSOURCING USA ACADEMY',
+                'title' => 'WHY SMARTSOURCING USA ACADEMY?',
                 'flags' => [
                     'title' => true,
                 ],

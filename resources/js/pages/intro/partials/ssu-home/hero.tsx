@@ -6,7 +6,7 @@ import { IntroPageProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 
 const defaultHero = {
-   kicker: 'SMART SOURCING USA ACADEMY',
+   kicker: 'SMARTSOURCING USA ACADEMY',
    title: 'Upskill. Certify your skills. Scale with confidence.',
    description:
       'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
@@ -16,7 +16,8 @@ const Hero = () => {
    const { props } = usePage<IntroPageProps>();
    const heroSection = getPageSection(props.page, 'hero');
 
-   const kicker = heroSection?.title?.trim() || defaultHero.kicker;
+   const rawKicker = heroSection?.title?.trim() || defaultHero.kicker;
+   const kicker = rawKicker.replace(/SMART\s+SOURCING/gi, 'SMARTSOURCING');
    const title = heroSection?.sub_title?.trim() || defaultHero.title;
    const description = heroSection?.description?.trim() || defaultHero.description;
 

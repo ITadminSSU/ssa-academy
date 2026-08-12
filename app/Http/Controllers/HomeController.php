@@ -63,6 +63,13 @@ class HomeController extends Controller
       ]);
    }
 
+   public function faqs(Request $request)
+   {
+      return Inertia::render('intro/ssu-faqs', [
+         'type' => 'intro',
+      ]);
+   }
+
    public function demo(Request $request, string $slug)
    {
       return redirect()->route('home');

@@ -1,0 +1,274 @@
+import LandingLayout from '@/layouts/landing-layout';
+import { cn } from '@/lib/utils';
+import { IntroPageProps } from '@/types/page';
+import { Head } from '@inertiajs/react';
+import { useState } from 'react';
+
+type FaqBlock = {
+   question: string;
+   paragraphs: string[];
+   bullets?: string[];
+   after?: string[];
+};
+
+const faqs: FaqBlock[] = [
+   {
+      question: 'What is SmartSourcing USA Academy?',
+      paragraphs: [
+         'SmartSourcing USA Academy is a construction-focused training platform designed to help aspiring and current Construction VAs and construction professionals develop practical skills for remote construction work.',
+         'The Academy focuses on U.S. construction workflows, industry tools, terminology, project documents, and practical training to help learners prepare for real-world remote construction opportunities.',
+      ],
+   },
+   {
+      question: 'Who is SmartSourcing USA Academy for?',
+      paragraphs: [
+         'SmartSourcing USA Academy is for engineers, architects, estimators, quantity surveyors, construction professionals, students, fresh graduates, aspiring Construction VAs, and anyone interested in building practical skills for a remote construction career.',
+         'You do not need to have previous U.S. construction experience to start learning.',
+      ],
+   },
+   {
+      question: 'Do I need to be an engineer to join SmartSourcing USA Academy?',
+      paragraphs: [
+         'No. You do not need to be a licensed engineer to join.',
+         'SmartSourcing USA Academy is open to anyone who wants to develop construction-related skills and learn more about working remotely in the construction industry.',
+         'Some courses may be easier to understand if you already have a basic construction background, but this is not a requirement for all programs.',
+      ],
+   },
+   {
+      question: 'What skills will I learn from SmartSourcing USA Academy?',
+      paragraphs: [
+         'Training topics may include practical skills commonly used in remote construction work, such as:',
+      ],
+      bullets: [
+         'Construction estimating',
+         'Quantity takeoff',
+         'Blueprint and plan reading',
+         'U.S. construction terminology',
+         'Project specifications and construction documents',
+         'Construction workflows',
+         'Estimating and takeoff software',
+         'Documentation and project organization',
+         'Remote communication and collaboration',
+         'Trade-specific construction skills',
+      ],
+      after: ['Available courses and training topics may vary as new programs are introduced.'],
+   },
+   {
+      question: 'Will SmartSourcing USA Academy have live classes or recorded lessons?',
+      paragraphs: [
+         'SmartSourcing USA Academy courses are pre-recorded but interactive, allowing learners to study at their own pace while still staying connected throughout the training.',
+         'Depending on the course, learners may have access to:',
+      ],
+      bullets: [
+         'Pre-recorded lessons',
+         'Interactive quizzes and assessments',
+         'Opportunities to communicate and engage with instructors through the platform',
+         'An exclusive Facebook community for Academy learners',
+         'Additional learning resources and activities',
+      ],
+      after: [
+         'This gives learners the flexibility of self-paced training while still providing access to instructor support and an active learning community.',
+      ],
+   },
+   {
+      question: 'When will SmartSourcing USA Academy launch?',
+      paragraphs: [
+         'Pre-registration for SmartSourcing USA Academy opens on August 15, 2026.',
+         'Additional information regarding available courses, schedules, enrollment, and the official start of training will be announced through SmartSourcing USA and the Construction VA Academy community.',
+      ],
+   },
+   {
+      question: 'How much is SmartSourcing USA Academy training?',
+      paragraphs: [
+         'Course pricing may vary depending on the training program.',
+         'Complete information regarding course fees, inclusions, schedules, and enrollment options will be announced together with each specific Academy program.',
+      ],
+   },
+   {
+      question: 'Does completing SmartSourcing USA Academy guarantee a job?',
+      paragraphs: [
+         'No. Completing SmartSourcing USA Academy does not guarantee employment or placement with SmartSourcing USA or any of its clients.',
+         'The Academy is designed to help learners develop practical skills, strengthen their construction knowledge, and better prepare themselves for remote construction opportunities.',
+         'We encourage every learner to take the training seriously, do their best, and demonstrate what they can do. Strong performance and the skills developed through the Academy may help learners become better prepared and potentially be considered for future opportunities with SmartSourcing USA when suitable roles become available.',
+         'Any employment opportunity will still depend on factors such as qualifications, skills, experience, performance, client requirements, available positions, and the applicable hiring or selection process.',
+      ],
+   },
+   {
+      question: 'Can students join SmartSourcing USA Academy?',
+      paragraphs: [
+         'Yes. Students and fresh graduates who are interested in construction and remote career opportunities are welcome to join.',
+         'The Academy can help them begin developing practical skills, become familiar with industry workflows, and better understand the skills used in remote construction work.',
+      ],
+   },
+   {
+      question: 'Can current construction professionals join SmartSourcing USA Academy?',
+      paragraphs: [
+         'Yes. SmartSourcing USA Academy is also designed for experienced construction professionals who want to expand their skills, learn U.S. construction workflows, become familiar with industry tools, or prepare to transition into remote construction work.',
+         'Existing construction knowledge can serve as a valuable foundation when learning remote construction processes.',
+      ],
+   },
+   {
+      question: 'How do I join the Construction VA Academy Facebook community?',
+      paragraphs: [
+         'You may join the Construction VA Academy Facebook community through this link:',
+         'https://www.facebook.com/groups/constructionvaacademy',
+         'Please make sure to answer all membership questions, as completing them is required for membership approval.',
+      ],
+   },
+   {
+      question: 'How can I stay updated about SmartSourcing USA Academy?',
+      paragraphs: ['Follow SmartSourcing USA and join the Construction VA Academy Facebook community to receive updates about:'],
+      bullets: [
+         'Pre-registration and enrollment',
+         'New courses and training programs',
+         'Class schedules',
+         'Academy announcements',
+         'Construction learning resources',
+         'Future Academy activities',
+      ],
+   },
+   {
+      question: 'What makes SmartSourcing USA Academy different?',
+      paragraphs: [
+         'SmartSourcing USA Academy focuses on practical construction training for people who want to build skills relevant to remote and U.S.-based construction workflows.',
+         'Instead of focusing only on theory or software tutorials, the Academy aims to help learners understand how construction professionals work with plans, specifications, takeoffs, estimating processes, terminology, project documents, industry tools, and remote workflows.',
+         'The goal is to help learners build practical skills, confidence, and industry familiarity that they can apply as they prepare for real-world construction opportunities.',
+      ],
+   },
+];
+
+function renderParagraph(text: string, key: string) {
+   if (text.startsWith('https://')) {
+      return (
+         <p key={key}>
+            <a
+               href={text}
+               target="_blank"
+               rel="noopener noreferrer"
+               className="font-medium text-white underline decoration-white/40 underline-offset-4 transition hover:decoration-white"
+            >
+               {text}
+            </a>
+         </p>
+      );
+   }
+
+   return (
+      <p key={key} className="leading-relaxed text-white/90">
+         {text}
+      </p>
+   );
+}
+
+const SsuFaqs = ({ system }: IntroPageProps) => {
+   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+   return (
+      <LandingLayout navbarHeight={true} customizable={false}>
+         <Head title={`FAQs | ${system.fields.name}`} />
+
+         <div className="ssu-page-shell">
+            {/* Hero */}
+            <section className="relative overflow-hidden bg-primary text-white">
+               <div className="absolute inset-0" aria-hidden>
+                  <div
+                     className="absolute inset-0 bg-cover bg-center"
+                     style={{
+                        backgroundImage: `linear-gradient(90deg, rgba(1,18,58,0.88) 0%, rgba(1,18,58,0.72) 45%, rgba(1,18,58,0.82) 100%), url('/assets/images/ssu-about/about-hero.png')`,
+                     }}
+                  />
+                  <div
+                     className="absolute inset-0 opacity-[0.15]"
+                     style={{
+                        backgroundImage:
+                           'linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px)',
+                        backgroundSize: '40px 40px',
+                     }}
+                  />
+               </div>
+
+               <div className="relative container flex min-h-[280px] flex-col items-center justify-center px-4 py-16 text-center md:min-h-[340px] md:py-24">
+                  <h1 className="font-display text-3xl font-bold tracking-wide uppercase sm:text-4xl md:text-5xl">
+                     Frequently Asked Questions
+                  </h1>
+                  <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/85 sm:text-base md:text-lg">
+                     Here are some of the most frequently asked questions about SmartSourcing USA Academy (SSA). Learn about
+                     our courses, training, certification, and career opportunities.
+                  </p>
+               </div>
+            </section>
+
+            {/* FAQ list */}
+            <section className="bg-[color:var(--brand-grey)] py-12 md:py-16">
+               <div className="container space-y-4 px-4 md:space-y-5">
+                  {faqs.map((faq, index) => {
+                     const isOpen = openIndex === index;
+
+                     return (
+                        <div key={faq.question} className="w-full">
+                           <div className="flex items-stretch gap-2 sm:gap-3">
+                              <div
+                                 className="bg-accent relative mt-1 hidden h-11 w-11 shrink-0 sm:block md:h-12 md:w-12"
+                                 style={{
+                                    clipPath: 'polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%)',
+                                 }}
+                                 aria-hidden
+                              >
+                                 <span className="absolute top-1/2 -right-1 h-0 w-0 -translate-y-1/2 border-y-[6px] border-l-[8px] border-y-transparent border-l-accent" />
+                              </div>
+
+                              <button
+                                 type="button"
+                                 aria-expanded={isOpen}
+                                 onClick={() => setOpenIndex(isOpen ? null : index)}
+                                 className={cn(
+                                    'group relative flex min-h-12 flex-1 items-center bg-primary px-4 py-3 text-left transition sm:px-5 md:min-h-14 md:px-6',
+                                    'hover:bg-primary/95 focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                                 )}
+                                 style={{
+                                    clipPath: 'polygon(0 0, calc(100% - 22px) 0, 100% 50%, calc(100% - 22px) 100%, 0 100%)',
+                                 }}
+                              >
+                                 <span className="font-display pr-6 text-sm font-semibold text-white sm:text-base md:text-lg">
+                                    {faq.question}
+                                 </span>
+                              </button>
+                           </div>
+
+                           <div
+                              className={cn(
+                                 'grid transition-[grid-template-rows] duration-300 ease-out',
+                                 isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+                              )}
+                           >
+                              <div className="overflow-hidden">
+                                 <div className="pt-2 sm:pl-14 md:pl-[3.75rem]">
+                                    <div className="bg-primary px-5 py-5 text-sm text-white sm:px-6 sm:py-6 sm:text-base">
+                                       <div className="space-y-3">
+                                          {faq.paragraphs.map((paragraph, pIndex) => renderParagraph(paragraph, `${index}-p-${pIndex}`))}
+
+                                          {faq.bullets && faq.bullets.length > 0 && (
+                                             <ul className="list-disc space-y-1.5 pl-5 text-white/90">
+                                                {faq.bullets.map((bullet) => (
+                                                   <li key={bullet}>{bullet}</li>
+                                                ))}
+                                             </ul>
+                                          )}
+
+                                          {faq.after?.map((paragraph, aIndex) => renderParagraph(paragraph, `${index}-a-${aIndex}`))}
+                                       </div>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </div>
+            </section>
+         </div>
+      </LandingLayout>
+   );
+};
+
+export default SsuFaqs;
