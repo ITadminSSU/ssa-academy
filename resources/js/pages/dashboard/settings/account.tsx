@@ -52,7 +52,7 @@ const Account = ({ instructor, translate }: Props) => {
               {
                  id: nanoid(),
                  slug: 'two-factor',
-                 title: button.two_factor_authentication,
+                 title: button.two_factor_authentication || 'Two-Factor Auth',
                  Component: TwoFactor,
               },
            ]
