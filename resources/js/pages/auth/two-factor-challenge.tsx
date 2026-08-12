@@ -16,6 +16,18 @@ export default function TwoFactorChallenge({ status }: Props) {
    const { props } = usePage<SharedData>();
    const { auth: authLang, button, input } = props.translate;
 
+   const t = {
+      title: authLang.two_factor_title || 'Two-factor authentication',
+      description:
+         authLang.two_factor_description || 'Enter the 6-digit code from your authenticator app, or a recovery code.',
+      recoveryHint:
+         authLang.two_factor_recovery_hint || 'You can also use one of your one-time recovery codes.',
+      code: input.two_factor_code || 'Authentication code',
+      codePlaceholder: input.two_factor_code_placeholder || '6-digit code or recovery code',
+      submit: button.verify_and_continue || 'Verify and continue',
+      logout: button.logout || 'Logout',
+   };
+
    const { data, setData, post, processing, errors } = useForm({
       code: '',
    });
@@ -26,14 +38,14 @@ export default function TwoFactorChallenge({ status }: Props) {
    };
 
    return (
-      <AuthLayout title={authLang.two_factor_title} description={authLang.two_factor_description}>
-         <Head title={authLang.two_factor_title} />
+      <AuthLayout title={t.title} description={t.description}>
+         <Head title={t.title} />
 
          {status && <div className="mb-4 text-sm font-medium text-green-600">{status}</div>}
 
          <form className="flex flex-col gap-6" onSubmit={submit}>
             <div className="grid gap-2">
-               <Label htmlFor="code">{input.two_factor_code}</Label>
+               <Label htmlFor="code">{t.code}</Label>
                <Input
                   id="code"
                   type="text"
@@ -42,20 +54,20 @@ export default function TwoFactorChallenge({ status }: Props) {
                   required
                   autoFocus
                   value={data.code}
-                  placeholder={input.two_factor_code_placeholder}
+                  placeholder={t.codePlaceholder}
                   onChange={(e) => setData('code', e.target.value)}
                />
                <InputError message={errors.code} />
-               <p className="text-muted-foreground text-sm">{authLang.two_factor_recovery_hint}</p>
+               <p className="text-muted-foreground text-sm">{t.recoveryHint}</p>
             </div>
 
             <LoadingButton loading={processing} className="w-full" tabIndex={2}>
-               {button.verify_and_continue}
+               {t.submit}
             </LoadingButton>
 
             <div className="text-muted-foreground text-center text-sm">
                <TextLink href={route('logout')} method="post" as="button">
-                  {button.logout}
+                  {t.logout}
                </TextLink>
             </div>
          </form>
