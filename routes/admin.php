@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\SettingController;
-use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\Course\CourseEnrollmentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobCircularController;
@@ -59,9 +58,6 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::put('candidates/{id}/status', [CandidatePipelineController::class, 'updateStatus'])->name('candidates.status.update');
     Route::post('candidates/{candidate}/refunds/{payment}', [CandidatePipelineController::class, 'processRefund'])->name('candidates.refund.process');
     Route::post('candidates/{candidate}/refunds', [CandidatePipelineController::class, 'processAllRefunds'])->name('candidates.refund.process-all');
-
-    // course
-    Route::delete('courses/{id}', [CourseController::class, 'destroy'])->name('courses.destroy');
 
     // instructor
     Route::middleware('checkCourseCreation')->group(function () {

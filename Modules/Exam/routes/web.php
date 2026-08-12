@@ -22,9 +22,6 @@ use Modules\Exam\Http\Middleware\CheckExamEnrollMiddleware;
 */
 
 Route::middleware(['auth', 'role:admin'])->prefix('dashboard')->group(function () {
-    // Exams (Admin only)
-    Route::delete('exams/{exam}', [ExamController::class, 'destroy'])->name('exams.destroy');
-
     // course enrolment
     Route::delete('enrollments/exams/{id}', [ExamEnrollmentController::class, 'destroy'])->name('exam-enrollments.destroy');
 });
@@ -35,8 +32,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('dashboard')->group(function (
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'legalAgreement', 'role:instructor,admin'])->prefix('dashboard')->group(function () {
-    // Exams (Admin can manage all)
-    Route::resource('exams', ExamController::class)->except(['show', 'update', 'destroy']);
+    // Exams (Admin can manage all; trainers can delete only their own — enforced in controller)
+    Route::resource('exams', ExamController::class)->except(['show', 'update']);
     Route::post('exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
     Route::post('exams/{exam}/takeoff/answer-key', [ExamQuantityTakeoffController::class, 'importAnswerKey'])->name('exams.takeoff.answer-key');
     Route::post('exams/{exam}/takeoff/tutorial', [ExamQuantityTakeoffController::class, 'saveTutorial'])->name('exams.takeoff.tutorial');

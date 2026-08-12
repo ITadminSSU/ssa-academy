@@ -11,7 +11,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronsUpDown, Eye, Pencil, Trash2 } from 'lucide-react';
 
 const ExamTableColumn = (): ColumnDef<Exam>[] => {
-   const { isAdmin } = useAuth();
+   const { isAdmin, user } = useAuth();
    const { props, url } = usePage<SharedData>();
    const { system, translate } = props;
    const { table, common } = translate;
@@ -173,7 +173,7 @@ const ExamTableColumn = (): ColumnDef<Exam>[] => {
                      <Pencil />
                   </Button>
 
-                  {isAdmin && (
+                  {(isAdmin || Number(user?.instructor_id) === Number(exam.instructor_id)) && (
                      <DeleteModal
                         routePath={route('exams.destroy', exam.id)}
                         message={`Are you sure you want to delete "${exam.title}"? This action cannot be undone.`}

@@ -364,8 +364,26 @@ class CourseController extends Controller
 
     public function destroy($id)
     {
+        $course = Course::findOrFail($id);
+        $this->authorizeCourseDelete($course);
+
         $this->courseService->deleteCourse($id);
 
         return redirect(route('courses.index'))->with('success', 'Course deleted successfully');
+    }
+
+    private function authorizeCourseDelete(Course $course): void
+    {
+        if (isAdmin()) {
+            return;
+        }
+
+        $user = Auth::user();
+
+        if ($user && $user->role === 'instructor' && (int) $user->instructor_id === (int) $course->instructor_id) {
+            return;
+        }
+
+        abort(403, 'You can only delete courses you created.');
     }
 }

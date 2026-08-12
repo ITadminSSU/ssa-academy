@@ -170,10 +170,27 @@ class ExamController extends Controller
      */
     public function destroy(Exam $exam)
     {
+        $this->authorizeExamDelete($exam);
+
         $this->exam->deleteExam($exam);
 
         return redirect()
             ->route('exams.index')
             ->with('success', 'Exam deleted successfully.');
+    }
+
+    private function authorizeExamDelete(Exam $exam): void
+    {
+        if (isAdmin()) {
+            return;
+        }
+
+        $user = Auth::user();
+
+        if ($user && $user->role === 'instructor' && (int) $user->instructor_id === (int) $exam->instructor_id) {
+            return;
+        }
+
+        abort(403, 'You can only delete exams you created.');
     }
 }

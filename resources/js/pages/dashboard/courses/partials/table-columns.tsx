@@ -9,7 +9,7 @@ import { ArrowUpDown, Pencil, Trash2 } from 'lucide-react';
 import CourseStatusFilter from './course-status-filter';
 
 const TableColumn = (): ColumnDef<Course>[] => {
-   const { isAdmin } = useAuth();
+   const { isAdmin, user } = useAuth();
    const { system, translate } = usePage<SharedData>().props;
    const { table, common } = translate;
    const currency = systemCurrency(system.fields['selling_currency']);
@@ -132,7 +132,7 @@ const TableColumn = (): ColumnDef<Course>[] => {
                      <Pencil />
                   </Button>
 
-                  {isAdmin && (
+                  {(isAdmin || Number(user?.instructor_id) === Number(course.instructor_id)) && (
                      <DeleteModal
                         routePath={route('courses.destroy', course.id)}
                         message={table.delete_course_warning}
