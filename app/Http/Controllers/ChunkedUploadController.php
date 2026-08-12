@@ -54,17 +54,128 @@ class ChunkedUploadController extends Controller
             // Update total chunks
             $upload->update(['total_chunks' => $request->total_chunks]);
 
+            $isS3 = ($upload->disk === 's3') || (($disk ?: config('filesystems.default')) === 's3');
+
             return response()->json([
                 'success' => true,
                 'key' => $upload->key,
                 'upload_id' => $upload->id,
                 'aws_upload_id' => $upload->upload_id,
-                'message' => 'Upload initialized successfully'
+                'disk' => $upload->disk,
+                // R2/S3 require every part except the last to be >= 5MB.
+                'chunk_size' => S3MultipartUploadService::MIN_PART_BYTES,
+                'min_part_size' => S3MultipartUploadService::MIN_PART_BYTES,
+                'direct_to_storage' => $isS3,
+                'message' => 'Upload initialized successfully',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to initialize upload: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a presigned URL for uploading one part directly to S3/R2.
+     */
+    public function partUrl(Request $request, $id)
+    {
+        $request->validate([
+            'part_number' => 'required|integer|min:1',
+        ]);
+
+        try {
+            $upload = ChunkedUpload::where('id', $id)
+                ->where('user_id', Auth::id())
+                ->where('status', '!=', 'completed')
+                ->firstOrFail();
+
+            if ($upload->disk !== 's3') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Direct part uploads are only available for S3/R2 storage.',
+                ], 422);
+            }
+
+            $uploaderService = $this->getUploadService('s3');
+            $url = $uploaderService->createPartUploadUrl($upload, (int) $request->input('part_number'));
+
+            return response()->json([
+                'success' => true,
+                'url' => $url,
+                'part_number' => (int) $request->input('part_number'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create part upload URL: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Record a part that was uploaded directly to S3/R2.
+     */
+    public function partAck(Request $request, $id)
+    {
+        $request->validate([
+            'part_number' => 'required|integer|min:1',
+            'etag' => 'required|string',
+            'size' => 'required|integer|min:1',
+        ]);
+
+        try {
+            $upload = ChunkedUpload::where('id', $id)
+                ->where('user_id', Auth::id())
+                ->where('status', '!=', 'completed')
+                ->firstOrFail();
+
+            $partNumber = (int) $request->input('part_number');
+            $size = (int) $request->input('size');
+            $isLastPart = $partNumber >= (int) $upload->total_chunks;
+
+            if (! $isLastPart && $size < S3MultipartUploadService::MIN_PART_BYTES) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Each upload part except the last must be at least 5MB for Cloudflare R2.',
+                ], 422);
+            }
+
+            $etag = trim((string) $request->input('etag'));
+
+            DB::table('chunked_upload_parts')->updateOrInsert(
+                [
+                    'upload_id' => $upload->id,
+                    'part_number' => $partNumber,
+                ],
+                [
+                    'etag' => $etag,
+                    'size' => $size,
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]
+            );
+
+            $completed = DB::table('chunked_upload_parts')
+                ->where('upload_id', $upload->id)
+                ->count();
+
+            $upload->update([
+                'chunks_completed' => $completed,
+                'status' => 'uploading',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'part_number' => $partNumber,
+                'percentage' => $upload->fresh()->percentCompleted(),
+                'chunks_completed' => $completed,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to acknowledge part: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -87,9 +198,6 @@ class ChunkedUploadController extends Controller
 
             // Determine upload service based on the stored disk type
             $uploaderService = $this->getUploadService($upload->disk);
-
-            // Get part number
-            $partNumber = $request->input('part_number');
 
             $chunk = null;
 
@@ -119,22 +227,38 @@ class ChunkedUploadController extends Controller
                 ], 400);
             }
 
+            $partNumber = (int) $request->input('part_number');
+            $chunkSize = strlen($chunk);
+            $isLastPart = $partNumber >= (int) $upload->total_chunks;
+
+            if ($upload->disk === 's3' && ! $isLastPart && $chunkSize < S3MultipartUploadService::MIN_PART_BYTES) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Each upload part except the last must be at least 5MB for Cloudflare R2. Hard-refresh the page after deploy, or raise Nginx client_max_body_size to 20M.',
+                ], 422);
+            }
+
             // Upload the part to S3
             $part = $uploaderService->uploadPart($upload, $partNumber, $chunk);
 
             // Store part information in the database (for completing the upload later)
-            DB::table('chunked_upload_parts')->insert([
-                'upload_id' => $upload->id,
-                'part_number' => $partNumber,
-                'etag' => $part['ETag'],
-                'size' => strlen($chunk),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            DB::table('chunked_upload_parts')->updateOrInsert(
+                [
+                    'upload_id' => $upload->id,
+                    'part_number' => $partNumber,
+                ],
+                [
+                    'etag' => $part['ETag'],
+                    'size' => $chunkSize,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
 
             return response()->json([
                 'success' => true,
                 'part_number' => $partNumber,
+                'etag' => $part['ETag'],
                 'percentage' => $upload->percentCompleted(),
                 'chunks_completed' => $upload->chunks_completed,
                 'message' => 'Chunk uploaded successfully'
@@ -178,21 +302,38 @@ class ChunkedUploadController extends Controller
                 ], 422);
             }
 
-            // Get all parts from database
+            // Get all parts from database (dedupe by part number)
             $parts = DB::table('chunked_upload_parts')
                 ->where('upload_id', $upload->id)
                 ->orderBy('part_number')
                 ->get()
-                ->map(function ($part) {
-                    return [
-                        'PartNumber' => $part->part_number,
-                        'ETag' => $part->etag,
-                    ];
-                })
-                ->toArray();
+                ->unique('part_number')
+                ->values();
+
+            if ($upload->disk === 's3') {
+                $undersized = $parts->filter(function ($part, $index) use ($parts) {
+                    $isLast = $index === $parts->count() - 1;
+
+                    return ! $isLast && (int) $part->size < S3MultipartUploadService::MIN_PART_BYTES;
+                });
+
+                if ($undersized->isNotEmpty()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload parts are smaller than Cloudflare R2 allows (5MB minimum per part except the last). Hard-refresh after deploy and ensure Forge Nginx client_max_body_size is at least 20M, or paste a YouTube/Vimeo URL.',
+                    ], 422);
+                }
+            }
+
+            $partsPayload = $parts->map(function ($part) {
+                return [
+                    'PartNumber' => (int) $part->part_number,
+                    'ETag' => $part->etag,
+                ];
+            })->toArray();
 
             // Complete the upload
-            $uploaderService->completeUpload($upload, $parts);
+            $uploaderService->completeUpload($upload, $partsPayload);
             $upload->refresh();
 
             // After successful completion

@@ -139,6 +139,8 @@ Route::delete('users/{id}', [UsersController::class, 'destroy'])->name('users.de
 Route::prefix('dashboard/uploads/chunked')->controller(ChunkedUploadController::class)->group(function () {
     Route::post('initialize', 'initialize')->name('chunked.upload.initialize');
     Route::post('{id}/chunk', 'uploadChunk')->name('chunked.upload.chunk');
+    Route::post('{id}/part-url', 'partUrl')->name('chunked.upload.part-url');
+    Route::post('{id}/part-ack', 'partAck')->name('chunked.upload.part-ack');
     Route::post('{id}/complete', 'complete')->name('chunked.upload.complete');
     Route::get('{id}/status', 'status')->name('chunked.upload.status');
     Route::delete('{id}/abort', 'abort')->name('chunked.upload.abort');

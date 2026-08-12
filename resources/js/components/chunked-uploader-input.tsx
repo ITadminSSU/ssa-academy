@@ -72,17 +72,17 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const fileRef = useRef<File | null>(null);
    const abortControllerRef = useRef<AbortController | null>(null);
    const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
-   // S3/R2 multipart requires every part except the last to be >= 5MB (EntityTooSmall otherwise).
-   const chunkSize = 5 * 1024 * 1024;
+   // Cloudflare R2/S3 require every multipart part except the last to be >= 5MB.
+   const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024;
 
    const formatUploadError = (error: any, fallback: string): string => {
       if (error?.response?.status === 413) {
-         return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M (R2 needs 5MB chunks). Or paste a YouTube/Vimeo URL instead.';
+         return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M, or use direct R2 upload (redeploy latest). Or paste a YouTube/Vimeo URL.';
       }
 
       const awsMessage = error?.response?.data?.message || error?.message || '';
       if (typeof awsMessage === 'string' && awsMessage.includes('EntityTooSmall')) {
-         return 'Upload failed: Cloudflare R2 rejected parts smaller than 5MB. Redeploy with 5MB chunk size, or use a YouTube/Vimeo URL.';
+         return 'Upload failed: Cloudflare R2 rejected parts smaller than 5MB. Redeploy latest upload fix, hard-refresh, and retry — or paste a YouTube/Vimeo URL.';
       }
 
       return error?.response?.data?.message || error?.message || fallback;
@@ -152,6 +152,8 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       const mimetype = activeFile.type || mimeTypeFromFilename(activeFile.name);
 
       try {
+         // Always use R2/S3-safe 5MB parts (server also returns chunk_size to confirm).
+         const chunkSize = DEFAULT_CHUNK_SIZE;
          const totalChunks = Math.ceil(activeFile.size / chunkSize);
 
          const response = await axios.post(
@@ -173,7 +175,9 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
 
          if (response.data.success) {
             setUploadId(response.data.upload_id);
-            await uploadChunks(response.data.upload_id, totalChunks, activeFile);
+            const resolvedChunkSize = Number(response.data.chunk_size) || chunkSize;
+            const resolvedTotalChunks = Math.ceil(activeFile.size / resolvedChunkSize);
+            await uploadChunks(response.data.upload_id, resolvedTotalChunks, activeFile, resolvedChunkSize, Boolean(response.data.direct_to_storage));
          } else {
             throw new Error(response.data.message || 'Failed to initialize upload');
          }
@@ -185,7 +189,92 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       }
    };
 
-   const uploadChunks = async (uploadId: number, totalChunks: number, activeFile: File) => {
+   const uploadChunkViaServer = async (
+      uploadId: number,
+      partNumber: number,
+      chunk: Blob,
+      activeFile: File,
+      mimetype: string,
+      signal: AbortSignal,
+   ) => {
+      const formData = new FormData();
+      if (storage) {
+         formData.append('storage', storage);
+      }
+      formData.append('part_number', String(partNumber));
+      formData.append('filename', activeFile.name);
+      formData.append('mimetype', mimetype);
+      formData.append('chunk', chunk, `chunk-${partNumber}.bin`);
+
+      const response = await axios.post(`/dashboard/uploads/chunked/${uploadId}/chunk`, formData, {
+         signal,
+         timeout: 120000,
+         maxContentLength: Infinity,
+         maxBodyLength: Infinity,
+         headers: {
+            'Content-Type': 'multipart/form-data',
+         },
+      });
+
+      if (!response.data.success) {
+         throw new Error(response.data.message || 'Failed to upload chunk');
+      }
+
+      return response.data;
+   };
+
+   const uploadChunkDirectToStorage = async (
+      uploadId: number,
+      partNumber: number,
+      chunk: Blob,
+      signal: AbortSignal,
+   ): Promise<boolean> => {
+      const urlResponse = await axios.post(
+         `/dashboard/uploads/chunked/${uploadId}/part-url`,
+         { part_number: partNumber },
+         { signal, timeout: 60000 },
+      );
+
+      if (!urlResponse.data.success || !urlResponse.data.url) {
+         return false;
+      }
+
+      const putResponse = await fetch(urlResponse.data.url, {
+         method: 'PUT',
+         body: chunk,
+         signal,
+      });
+
+      if (!putResponse.ok) {
+         return false;
+      }
+
+      const etag = putResponse.headers.get('etag') || putResponse.headers.get('ETag');
+      if (!etag) {
+         // R2 CORS must expose ETag; fall back to server upload if missing.
+         return false;
+      }
+
+      const ackResponse = await axios.post(
+         `/dashboard/uploads/chunked/${uploadId}/part-ack`,
+         {
+            part_number: partNumber,
+            etag,
+            size: chunk.size,
+         },
+         { signal, timeout: 60000 },
+      );
+
+      return Boolean(ackResponse.data.success);
+   };
+
+   const uploadChunks = async (
+      uploadId: number,
+      totalChunks: number,
+      activeFile: File,
+      chunkSize: number = DEFAULT_CHUNK_SIZE,
+      directToStorage: boolean = false,
+   ) => {
 
       setUploadStatus('uploading');
 
@@ -196,7 +285,6 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       const signal = abortControllerRef.current.signal;
 
       try {
-         const uploadedParts: { PartNumber: number; ETag: string }[] = [];
          let uploadedChunks = 0;
 
          // Process chunks sequentially to avoid overwhelming the server
@@ -204,39 +292,29 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
             const start = chunkIndex * chunkSize;
             const end = Math.min(start + chunkSize, activeFile.size);
             const chunk = activeFile.slice(start, end);
+            const partNumber = chunkIndex + 1;
+            const isLast = partNumber === totalChunks;
 
-            // Send binary multipart FormData (avoids base64 inflation that triggers Nginx 413).
-            const formData = new FormData();
-            if (storage) {
-               formData.append('storage', storage);
+            if (!isLast && chunk.size < DEFAULT_CHUNK_SIZE) {
+               throw new Error('Upload part is smaller than the 5MB minimum required by Cloudflare R2.');
             }
-            formData.append('part_number', String(chunkIndex + 1));
-            formData.append('filename', activeFile.name);
-            formData.append('mimetype', mimetype);
-            formData.append('chunk', chunk, `chunk-${chunkIndex + 1}.bin`);
 
-            const response = await axios.post(`/dashboard/uploads/chunked/${uploadId}/chunk`, formData, {
-               signal: signal,
-               timeout: 120000,
-               maxContentLength: Infinity,
-               maxBodyLength: Infinity,
-               headers: {
-                  'Content-Type': 'multipart/form-data',
-               },
-            });
+            let uploaded = false;
 
-            if (response.data.success) {
-               uploadedChunks++;
-               const progress = Math.round((uploadedChunks / totalChunks) * 100);
-               setUploadProgress(progress);
-
-               uploadedParts.push({
-                  PartNumber: chunkIndex + 1,
-                  ETag: response.data.etag || '', // The server should return the ETag
-               });
-            } else {
-               throw new Error(response.data.message || 'Failed to upload chunk');
+            if (directToStorage) {
+               try {
+                  uploaded = await uploadChunkDirectToStorage(uploadId, partNumber, chunk, signal);
+               } catch {
+                  uploaded = false;
+               }
             }
+
+            if (!uploaded) {
+               await uploadChunkViaServer(uploadId, partNumber, chunk, activeFile, mimetype, signal);
+            }
+
+            uploadedChunks++;
+            setUploadProgress(Math.round((uploadedChunks / totalChunks) * 100));
          }
 
          if (signal.aborted) {

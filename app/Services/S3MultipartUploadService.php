@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
 
 class S3MultipartUploadService
 {
+    public const MIN_PART_BYTES = 5 * 1024 * 1024;
+
     protected string $bucket;
 
     public function __construct()
@@ -94,6 +96,24 @@ class S3MultipartUploadService
     }
 
     /**
+     * Presigned URL so the browser can PUT a part straight to R2/S3 (avoids Nginx 413).
+     */
+    public function createPartUploadUrl(ChunkedUpload $upload, int $partNumber): string
+    {
+        $client = S3CompatibleStorage::makeClient();
+        $command = $client->getCommand('UploadPart', [
+            'Bucket' => $this->bucket,
+            'Key' => $upload->key,
+            'UploadId' => $upload->upload_id,
+            'PartNumber' => $partNumber,
+        ]);
+
+        $request = $client->createPresignedRequest($command, '+30 minutes');
+
+        return (string) $request->getUri();
+    }
+
+    /**
      * Complete multipart upload
      *
      * @param array $parts Array of part information from uploadPart()
@@ -101,12 +121,24 @@ class S3MultipartUploadService
     public function completeUpload(ChunkedUpload $upload, array $parts): bool
     {
         try {
+            $normalizedParts = array_map(function (array $part) {
+                $etag = trim((string) ($part['ETag'] ?? ''));
+                if ($etag !== '' && ! str_starts_with($etag, '"')) {
+                    $etag = '"'.trim($etag, '"').'"';
+                }
+
+                return [
+                    'PartNumber' => (int) $part['PartNumber'],
+                    'ETag' => $etag,
+                ];
+            }, $parts);
+
             S3CompatibleStorage::makeClient()->completeMultipartUpload([
                 'Bucket' => $this->bucket,
                 'Key' => $upload->key,
                 'UploadId' => $upload->upload_id,
                 'MultipartUpload' => [
-                    'Parts' => $parts,
+                    'Parts' => $normalizedParts,
                 ],
             ]);
 
