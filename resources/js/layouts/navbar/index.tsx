@@ -53,14 +53,14 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                         href="https://smartsourcingusa.com/contact"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-normal"
+                        className="hover:text-primary text-sm font-medium transition-colors"
                      >
                         {item.title}
                      </a>
                   );
                }
                return (
-                  <Link key={item.id} href={resolveNavbarItemHref(item)} className="text-sm font-normal">
+                  <Link key={item.id} href={resolveNavbarItemHref(item)} className="hover:text-primary text-sm font-medium transition-colors">
                      {item.title}
                   </Link>
                );
@@ -68,7 +68,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
             case 'dropdown':
                return (
                   <DropdownMenu key={item.id}>
-                     <DropdownMenuTrigger className="flex cursor-pointer items-center gap-1 text-sm">
+                     <DropdownMenuTrigger className="hover:text-primary flex cursor-pointer items-center gap-1 text-sm font-medium transition-colors">
                         {item.title}
                         <ChevronDown className="ml-1 h-4 w-4" />
                      </DropdownMenuTrigger>
@@ -165,13 +165,13 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
             {isMenuOpen && (
                <ScrollArea className="bg-background h-[calc(100vh-64px)] border-t md:hidden">
                   <div className="flex flex-col space-y-4 px-6 py-4">
-                     <Link href={route('home')} className="text-sm font-normal">
+                     <Link href={route('home')} className="text-sm font-medium">
                         Home
                      </Link>
                      {sortedItems.map((item) => (
                         <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                      ))}
-                     <Link href={route('faqs')} className="text-sm font-normal" onClick={() => setIsMenuOpen(false)}>
+                     <Link href={route('faqs')} className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
                         FAQs
                      </Link>
 
