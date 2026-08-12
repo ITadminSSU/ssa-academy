@@ -162,6 +162,9 @@ export default function Login({ status, recaptcha, canResetPassword, googleLogIn
                   {button.sign_up}
                </Link>
             </div>
+            <div className="text-muted-foreground text-center text-sm">
+               <TextLink href={route('home')}>← Back to homepage</TextLink>
+            </div>
          </form>
 
          {status && <div className="text-primary text-center text-sm font-medium">{status}</div>}
