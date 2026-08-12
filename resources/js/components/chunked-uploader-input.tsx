@@ -77,15 +77,27 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
 
    const formatUploadError = (error: any, fallback: string): string => {
       if (error?.response?.status === 413) {
-         return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M, or use direct R2 upload (redeploy latest). Or paste a YouTube/Vimeo URL.';
+         return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M. Or paste a YouTube/Vimeo URL.';
       }
 
-      const awsMessage = error?.response?.data?.message || error?.message || '';
+      const data = error?.response?.data;
+      if (data?.errors && typeof data.errors === 'object') {
+         const firstFieldErrors = Object.values(data.errors).flat().filter(Boolean) as string[];
+         if (firstFieldErrors.length > 0) {
+            return firstFieldErrors.join(' ');
+         }
+      }
+
+      const awsMessage = data?.message || error?.message || '';
       if (typeof awsMessage === 'string' && awsMessage.includes('EntityTooSmall')) {
-         return 'Upload failed: Cloudflare R2 rejected parts smaller than 5MB. Redeploy latest upload fix, hard-refresh, and retry — or paste a YouTube/Vimeo URL.';
+         return 'Upload failed: Cloudflare R2 rejected parts smaller than 5MB. Hard-refresh after deploy, or paste a YouTube/Vimeo URL.';
       }
 
-      return error?.response?.data?.message || error?.message || fallback;
+      if (typeof awsMessage === 'string' && awsMessage.includes('chunk failed to upload')) {
+         return 'Chunk upload blocked by PHP limits. In Forge → PHP set upload_max_filesize=20M and post_max_size=20M, then restart PHP.';
+      }
+
+      return data?.message || error?.message || fallback;
    };
 
    // Configure axios to automatically handle CSRF tokens
