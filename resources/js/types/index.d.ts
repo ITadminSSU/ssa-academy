@@ -32,6 +32,10 @@ interface User extends TableCommon {
    professional_type_id: number | null;
    professional_type_other: string | null;
    professional_type?: ProfessionalType;
+   estimating_software?: string[] | null;
+   estimating_software_other?: string | null;
+   construction_experience?: string | null;
+   worked_as_construction_va?: boolean | null;
    cv_resume_url?: string | null;
    cv_resume_name?: string | null;
    has_cv?: boolean;

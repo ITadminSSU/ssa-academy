@@ -42,6 +42,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'instructor_id',
         'professional_type_id',
         'professional_type_other',
+        'estimating_software',
+        'estimating_software_other',
+        'construction_experience',
+        'worked_as_construction_va',
         'candidate_status',
         'candidate_notes',
         'candidate_status_updated_at',
@@ -71,6 +75,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      */
     protected $casts = [
         'social_links' => 'array',
+        'estimating_software' => 'array',
+        'worked_as_construction_va' => 'boolean',
         'status' => 'integer',
         'user_type' => LearnerUserType::class,
         'candidate_status' => CandidateStatus::class,

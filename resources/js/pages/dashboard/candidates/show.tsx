@@ -204,6 +204,34 @@ const CandidateShow = (props: Props) => {
                      <p className="font-medium">{professionalLabel}</p>
                   </div>
                   <div>
+                     <p className="text-muted-foreground text-sm">Estimating software</p>
+                     <p className="font-medium">
+                        {(candidate.estimating_software?.length
+                           ? candidate.estimating_software
+                                .map((item) =>
+                                   item === 'Others' && candidate.estimating_software_other
+                                      ? `Others (${candidate.estimating_software_other})`
+                                      : item,
+                                )
+                                .join(', ')
+                           : null) || '—'}
+                     </p>
+                  </div>
+                  <div>
+                     <p className="text-muted-foreground text-sm">Years of construction experience</p>
+                     <p className="font-medium">{candidate.construction_experience || '—'}</p>
+                  </div>
+                  <div>
+                     <p className="text-muted-foreground text-sm">Worked as Construction VA</p>
+                     <p className="font-medium">
+                        {candidate.worked_as_construction_va === true
+                           ? 'Yes'
+                           : candidate.worked_as_construction_va === false
+                             ? 'No'
+                             : '—'}
+                     </p>
+                  </div>
+                  <div>
                      <p className="text-muted-foreground text-sm">{dashboard.registered ?? 'Registered'}</p>
                      <p className="font-medium">{new Date(candidate.created_at).toLocaleDateString()}</p>
                   </div>
