@@ -119,7 +119,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
          <div className={cn('ssu-nav-shell fixed top-0 z-30 w-full', isMenuOpen && 'bg-background', isSticky && 'ssu-nav-shell--sticky')}>
             <div
                className={cn(
-                  'container mt-0 flex min-h-14 items-center justify-between gap-1 !px-4 py-1.5 transition-all duration-200 md:gap-6',
+                  'container mt-0 flex min-h-[88px] items-center justify-between gap-1 !px-4 py-2 transition-all duration-200 md:min-h-[96px] md:gap-6',
                )}
             >
                <div className="flex items-center gap-2">
@@ -153,7 +153,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-               <ScrollArea className="bg-background h-[calc(100vh-72px)] border-t md:hidden">
+               <ScrollArea className="bg-background h-[calc(100vh-96px)] border-t md:hidden">
                   <div className="flex flex-col space-y-4 px-6 py-4">
                      <Link href={route('home')} className="text-sm font-normal">
                         Home

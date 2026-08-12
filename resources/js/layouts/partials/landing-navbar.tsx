@@ -46,7 +46,7 @@ const LandingNavbar = () => {
    return (
       <header className={cn('bg-background sticky top-0 z-50 border-b', isSticky && 'shadow-card')}>
          <div className={cn('relative container', customize && 'section-edit')}>
-            <div className="flex h-[72px] items-center justify-between">
+            <div className="flex h-[88px] items-center justify-between md:h-[96px]">
                {/* Logo */}
                <div className="flex items-center gap-0 sm:gap-4">
                   <div className="ssu-logo-frame ssu-logo-frame--nav">
@@ -160,7 +160,7 @@ const LandingNavbar = () => {
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-               <ScrollArea className="animate-fade-in h-[calc(100vh-72px)] border-t md:hidden">
+               <ScrollArea className="animate-fade-in h-[calc(100vh-96px)] border-t md:hidden">
                   <div className="flex flex-col space-y-4 py-4">
                      <SearchInput
                         className="[&>input]:h-10"
