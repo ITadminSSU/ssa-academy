@@ -76,7 +76,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       () => ({
          ratio: '16:9',
          autoplay: true,
-         muted: true,
+         muted: false,
          loop: { active: true },
          playsinline: true,
          controls: ['mute', 'volume', 'fullscreen'],
@@ -100,7 +100,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    );
 
    useEffect(() => {
-      setIsMuted(true);
+      setIsMuted(false);
       setLoadFailed(false);
       setPosterFailed(false);
       setIsHovering(false);
@@ -114,6 +114,31 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       let frame = 0;
       let attempts = 0;
       let player: NonNullable<APITypes['plyr']> | null = null;
+      let unlocked = false;
+
+      const applyUnmuted = (instance: NonNullable<APITypes['plyr']>) => {
+         instance.muted = false;
+         instance.volume = 1;
+         setIsMuted(false);
+
+         const playPromise = instance.play?.();
+
+         if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => undefined);
+         }
+      };
+
+      const applyMutedFallback = (instance: NonNullable<APITypes['plyr']>) => {
+         instance.muted = true;
+         instance.volume = 0;
+         setIsMuted(true);
+
+         const playPromise = instance.play?.();
+
+         if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => undefined);
+         }
+      };
 
       const handleVolumeChange = () => {
          if (player) {
@@ -123,6 +148,15 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
 
       const handleError = () => {
          setLoadFailed(true);
+      };
+
+      const unlockOnGesture = () => {
+         if (unlocked || !player) {
+            return;
+         }
+
+         unlocked = true;
+         applyUnmuted(player);
       };
 
       const bindPlayer = () => {
@@ -139,26 +173,40 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          }
 
          player = instance;
-         player.muted = true;
-         player.volume = 0;
+         player.muted = false;
+         player.volume = 1;
          player.on('volumechange', handleVolumeChange);
          player.on('error', handleError);
 
          const playPromise = player.play?.();
 
-         if (playPromise && typeof playPromise.catch === 'function') {
-            playPromise.catch(() => {
-               // Autoplay may be blocked until user interaction — poster remains visible.
-            });
+         if (playPromise && typeof playPromise.then === 'function') {
+            playPromise
+               .then(() => {
+                  if (player && !player.muted) {
+                     setIsMuted(false);
+                  }
+               })
+               .catch(() => {
+                  if (player) {
+                     applyMutedFallback(player);
+                  }
+               });
          }
       };
 
       bindPlayer();
 
+      window.addEventListener('pointerdown', unlockOnGesture, { once: true });
+      window.addEventListener('keydown', unlockOnGesture, { once: true });
+
       return () => {
          if (frame) {
             window.cancelAnimationFrame(frame);
          }
+
+         window.removeEventListener('pointerdown', unlockOnGesture);
+         window.removeEventListener('keydown', unlockOnGesture);
 
          if (player && typeof player.off === 'function') {
             player.off('volumechange', handleVolumeChange);
