@@ -78,6 +78,95 @@
       @apply text-xs font-semibold tracking-[0.18em] uppercase text-accent;
    }
 
+   /*
+    * FAQ tab — regular flat-top hexagon + navy chevron bar.
+    * Row font-size = tab height so `em` notch = hexagon right point (60°).
+    * Hexagon width = height × 2/√3; notch = height / (2√3).
+    */
+   .ssu-faq-tab {
+      --faq-h: 3.25rem;
+      --faq-gap: 0.18rem;
+      --faq-notch: 0.288675em;
+      font-size: var(--faq-h);
+      display: flex;
+      width: 100%;
+      align-items: stretch;
+      min-height: 1em;
+      text-align: left;
+   }
+
+   @media (min-width: 640px) {
+      .ssu-faq-tab {
+         --faq-h: 3.5rem;
+      }
+   }
+
+   @media (min-width: 768px) {
+      .ssu-faq-tab {
+         --faq-h: 3.75rem;
+      }
+   }
+
+   .ssu-faq-hex {
+      position: relative;
+      z-index: 2;
+      width: 1.1547005em;
+      flex-shrink: 0;
+      align-self: stretch;
+      background-color: #8c2a23;
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+   }
+
+   .ssu-faq-bar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      min-height: 1em;
+      flex: 1 1 auto;
+      align-items: center;
+      margin-left: calc(var(--faq-gap) - var(--faq-notch));
+      padding: 0.2em calc(var(--faq-notch) + 0.35em) 0.2em calc(var(--faq-notch) + 0.22em);
+      background-color: #01123a;
+      clip-path: polygon(
+         0 50%,
+         var(--faq-notch) 0,
+         calc(100% - var(--faq-notch)) 0,
+         100% 50%,
+         calc(100% - var(--faq-notch)) 100%,
+         var(--faq-notch) 100%
+      );
+      transition: background-color 150ms ease;
+   }
+
+   .ssu-faq-tab:hover .ssu-faq-bar {
+      background-color: #0a1c4a;
+   }
+
+   .ssu-faq-tab:focus-visible {
+      outline: 2px solid #8c2a23;
+      outline-offset: 3px;
+   }
+
+   .ssu-faq-question {
+      font-family: var(--font-display);
+      font-size: 0.28em;
+      font-weight: 700;
+      line-height: 1.25;
+      color: #ffffff;
+   }
+
+   @media (min-width: 640px) {
+      .ssu-faq-question {
+         font-size: 0.3em;
+      }
+   }
+
+   @media (min-width: 768px) {
+      .ssu-faq-question {
+         font-size: 0.32em;
+      }
+   }
+
    .ssu-nav-shell {
       @apply bg-background/95 supports-[backdrop-filter]:bg-background/80 backdrop-blur-md;
    }

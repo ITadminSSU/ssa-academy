@@ -160,41 +160,6 @@ function renderParagraph(text: string, key: string) {
    );
 }
 
-/** Regular flat-top hexagon (points left/right), brand red + white stroke. */
-const FaqHexagon = ({ className }: { className?: string }) => (
-   <svg
-      className={className}
-      viewBox="0 0 60.05 52"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-      overflow="visible"
-   >
-      <polygon
-         points="15.01,0 45.03,0 60.05,26 45.03,52 15.01,52 0,26"
-         fill="#8C2A23"
-         stroke="#ffffff"
-         strokeWidth="3.5"
-         strokeLinejoin="miter"
-         strokeMiterlimit="10"
-         vectorEffect="non-scaling-stroke"
-      />
-   </svg>
-);
-
-/** Navy chevron bar: 60° V-notch on the left, arrow on the right. */
-const FaqBarShape = ({ className }: { className?: string }) => (
-   <svg
-      className={className}
-      viewBox="0 0 1000 100"
-      preserveAspectRatio="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-   >
-      <path d="M28.867 0 H971.133 L1000 50 L971.133 100 H28.867 L0 50 Z" fill="currentColor" />
-   </svg>
-);
-
 const SsuFaqs = ({ system }: IntroPageProps) => {
    const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -245,21 +210,11 @@ const SsuFaqs = ({ system }: IntroPageProps) => {
                               type="button"
                               aria-expanded={isOpen}
                               onClick={() => setOpenIndex(isOpen ? null : index)}
-                              className="group relative flex w-full items-center text-left focus-visible:outline-none"
+                              className="ssu-faq-tab"
                            >
-                              <FaqHexagon className="relative z-20 h-11 w-[3.175rem] shrink-0 sm:h-12 sm:w-[3.464rem] md:h-[3.25rem] md:w-[3.75rem]" />
-
-                              <span
-                                 className={cn(
-                                    'relative z-10 -ml-[12px] flex min-h-11 flex-1 items-center py-3 pr-7 pl-5 sm:-ml-[14px] sm:min-h-12 sm:pr-8 sm:pl-6 md:-ml-[15px] md:min-h-[3.25rem] md:pr-9 md:pl-7',
-                                    'text-primary transition group-hover:text-primary/90',
-                                    'group-focus-visible:ring-accent group-focus-visible:ring-2 group-focus-visible:ring-offset-2',
-                                 )}
-                              >
-                                 <FaqBarShape className="pointer-events-none absolute inset-0 h-full w-full" />
-                                 <span className="font-display relative z-10 pr-3 text-sm font-semibold text-white sm:text-base md:text-lg">
-                                    {faq.question}
-                                 </span>
+                              <span className="ssu-faq-hex" aria-hidden />
+                              <span className="ssu-faq-bar">
+                                 <span className="ssu-faq-question">{faq.question}</span>
                               </span>
                            </button>
 
