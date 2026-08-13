@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { VolumeX } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import Plyr, { APITypes } from 'plyr-react';
 import 'plyr-react/plyr.css';
 
@@ -76,12 +76,12 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       () => ({
          ratio: '16:9',
          autoplay: true,
-         muted: false,
+         muted: true,
          loop: { active: true },
          playsinline: true,
          controls: ['mute', 'volume', 'fullscreen'],
          hideControls: true,
-         clickToPlay: true,
+         clickToPlay: false,
          poster,
          youtube: {
             noCookie: true,
@@ -89,18 +89,23 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
             showinfo: 0,
             iv_load_policy: 3,
             modestbranding: 1,
+            playsinline: 1,
+            mute: 1,
+            autoplay: 1,
          },
          vimeo: {
             byline: false,
             portrait: false,
             title: false,
+            muted: true,
+            autoplay: true,
          },
       }),
       [poster],
    );
 
    useEffect(() => {
-      setIsMuted(false);
+      setIsMuted(true);
       setLoadFailed(false);
       setPosterFailed(false);
       setIsHovering(false);
@@ -114,31 +119,6 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       let frame = 0;
       let attempts = 0;
       let player: NonNullable<APITypes['plyr']> | null = null;
-      let unlocked = false;
-
-      const applyUnmuted = (instance: NonNullable<APITypes['plyr']>) => {
-         instance.muted = false;
-         instance.volume = 1;
-         setIsMuted(false);
-
-         const playPromise = instance.play?.();
-
-         if (playPromise && typeof playPromise.catch === 'function') {
-            playPromise.catch(() => undefined);
-         }
-      };
-
-      const applyMutedFallback = (instance: NonNullable<APITypes['plyr']>) => {
-         instance.muted = true;
-         instance.volume = 0;
-         setIsMuted(true);
-
-         const playPromise = instance.play?.();
-
-         if (playPromise && typeof playPromise.catch === 'function') {
-            playPromise.catch(() => undefined);
-         }
-      };
 
       const handleVolumeChange = () => {
          if (player) {
@@ -148,15 +128,6 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
 
       const handleError = () => {
          setLoadFailed(true);
-      };
-
-      const unlockOnGesture = () => {
-         if (unlocked || !player) {
-            return;
-         }
-
-         unlocked = true;
-         applyUnmuted(player);
       };
 
       const bindPlayer = () => {
@@ -173,40 +144,24 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          }
 
          player = instance;
-         player.muted = false;
-         player.volume = 1;
+         player.muted = true;
+         player.volume = 0;
          player.on('volumechange', handleVolumeChange);
          player.on('error', handleError);
 
          const playPromise = player.play?.();
 
-         if (playPromise && typeof playPromise.then === 'function') {
-            playPromise
-               .then(() => {
-                  if (player && !player.muted) {
-                     setIsMuted(false);
-                  }
-               })
-               .catch(() => {
-                  if (player) {
-                     applyMutedFallback(player);
-                  }
-               });
+         if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => undefined);
          }
       };
 
       bindPlayer();
 
-      window.addEventListener('pointerdown', unlockOnGesture, { once: true });
-      window.addEventListener('keydown', unlockOnGesture, { once: true });
-
       return () => {
          if (frame) {
             window.cancelAnimationFrame(frame);
          }
-
-         window.removeEventListener('pointerdown', unlockOnGesture);
-         window.removeEventListener('keydown', unlockOnGesture);
 
          if (player && typeof player.off === 'function') {
             player.off('volumechange', handleVolumeChange);
@@ -215,7 +170,10 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       };
    }, [plyrSource]);
 
-   const handleUnmute = () => {
+   const handleUnmute = (event: SyntheticEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+
       const player = playerRef.current?.plyr;
 
       if (!player) {
@@ -265,12 +223,15 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          {isMuted && (
             <button
                type="button"
+               onPointerUp={handleUnmute}
                onClick={handleUnmute}
-               className="absolute right-4 bottom-4 z-20 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm transition hover:scale-[1.02] hover:bg-black/80"
+               className="absolute inset-0 z-20 flex items-end justify-end bg-transparent p-4"
                aria-label="Unmute video"
             >
-               <VolumeX className="h-4 w-4" />
-               Tap for sound
+               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/70 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm">
+                  <VolumeX className="h-4 w-4" />
+                  Tap for sound
+               </span>
             </button>
          )}
       </div>
