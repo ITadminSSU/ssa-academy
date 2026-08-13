@@ -160,12 +160,43 @@ function renderParagraph(text: string, key: string) {
    );
 }
 
+/** Regular flat-top hexagon (points left/right), brand red + white stroke. */
+const FaqHexagon = ({ className }: { className?: string }) => (
+   <svg
+      className={className}
+      viewBox="0 0 60.05 52"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+      overflow="visible"
+   >
+      <polygon
+         points="15.01,0 45.03,0 60.05,26 45.03,52 15.01,52 0,26"
+         fill="#8C2A23"
+         stroke="#ffffff"
+         strokeWidth="3.5"
+         strokeLinejoin="miter"
+         strokeMiterlimit="10"
+         vectorEffect="non-scaling-stroke"
+      />
+   </svg>
+);
+
+/** Navy chevron bar: 60° V-notch on the left, arrow on the right. */
+const FaqBarShape = ({ className }: { className?: string }) => (
+   <svg
+      className={className}
+      viewBox="0 0 1000 100"
+      preserveAspectRatio="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+   >
+      <path d="M28.867 0 H971.133 L1000 50 L971.133 100 H28.867 L0 50 Z" fill="currentColor" />
+   </svg>
+);
+
 const SsuFaqs = ({ system }: IntroPageProps) => {
    const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-   const hexClip = 'polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0% 50%)';
-   const barClip =
-      'polygon(16px 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 16px 100%, 0% 50%)';
 
    return (
       <LandingLayout navbarHeight={true} customizable={false}>
@@ -210,36 +241,27 @@ const SsuFaqs = ({ system }: IntroPageProps) => {
 
                      return (
                         <div key={faq.question} className="w-full">
-                           <div className="relative flex items-center">
-                              {/* Red hexagon integrated into blue bar */}
-                              <div className="relative z-20 mr-[-10px] shrink-0 sm:mr-[-12px]">
-                                 <div
-                                    className="absolute -inset-[3px] bg-white"
-                                    style={{ clipPath: hexClip }}
-                                    aria-hidden
-                                 />
-                                 <div
-                                    className="bg-accent relative h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12"
-                                    style={{ clipPath: hexClip }}
-                                    aria-hidden
-                                 />
-                              </div>
+                           <button
+                              type="button"
+                              aria-expanded={isOpen}
+                              onClick={() => setOpenIndex(isOpen ? null : index)}
+                              className="group relative flex w-full items-center text-left focus-visible:outline-none"
+                           >
+                              <FaqHexagon className="relative z-20 h-11 w-[3.175rem] shrink-0 sm:h-12 sm:w-[3.464rem] md:h-[3.25rem] md:w-[3.75rem]" />
 
-                              <button
-                                 type="button"
-                                 aria-expanded={isOpen}
-                                 onClick={() => setOpenIndex(isOpen ? null : index)}
+                              <span
                                  className={cn(
-                                    'relative z-10 flex min-h-11 flex-1 items-center bg-primary py-3 pr-5 pl-6 text-left transition sm:min-h-12 sm:pr-6 sm:pl-7 md:min-h-14 md:pr-8 md:pl-8',
-                                    'hover:bg-primary/95 focus-visible:ring-accent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                                    'relative z-10 -ml-[12px] flex min-h-11 flex-1 items-center py-3 pr-7 pl-5 sm:-ml-[14px] sm:min-h-12 sm:pr-8 sm:pl-6 md:-ml-[15px] md:min-h-[3.25rem] md:pr-9 md:pl-7',
+                                    'text-primary transition group-hover:text-primary/90',
+                                    'group-focus-visible:ring-accent group-focus-visible:ring-2 group-focus-visible:ring-offset-2',
                                  )}
-                                 style={{ clipPath: barClip }}
                               >
-                                 <span className="font-display pr-4 text-sm font-semibold text-white sm:text-base md:text-lg">
+                                 <FaqBarShape className="pointer-events-none absolute inset-0 h-full w-full" />
+                                 <span className="font-display relative z-10 pr-3 text-sm font-semibold text-white sm:text-base md:text-lg">
                                     {faq.question}
                                  </span>
-                              </button>
-                           </div>
+                              </span>
+                           </button>
 
                            <div
                               className={cn(
