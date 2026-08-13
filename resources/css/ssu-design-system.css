@@ -79,20 +79,24 @@
    }
 
    /*
-    * FAQ tab — regular flat-top hexagon + navy chevron bar.
-    * Row font-size = tab height so `em` notch = hexagon right point (60°).
-    * Hexagon width = height × 2/√3; notch = height / (2√3).
+    * FAQ tab — regular flat-top hexagon slotted into a navy arrow.
+    * Left of the bar is a 60° V-cutout (not a point). Right end is the arrow.
+    * Notch = height / (2√3) so it matches the hexagon's right vertex.
     */
    .ssu-faq-tab {
       --faq-h: 3.25rem;
-      --faq-gap: 0.18rem;
-      --faq-notch: 0.288675em;
-      font-size: var(--faq-h);
+      --faq-gap: 3px;
+      --faq-notch: calc(var(--faq-h) * 0.28867513459);
       display: flex;
       width: 100%;
-      align-items: stretch;
-      min-height: 1em;
+      height: var(--faq-h);
+      align-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
       text-align: left;
+      filter: drop-shadow(0 2px 3px rgb(1 18 58 / 0.22));
    }
 
    @media (min-width: 640px) {
@@ -110,9 +114,9 @@
    .ssu-faq-hex {
       position: relative;
       z-index: 2;
-      width: 1.1547005em;
+      width: calc(var(--faq-h) * 1.15470053838);
+      height: var(--faq-h);
       flex-shrink: 0;
-      align-self: stretch;
       background-color: #8c2a23;
       clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
    }
@@ -121,19 +125,19 @@
       position: relative;
       z-index: 1;
       display: flex;
-      min-height: 1em;
+      height: var(--faq-h);
       flex: 1 1 auto;
       align-items: center;
       margin-left: calc(var(--faq-gap) - var(--faq-notch));
-      padding: 0.2em calc(var(--faq-notch) + 0.35em) 0.2em calc(var(--faq-notch) + 0.22em);
+      padding: 0 calc(var(--faq-notch) + 1.15rem) 0 calc(var(--faq-notch) + 0.85rem);
       background-color: #01123a;
       clip-path: polygon(
-         0 50%,
-         var(--faq-notch) 0,
+         0 0,
          calc(100% - var(--faq-notch)) 0,
          100% 50%,
          calc(100% - var(--faq-notch)) 100%,
-         var(--faq-notch) 100%
+         0 100%,
+         var(--faq-notch) 50%
       );
       transition: background-color 150ms ease;
    }
@@ -149,21 +153,24 @@
 
    .ssu-faq-question {
       font-family: var(--font-display);
-      font-size: 0.28em;
+      font-size: 0.95rem;
       font-weight: 700;
-      line-height: 1.25;
+      line-height: 1.2;
       color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
    }
 
    @media (min-width: 640px) {
       .ssu-faq-question {
-         font-size: 0.3em;
+         font-size: 1.05rem;
       }
    }
 
    @media (min-width: 768px) {
       .ssu-faq-question {
-         font-size: 0.32em;
+         font-size: 1.125rem;
       }
    }
 
