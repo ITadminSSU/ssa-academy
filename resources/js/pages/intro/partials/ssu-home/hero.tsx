@@ -8,8 +8,6 @@ import { usePage } from '@inertiajs/react';
 const defaultHero = {
    kicker: 'SMARTSOURCING USA ACADEMY',
    title: 'Upskill. Certify your skills. Scale with confidence.',
-   description:
-      'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
 };
 
 /** Dense original CAD-style building blueprint (hand-authored, not third-party). */
@@ -350,7 +348,6 @@ const Hero = () => {
    const rawKicker = heroSection?.title?.trim() || defaultHero.kicker;
    const kicker = rawKicker.replace(/SMART\s+SOURCING/gi, 'SMARTSOURCING');
    const title = heroSection?.sub_title?.trim() || defaultHero.title;
-   const description = heroSection?.description?.trim() || defaultHero.description;
    const videoUrl = heroSection?.video_url?.trim() || null;
    const posterUrl = heroSection?.thumbnail?.trim() || null;
 
@@ -382,27 +379,27 @@ const Hero = () => {
          </div>
 
          {/* Top: Welcome + logo | video */}
-         <div className="relative z-20 mx-auto w-full max-w-[1440px] px-4 pt-12 pb-10 sm:px-6 sm:pt-14 md:pt-16 md:pb-12 lg:px-10 lg:pt-20 lg:pb-14">
+         <div className="relative z-20 mx-auto w-full max-w-[1440px] px-4 pt-6 pb-5 sm:px-6 sm:pt-7 md:pt-8 md:pb-6 lg:px-10 lg:pt-9 lg:pb-7">
             <div
                className={cn(
-                  'flex flex-col items-center gap-10',
-                  'md:flex-row md:items-center md:justify-between md:gap-12 lg:gap-16',
+                  'flex flex-col items-center gap-6',
+                  'md:flex-row md:items-center md:justify-between md:gap-8 lg:gap-10',
                )}
             >
                <div className="flex w-full justify-center md:w-auto md:shrink-0">
-                  <div className="flex w-[260px] flex-col items-center sm:w-[300px] md:w-[340px] lg:w-[380px]">
-                     <p className="font-display mb-4 w-full text-center text-[1.35rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-5 sm:text-[1.55rem] md:text-[1.7rem] lg:text-[1.85rem]">
+                  <div className="flex w-[220px] flex-col items-center sm:w-[250px] md:w-[280px] lg:w-[300px]">
+                     <p className="font-display mb-2.5 w-full text-center text-[1.15rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-3 sm:text-[1.25rem] md:text-[1.35rem] lg:text-[1.45rem]">
                         Welcome to
                      </p>
 
                      <AppLogo
                         theme="dark"
-                        className="mx-auto h-[120px] w-full object-contain object-center sm:h-[140px] md:h-[160px] lg:h-[180px]"
+                        className="mx-auto h-[96px] w-full object-contain object-center sm:h-[110px] md:h-[124px] lg:h-[140px]"
                      />
                   </div>
                </div>
 
-               <div className="w-full min-w-0 flex-1 md:max-w-[56%]">
+               <div className="w-full min-w-0 flex-1 md:max-w-[48%]">
                   <div className="aspect-video w-full overflow-hidden rounded-2xl border border-white/15 bg-black/30 shadow-2xl shadow-black/35">
                      <HeroVideoPlayer
                         videoUrl={videoUrl}
@@ -414,7 +411,7 @@ const Hero = () => {
             </div>
          </div>
 
-         <div className="relative z-20 h-10 sm:h-14 md:h-20 lg:h-24" aria-hidden>
+         <div className="relative z-20 h-8 sm:h-9 md:h-10 lg:h-11" aria-hidden>
             <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-white md:h-1.5" />
          </div>
 
@@ -435,17 +432,13 @@ const Hero = () => {
                <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-primary/40" />
             </div>
 
-            <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 pt-10 pb-16 sm:px-6 sm:pt-12 md:pt-14 md:pb-20 lg:px-10 lg:pt-16 lg:pb-24">
-               <div className="mx-auto max-w-4xl space-y-4 text-center">
+            <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 pt-6 pb-8 sm:px-6 sm:pt-7 md:pt-8 md:pb-10 lg:px-10 lg:pt-8 lg:pb-11">
+               <div className="mx-auto max-w-4xl space-y-2 text-center md:space-y-2.5">
                   <p className="ssu-kicker !text-sky-100/70">{kicker}</p>
 
-                  <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-[2.75rem] lg:leading-[1.15] xl:text-5xl">
+                  <h1 className="font-display text-2xl leading-tight font-bold sm:text-3xl md:text-[2rem] lg:text-[2.35rem] lg:leading-[1.15] xl:text-[2.5rem]">
                      {title}
                   </h1>
-
-                  <p className="mx-auto max-w-2xl text-base leading-relaxed text-white/90 md:text-lg lg:text-xl lg:leading-relaxed">
-                     {description}
-                  </p>
                </div>
             </div>
          </div>
