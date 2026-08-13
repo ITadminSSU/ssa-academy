@@ -381,29 +381,29 @@ const Hero = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" />
          </div>
 
-         {/* Top: Welcome + logo | video */}
-         <div className="relative z-20 mx-auto w-full max-w-[1440px] px-4 pt-6 pb-5 sm:px-6 sm:pt-7 md:pt-8 md:pb-6 lg:px-10 lg:pt-9 lg:pb-7">
+         {/* Top: Welcome + logo | video — 330px on desktop */}
+         <div className="relative z-20 mx-auto w-full max-w-[1440px] px-4 py-4 sm:px-6 md:h-[330px] md:py-4 lg:px-10">
             <div
                className={cn(
-                  'flex flex-col items-center gap-6',
-                  'md:flex-row md:items-center md:justify-center md:gap-8 lg:gap-12',
+                  'flex flex-col items-center gap-4',
+                  'md:h-full md:flex-row md:items-center md:justify-center md:gap-8 lg:gap-12',
                )}
             >
                <div className="flex w-full justify-center md:w-1/2 md:flex-1">
-                  <div className="flex w-[220px] flex-col items-center sm:w-[250px] md:w-[280px] lg:w-[300px]">
-                     <p className="font-display mb-2.5 w-full text-center text-[1.15rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-3 sm:text-[1.25rem] md:text-[1.35rem] lg:text-[1.45rem]">
+                  <div className="flex w-[200px] flex-col items-center sm:w-[230px] md:w-[250px] lg:w-[270px]">
+                     <p className="font-display mb-2 w-full text-center text-[1.05rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-2.5 sm:text-[1.15rem] md:text-[1.2rem] lg:text-[1.3rem]">
                         Welcome to
                      </p>
 
                      <AppLogo
                         theme="dark"
-                        className="mx-auto h-[96px] w-full object-contain object-center sm:h-[110px] md:h-[124px] lg:h-[140px]"
+                        className="mx-auto h-[84px] w-full object-contain object-center sm:h-[96px] md:h-[108px] lg:h-[120px]"
                      />
                   </div>
                </div>
 
-               <div className="w-full min-w-0 flex-1 md:max-w-[48%]">
-                  <div className="aspect-video w-full overflow-hidden rounded-2xl border border-white/15 bg-black/30 shadow-2xl shadow-black/35">
+               <div className="flex w-full min-w-0 flex-1 items-center justify-center md:h-full md:max-w-[48%]">
+                  <div className="aspect-video w-full overflow-hidden rounded-2xl border border-white/15 bg-black/30 shadow-2xl shadow-black/35 md:h-full md:w-auto md:max-h-full">
                      <HeroVideoPlayer
                         videoUrl={videoUrl}
                         posterUrl={posterUrl}
@@ -414,7 +414,7 @@ const Hero = () => {
             </div>
          </div>
 
-         <div className="relative z-20 h-8 sm:h-9 md:h-10 lg:h-11" aria-hidden>
+         <div className="relative z-20 h-8 sm:h-9 md:h-9" aria-hidden>
             <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-white md:h-1.5" />
          </div>
 
