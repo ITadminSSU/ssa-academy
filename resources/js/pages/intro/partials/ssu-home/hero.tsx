@@ -8,6 +8,8 @@ import { usePage } from '@inertiajs/react';
 const defaultHero = {
    kicker: 'SMARTSOURCING USA ACADEMY',
    title: 'Upskill. Certify your skills. Scale with confidence.',
+   description:
+      'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
 };
 
 /** Dense original CAD-style building blueprint (hand-authored, not third-party). */
@@ -348,6 +350,7 @@ const Hero = () => {
    const rawKicker = heroSection?.title?.trim() || defaultHero.kicker;
    const kicker = rawKicker.replace(/SMART\s+SOURCING/gi, 'SMARTSOURCING');
    const title = heroSection?.sub_title?.trim() || defaultHero.title;
+   const description = heroSection?.description?.trim() || defaultHero.description;
    const videoUrl = heroSection?.video_url?.trim() || null;
    const posterUrl = heroSection?.thumbnail?.trim() || null;
 
@@ -383,10 +386,10 @@ const Hero = () => {
             <div
                className={cn(
                   'flex flex-col items-center gap-6',
-                  'md:flex-row md:items-center md:justify-between md:gap-8 lg:gap-10',
+                  'md:flex-row md:items-center md:justify-center md:gap-8 lg:gap-12',
                )}
             >
-               <div className="flex w-full justify-center md:w-auto md:shrink-0">
+               <div className="flex w-full justify-center md:w-1/2 md:flex-1">
                   <div className="flex w-[220px] flex-col items-center sm:w-[250px] md:w-[280px] lg:w-[300px]">
                      <p className="font-display mb-2.5 w-full text-center text-[1.15rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-3 sm:text-[1.25rem] md:text-[1.35rem] lg:text-[1.45rem]">
                         Welcome to
@@ -433,12 +436,16 @@ const Hero = () => {
             </div>
 
             <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 pt-6 pb-8 sm:px-6 sm:pt-7 md:pt-8 md:pb-10 lg:px-10 lg:pt-8 lg:pb-11">
-               <div className="mx-auto max-w-4xl space-y-2 text-center md:space-y-2.5">
+               <div className="mx-auto w-full max-w-6xl space-y-2.5 text-center md:space-y-3">
                   <p className="ssu-kicker !text-sky-100/70">{kicker}</p>
 
-                  <h1 className="font-display text-2xl leading-tight font-bold sm:text-3xl md:text-[2rem] lg:text-[2.35rem] lg:leading-[1.15] xl:text-[2.5rem]">
+                  <h1 className="font-display whitespace-nowrap text-[clamp(0.8rem,2.15vw,1.65rem)] leading-none font-bold tracking-tight">
                      {title}
                   </h1>
+
+                  <p className="mx-auto max-w-3xl text-[0.8rem] leading-snug text-sky-100/80 sm:text-sm md:text-[0.95rem] md:leading-relaxed">
+                     {description}
+                  </p>
                </div>
             </div>
          </div>
