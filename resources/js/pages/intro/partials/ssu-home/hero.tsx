@@ -390,14 +390,14 @@ const Hero = () => {
                )}
             >
                <div className="flex w-full justify-center md:w-1/2 md:flex-1">
-                  <div className="flex w-[200px] flex-col items-center sm:w-[230px] md:w-[250px] lg:w-[270px]">
-                     <p className="font-display mb-2 w-full text-center text-[1.05rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-2.5 sm:text-[1.15rem] md:text-[1.2rem] lg:text-[1.3rem]">
+                  <div className="flex w-[220px] flex-col items-center sm:w-[260px] md:w-[300px] lg:w-[320px]">
+                     <p className="font-display mb-2.5 w-full text-center text-[1.15rem] leading-none font-bold tracking-[0.04em] text-white uppercase sm:mb-3 sm:text-[1.25rem] md:text-[1.4rem] lg:text-[1.5rem]">
                         Welcome to
                      </p>
 
                      <AppLogo
                         theme="dark"
-                        className="mx-auto h-[84px] w-full object-contain object-center sm:h-[96px] md:h-[108px] lg:h-[120px]"
+                        className="mx-auto h-[100px] w-full object-contain object-center sm:h-[120px] md:h-[140px] lg:h-[148px]"
                      />
                   </div>
                </div>
