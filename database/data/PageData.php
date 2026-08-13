@@ -136,8 +136,8 @@ class PageData
             'type' => 'inner_page',
             'title' => 'Refund Policy',
             'description' => InnerSections::getRefundPolicyDescription(),
-            'meta_description' => 'Learn about SMARTSOURCING USA ACADEMY refund conditions and processes for course purchases and other services.',
-            'meta_keywords' => 'refund policy, refunds, money back, course refund, payment returns',
+            'meta_description' => 'SMARTSOURCING USA ACADEMY payments are non-refundable. Read our Refund Policy for course fees, subscriptions, and paid services.',
+            'meta_keywords' => 'refund policy, non-refundable, course fees, subscription billing, SMARTSOURCING USA ACADEMY',
             'sections' => []
          ],
       ];
