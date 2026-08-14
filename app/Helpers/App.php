@@ -212,6 +212,21 @@ function media_public_url(\Spatie\MediaLibrary\MediaCollections\Models\Media $me
 }
 
 /**
+ * Stable (unsigned) URL for persisting Spatie media references in VARCHAR/TEXT columns.
+ * Never store temporary signed R2/S3 URLs — they exceed VARCHAR(255) and expire.
+ */
+function media_storage_url(\Spatie\MediaLibrary\MediaCollections\Models\Media $media): string
+{
+   $url = $media->getUrl();
+
+   if (in_array($media->disk, ['s3'], true)) {
+      return \App\Support\S3CompatibleStorage::normalizeStoredUrl($url) ?? $url;
+   }
+
+   return public_asset_url($url) ?? $url;
+}
+
+/**
  * Collapse redundant slashes in a URL while preserving the scheme separator
  * (e.g. "https://"). Fixes malformed paths such as "//storage/app/public/x.jpg"
  * or "https://host//storage/x.jpg" that would otherwise 404.

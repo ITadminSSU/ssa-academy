@@ -7,6 +7,7 @@ use App\Enums\CourseBillingModel;
 use App\Enums\CourseStatusType;
 use App\Models\Instructor;
 use App\Models\User;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -84,17 +85,26 @@ class Course extends Model implements HasMedia
 
     protected function thumbnail(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => public_asset_url($value));
+        return Attribute::make(
+            get: fn (?string $value) => S3CompatibleStorage::attributeGet($value),
+            set: fn (?string $value) => S3CompatibleStorage::attributeSet($value),
+        );
     }
 
     protected function banner(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => public_asset_url($value));
+        return Attribute::make(
+            get: fn (?string $value) => S3CompatibleStorage::attributeGet($value),
+            set: fn (?string $value) => S3CompatibleStorage::attributeSet($value),
+        );
     }
 
     protected function preview(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => public_asset_url($value));
+        return Attribute::make(
+            get: fn (?string $value) => S3CompatibleStorage::attributeGet($value),
+            set: fn (?string $value) => S3CompatibleStorage::attributeSet($value),
+        );
     }
 
     public function scopeVisibleInCatalog(Builder $query, ?User $user = null): Builder

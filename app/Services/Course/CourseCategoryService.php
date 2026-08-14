@@ -78,13 +78,13 @@ class CourseCategoryService extends MediaService
    function createCategory(array $data): CourseCategory
    {
       $category = CourseCategory::create([
-         ...$data,
+         ...collect($data)->except(['thumbnail'])->all(),
          'slug' => Str::slug($data['title']),
       ]);
 
-      if ($data['thumbnail']) {
+      if (! empty($data['thumbnail'])) {
          $category->update([
-            'thumbnail' => $this->addNewDeletePrev($category, $data['thumbnail'], "thumbnail")
+            'thumbnail' => $this->addNewDeletePrev($category, $data['thumbnail'], 'thumbnail'),
          ]);
       }
 
@@ -94,13 +94,13 @@ class CourseCategoryService extends MediaService
    function updateCategory(array $data, CourseCategory $category): CourseCategory
    {
       $category->update([
-         ...$data,
+         ...collect($data)->except(['thumbnail'])->all(),
          'slug' => Str::slug($data['title']),
       ]);
 
-      if ($data['thumbnail']) {
+      if (! empty($data['thumbnail'])) {
          $category->update([
-            'thumbnail' => $this->addNewDeletePrev($category, $data['thumbnail'], "thumbnail")
+            'thumbnail' => $this->addNewDeletePrev($category, $data['thumbnail'], 'thumbnail'),
          ]);
       }
 

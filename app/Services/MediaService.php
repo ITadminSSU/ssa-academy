@@ -38,7 +38,8 @@ class MediaService extends BaseService
         $this->ensureMediaPublic($newMedia);
         $model->unsetRelation('media');
 
-        return media_public_url($newMedia);
+        // Persist a short unsigned object URL — signed R2 URLs are too long for VARCHAR(255).
+        return media_storage_url($newMedia);
     }
 
     public function addSingleFile(Model $model, $image, ?string $name)
@@ -46,7 +47,7 @@ class MediaService extends BaseService
         $newMedia = $this->addMediaSafely($model, $image, $name);
         $this->ensureMediaPublic($newMedia);
 
-        return media_public_url($newMedia);
+        return media_storage_url($newMedia);
     }
 
     public function removeProfilePhoto(Model $model): void

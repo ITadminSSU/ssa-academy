@@ -29,16 +29,17 @@ class CourseService extends MediaService
 
    function createCourse(array $data): Course
    {
+      // Do not mass-assign the UploadedFile onto thumbnail — upload and store a short URL after create.
       $course = Course::create([
-         ...$data,
+         ...collect($data)->except(['thumbnail'])->all(),
          'slug' => Str::slug($data['title']),
          'user_id' => Auth::user()->id,
          'course_type' => 'general',
       ]);
 
-      if ($data['thumbnail']) {
+      if (! empty($data['thumbnail'])) {
          $course->update([
-            'thumbnail' => $this->addNewDeletePrev($course, $data['thumbnail'], "thumbnail")
+            'thumbnail' => $this->addNewDeletePrev($course, $data['thumbnail'], 'thumbnail'),
          ]);
       }
 

@@ -126,6 +126,40 @@ class S3CompatibleStorage
         return static::objectFileUrl($key);
     }
 
+    /**
+     * Eloquent Attribute get: sign private R2/S3 URLs for the browser; keep local paths app-absolute.
+     */
+    public static function attributeGet(?string $value): ?string
+    {
+        $resolved = static::resolvePlaybackUrl($value);
+
+        if ($resolved === null || $resolved === '') {
+            return $resolved;
+        }
+
+        if (static::isLocalPublicUrl($resolved) || ! str_starts_with($resolved, 'http')) {
+            return public_asset_url($resolved) ?? $resolved;
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Eloquent Attribute set: strip signatures / query strings before persisting.
+     */
+    public static function attributeSet(?string $value): ?string
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+
+        if (static::isLocalPublicUrl($value)) {
+            return $value;
+        }
+
+        return static::normalizeStoredUrl($value) ?? $value;
+    }
+
     public static function isExternalEmbedUrl(string $url): bool
     {
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));

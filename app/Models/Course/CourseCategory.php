@@ -2,6 +2,7 @@
 
 namespace App\Models\Course;
 
+use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,7 +30,10 @@ class CourseCategory extends Model implements HasMedia
 
     protected function thumbnail(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => public_asset_url($value));
+        return Attribute::make(
+            get: fn (?string $value) => S3CompatibleStorage::attributeGet($value),
+            set: fn (?string $value) => S3CompatibleStorage::attributeSet($value),
+        );
     }
 
     public function courses()

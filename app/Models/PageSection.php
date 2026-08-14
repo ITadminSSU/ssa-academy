@@ -69,30 +69,8 @@ class PageSection extends Model implements HasMedia
     protected function thumbnail(): Attribute
     {
         return Attribute::make(
-            get: function (?string $value) {
-                $resolved = S3CompatibleStorage::resolvePlaybackUrl($value);
-
-                if ($resolved === null || $resolved === '') {
-                    return $resolved;
-                }
-
-                if (S3CompatibleStorage::isLocalPublicUrl($resolved) || ! str_starts_with($resolved, 'http')) {
-                    return public_asset_url($resolved) ?? $resolved;
-                }
-
-                return $resolved;
-            },
-            set: function (?string $value) {
-                if ($value === null || trim($value) === '') {
-                    return null;
-                }
-
-                if (S3CompatibleStorage::isLocalPublicUrl($value)) {
-                    return $value;
-                }
-
-                return S3CompatibleStorage::normalizeStoredUrl($value) ?? $value;
-            },
+            get: fn (?string $value) => S3CompatibleStorage::attributeGet($value),
+            set: fn (?string $value) => S3CompatibleStorage::attributeSet($value),
         );
     }
 

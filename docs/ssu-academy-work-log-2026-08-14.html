@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SMARTSOURCING USA Academy — Work Log 13–14 August 2026</title>
+  <style>
+    :root {
+      --navy: #01123a;
+      --navy-mid: #0a1c4a;
+      --maroon: #8c2a23;
+      --sky: #e8f4fc;
+      --ink: #1a2332;
+      --muted: #5a6578;
+      --line: #d5dde8;
+      --paper: #ffffff;
+      --band: #f4f7fb;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      background: #fff;
+    }
+    @page {
+      size: A4;
+      margin: 18mm 16mm 20mm 16mm;
+    }
+    .cover {
+      min-height: 240mm;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12mm 4mm 8mm;
+    }
+    .cover-top {
+      border-top: 8px solid var(--navy);
+      border-bottom: 4px solid var(--maroon);
+      padding: 18px 0 16px;
+    }
+    .kicker {
+      letter-spacing: 0.18em;
+      font-size: 10pt;
+      font-weight: 700;
+      color: var(--maroon);
+      text-transform: uppercase;
+      margin: 0 0 10px;
+    }
+    .cover h1 {
+      font-size: 28pt;
+      line-height: 1.15;
+      color: var(--navy);
+      margin: 0 0 8px;
+    }
+    .cover .sub {
+      font-size: 13pt;
+      color: var(--muted);
+      margin: 0;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 24px;
+      margin-top: 36px;
+      border: 1px solid var(--line);
+      padding: 16px 18px;
+      background: var(--band);
+    }
+    .meta-grid dt {
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+      margin: 0 0 2px;
+    }
+    .meta-grid dd {
+      margin: 0 0 10px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .cover-foot {
+      font-size: 9pt;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+    h2 {
+      color: var(--navy);
+      font-size: 15pt;
+      margin: 22px 0 10px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid var(--maroon);
+      page-break-after: avoid;
+    }
+    h3 {
+      color: var(--navy-mid);
+      font-size: 12pt;
+      margin: 16px 0 6px;
+      page-break-after: avoid;
+    }
+    p { margin: 0 0 8px; }
+    ul, ol { margin: 0 0 10px; padding-left: 20px; }
+    li { margin: 0 0 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 9.5pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--navy);
+      color: #fff;
+      font-weight: 700;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    tr:nth-child(even) td { background: var(--band); }
+    code, .path {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8.5pt;
+      background: #eef2f7;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .callout {
+      border-left: 4px solid var(--maroon);
+      background: var(--sky);
+      padding: 10px 12px;
+      margin: 10px 0 14px;
+      page-break-inside: avoid;
+    }
+    .callout.ok {
+      border-left-color: #1f7a4d;
+      background: #eef8f2;
+    }
+    .callout.warn {
+      border-left-color: #b7791f;
+      background: #fff8e8;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 3px;
+      color: #fff;
+    }
+    .done { background: #1f7a4d; }
+    .code { background: var(--navy); }
+    .ops { background: var(--maroon); }
+    .guide { background: #3b5b8c; }
+    .pending { background: #b7791f; }
+    .section { page-break-inside: avoid; }
+    footer.page-note {
+      font-size: 8.5pt;
+      color: var(--muted);
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <section class="cover">
+    <div>
+      <div class="cover-top">
+        <p class="kicker">Internal documentation</p>
+        <h1>Work log and change record</h1>
+        <p class="sub">SMARTSOURCING USA Academy — LMS launch preparation</p>
+      </div>
+      <dl class="meta-grid">
+        <div>
+          <dt>Period</dt>
+          <dd>13–14 August 2026</dd>
+          <dt>Live site</dt>
+          <dd>https://smartsourcingacademy.com</dd>
+          <dt>Workspace</dt>
+          <dd>SSU Academy (Laravel + Inertia / React)</dd>
+        </div>
+        <div>
+          <dt>Repository</dt>
+          <dd>ssa-academy</dd>
+          <dt>Hosting</dt>
+          <dd>Laravel Forge + DigitalOcean</dd>
+          <dt>CDN / proxy</dt>
+          <dd>Cloudflare (Free) — Active as of 14 Aug 2026</dd>
+        </div>
+      </dl>
+    </div>
+    <div class="cover-foot">
+      Prepared for Smart Sourcing USA. This document records code changes, infrastructure work, and decisions from the 13–14 August 2026 session. It is not a legal contract and does not replace Terms, Refund Policy, or NDA pages on the live site.
+    </div>
+  </section>
+
+  <h2>1. Executive summary</h2>
+  <p>This session prepared the public LMS for launch. Work covered homepage design, registration fields, legal copy alignment, and putting Cloudflare in front of the live domain. Video delivery at 10,000 concurrent viewers was reviewed and is <strong>not yet complete</strong> — that still depends on Bunny Stream being enabled and older lessons re-uploaded.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Status</th>
+        <th>Item</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="badge done">Done</span></td><td>Original hero blueprint artwork (not copied from a third-party PNG)</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Hero layout: 330px desktop band, logo size B (148px), one-line tagline + description</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Hero video: muted autoplay; tap/click overlay to unmute (mobile freeze fixed)</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>FAQ tabs rebuilt as hexagon + inward V-notch + right arrow</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Refund Policy rewritten to match Terms: all payments non-refundable</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Footer Company links: FAQs added under About Us</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Registration extras: estimating software, construction experience, Construction VA</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Cloudflare connected, nameservers at GoDaddy, SSL Full (strict), Always HTTPS</td></tr>
+      <tr><td><span class="badge done">Done</span></td><td>Live verification: <code>server: cloudflare</code> and <code>cf-ray</code> on the homepage</td></tr>
+      <tr><td><span class="badge pending">Open</span></td><td>Cloudflare cache rules (public pages vs dashboard / player)</td></tr>
+      <tr><td><span class="badge pending">Open</span></td><td>Bunny Stream enable + re-upload older lessons (needed for high concurrent video)</td></tr>
+      <tr><td><span class="badge pending">Open</span></td><td>SignWell e-sign for 1,000+ NDAs (recommendation only; not implemented)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. What we did (timeline)</h2>
+
+  <h3>2.1 Homepage hero — original blueprint</h3>
+  <p><span class="badge code">Code</span></p>
+  <p>The hero background was rebuilt as original SVG (hand-authored), not a copy of a third-party PNG. Two layers:</p>
+  <ul>
+    <li><strong>Top band:</strong> dense CAD-style building / skyline blueprint behind Welcome + logo + video.</li>
+    <li><strong>Lower band:</strong> house-style blueprint behind the tagline and description.</li>
+  </ul>
+  <p>Constraint recorded: do not copy third-party artwork; keep original SVG blueprints.</p>
+
+  <h3>2.2 Hero layout and copy</h3>
+  <p><span class="badge code">Code</span></p>
+  <ul>
+    <li>Desktop top band locked at <strong>330px</strong>.</li>
+    <li>Logo height option <strong>B</strong>: 100 / 120 / 140 / <strong>148px</strong> (sm → lg).</li>
+    <li>“Welcome to” + logo centered; video beside on desktop.</li>
+    <li>Tagline kept to <strong>one line</strong> (<code>whitespace-nowrap</code> + fluid type).</li>
+    <li>Description sits under the tagline.</li>
+  </ul>
+  <p>Primary file: <span class="path">resources/js/pages/intro/partials/ssu-home/hero.tsx</span></p>
+
+  <h3>2.3 Hero video autoplay and mobile tap</h3>
+  <p><span class="badge code">Code</span></p>
+  <p>Browsers block autoplay with sound. The player now:</p>
+  <ul>
+    <li>Starts <strong>muted</strong> and autoplays in a loop.</li>
+    <li>Sets Plyr <code>clickToPlay: false</code> so a tap does not pause the video.</li>
+    <li>Shows a full-video unmute overlay (speaker icon). First tap/click unmutes and continues playback.</li>
+  </ul>
+  <p>This fixed the mobile bug where a tap both unmuted and paused (video appeared frozen).</p>
+  <p>Primary file: <span class="path">resources/js/components/hero-video-player.tsx</span></p>
+
+  <h3>2.4 FAQ hexagon tabs</h3>
+  <p><span class="badge code">Code</span></p>
+  <p>FAQ category tabs were rebuilt to match the reference look without copying artwork:</p>
+  <ul>
+    <li>Regular flat-top hexagon (maroon).</li>
+    <li>Navy bar with an inward 60° V-cut on the left and an arrow on the right.</li>
+    <li>3px visual gap between hexagon and bar.</li>
+  </ul>
+  <p>Files:</p>
+  <ul>
+    <li><span class="path">resources/css/ssu-design-system.css</span> — <code>.ssu-faq-tab</code>, <code>.ssu-faq-hex</code>, <code>.ssu-faq-bar</code></li>
+    <li><span class="path">resources/js/pages/intro/partials/ssu-home/ssu-faqs.tsx</span> (and related FAQ UI)</li>
+  </ul>
+
+  <h3>2.5 Refund Policy aligned with Terms</h3>
+  <p><span class="badge code">Code</span></p>
+  <p>Terms already stated payments are non-refundable. The Refund Policy page was rewritten to match, then applied via migration so the live CMS row updates.</p>
+  <p>Policy now states:</p>
+  <ul>
+    <li>All fees are final and non-refundable (courses, subscriptions, enrollment, other paid services).</li>
+    <li>No refund for unused access, change of mind, partial completion, dissatisfaction, inactivity, or termination for Terms/NDA violation.</li>
+    <li>Subscription cancel stops the next renewal; it does not refund the current period.</li>
+    <li>Billing errors (duplicate / unauthorized) can be reviewed via <strong>training@smartsourcingusa.com</strong>.</li>
+  </ul>
+  <p>Files:</p>
+  <ul>
+    <li><span class="path">database/data/utils/InnerSections.php</span> — source copy</li>
+    <li><span class="path">database/migrations/2026_08_13_000002_update_refund_policy_to_non_refundable.php</span></li>
+    <li><span class="path">database/data/PageData.php</span> — seed/default meta</li>
+  </ul>
+  <div class="callout warn">
+    <strong>Deploy note:</strong> run <code>php artisan migrate</code> on production if this migration has not already been applied. Admin → Pages can also be used to confirm the live Refund Policy text.
+  </div>
+
+  <h3>2.6 Footer — FAQs under About Us</h3>
+  <p><span class="badge code">Code</span></p>
+  <p>Company footer column now includes <strong>FAQs</strong> (<code>/faqs</code>) immediately after <strong>About Us</strong>.</p>
+  <p>Files:</p>
+  <ul>
+    <li><span class="path">database/seeders/FooterSeeder.php</span></li>
+    <li><span class="path">database/migrations/2026_08_13_000003_add_faqs_link_to_footer_company.php</span></li>
+  </ul>
+
+  <h3>2.7 Registration profile extras</h3>
+  <p><span class="badge code">Code</span></p>
+  <p>New required fields on public registration, stored on <code>users</code> and shown on the candidate profile in Admin:</p>
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>estimating_software</code></td><td>JSON array</td><td>Multi-select; “None” is exclusive; “Others” requires a text value</td></tr>
+      <tr><td><code>estimating_software_other</code></td><td>string, nullable</td><td>Required only when Others is selected</td></tr>
+      <tr><td><code>construction_experience</code></td><td>string</td><td>Years of construction experience (select)</td></tr>
+      <tr><td><code>worked_as_construction_va</code></td><td>boolean</td><td>Have you worked as a Construction Virtual Assistant?</td></tr>
+    </tbody>
+  </table>
+  <p>Files:</p>
+  <ul>
+    <li><span class="path">database/migrations/2026_08_13_000001_add_registration_profile_fields_to_users_table.php</span></li>
+    <li><span class="path">app/Models/User.php</span></li>
+    <li><span class="path">app/Http/Controllers/Auth/RegisteredUserController.php</span></li>
+    <li><span class="path">resources/js/pages/auth/register.tsx</span></li>
+    <li><span class="path">resources/js/pages/dashboard/candidates/show.tsx</span></li>
+    <li><span class="path">resources/js/types/index.d.ts</span></li>
+  </ul>
+
+  <h2>3. Cloudflare — put the site behind the proxy</h2>
+  <p><span class="badge ops">Infrastructure</span> &nbsp; No LMS code change. Domain was <strong>connected</strong> (not transferred, not purchased).</p>
+
+  <h3>3.1 What “move the domain” meant</h3>
+  <ul>
+    <li><strong>Done:</strong> point nameservers at Cloudflare so Cloudflare can proxy traffic.</li>
+    <li><strong>Not done / not needed:</strong> transfer the domain away from GoDaddy.</li>
+  </ul>
+  <p>GoDaddy now shows DNS as managed elsewhere / IDLE. That is expected. Do not revert nameservers.</p>
+
+  <h3>3.2 Nameservers (GoDaddy → Cloudflare)</h3>
+  <table>
+    <thead><tr><th>Record</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Nameserver 1</td><td><code>ignacio.ns.cloudflare.com</code></td></tr>
+      <tr><td>Nameserver 2</td><td><code>savanna.ns.cloudflare.com</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 DNS records</h3>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Name</th><th>Target</th><th>Proxy</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>A</td><td>@ / smartsourcingacademy.com</td><td>157.230.37.127 (Forge)</td><td>Proxied (orange cloud)</td></tr>
+      <tr><td>CNAME</td><td>www</td><td>smartsourcingacademy.com (or Forge host)</td><td>Proxied (orange cloud)</td></tr>
+      <tr><td>MX / TXT / email</td><td>as existing</td><td>mail provider</td><td>DNS only (grey)</td></tr>
+      <tr><td>_domainconnect</td><td>_domainconnect</td><td>GoDaddy helper</td><td>DNS only (grey)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.4 SSL and HTTPS</h3>
+  <ul>
+    <li>SSL/TLS encryption mode: <strong>Full (strict)</strong> — set 14 August 2026.</li>
+    <li>Edge Certificates: <strong>Always Use HTTPS</strong> — On.</li>
+  </ul>
+  <p>Do not use Flexible SSL (that would encrypt browser→Cloudflare only and can break cookies / mixed content).</p>
+
+  <h3>3.5 Verification</h3>
+  <p>First HAR export (before orange-cloud / propagation) showed <code>server: nginx</code> and no <code>cf-ray</code> on the HTML document. Traffic was still hitting Forge directly. Cloudflare headers on that file were only for R2 object storage URLs, not the website.</p>
+  <p>Second check (Headers screenshot, 13 Aug 2026 20:40 UTC / 14 Aug 04:40 PHT) confirmed the homepage is proxied:</p>
+  <table>
+    <thead><tr><th>Header</th><th>Value</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>Server</code></td><td>cloudflare</td><td>Request hit Cloudflare first</td></tr>
+      <tr><td><code>Cf-Ray</code></td><td>a2aa88f2693c8d05-MNL</td><td>Proxied; Manila edge</td></tr>
+      <tr><td><code>Cf-Cache-Status</code></td><td>DYNAMIC</td><td>HTML not cached (Laravel sends <code>no-cache, private</code> + cookies)</td></tr>
+      <tr><td><code>Server-Timing</code></td><td>cfEdge ~34ms; cfOrigin ~956ms</td><td>Edge is fast; origin still does the page work</td></tr>
+    </tbody>
+  </table>
+  <div class="callout ok">
+    <strong>Cloudflare proxy is live.</strong> <code>DYNAMIC</code> is expected until cache rules are added. It is not a failure.
+  </div>
+
+  <h2>4. Decisions and guidance (no code in this session)</h2>
+
+  <h3>4.1 E-sign for 1,000+ NDAs — SignWell</h3>
+  <p><span class="badge guide">Recommendation</span></p>
+  <p>For high-volume NDA signing, SignWell API was recommended over building a custom signer. Not implemented in code. Revisit when you are ready to connect templates, webhooks, and stored signed PDFs.</p>
+
+  <h3>4.2 Public launch vs 10,000 concurrent users</h3>
+  <p><span class="badge guide">Capacity</span></p>
+  <p>The LMS can launch publicly on the current Forge + Cloudflare setup for normal traffic. <strong>10,000 concurrent video viewers is not supported on a single Forge app server</strong> if lessons stream from Laravel / R2 signed URLs through the origin.</p>
+  <p>Path to that capacity:</p>
+  <ol>
+    <li>Enable Bunny Stream in Admin → Settings → Bunny Stream.</li>
+    <li>Re-upload older lessons so they get a <code>bunny_video_id</code>.</li>
+    <li>Keep Cloudflare in front for HTML/assets; let Bunny (player.mediadelivery.net / b-cdn.net) carry video.</li>
+    <li>Later: Redis, queue workers, and more than one app server if app traffic (not just video) grows.</li>
+  </ol>
+  <p>Cloudflare empty analytics / “no requests in 24h” right after going Active is stats lag, not a broken proxy.</p>
+
+  <h3>4.3 Autoplay with sound</h3>
+  <p>Chrome, Safari, and mobile browsers will not autoplay with sound without a user gesture. A popup cannot legally bypass that. The implemented approach (muted autoplay + first tap to unmute) is the reliable pattern.</p>
+
+  <h2>5. File index — code touched this session</h2>
+  <table>
+    <thead>
+      <tr><th>File</th><th>Change</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="path">resources/js/pages/intro/partials/ssu-home/hero.tsx</span></td><td>Original SVG blueprints; 330px band; logo 148px; one-line tagline</td></tr>
+      <tr><td><span class="path">resources/js/components/hero-video-player.tsx</span></td><td>Muted autoplay; clickToPlay false; unmute overlay</td></tr>
+      <tr><td><span class="path">resources/css/ssu-design-system.css</span></td><td>FAQ hexagon + V-notch + arrow tabs</td></tr>
+      <tr><td><span class="path">resources/js/pages/intro/partials/ssu-home/ssu-faqs.tsx</span></td><td>FAQ tab markup to match new CSS</td></tr>
+      <tr><td><span class="path">database/data/utils/InnerSections.php</span></td><td>Non-refundable Refund Policy (and Terms refresh)</td></tr>
+      <tr><td><span class="path">database/data/PageData.php</span></td><td>Refund policy meta defaults</td></tr>
+      <tr><td><span class="path">database/migrations/2026_08_13_000002_…refund_policy…</span></td><td>Update CMS pages on migrate</td></tr>
+      <tr><td><span class="path">database/seeders/FooterSeeder.php</span></td><td>FAQs link in Company column</td></tr>
+      <tr><td><span class="path">database/migrations/2026_08_13_000003_…faqs_link…</span></td><td>Insert FAQs after About Us in live footer</td></tr>
+      <tr><td><span class="path">database/migrations/2026_08_13_000001_…users…</span></td><td>Registration extra columns</td></tr>
+      <tr><td><span class="path">app/Models/User.php</span></td><td>Fillable / casts for new fields</td></tr>
+      <tr><td><span class="path">app/Http/Controllers/Auth/RegisteredUserController.php</span></td><td>Validation and persist</td></tr>
+      <tr><td><span class="path">resources/js/pages/auth/register.tsx</span></td><td>Full-page register UI</td></tr>
+      <tr><td><span class="path">resources/js/pages/dashboard/candidates/show.tsx</span></td><td>Admin display of new fields</td></tr>
+      <tr><td><span class="path">resources/js/types/index.d.ts</span></td><td>TypeScript user fields</td></tr>
+    </tbody>
+  </table>
+  <p>Bunny Stream admin UI already existed (<span class="path">resources/js/pages/dashboard/settings/bunny-stream.tsx</span>). It was not newly built today; it remains the switch for video CDN.</p>
+
+  <h2>6. Production checklist</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Owner / where</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Deploy code + run migrations 000001, 000002, 000003</td><td>Forge deploy / <code>php artisan migrate</code></td><td>Confirm on server</td></tr>
+      <tr><td>2</td><td>Confirm Refund Policy page on live site</td><td>https://smartsourcingacademy.com/refund-policy</td><td>Confirm</td></tr>
+      <tr><td>3</td><td>Confirm footer FAQs under About Us</td><td>Live homepage footer</td><td>Confirm</td></tr>
+      <tr><td>4</td><td>Cloudflare orange cloud on A + www</td><td>Cloudflare DNS</td><td>Done</td></tr>
+      <tr><td>5</td><td>SSL Full (strict) + Always HTTPS</td><td>Cloudflare SSL/TLS</td><td>Done</td></tr>
+      <tr><td>6</td><td>Homepage shows <code>cf-ray</code></td><td>Chrome DevTools → Network</td><td>Done</td></tr>
+      <tr><td>7</td><td>Cache rules: cache public; bypass /dashboard*, /play-course*, auth, Stripe</td><td>Cloudflare Rules</td><td>Not yet</td></tr>
+      <tr><td>8</td><td>Enable Bunny Stream + re-upload old lessons</td><td>Admin Settings</td><td>Not yet</td></tr>
+      <tr><td>9</td><td>SignWell (or other e-sign) for NDA volume</td><td>Ops / later sprint</td><td>Not yet</td></tr>
+    </tbody>
+  </table>
+
+  <h2>7. Suggested Cloudflare cache rules (not applied yet)</h2>
+  <p>When you want them:</p>
+  <ul>
+    <li><strong>Cache:</strong> <code>/</code>, <code>/faqs</code>, <code>/about-us</code>, <code>/courses*</code>, static <code>/build/*</code></li>
+    <li><strong>Bypass (do not cache):</strong> <code>/dashboard*</code>, <code>/play-course*</code>, login/register, Stripe webhooks/checkout, Admin</li>
+  </ul>
+  <p>Until then, Laravel’s <code>Cache-Control: no-cache, private</code> plus session cookies keep HTML as <code>DYNAMIC</code>. That is safe.</p>
+
+  <h2>8. Important operational notes</h2>
+  <ul>
+    <li>Do not revert GoDaddy nameservers back to GoDaddy DNS.</li>
+    <li>Do not set Cloudflare SSL to Flexible.</li>
+    <li>R2 file URLs already show Cloudflare headers; that is storage, not the site proxy. The site proxy is confirmed only when the HTML document has <code>cf-ray</code>.</li>
+    <li>Hero video on the homepage may still load from R2 until Bunny is enabled for that asset.</li>
+    <li>Legal pages live in the database; after migrate, also spot-check Admin → Pages.</li>
+  </ul>
+
+  <p class="page-note">End of document — SMARTSOURCING USA Academy work log, 13–14 August 2026.</p>
+
+</body>
+</html>
