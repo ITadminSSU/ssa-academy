@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendRegistrationNotificationsJob;
 use App\Models\ProfessionalType;
 use App\Models\User;
+use App\Services\Auth\SingleSessionService;
 use App\Services\AuthService;
 use App\Services\LearnerTypeResolver;
 use App\Services\LegalAgreementService;
@@ -25,6 +26,7 @@ class RegisteredUserController extends Controller
         private AuthService $authService,
         private LearnerTypeResolver $learnerTypeResolver,
         private LegalAgreementService $legalAgreement,
+        private SingleSessionService $singleSession,
     ) {}
 
     /**
@@ -134,6 +136,8 @@ class RegisteredUserController extends Controller
             ->afterResponse();
 
         Auth::login($user);
+        $request->session()->regenerate();
+        $this->singleSession->claim($user);
 
         return redirect()->intended($this->authService->homeUrlFor($user));
     }

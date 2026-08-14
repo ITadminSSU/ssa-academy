@@ -59,6 +59,12 @@ export default function Login({ status, recaptcha, canResetPassword, googleLogIn
       <AuthLayout title={auth.login_title} description={auth.login_description}>
          <Head title={auth.login_title} />
 
+         {props.flash?.error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-800 dark:text-red-100">
+               {props.flash.error}
+            </div>
+         )}
+
          {testAccounts && testAccounts.length > 0 && (
             <div className="border-amber-500/30 bg-amber-500/10 rounded-xl border p-4 text-sm">
                <p className="mb-2 font-semibold text-amber-900 dark:text-amber-100">Test accounts (UAT)</p>

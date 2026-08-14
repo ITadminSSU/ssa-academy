@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\UserType;
 use App\Models\User;
+use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
@@ -19,6 +20,7 @@ class GoogleAuthController extends Controller
         private AuthService $authService,
         private LegalAgreementService $legalAgreement,
         private TwoFactorAuthenticationService $twoFactor,
+        private SingleSessionService $singleSession,
     ) {}
 
     /**
@@ -53,7 +55,9 @@ class GoogleAuthController extends Controller
                 Auth::login($registered, true);
             }
 
+            request()->session()->regenerate();
             session()->forget('auth.two_factor_confirmed');
+            $this->singleSession->claim($registered);
 
             if ($this->twoFactor->isEnabled($registered)) {
                 return redirect()->route('two-factor.challenge');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
@@ -21,6 +22,7 @@ class AuthenticatedSessionController extends Controller
         private AuthService $authService,
         private LegalAgreementService $legalAgreement,
         private TwoFactorAuthenticationService $twoFactor,
+        private SingleSessionService $singleSession,
     ) {}
 
     /**
@@ -70,6 +72,11 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
+        if ($user) {
+            // Claim this device immediately so any other open session is signed out.
+            $this->singleSession->claim($user);
+        }
+
         if ($user && $this->twoFactor->isEnabled($user)) {
             $destination = route('two-factor.challenge');
 
@@ -95,6 +102,7 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         if ($user = $request->user()) {
+            $this->singleSession->clear($user);
             $user->tokens()->delete();
         }
 

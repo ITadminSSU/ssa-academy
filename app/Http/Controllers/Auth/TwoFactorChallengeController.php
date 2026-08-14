@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
@@ -19,6 +20,7 @@ class TwoFactorChallengeController extends Controller
         private TwoFactorAuthenticationService $twoFactor,
         private AuthService $authService,
         private LegalAgreementService $legalAgreement,
+        private SingleSessionService $singleSession,
     ) {}
 
     public function create(Request $request): Response|RedirectResponse
@@ -70,6 +72,7 @@ class TwoFactorChallengeController extends Controller
 
         RateLimiter::clear($key);
         $request->session()->put('auth.two_factor_confirmed', true);
+        $this->singleSession->claim($user);
 
         if ($this->legalAgreement->requiresAcceptance($user)) {
             return redirect()->route('legal.agreement.show');
