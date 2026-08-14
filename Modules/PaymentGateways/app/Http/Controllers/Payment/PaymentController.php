@@ -4,7 +4,10 @@ namespace Modules\PaymentGateways\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
+use App\Models\Course\CourseEnrollment;
 use App\Services\Payment\ExternalCheckoutService;
+use App\Services\Payment\LaunchOfferEnrollmentService;
+use App\Services\Payment\LaunchOfferService;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,20 +21,24 @@ class PaymentController extends Controller
         private PaymentService $payment,
         private SettingsService $settings,
         private ExternalCheckoutService $externalCheckout,
+        private LaunchOfferService $launchOffer,
+        private LaunchOfferEnrollmentService $launchOfferEnrollment,
     ) {}
 
     public function index(Request $request, string $from, string $item_type, string $id)
     {
         $user = Auth::user();
+        $launchOfferPayload = null;
+        $checkoutMode = null;
 
         if ($item_type === 'course') {
             $course = Course::find($id);
 
             if ($course) {
-                if (!$this->externalCheckout->userCanAccessCheckoutCourse($user, $course)) {
+                if (! $this->externalCheckout->userCanAccessCheckoutCourse($user, $course)) {
                     $message = $course->isComingSoon()
                         ? ($course->launch_at
-                            ? 'This course launches on ' . $course->launch_at->timezone(config('app.timezone'))->format('M j, Y') . '.'
+                            ? 'This course launches on '.$course->launch_at->timezone(config('app.timezone'))->format('M j, Y').'.'
                             : 'This course is coming soon.')
                         : 'This course is only available to internal employees.';
 
@@ -52,11 +59,19 @@ class PaymentController extends Controller
                         ->with('info', 'You are already enrolled in this course.');
                 }
 
-                if (!$this->externalCheckout->requiresPaidCheckout($user, $course)) {
+                if (! $this->externalCheckout->requiresPaidCheckout($user, $course)) {
                     return redirect()
                         ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
                         ->with('info', 'This course does not require payment. Enroll from the course page.');
                 }
+
+                $enrollment = CourseEnrollment::query()
+                    ->where('user_id', $user->id)
+                    ->where('course_id', $course->id)
+                    ->first();
+
+                $launchOfferPayload = $this->launchOffer->toFrontendPayload($course, $enrollment);
+                $checkoutMode = $this->launchOfferEnrollment->resolveCheckoutMode($user, $course);
             }
         }
 
@@ -65,7 +80,7 @@ class PaymentController extends Controller
             $user
         );
 
-        if (!$this->externalCheckout->hasActiveGateway($payments)) {
+        if (! $this->externalCheckout->hasActiveGateway($payments)) {
             return redirect()
                 ->route('category.courses', ['category' => 'all'])
                 ->with('error', 'Online payment is not available yet. Please contact support.');
@@ -75,6 +90,44 @@ class PaymentController extends Controller
         $checkoutItem = $this->payment->getCheckoutItem($item_type, $id, $request->coupon);
         $itemCoupons = $this->payment->validateExamCoupons($item_type, $id);
 
+        if ($checkoutMode === 'deposit' && $launchOfferPayload) {
+            $amount = (float) $launchOfferPayload['deposit_amount'];
+            $checkoutItem = [
+                ...$checkoutItem,
+                'subtotal' => $amount,
+                'taxAmount' => 0,
+                'couponDiscount' => 0,
+                'discountedPrice' => $amount,
+                'finalPrice' => $amount,
+                'coupon' => null,
+            ];
+            $itemCoupons = collect();
+        } elseif ($checkoutMode === 'balance' && $launchOfferPayload) {
+            $amount = (float) $launchOfferPayload['balance_amount'];
+            $checkoutItem = [
+                ...$checkoutItem,
+                'subtotal' => $amount,
+                'taxAmount' => 0,
+                'couponDiscount' => 0,
+                'discountedPrice' => $amount,
+                'finalPrice' => $amount,
+                'coupon' => null,
+            ];
+            $itemCoupons = collect();
+        } elseif ($checkoutMode === 'full_launch' && $launchOfferPayload) {
+            $amount = (float) $launchOfferPayload['full_upfront_price'];
+            $checkoutItem = [
+                ...$checkoutItem,
+                'subtotal' => $amount,
+                'taxAmount' => 0,
+                'couponDiscount' => 0,
+                'discountedPrice' => $amount,
+                'finalPrice' => $amount,
+                'coupon' => null,
+            ];
+            $itemCoupons = collect();
+        }
+
         return view('paymentgateways::payment', [
             'id' => $id,
             'from' => $from,
@@ -83,13 +136,12 @@ class PaymentController extends Controller
             'payments' => $payments,
             'currency' => $currency,
             'itemCoupons' => $itemCoupons,
+            'launchOffer' => $launchOfferPayload,
+            'checkoutMode' => $checkoutMode,
             ...$checkoutItem,
         ]);
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function payment(Request $request)
     {
         $payments = $this->settings->getSettings(['type' => 'payment']);
@@ -97,9 +149,6 @@ class PaymentController extends Controller
         return Inertia::render('dashboard/settings/payment', compact('payments'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function payment_update(GatewayRequest $request, string $id)
     {
         $this->settings->paymentUpdate($request->validated(), $id);

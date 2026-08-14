@@ -214,6 +214,52 @@ class PaymentService
         ]);
     }
 
+    public function recordLaunchOfferPayment(
+        \App\Models\User $user,
+        Course $course,
+        string $paymentMethod,
+        string $transactionId,
+        float $amount,
+        PaymentBillingType $billingType,
+    ): PaymentHistory {
+        if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
+            return $existing;
+        }
+
+        $instructor = Instructor::with('user')
+            ->where('id', $course->instructor_id)
+            ->first();
+
+        $historyData = [
+            'purchase_type' => Course::class,
+            'purchase_id' => $course->id,
+            'billing_type' => $billingType,
+        ];
+
+        if ($instructor && $instructor->user->role == UserType::ADMIN->value) {
+            $historyData['admin_revenue'] = $amount;
+        } elseif ($instructor) {
+            $instructorRevenue = app('system_settings')->fields['instructor_revenue'];
+            $instructorRevenueAmount = $amount * ($instructorRevenue / 100);
+            $historyData['instructor_revenue'] = $instructorRevenueAmount;
+            $historyData['admin_revenue'] = $amount - $instructorRevenueAmount;
+        } else {
+            $historyData['admin_revenue'] = $amount;
+        }
+
+        return PaymentHistory::create([
+            'user_id' => $user->id,
+            'amount' => $amount,
+            'tax' => 0,
+            'payment_type' => $paymentMethod,
+            'coupon' => null,
+            'transaction_id' => $transactionId,
+            'invoice' => random_int(10000000, 99999999),
+            'refund_status' => PaymentRefundStatus::PAID->value,
+            ...$historyData,
+        ]);
+    }
+
     public function calculateItemPrice(Exam|Course $item, ExamCoupon|CourseCoupon|null $coupon): array
     {
         // dd($coupon);

@@ -11,6 +11,10 @@ use Illuminate\Support\Collection;
 
 class ExternalCheckoutService
 {
+    public function __construct(
+        private LaunchOfferService $launchOffer,
+    ) {}
+
     public function requiresPaidCheckout(User $user, Course $course): bool
     {
         if ($user->qualifiesForFreeCourseAccess()) {
@@ -30,11 +34,22 @@ class ExternalCheckoutService
 
     public function userCanAccessCheckoutCourse(User $user, Course $course): bool
     {
-        if (!$course->isEnrollmentOpen()) {
-            return false;
+        $allowPreLaunchDeposit = $this->launchOffer->allowsDepositCheckout($course);
+
+        if (! $course->isEnrollmentOpen() && ! $allowPreLaunchDeposit) {
+            $enrollment = CourseEnrollment::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->first();
+
+            $payload = $this->launchOffer->toFrontendPayload($course, $enrollment);
+
+            if (! ($payload['can_pay_balance'] ?? false) && ! ($payload['can_full_enroll'] ?? false)) {
+                return false;
+            }
         }
 
-        if ($course->audience === CourseAudience::INTERNAL && !$user->isEmployeeLearner()) {
+        if ($course->audience === CourseAudience::INTERNAL && ! $user->isEmployeeLearner()) {
             return false;
         }
 
@@ -43,10 +58,20 @@ class ExternalCheckoutService
 
     public function isAlreadyEnrolled(User $user, Course $course): bool
     {
-        return CourseEnrollment::query()
+        $enrollment = CourseEnrollment::query()
             ->where('user_id', $user->id)
             ->where('course_id', $course->id)
-            ->exists();
+            ->first();
+
+        if (! $enrollment) {
+            return false;
+        }
+
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+            return false;
+        }
+
+        return true;
     }
 
     public function hasActiveCourseAccess(User $user, Course $course): bool
@@ -57,7 +82,11 @@ class ExternalCheckoutService
             ->with('subscription')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
+            return false;
+        }
+
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
             return false;
         }
 
@@ -69,7 +98,7 @@ class ExternalCheckoutService
             return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE;
         }
 
-        return $enrollment->access_status !== EnrollmentAccessStatus::SUSPENDED;
+        return $enrollment->hasFullAccess();
     }
 
     public function requiresSubscriptionCheckout(User $user, Course $course): bool
@@ -79,19 +108,16 @@ class ExternalCheckoutService
 
     public function canPurchaseCourse(User $user, Course $course): bool
     {
-        if (!$this->requiresPaidCheckout($user, $course)) {
+        if (! $this->requiresPaidCheckout($user, $course)) {
             return false;
         }
 
-        return !$this->hasActiveCourseAccess($user, $course);
+        return ! $this->hasActiveCourseAccess($user, $course);
     }
 
-    /**
-     * External learners see Stripe (sandbox) first; admins/instructors keep all gateways.
-     */
     public function filterGatewaysForCheckout(Collection $payments, ?User $user): Collection
     {
-        if (!$user || $user->qualifiesForFreeCourseAccess()) {
+        if (! $user || $user->qualifiesForFreeCourseAccess()) {
             return $payments;
         }
 

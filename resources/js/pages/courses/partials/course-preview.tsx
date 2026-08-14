@@ -3,6 +3,7 @@ import SubscriptionBillingNotice from '@/components/subscription-billing-notice'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
+import { getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
@@ -13,11 +14,12 @@ import CourseLaunchNotifyForm from '@/components/course-launch-notify-form';
 import EnrollOrPlayerButton from './course-player-button';
 
 const CoursePreview = () => {
-   const { course, system, translate } = usePage<CourseDetailsProps>().props;
+   const { course, system, translate, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
    const { frontend } = translate;
    const currency = systemCurrency(system.fields['selling_currency']);
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
    const isSubscription = isSubscriptionCourse(course);
+   const offer = getLaunchOfferView(course, launchOffer, enrollment);
 
    return (
       <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
@@ -57,6 +59,28 @@ const CoursePreview = () => {
             <h2 className="font-display text-primary text-3xl font-bold capitalize">
                {course.pricing_type === 'free' ? (
                   course.pricing_type
+               ) : offer.enabled && offer.phase === 'pre_register' ? (
+                  <>
+                     <span className="font-semibold">
+                        {currency?.symbol}
+                        {offer.offerPrice}
+                     </span>
+                     <span className="text-muted-foreground ml-2 text-base font-medium line-through">
+                        {currency?.symbol}
+                        {offer.listPrice}
+                     </span>
+                  </>
+               ) : offer.enabled && offer.phase === 'full_price' ? (
+                  <>
+                     <span className="font-semibold">
+                        {currency?.symbol}
+                        {offer.fullUpfrontPrice}
+                     </span>
+                     <span className="text-muted-foreground ml-2 text-base font-medium">
+                        + {currency?.symbol}
+                        {offer.subscriptionPrice}/mo
+                     </span>
+                  </>
                ) : course.billing_model === 'subscription' ? (
                   <>
                      <span className="font-semibold">
@@ -86,7 +110,18 @@ const CoursePreview = () => {
                )}
             </h2>
 
-            {isSubscription ? <SubscriptionBillingNotice course={course} variant="detail" /> : null}
+            {offer.enabled && offer.phase === 'pre_register' ? (
+               <p className="text-muted-foreground text-sm">
+                  Early bird: pre-register for {currency?.symbol}
+                  {offer.depositAmount} now (seat reserved). Pay remaining {currency?.symbol}
+                  {offer.balanceAmount} on launch for full access. Then {currency?.symbol}
+                  {offer.subscriptionPrice}/mo after the free month. Deposit is non-refundable.
+               </p>
+            ) : null}
+
+            {isSubscription && !(offer.enabled && offer.phase === 'pre_register') ? (
+               <SubscriptionBillingNotice course={course} variant="detail" />
+            ) : null}
 
             <SsuEnrollmentPanel isSubscription={isSubscription}>
                <EnrollOrPlayerButton />

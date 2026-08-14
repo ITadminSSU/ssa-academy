@@ -22,6 +22,16 @@ class CourseEnrollment extends Model
         'expiry_date',
         'suspended_at',
         'subscription_id',
+        'deposit_amount',
+        'deposit_paid_at',
+        'deposit_payment_history_id',
+        'balance_amount',
+        'balance_due_at',
+        'balance_deadline_at',
+        'balance_paid_at',
+        'balance_payment_history_id',
+        'forfeited_at',
+        'launch_offer_cohort',
     ];
 
     protected $casts = [
@@ -29,6 +39,13 @@ class CourseEnrollment extends Model
         'entry_date' => 'datetime',
         'expiry_date' => 'datetime',
         'suspended_at' => 'datetime',
+        'deposit_amount' => 'decimal:2',
+        'deposit_paid_at' => 'datetime',
+        'balance_amount' => 'decimal:2',
+        'balance_due_at' => 'datetime',
+        'balance_deadline_at' => 'datetime',
+        'balance_paid_at' => 'datetime',
+        'forfeited_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -61,6 +78,18 @@ class CourseEnrollment extends Model
         }
 
         return false;
+    }
+
+    public function isReservedSeat(): bool
+    {
+        return $this->access_status === EnrollmentAccessStatus::RESERVED
+            && empty($this->balance_paid_at)
+            && empty($this->forfeited_at);
+    }
+
+    public function isCanceled(): bool
+    {
+        return $this->access_status === EnrollmentAccessStatus::CANCELED;
     }
 
     public function isSuspended(): bool

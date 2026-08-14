@@ -45,6 +45,16 @@ interface Course extends TableCommon {
    pricing_type: string;
    billing_model?: 'one_time' | 'subscription';
    subscription_price?: number | null;
+   launch_offer_enabled?: boolean;
+   launch_offer_starts_at?: string | null;
+   launch_offer_ends_at?: string | null;
+   launch_list_price?: number | null;
+   launch_offer_price?: number | null;
+   launch_deposit_amount?: number | null;
+   launch_balance_amount?: number | null;
+   launch_balance_grace_days?: number | null;
+   launch_subscription_trial_ends_at?: string | null;
+   launch_full_upfront_price?: number | null;
    stripe_product_id?: string | null;
    stripe_price_id?: string | null;
    audience: 'internal' | 'public' | 'both';
@@ -370,6 +380,14 @@ interface CourseEnrollment extends TableCommon {
    completion?: CourseCompletion;
    watch_history?: WatchHistory;
    watch_history_id?: number | null;
+   deposit_amount?: number | null;
+   deposit_paid_at?: string | null;
+   balance_amount?: number | null;
+   balance_due_at?: string | null;
+   balance_deadline_at?: string | null;
+   balance_paid_at?: string | null;
+   forfeited_at?: string | null;
+   launch_offer_cohort?: string | null;
 }
 
 // course_certificates.ts

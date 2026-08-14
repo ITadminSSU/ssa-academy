@@ -36,5 +36,24 @@ return [
     |
     */
     'apply_selling_tax' => filter_var(env('PAYMENT_APPLY_SELLING_TAX', false), FILTER_VALIDATE_BOOLEAN),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Launch offer defaults (per-course fields override these when set)
+    |--------------------------------------------------------------------------
+    */
+    'launch_offer' => [
+        'window_start' => env('LAUNCH_OFFER_START', '2026-08-15'),
+        'window_end' => env('LAUNCH_OFFER_END', '2026-09-14'),
+        'list_price' => (float) env('LAUNCH_OFFER_LIST_PRICE', 75),
+        'offer_price' => (float) env('LAUNCH_OFFER_PRICE', 70),
+        'deposit_amount' => (float) env('LAUNCH_OFFER_DEPOSIT', 20),
+        'balance_amount' => (float) env('LAUNCH_OFFER_BALANCE', 50),
+        'balance_grace_days' => (int) env('LAUNCH_OFFER_GRACE_DAYS', 5),
+        'subscription_price' => (float) env('LAUNCH_OFFER_SUBSCRIPTION', 6),
+        'subscription_trial_ends_at' => env('LAUNCH_OFFER_TRIAL_ENDS', '2026-10-15'),
+        'full_upfront_price' => (float) env('LAUNCH_OFFER_FULL_UPFRONT', 75),
+        'deposit_non_refundable' => true,
+    ],
 ];
 

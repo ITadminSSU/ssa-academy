@@ -53,13 +53,16 @@ class CourseEnrollmentService extends MediaService
    }
 
 
-   function createCourseEnroll(array $data): CourseEnrollment
+   function createCourseEnroll(array $data, bool $allowBeforeLaunch = false): CourseEnrollment
    {
-      return DB::transaction(function () use ($data) {
+      return DB::transaction(function () use ($data, $allowBeforeLaunch) {
          $courseId = $data['course_id'];
          $course = Course::findOrFail($data['course_id']);
 
-         if (!$course->isEnrollmentOpen() && !isAdmin()) {
+         $isDepositReservation = ($data['access_status'] ?? null) === \App\Enums\EnrollmentAccessStatus::RESERVED->value
+            || ($data['enrollment_type'] ?? null) === 'deposit';
+
+         if (!$course->isEnrollmentOpen() && !isAdmin() && !$allowBeforeLaunch && !$isDepositReservation) {
             throw new \InvalidArgumentException('This course is not available for enrollment yet.');
          }
 
@@ -91,6 +94,11 @@ class CourseEnrollmentService extends MediaService
             'entry_date' => now(),
             'expiry_date' => $expiryDate
          ]);
+
+         // Reserved deposit seats have no player access yet — skip watch history.
+         if ($isDepositReservation) {
+            return $enrollment;
+         }
 
          $lessons = SectionLesson::query()->where('course_id', $courseId);
          if ($lessons->exists()) {

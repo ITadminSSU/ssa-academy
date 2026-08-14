@@ -2,13 +2,12 @@ import SsuCheckoutButton from '@/components/ssu-checkout-button';
 import { Button } from '@/components/ui/button';
 import { canEnrollCourseWithoutPayment, requiresCoursePayment } from '@/lib/learner-access';
 import { canPreviewCourseBeforeLaunch, formatCourseLaunchDateTime, isCourseComingSoon } from '@/lib/course-launch';
+import { getLaunchOfferView } from '@/lib/launch-offer';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { CourseDetailsProps } from '../show';
 
-// Initializes the watch history for an enrolled user (or course-owner) and
-// drops them into the player. Used when no watch history exists yet.
 const StartCourseButton = () => {
    const { course, translate } = usePage<CourseDetailsProps>().props;
    const { frontend } = translate;
@@ -29,7 +28,6 @@ const StartCourseButton = () => {
    );
 };
 
-// Separate component for the play button to reduce duplication
 const EnabledPlayButton = ({ watchHistory }: { watchHistory: WatchHistory }) => {
    const { props } = usePage<SharedData>();
    const { translate } = props;
@@ -50,7 +48,6 @@ const EnabledPlayButton = ({ watchHistory }: { watchHistory: WatchHistory }) => 
    );
 };
 
-// Disabled play button component
 const DisabledPlayButton = () => {
    const { auth, course, approvalStatus, translate } = usePage<CourseDetailsProps>().props;
    const { frontend } = translate;
@@ -79,9 +76,13 @@ const DisabledPlayButton = () => {
    );
 };
 
-const checkoutLabel = (course: Course, resubscribe: boolean) => {
+const checkoutLabel = (course: Course, resubscribe: boolean, launchLabel?: string) => {
    if (resubscribe) {
       return 'Resubscribe';
+   }
+
+   if (launchLabel) {
+      return launchLabel;
    }
 
    return course.billing_model === 'subscription' ? 'Subscribe now' : undefined;
@@ -130,16 +131,46 @@ const StaffPreviewButton = () => {
    );
 };
 
-// Enrollment/Buy button component
+const ReservedSeatPanel = () => {
+   const { course, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
+   const offer = getLaunchOfferView(course, launchOffer, enrollment);
+
+   return (
+      <div className="space-y-3">
+         <p className="text-muted-foreground text-center text-sm">
+            Seat reserved. Full access unlocks after you pay the remaining ${offer.balanceAmount.toFixed(0)}. Your $
+            {offer.depositAmount.toFixed(0)} deposit is non-refundable.
+         </p>
+         {offer.canPayBalance ? (
+            <SsuCheckoutButton item="course" item_id={course.id}>
+               Pay remaining ${offer.balanceAmount.toFixed(0)}
+            </SsuCheckoutButton>
+         ) : (
+            <Button disabled size="lg" className="w-full">
+               Balance due on launch day
+            </Button>
+         )}
+      </div>
+   );
+};
+
 const EnrollmentButton = () => {
-   const { auth, course, translate, wishlists, subscriptionAccess } = usePage<CourseDetailsProps>().props;
+   const { auth, course, translate, wishlists, subscriptionAccess, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
    const { frontend } = translate;
    const canResubscribe = subscriptionAccess?.can_resubscribe ?? false;
-   const checkoutText = checkoutLabel(course, canResubscribe);
+   const offer = getLaunchOfferView(course, launchOffer, enrollment);
 
+   let launchCheckoutLabel: string | undefined;
+   if (offer.enabled && offer.canPreRegister) {
+      launchCheckoutLabel = `Pre-register — $${offer.depositAmount.toFixed(0)}`;
+   } else if (offer.enabled && offer.canFullEnroll) {
+      launchCheckoutLabel = `Enroll — $${offer.fullUpfrontPrice.toFixed(0)}`;
+   }
+
+   const checkoutText = checkoutLabel(course, canResubscribe, launchCheckoutLabel);
    const loginRedirectUrl = `${route('login')}?redirect=${encodeURIComponent(window.location.href)}`;
 
-   const enrollmentHandler = (course: Course) => {
+   const enrollmentHandler = (selectedCourse: Course) => {
       if (!auth.user) {
          router.get(loginRedirectUrl);
          return;
@@ -147,7 +178,7 @@ const EnrollmentButton = () => {
 
       router.post(route('enrollments.store'), {
          user_id: auth.user.id,
-         course_id: course.id,
+         course_id: selectedCourse.id,
          enrollment_type: 'free',
       });
    };
@@ -168,7 +199,7 @@ const EnrollmentButton = () => {
             {isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}
          </Button>
 
-         {requiresCoursePayment(auth.user, course) || canResubscribe ? (
+         {requiresCoursePayment(auth.user, course) || canResubscribe || offer.canPreRegister || offer.canFullEnroll ? (
             <SsuCheckoutButton item="course" item_id={course.id}>
                {checkoutText ?? frontend.buy_now}
             </SsuCheckoutButton>
@@ -182,16 +213,25 @@ const EnrollmentButton = () => {
 };
 
 const EnrollOrPlayerButton = () => {
-   const { auth, enrollment, watchHistory, subscriptionAccess, course } = usePage<CourseDetailsProps>().props;
+   const { auth, enrollment, watchHistory, subscriptionAccess, course, launchOffer } = usePage<CourseDetailsProps>().props;
 
-   const isEnrolled = !!enrollment;
+   const isEnrolled = !!enrollment && enrollment.access_status !== 'reserved' && enrollment.access_status !== 'canceled';
    const hasWatchHistory = !!watchHistory;
    const isAdminOrInstructor = auth.user && ['admin', 'instructor'].includes(auth.user.role);
    const comingSoon = isCourseComingSoon(course);
    const canStaffPreview = canPreviewCourseBeforeLaunch(course);
+   const offer = getLaunchOfferView(course, launchOffer, enrollment);
+
+   if (offer.reservedSeat) {
+      return <ReservedSeatPanel />;
+   }
 
    if (comingSoon && canStaffPreview) {
       return <StaffPreviewButton />;
+   }
+
+   if (comingSoon && offer.canPreRegister) {
+      return <EnrollmentButton />;
    }
 
    if (comingSoon) {

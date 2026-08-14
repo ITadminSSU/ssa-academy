@@ -49,6 +49,14 @@ class UpdateCourseRequest extends FormRequest
         $billingModel = (string) $this->input('billing_model', CourseBillingModel::ONE_TIME->value);
         $isSubscription = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
         $isOneTime = ! $isFree && ! $isSubscription;
+        $launchOfferEnabled = ! $isFree && filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN);
+
+        // Launch offers always use monthly subscription after deposit/full pay.
+        if ($launchOfferEnabled) {
+            $billingModel = CourseBillingModel::SUBSCRIPTION->value;
+            $isSubscription = true;
+            $isOneTime = false;
+        }
 
         $this->merge([
             'pricing_type' => $pricingType,
@@ -67,6 +75,34 @@ class UpdateCourseRequest extends FormRequest
                     : null,
             'expiry_duration' => (string) $this->input('expiry_type') === ExpiryLimitType::LIMITED_TIME->value
                 ? ($this->input('expiry_duration') ?: null)
+                : null,
+            'launch_offer_enabled' => $launchOfferEnabled,
+            'launch_offer_starts_at' => $launchOfferEnabled && $this->filled('launch_offer_starts_at')
+                ? $this->input('launch_offer_starts_at')
+                : null,
+            'launch_offer_ends_at' => $launchOfferEnabled && $this->filled('launch_offer_ends_at')
+                ? $this->input('launch_offer_ends_at')
+                : null,
+            'launch_list_price' => $launchOfferEnabled && $this->filled('launch_list_price')
+                ? (float) $this->input('launch_list_price')
+                : null,
+            'launch_offer_price' => $launchOfferEnabled && $this->filled('launch_offer_price')
+                ? (float) $this->input('launch_offer_price')
+                : null,
+            'launch_deposit_amount' => $launchOfferEnabled && $this->filled('launch_deposit_amount')
+                ? (float) $this->input('launch_deposit_amount')
+                : null,
+            'launch_balance_amount' => $launchOfferEnabled && $this->filled('launch_balance_amount')
+                ? (float) $this->input('launch_balance_amount')
+                : null,
+            'launch_balance_grace_days' => $launchOfferEnabled
+                ? (int) ($this->input('launch_balance_grace_days') ?: 5)
+                : 5,
+            'launch_subscription_trial_ends_at' => $launchOfferEnabled && $this->filled('launch_subscription_trial_ends_at')
+                ? $this->input('launch_subscription_trial_ends_at')
+                : null,
+            'launch_full_upfront_price' => $launchOfferEnabled && $this->filled('launch_full_upfront_price')
+                ? (float) $this->input('launch_full_upfront_price')
                 : null,
         ]);
     }
@@ -159,7 +195,7 @@ class UpdateCourseRequest extends FormRequest
             'price' => $isOneTime
                 ? 'required|numeric|min:1'
                 : 'nullable|numeric|min:1',
-            'subscription_price' => $isSubscription
+            'subscription_price' => ($isSubscription || filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN))
                 ? 'required|numeric|min:1'
                 : 'nullable|numeric|min:1',
             'discount' => 'boolean',
@@ -168,6 +204,16 @@ class UpdateCourseRequest extends FormRequest
                 : 'nullable',
             'expiry_type' => "required|string|in:$lifetime,$limited",
             'expiry_duration' => "nullable|string|required_if:expiry_type,$limited",
+            'launch_offer_enabled' => 'boolean',
+            'launch_offer_starts_at' => 'nullable|date|required_if:launch_offer_enabled,true',
+            'launch_offer_ends_at' => 'nullable|date|after_or_equal:launch_offer_starts_at|required_if:launch_offer_enabled,true',
+            'launch_list_price' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
+            'launch_offer_price' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
+            'launch_deposit_amount' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
+            'launch_balance_amount' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
+            'launch_balance_grace_days' => 'nullable|integer|min:1|max:30',
+            'launch_subscription_trial_ends_at' => 'nullable|date|required_if:launch_offer_enabled,true',
+            'launch_full_upfront_price' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
         ];
     }
 

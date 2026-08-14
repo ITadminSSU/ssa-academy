@@ -22,6 +22,7 @@ export interface CourseDetailsProps extends SharedData {
    reviews: Pagination<CourseReview>;
    totalReviews: CourseTotalReview;
    subscriptionAccess?: SubscriptionAccess | null;
+   launchOffer?: Record<string, unknown> | null;
    launchNotifySubscribed?: boolean;
 }
 

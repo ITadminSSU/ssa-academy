@@ -90,6 +90,16 @@ class CourseService extends MediaService
                'subscription_price' => $data['subscription_price'] ?? null,
                'expiry_type' => $data['expiry_type'],
                'expiry_duration' => $data['expiry_duration'] ?? null,
+               'launch_offer_enabled' => (bool) ($data['launch_offer_enabled'] ?? false),
+               'launch_offer_starts_at' => $data['launch_offer_starts_at'] ?? null,
+               'launch_offer_ends_at' => $data['launch_offer_ends_at'] ?? null,
+               'launch_list_price' => $data['launch_list_price'] ?? null,
+               'launch_offer_price' => $data['launch_offer_price'] ?? null,
+               'launch_deposit_amount' => $data['launch_deposit_amount'] ?? null,
+               'launch_balance_amount' => $data['launch_balance_amount'] ?? null,
+               'launch_balance_grace_days' => $data['launch_balance_grace_days'] ?? 5,
+               'launch_subscription_trial_ends_at' => $data['launch_subscription_trial_ends_at'] ?? null,
+               'launch_full_upfront_price' => $data['launch_full_upfront_price'] ?? null,
             ])->save();
             break;
 

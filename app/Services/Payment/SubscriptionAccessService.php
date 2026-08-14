@@ -39,6 +39,10 @@ class SubscriptionAccessService
             return 'none';
         }
 
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+            return 'none';
+        }
+
         if (!$course->usesSubscriptionBilling()) {
             return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
         }

@@ -125,5 +125,6 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
         $schedule->command('courses:publish-scheduled')->everyFiveMinutes();
+        $schedule->command('ssu:forfeit-expired-launch-deposits')->hourly();
     })
     ->create();

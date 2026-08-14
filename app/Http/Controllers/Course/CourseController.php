@@ -222,6 +222,8 @@ class CourseController extends Controller
         $subscriptionAccess = $user
             ? $this->subscriptionAccess->toFrontendPayload($user, $course, $enrollment)
             : null;
+        $launchOffer = app(\App\Services\Payment\LaunchOfferService::class)
+            ->toFrontendPayload($course, $enrollment);
 
         if ($course->exists()) {
             // Generate meta tags for SEO and social sharing
@@ -248,6 +250,7 @@ class CourseController extends Controller
                     'reviews' => $reviews,
                     'totalReviews' => $totalReviews,
                     'subscriptionAccess' => $subscriptionAccess,
+                    'launchOffer' => $launchOffer,
                     'launchNotifySubscribed' => $this->launchNotifications->isSubscribed(
                         $course,
                         $user,

@@ -143,13 +143,37 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                   <div className="ssu-course-card__price capitalize">
                      {course.pricing_type === 'free' ? (
                         common.free
+                     ) : course.launch_offer_enabled &&
+                       course.launch_offer_starts_at &&
+                       course.launch_offer_ends_at &&
+                       Date.now() >= new Date(course.launch_offer_starts_at).getTime() &&
+                       Date.now() <= new Date(course.launch_offer_ends_at).getTime() ? (
+                        <>
+                           <span>
+                              {currency?.symbol}
+                              {course.launch_offer_price ?? 70}
+                           </span>
+                           <span className="text-muted-foreground ml-2 text-sm font-medium line-through normal-case">
+                              {currency?.symbol}
+                              {course.launch_list_price ?? 75}
+                           </span>
+                        </>
                      ) : isSubscription ? (
                         <>
                            <span>
                               {currency?.symbol}
-                              {course.subscription_price ?? course.price}
+                              {course.launch_offer_enabled
+                                 ? (course.launch_full_upfront_price ?? 75)
+                                 : (course.subscription_price ?? course.price)}
                            </span>
-                           <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">/month</span>
+                           {course.launch_offer_enabled ? (
+                              <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
+                                 +{currency?.symbol}
+                                 {course.subscription_price}/mo
+                              </span>
+                           ) : (
+                              <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">/month</span>
+                           )}
                         </>
                      ) : course.discount ? (
                         <>

@@ -1,6 +1,6 @@
 type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused';
 
-type EnrollmentAccessStatus = 'active' | 'suspended' | 'expired';
+type EnrollmentAccessStatus = 'active' | 'reserved' | 'canceled' | 'suspended' | 'expired';
 
 type SubscriptionAccessMode = 'full' | 'completed_only' | 'none';
 
