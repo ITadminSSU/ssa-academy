@@ -103,11 +103,40 @@ const TableColumn = (): ColumnDef<Course>[] => {
                </Button>
             </div>
          ),
-         cell: ({ row }) => (
-            <div className="py-1 text-center capitalize">
-               <p>{row.original.price ? `${currency?.symbol}${row.original.price}` : common.free}</p>
-            </div>
-         ),
+         cell: ({ row }) => {
+            const course = row.original;
+            const symbol = currency?.symbol ?? '$';
+
+            let label = common.free;
+
+            if (course.pricing_type !== 'free') {
+               if (course.launch_offer_enabled) {
+                  const list = course.launch_list_price ?? course.launch_full_upfront_price;
+                  const monthly = course.subscription_price;
+                  label = list
+                     ? `${symbol}${list}${monthly ? ` + ${symbol}${monthly}/mo` : ''}`
+                     : monthly
+                       ? `${symbol}${monthly}/mo`
+                       : 'Paid';
+               } else if (course.billing_model === 'subscription' && course.subscription_price) {
+                  label = `${symbol}${course.subscription_price}/mo`;
+               } else if (course.discount && course.discount_price) {
+                  label = `${symbol}${course.discount_price}`;
+               } else if (course.price) {
+                  label = `${symbol}${course.price}`;
+               } else if (course.subscription_price) {
+                  label = `${symbol}${course.subscription_price}/mo`;
+               } else {
+                  label = 'Paid';
+               }
+            }
+
+            return (
+               <div className="py-1 text-center capitalize">
+                  <p>{label}</p>
+               </div>
+            );
+         },
       },
       {
          id: 'actions',
