@@ -135,11 +135,13 @@ const Update = (props: CourseUpdateProps) => {
             </div>
 
             <div className="col-span-full md:col-span-3">
-               {tabs.map(({ id, slug, Component }) => (
-                  <TabsContent key={id} value={slug} className="m-0">
-                     <Component />
-                  </TabsContent>
-               ))}
+               {tabs.map(({ id, slug, Component }) =>
+                  (tab ?? tabs[0].slug) === slug ? (
+                     <TabsContent key={id} value={slug} className="m-0" forceMount>
+                        <Component />
+                     </TabsContent>
+                  ) : null,
+               )}
             </div>
          </Tabs>
       </section>

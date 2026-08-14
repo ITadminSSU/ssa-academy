@@ -346,9 +346,13 @@ class CourseController extends Controller
 
     public function update(UpdateCourseRequest $request, $id)
     {
+        $tab = (string) $request->validated('tab');
+
         $this->courseService->updateCourse($id, $request->validated());
 
-        return back()->with('success', "Course $request->tab updated successfully");
+        return redirect()
+            ->route('courses.edit', ['course' => $id, 'tab' => $tab])
+            ->with('success', "Course {$tab} updated successfully");
     }
 
     public function status(UpdateCourseStatusRequest $request, $id)

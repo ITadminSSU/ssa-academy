@@ -52,7 +52,9 @@ const Basic = () => {
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
-      post(route('courses.update', { id: course.id }));
+      post(route('courses.update', { id: course.id }), {
+         preserveScroll: true,
+      });
    };
 
    const transformedCategories = useMemo(() => {

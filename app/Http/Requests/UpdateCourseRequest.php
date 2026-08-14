@@ -13,55 +13,82 @@ class UpdateCourseRequest extends FormRequest
 {
     use NormalizesLaunchAt;
 
-    protected function prepareForValidation()
+    protected function prepareForValidation(): void
     {
-        $pricingType = request('pricing_type');
-        $isFree = $pricingType && $pricingType === CoursePricingType::FREE->value;
-        $billingModel = request('billing_model', CourseBillingModel::ONE_TIME->value);
-        $isSubscription = !$isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
-        
-        // Convert numeric fields
+        $tab = (string) $this->input('tab', '');
+
+        match ($tab) {
+            'basic' => $this->prepareBasicTab(),
+            'pricing' => $this->preparePricingTab(),
+            'media' => $this->prepareMediaTab(),
+            'seo' => null,
+            default => null,
+        };
+    }
+
+    private function prepareBasicTab(): void
+    {
         $this->merge([
-            'price' => $isFree ? null : (request('price') ? (float) request('price') : null),
-            'discount' => $isFree || $isSubscription ? false : filter_var(request('discount'), FILTER_VALIDATE_BOOLEAN),
-            'discount_price' => ($isFree || $isSubscription) ? null : (request('discount_price') ? (float) request('discount_price') : null),
-            'billing_model' => $isFree ? CourseBillingModel::ONE_TIME->value : $billingModel,
-            'subscription_price' => $isSubscription && request('subscription_price')
-                ? (float) request('subscription_price')
+            'instructor_id' => $this->filled('instructor_id') ? (int) $this->input('instructor_id') : null,
+            'course_category_id' => (int) $this->input('course_category_id', 0),
+            'course_category_child_id' => $this->filled('course_category_child_id')
+                ? (int) $this->input('course_category_child_id')
                 : null,
-            'instructor_id' => request('instructor_id') ? (int) request('instructor_id') : null,
-            'course_category_id' => (int) request('course_category_id', 0),
-            'course_category_child_id' => request('course_category_child_id') ? (int) request('course_category_child_id') : null,
-            'final_exam_id' => request('final_exam_id') ? (int) request('final_exam_id') : null,
-            'allow_staff_preview' => filter_var(request('allow_staff_preview', true), FILTER_VALIDATE_BOOLEAN),
-            'allow_internal_preview' => filter_var(request('allow_internal_preview', false), FILTER_VALIDATE_BOOLEAN),
+            'final_exam_id' => $this->filled('final_exam_id') ? (int) $this->input('final_exam_id') : null,
+            'allow_staff_preview' => filter_var($this->input('allow_staff_preview', true), FILTER_VALIDATE_BOOLEAN),
+            'allow_internal_preview' => filter_var($this->input('allow_internal_preview', false), FILTER_VALIDATE_BOOLEAN),
         ]);
 
         $this->normalizeLaunchAtInput();
     }
 
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    private function preparePricingTab(): void
+    {
+        $pricingType = (string) $this->input('pricing_type', '');
+        $isFree = $pricingType === CoursePricingType::FREE->value;
+        $billingModel = (string) $this->input('billing_model', CourseBillingModel::ONE_TIME->value);
+        $isSubscription = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
+        $isOneTime = ! $isFree && ! $isSubscription;
+
+        $this->merge([
+            'pricing_type' => $pricingType,
+            'billing_model' => $isFree ? CourseBillingModel::ONE_TIME->value : $billingModel,
+            'price' => $isOneTime && $this->filled('price') ? (float) $this->input('price') : null,
+            'subscription_price' => $isSubscription && $this->filled('subscription_price')
+                ? (float) $this->input('subscription_price')
+                : null,
+            'discount' => $isOneTime
+                ? filter_var($this->input('discount'), FILTER_VALIDATE_BOOLEAN)
+                : false,
+            'discount_price' => $isOneTime
+                && filter_var($this->input('discount'), FILTER_VALIDATE_BOOLEAN)
+                && $this->filled('discount_price')
+                    ? (float) $this->input('discount_price')
+                    : null,
+            'expiry_duration' => (string) $this->input('expiry_type') === ExpiryLimitType::LIMITED_TIME->value
+                ? ($this->input('expiry_duration') ?: null)
+                : null,
+        ]);
+    }
+
+    private function prepareMediaTab(): void
+    {
+        // Keep preview string/null as submitted; files are handled by the service.
+        if (! $this->has('preview')) {
+            $this->merge(['preview' => null]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
-        // Common rules for all tabs
-        $rules = [
-            'tab' => 'required|string',
-        ];
-
-        // Merge with tab-specific rules
-        return array_merge($rules, $this->getTabSpecificRules());
+        return array_merge([
+            'tab' => 'required|string|in:basic,pricing,media,seo,info,status',
+        ], $this->getTabSpecificRules());
     }
 
     public function messages(): array
@@ -69,16 +96,14 @@ class UpdateCourseRequest extends FormRequest
         return [
             'launch_at.after' => 'Launch date and time must be in the future.',
             'launch_at.required_if' => 'Launch date is required for Coming Soon courses.',
+            'price.required' => 'Please enter a course price.',
+            'subscription_price.required' => 'Please enter a monthly subscription price.',
         ];
     }
 
-    /**
-     * Get validation rules specific to the current tab
-     */
     private function getTabSpecificRules(): array
     {
-        $tab = request('tab');
-        return match ($tab) {
+        return match ((string) $this->input('tab')) {
             'basic' => $this->basicTabRules(),
             'pricing' => $this->pricingTabRules(),
             'media' => $this->mediaTabRules(),
@@ -87,9 +112,6 @@ class UpdateCourseRequest extends FormRequest
         };
     }
 
-    /**
-     * Validation rules for the basic tab
-     */
     private function basicTabRules(): array
     {
         $internal = CourseAudience::INTERNAL->value;
@@ -115,9 +137,6 @@ class UpdateCourseRequest extends FormRequest
         ];
     }
 
-    /**
-     * Validation rules for the pricing tab
-     */
     private function pricingTabRules(): array
     {
         $free = CoursePricingType::FREE->value;
@@ -126,15 +145,25 @@ class UpdateCourseRequest extends FormRequest
         $limited = ExpiryLimitType::LIMITED_TIME->value;
         $oneTime = CourseBillingModel::ONE_TIME->value;
         $subscription = CourseBillingModel::SUBSCRIPTION->value;
-        $billingModel = request('billing_model', $oneTime);
+        $pricingType = (string) $this->input('pricing_type');
+        $billingModel = (string) $this->input('billing_model', $oneTime);
+        $isPaid = $pricingType === $paid;
+        $isOneTime = $isPaid && $billingModel === $oneTime;
+        $isSubscription = $isPaid && $billingModel === $subscription;
 
         return [
             'pricing_type' => "required|string|in:$free,$paid",
-            'billing_model' => "nullable|string|in:$oneTime,$subscription|required_if:pricing_type,$paid",
-            'price' => "nullable|numeric|min:1|required_if:billing_model,$oneTime",
-            'subscription_price' => "nullable|numeric|min:1|required_if:billing_model,$subscription",
+            'billing_model' => $isPaid
+                ? "required|string|in:$oneTime,$subscription"
+                : "nullable|string|in:$oneTime,$subscription",
+            'price' => $isOneTime
+                ? 'required|numeric|min:1'
+                : 'nullable|numeric|min:1',
+            'subscription_price' => $isSubscription
+                ? 'required|numeric|min:1'
+                : 'nullable|numeric|min:1',
             'discount' => 'boolean',
-            'discount_price' => $billingModel === $oneTime
+            'discount_price' => $isOneTime
                 ? 'nullable|numeric|min:1|lt:price|required_if:discount,true'
                 : 'nullable',
             'expiry_type' => "required|string|in:$lifetime,$limited",
@@ -142,9 +171,6 @@ class UpdateCourseRequest extends FormRequest
         ];
     }
 
-    /**
-     * Validation rules for the media tab
-     */
     private function mediaTabRules(): array
     {
         return [
@@ -155,9 +181,6 @@ class UpdateCourseRequest extends FormRequest
         ];
     }
 
-    /**
-     * Validation rules for the SEO tab
-     */
     private function seoTabRules(): array
     {
         return [

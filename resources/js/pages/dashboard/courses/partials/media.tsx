@@ -17,7 +17,7 @@ const Media = () => {
    const { props } = usePage<CourseUpdateProps>();
    const { translate } = props;
    const { dashboard, input, button } = translate;
-   const { tab, course } = props;
+   const { course } = props;
 
    const [isSubmit, setIsSubmit] = useState(false);
    const [isFileSelected, setIsFileSelected] = useState(false);
@@ -27,9 +27,9 @@ const Media = () => {
    const [thumbnailBanner, setThumbnailBanner] = useState(course.thumbnail);
 
    const { data, setData, post, errors, reset, processing } = useForm({
-      tab: tab,
-      thumbnail: null,
-      banner: null,
+      tab: 'media',
+      thumbnail: null as File | null,
+      banner: null as File | null,
       preview: course.preview,
       preview_type: 'video_url',
    });
@@ -69,8 +69,10 @@ const Media = () => {
 
    const submitForm = () => {
       post(route('courses.update', { id: course.id }), {
+         forceFormData: true,
+         preserveScroll: true,
          onSuccess() {
-            reset();
+            reset('thumbnail', 'banner');
          },
       });
    };

@@ -13,11 +13,22 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import courseDurations from '@/data/course-durations';
 import DashboardLayout from '@/layouts/dashboard/layout';
-import { onHandleChange } from '@/lib/inertia';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { ReactNode, useMemo, useState } from 'react';
 import { CourseUpdateProps } from '../update';
+
+const asOptionValue = (value: unknown): string => {
+   if (typeof value === 'string') {
+      return value;
+   }
+
+   if (value && typeof value === 'object' && 'value' in value) {
+      return String((value as { value: string }).value);
+   }
+
+   return String(value ?? '');
+};
 
 const billingModelLabel = (value: string) => {
    if (value === 'subscription') {
@@ -31,7 +42,18 @@ const Pricing = () => {
    const { props } = usePage<CourseUpdateProps>();
    const { translate } = props;
    const { dashboard, input, button } = translate;
-   const { tab, prices, expiries, course, billingModels = [], stripeActive, stripeSynced } = props;
+   const { prices, expiries, course, billingModels = [], stripeActive, stripeSynced } = props;
+
+   const priceOptions = useMemo(
+      () => (Array.isArray(prices) ? prices.map(asOptionValue) : ['free', 'paid']),
+      [prices],
+   );
+   const expiryOptions = useMemo(
+      () => (Array.isArray(expiries) ? expiries.map(asOptionValue) : ['lifetime', 'limited_time']),
+      [expiries],
+   );
+   const paidValue = priceOptions.find((value) => value === 'paid') ?? 'paid';
+   const limitedValue = expiryOptions.find((value) => value === 'limited_time') ?? 'limited_time';
 
    const billingOptions = useMemo(() => {
       if (Array.isArray(billingModels) && billingModels.length > 0) {
@@ -42,7 +64,10 @@ const Pricing = () => {
             }));
          }
 
-         return billingModels as { value: string; label?: string }[];
+         return (billingModels as { value: string; label?: string }[]).map((option) => ({
+            value: asOptionValue(option.value),
+            label: option.label ?? billingModelLabel(asOptionValue(option.value)),
+         }));
       }
 
       return [
@@ -51,26 +76,42 @@ const Pricing = () => {
       ];
    }, [billingModels]);
 
-   const { data, setData, post, errors, processing } = useForm({
-      tab: tab,
-      pricing_type: course.pricing_type || '',
-      billing_model: course.billing_model || 'one_time',
-      price: course.price || '',
-      subscription_price: course.subscription_price || '',
-      discount: Boolean(course.discount) || false,
-      discount_price: course.discount_price || '',
-      expiry_type: course.expiry_type || '',
+   const { data, setData, post, errors, processing, transform } = useForm({
+      tab: 'pricing',
+      pricing_type: asOptionValue(course.pricing_type) || paidValue,
+      billing_model: asOptionValue(course.billing_model) || 'one_time',
+      price: course.price ?? '',
+      subscription_price: course.subscription_price ?? '',
+      discount: Boolean(course.discount),
+      discount_price: course.discount_price ?? '',
+      expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
       expiry_duration: course.expiry_duration || '',
    });
 
+   transform((form) => ({
+      ...form,
+      tab: 'pricing',
+      discount: Boolean(form.discount),
+      price: form.price === '' || form.price === null ? null : Number(form.price),
+      subscription_price:
+         form.subscription_price === '' || form.subscription_price === null ? null : Number(form.subscription_price),
+      discount_price:
+         form.discount && form.discount_price !== '' && form.discount_price !== null
+            ? Number(form.discount_price)
+            : null,
+      expiry_duration: form.expiry_type === limitedValue ? form.expiry_duration || null : null,
+   }));
+
    const [syncing, setSyncing] = useState(false);
-   const isPaid = data.pricing_type === prices[1];
+   const isPaid = data.pricing_type === paidValue;
    const isSubscription = isPaid && data.billing_model === 'subscription';
    const isOneTime = isPaid && data.billing_model === 'one_time';
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      post(route('courses.update', { id: course.id }));
+      post(route('courses.update', { id: course.id }), {
+         preserveScroll: true,
+      });
    };
 
    const handleStripeSync = () => {
@@ -88,18 +129,18 @@ const Pricing = () => {
    return (
       <Card className="container p-4 sm:p-6">
          <form onSubmit={handleSubmit} className="space-y-6">
-            <Accordion collapsible type="single" value={data.pricing_type as string}>
+            <Accordion collapsible type="single" value={data.pricing_type}>
                <div>
                   <Label>{input.pricing_type} *</Label>
                   <RadioGroup
-                     defaultValue={data.pricing_type as string}
+                     value={data.pricing_type}
                      className="flex items-center space-x-4 pt-2 pb-1"
                      onValueChange={(value) => setData('pricing_type', value)}
                   >
-                     {prices.map((price) => (
+                     {priceOptions.map((price) => (
                         <div key={price} className="flex items-center space-x-2">
-                           <RadioGroupItem className="cursor-pointer" id={price} value={price} />
-                           <Label htmlFor={price} className="capitalize">
+                           <RadioGroupItem className="cursor-pointer" id={`pricing-${price}`} value={price} />
+                           <Label htmlFor={`pricing-${price}`} className="capitalize">
                               {price}
                            </Label>
                         </div>
@@ -108,12 +149,12 @@ const Pricing = () => {
                   <InputError message={errors.pricing_type} />
                </div>
 
-               <AccordionItem value={prices[1]} className="border-none">
+               <AccordionItem value={paidValue} className="border-none">
                   <AccordionContent className="space-y-6 p-0.5">
                      <div className="space-y-3 pt-3">
                         <Label>Billing model *</Label>
                         <RadioGroup
-                           value={data.billing_model as string}
+                           value={data.billing_model}
                            className="grid gap-3 sm:grid-cols-2"
                            onValueChange={(value) => {
                               setData((current) => ({
@@ -143,8 +184,10 @@ const Pricing = () => {
                               <Input
                                  type="number"
                                  name="price"
-                                 value={data.price}
-                                 onChange={(e) => onHandleChange(e, setData)}
+                                 min="1"
+                                 step="0.01"
+                                 value={data.price === null || data.price === undefined ? '' : String(data.price)}
+                                 onChange={(e) => setData('price', e.target.value)}
                                  placeholder={input.course_price_placeholder}
                               />
                               <InputError message={errors.price} />
@@ -154,27 +197,30 @@ const Pricing = () => {
                               <div className="flex items-center space-x-2">
                                  <Checkbox
                                     id="discount"
-                                    name="discount"
-                                    checked={data.discount as any}
-                                    onCheckedChange={(checked: boolean) => {
-                                       setData('discount', checked as any);
-                                    }}
+                                    checked={Boolean(data.discount)}
+                                    onCheckedChange={(checked) => setData('discount', checked === true)}
                                  />
                                  <Label htmlFor="discount">{dashboard.check_course_discount}</Label>
                               </div>
 
-                              {data.discount && (
+                              {data.discount ? (
                                  <div>
                                     <Input
                                        type="number"
                                        name="discount_price"
-                                       value={data.discount_price}
-                                       onChange={(e) => onHandleChange(e, setData)}
+                                       min="1"
+                                       step="0.01"
+                                       value={
+                                          data.discount_price === null || data.discount_price === undefined
+                                             ? ''
+                                             : String(data.discount_price)
+                                       }
+                                       onChange={(e) => setData('discount_price', e.target.value)}
                                        placeholder={input.discount_price_placeholder}
                                     />
                                     <InputError message={errors.discount_price} />
                                  </div>
-                              )}
+                              ) : null}
                            </div>
                         </>
                      ) : null}
@@ -186,8 +232,14 @@ const Pricing = () => {
                               <Input
                                  type="number"
                                  name="subscription_price"
-                                 value={data.subscription_price}
-                                 onChange={(e) => onHandleChange(e, setData)}
+                                 min="1"
+                                 step="0.01"
+                                 value={
+                                    data.subscription_price === null || data.subscription_price === undefined
+                                       ? ''
+                                       : String(data.subscription_price)
+                                 }
+                                 onChange={(e) => setData('subscription_price', e.target.value)}
                                  placeholder="29.99"
                               />
                               <p className="text-muted-foreground mt-1 text-xs">
@@ -228,7 +280,9 @@ const Pricing = () => {
                                     )}
 
                                     <p className="text-muted-foreground text-sm">
-                                       Save your pricing changes first, then sync to Stripe. Changing the monthly price creates a new Stripe price; existing subscribers keep their current price until you migrate them in Stripe.
+                                       Save your pricing changes first, then sync to Stripe. Changing the monthly price
+                                       creates a new Stripe price; existing subscribers keep their current price until you
+                                       migrate them in Stripe.
                                     </p>
 
                                     <Button type="button" variant="outline" disabled={syncing || processing} onClick={handleStripeSync}>
@@ -248,14 +302,14 @@ const Pricing = () => {
                <div>
                   <Label>Expiry period type</Label>
                   <RadioGroup
-                     defaultValue={data.expiry_type}
+                     value={data.expiry_type}
                      className="flex items-center space-x-4 pt-2 pb-1"
                      onValueChange={(value) => setData('expiry_type', value)}
                   >
-                     {expiries.map((expiry) => (
+                     {expiryOptions.map((expiry) => (
                         <div key={expiry} className="flex items-center space-x-2">
-                           <RadioGroupItem className="cursor-pointer" id={expiry} value={expiry} />
-                           <Label htmlFor={expiry} className="capitalize">
+                           <RadioGroupItem className="cursor-pointer" id={`expiry-${expiry}`} value={expiry} />
+                           <Label htmlFor={`expiry-${expiry}`} className="capitalize">
                               {expiry.replace('_', ' ')}
                            </Label>
                         </div>
@@ -264,7 +318,7 @@ const Pricing = () => {
                   <InputError message={errors.expiry_type} />
                </div>
 
-               <AccordionItem value={expiries[1]} className="border-none">
+               <AccordionItem value={limitedValue} className="border-none">
                   <AccordionContent className="space-y-4 p-0.5">
                      <div className="pt-3">
                         <Label>{input.expiry_duration}</Label>

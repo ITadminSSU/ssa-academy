@@ -12,10 +12,10 @@ const SEO = () => {
    const { props } = usePage<CourseUpdateProps>();
    const { translate } = props;
    const { dashboard, input, button } = translate;
-   const { tab, course } = props;
+   const { course } = props;
 
    const { data, setData, post, errors, processing } = useForm({
-      tab: tab,
+      tab: 'seo',
       meta_title: course.meta_title,
       meta_keywords: course.meta_keywords,
       meta_description: course.meta_description,
@@ -27,7 +27,9 @@ const SEO = () => {
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
-      post(route('courses.update', { id: course.id }));
+      post(route('courses.update', { id: course.id }), {
+         preserveScroll: true,
+      });
    };
 
    return (

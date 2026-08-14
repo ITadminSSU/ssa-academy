@@ -48,9 +48,10 @@ class CourseService extends MediaService
 
    function updateCourse(string $id, array $data): Course
    {
-      $course = Course::find($id);
+      $course = Course::findOrFail($id);
+      $tab = (string) ($data['tab'] ?? '');
 
-      switch ($data['tab']) {
+      switch ($tab) {
          case 'basic':
             $this->courseFinalExamService->assertValidFinalExamLink(
                $data['final_exam_id'] ?? null,
@@ -60,7 +61,7 @@ class CourseService extends MediaService
             $wasComingSoon = $course->isComingSoon();
             $status = $data['status'] ?? $course->status;
 
-            if (!empty($data['launch_at'])) {
+            if (! empty($data['launch_at'])) {
                $launchAt = Carbon::parse($data['launch_at']);
 
                if ($launchAt->isFuture() && in_array($status, [
@@ -71,48 +72,59 @@ class CourseService extends MediaService
                }
             }
 
-            $course->update([
-               ...$data,
-               'status' => $status,
-               'slug' => Str::slug($data['title']),
-            ]);
+            $course->fill(collect($data)->except(['tab'])->all());
+            $course->status = $status;
+            $course->slug = Str::slug($data['title']);
+            $course->save();
 
             $this->notifyLaunchWaitlistIfPublished($course, $wasComingSoon, $status);
             break;
 
          case 'pricing':
-            $course->update(collect($data)->only([
-               'pricing_type',
-               'billing_model',
-               'price',
-               'discount',
-               'discount_price',
-               'subscription_price',
-               'expiry_type',
-               'expiry_duration',
-            ])->toArray());
+            $course->forceFill([
+               'pricing_type' => $data['pricing_type'],
+               'billing_model' => $data['billing_model'] ?? 'one_time',
+               'price' => $data['price'] ?? null,
+               'discount' => (bool) ($data['discount'] ?? false),
+               'discount_price' => $data['discount_price'] ?? null,
+               'subscription_price' => $data['subscription_price'] ?? null,
+               'expiry_type' => $data['expiry_type'],
+               'expiry_duration' => $data['expiry_duration'] ?? null,
+            ])->save();
             break;
 
          case 'info':
-            $course->update($data);
+            // Info tab saves FAQs / requirements / outcomes through their own endpoints.
             break;
 
          case 'media':
-            $media = ['preview' => $data['preview']];
+            $media = [];
 
-            if ($data['banner']) {
-               $media['banner'] = $this->addNewDeletePrev($course, $data['banner'], "banner");
+            if (array_key_exists('preview', $data)) {
+               $media['preview'] = $data['preview'];
             }
 
-            if ($data['thumbnail']) {
-               $media['thumbnail'] = $this->addNewDeletePrev($course, $data['thumbnail'], "thumbnail");
+            if (! empty($data['banner'])) {
+               $media['banner'] = $this->addNewDeletePrev($course, $data['banner'], 'banner');
             }
 
-            $course->update($media);
+            if (! empty($data['thumbnail'])) {
+               $media['thumbnail'] = $this->addNewDeletePrev($course, $data['thumbnail'], 'thumbnail');
+            }
+
+            if ($media !== []) {
+               $course->forceFill($media)->save();
+            }
             break;
 
          case 'seo':
-            $course->update($data);
+            $course->forceFill(collect($data)->only([
+               'meta_title',
+               'meta_keywords',
+               'meta_description',
+               'og_title',
+               'og_description',
+            ])->all())->save();
             break;
 
          case 'status':
@@ -123,7 +135,7 @@ class CourseService extends MediaService
                $payload['launch_at'] = null;
             }
 
-            $course->update($payload);
+            $course->forceFill($payload)->save();
 
             $this->notifyLaunchWaitlistIfPublished(
                $course,
@@ -140,12 +152,11 @@ class CourseService extends MediaService
 
             break;
 
-         case 'default':
-            $course->update($data);
-            break;
+         default:
+            throw new \InvalidArgumentException("Unsupported course update tab [{$tab}].");
       }
 
-      return $course;
+      return $course->fresh() ?? $course;
    }
 
    private function notifyLaunchWaitlistIfPublished(Course $course, bool $wasComingSoon, string $newStatus): void
