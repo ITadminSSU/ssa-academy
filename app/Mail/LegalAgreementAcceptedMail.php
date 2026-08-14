@@ -20,7 +20,6 @@ class LegalAgreementAcceptedMail extends Mailable
     public function __construct(
         public User $user,
         public Page $terms,
-        public Page $nda,
         public Carbon $acceptedAt,
         public ?string $ipAddress,
         public string $agreementVersion,
@@ -30,7 +29,7 @@ class LegalAgreementAcceptedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: config('app.name') . ' — Your Terms & NDA Acceptance Record',
+            subject: config('app.name') . ' — Your Terms & Conditions Acceptance Record',
         );
     }
 
@@ -51,10 +50,6 @@ class LegalAgreementAcceptedMail extends Mailable
             Attachment::fromData(
                 fn () => $this->renderPdf($this->terms->title, $this->terms->description ?? ''),
                 'SSU-Academy-Terms-and-Conditions.pdf'
-            )->withMime('application/pdf'),
-            Attachment::fromData(
-                fn () => $this->renderPdf($this->nda->title, $this->nda->description ?? ''),
-                'SSU-Academy-NDA.pdf'
             )->withMime('application/pdf'),
         ];
     }

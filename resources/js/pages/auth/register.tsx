@@ -64,7 +64,6 @@ export default function Register({
       cv_resume: null as File | null,
       referred_by: '',
       accept_terms: false,
-      accept_nda: false,
    });
 
    const selectedProfessionalType = professionalTypes.find((type) => type.id.toString() === data.professional_type_id);
@@ -106,7 +105,6 @@ export default function Register({
       data.worked_as_construction_va !== '' &&
       Boolean(data.cv_resume) &&
       data.accept_terms &&
-      data.accept_nda &&
       (!recaptcha.status || Boolean(data.recaptcha));
 
    const submit: FormEventHandler = (e) => {
@@ -402,12 +400,9 @@ export default function Register({
                      <LegalAgreementFields
                         document={legalDocument}
                         acceptTerms={data.accept_terms}
-                        acceptNda={data.accept_nda}
                         onAcceptTermsChange={(value) => setData('accept_terms', value)}
-                        onAcceptNdaChange={(value) => setData('accept_nda', value)}
                         disabled={processing}
                         termsError={errors.accept_terms}
-                        ndaError={errors.accept_nda}
                      />
 
                      {recaptcha.status && (

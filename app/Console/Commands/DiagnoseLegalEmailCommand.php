@@ -68,14 +68,12 @@ class DiagnoseLegalEmailCommand extends Command
 
         $this->line('<fg=cyan>2. CMS legal pages</>');
         $terms = $legalAgreement->getTermsPage();
-        $nda = $legalAgreement->getNdaPage();
 
         $this->line('  Terms page: '.($terms ? "found (ID {$terms->id}, active=".($terms->active ? 'yes' : 'no').')' : 'MISSING'));
-        $this->line('  NDA page: '.($nda ? "found (ID {$nda->id}, active=".($nda->active ? 'yes' : 'no').')' : 'MISSING'));
 
-        if (! $terms || ! $nda) {
-            $this->error('  Legal pages are missing or inactive. Email cannot be sent.');
-            $this->line('  Ensure /terms-and-conditions and /non-disclosure-agreement exist and are active.');
+        if (! $terms) {
+            $this->error('  Terms & Conditions page is missing or inactive. Email cannot be sent.');
+            $this->line('  Ensure /terms-and-conditions exists and is active.');
 
             return self::FAILURE;
         }

@@ -74,7 +74,6 @@ class RegisteredUserController extends Controller
             'cv_resume' => 'required|file|mimes:pdf,doc,docx|max:10240',
             'referred_by' => 'nullable|string|max:255',
             'accept_terms' => 'accepted',
-            'accept_nda' => 'accepted',
         ];
 
         if ($request->professional_type_id) {
@@ -100,7 +99,6 @@ class RegisteredUserController extends Controller
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
             'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
             'accept_terms.accepted' => 'You must agree to the Terms & Conditions to create an account.',
-            'accept_nda.accepted' => 'You must agree to the Non-Disclosure Agreement to create an account.',
         ]);
 
         if (in_array('None', $selectedSoftware, true)) {

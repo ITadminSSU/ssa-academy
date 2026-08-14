@@ -31,15 +31,6 @@ test('new users can register', function () {
         'active' => true,
     ]);
 
-    Page::create([
-        'name' => 'Non-Disclosure Agreement',
-        'slug' => 'non-disclosure-agreement',
-        'type' => 'inner_page',
-        'title' => 'Non-Disclosure Agreement (NDA)',
-        'description' => '<p>NDA content</p>',
-        'active' => true,
-    ]);
-
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -52,7 +43,6 @@ test('new users can register', function () {
         'worked_as_construction_va' => false,
         'cv_resume' => UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf'),
         'accept_terms' => true,
-        'accept_nda' => true,
     ]);
 
     $this->assertAuthenticated();

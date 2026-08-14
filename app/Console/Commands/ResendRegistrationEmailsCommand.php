@@ -65,7 +65,7 @@ class ResendRegistrationEmailsCommand extends Command
 
         if ($sendLegal) {
             if (! $user->legal_agreement_accepted_at) {
-                $this->warn('  Terms & NDA: skipped (no acceptance recorded for this user).');
+                $this->warn('  Terms & Conditions: skipped (no acceptance recorded for this user).');
             } else {
                 try {
                     $apiKey = is_array($setting?->fields) ? ($setting->fields['mail_password'] ?? null) : null;
@@ -73,9 +73,9 @@ class ResendRegistrationEmailsCommand extends Command
                         $user,
                         resendApiKey: is_string($apiKey) ? $apiKey : null,
                     );
-                    $this->info('  Terms & NDA: sent with PDF attachments when possible.');
+                    $this->info('  Terms & Conditions: sent with PDF attachment when possible.');
                 } catch (\Throwable $exception) {
-                    $this->error('  Terms & NDA: failed — '.$exception->getMessage());
+                    $this->error('  Terms & Conditions: failed — '.$exception->getMessage());
 
                     return self::FAILURE;
                 }

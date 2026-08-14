@@ -33,16 +33,14 @@ class LegalAgreementController extends Controller
 
         $request->validate([
             'accept_terms' => 'accepted',
-            'accept_nda' => 'accepted',
         ], [
             'accept_terms.accepted' => 'You must agree to the Terms & Conditions to continue.',
-            'accept_nda.accepted' => 'You must agree to the Non-Disclosure Agreement to continue.',
         ]);
 
         $this->legalAgreement->recordAcceptance($user, $request);
 
         return redirect()
             ->intended($this->authService->homeUrlFor($user))
-            ->with('success', 'Legal agreement accepted. Your academy access is now provisioned.');
+            ->with('success', 'Terms & Conditions accepted. Your academy access is now provisioned.');
     }
 }

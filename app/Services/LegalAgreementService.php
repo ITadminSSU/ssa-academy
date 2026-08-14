@@ -46,19 +46,15 @@ class LegalAgreementService
     public function currentVersion(): string
     {
         $terms = $this->getTermsPage();
-        $nda = $this->getNdaPage();
 
-        if (! $terms || ! $nda) {
+        if (! $terms) {
             return (string) config('legal.agreement_version', 'fallback');
         }
 
         return substr(hash('sha256', implode('|', [
             $terms->id,
             $terms->updated_at?->timestamp ?? 0,
-            $nda->id,
-            $nda->updated_at?->timestamp ?? 0,
             $terms->description ?? '',
-            $nda->description ?? '',
         ])), 0, 16);
     }
 
@@ -87,36 +83,26 @@ class LegalAgreementService
     public function documentPayload(): array
     {
         $terms = $this->getTermsPage();
-        $nda = $this->getNdaPage();
 
         return [
             'version' => $this->currentVersion(),
             'terms' => $this->formatDocument($terms, 'terms'),
-            'nda' => $this->formatDocument($nda, 'nda'),
         ];
     }
 
     public function recordAcceptance(User $user, Request $request, bool $sendEmail = true): User
     {
         $terms = $this->getTermsPage();
-        $nda = $this->getNdaPage();
         $ip = $request->ip();
         $acceptedAt = now();
         $version = $this->currentVersion();
 
-        foreach ([
-            ['type' => 'terms', 'page' => $terms],
-            ['type' => 'nda', 'page' => $nda],
-        ] as $entry) {
-            if (! $entry['page']) {
-                continue;
-            }
-
+        if ($terms) {
             UserLegalAcceptance::create([
                 'user_id' => $user->id,
-                'document_type' => $entry['type'],
-                'document_slug' => $entry['page']->slug,
-                'version' => $this->documentVersion($entry['page']),
+                'document_type' => 'terms',
+                'document_slug' => $terms->slug,
+                'version' => $this->documentVersion($terms),
                 'ip' => $ip,
                 'accepted_at' => $acceptedAt,
             ]);
@@ -130,7 +116,7 @@ class LegalAgreementService
 
         $user = $user->fresh();
 
-        if ($sendEmail && $terms && $nda) {
+        if ($sendEmail && $terms) {
             try {
                 $this->deliverAcceptanceEmail($user);
             } catch (\Throwable $exception) {
@@ -145,33 +131,30 @@ class LegalAgreementService
         return $user;
     }
 
-    public function sendAcceptanceEmail(User $user, ?Page $terms = null, ?Page $nda = null, $acceptedAt = null, ?string $ip = null): void
+    public function sendAcceptanceEmail(User $user, ?Page $terms = null, $acceptedAt = null, ?string $ip = null): void
     {
-        $this->deliverAcceptanceEmail($user, $terms, $nda, $acceptedAt, $ip);
+        $this->deliverAcceptanceEmail($user, $terms, $acceptedAt, $ip);
     }
 
     public function deliverAcceptanceEmail(
         User $user,
         ?Page $terms = null,
-        ?Page $nda = null,
         $acceptedAt = null,
         ?string $ip = null,
         ?string $resendApiKey = null,
     ): void {
         $terms ??= $this->getTermsPage();
-        $nda ??= $this->getNdaPage();
         $acceptedAt = $acceptedAt ?? $user->legal_agreement_accepted_at ?? now();
         $ip ??= $user->legal_agreement_ip;
         $agreementVersion = $this->currentVersion();
 
-        if (! $terms || ! $nda) {
-            $message = 'Legal agreement email skipped because CMS pages are missing';
+        if (! $terms) {
+            $message = 'Legal agreement email skipped because Terms & Conditions CMS page is missing';
 
             Log::warning($message, [
                 'user_id' => $user->id,
                 'email' => $user->email,
-                'terms_found' => (bool) $terms,
-                'nda_found' => (bool) $nda,
+                'terms_found' => false,
             ]);
 
             $this->markLegalEmailFailed($user, $message);
@@ -187,7 +170,7 @@ class LegalAgreementService
 
         if (ResendHttpClient::isAvailable()) {
             try {
-                $this->sendAcceptanceEmailViaResendHttp($user, $terms, $nda, $acceptedAt, $ip, $agreementVersion);
+                $this->sendAcceptanceEmailViaResendHttp($user, $terms, $acceptedAt, $ip, $agreementVersion);
                 $this->markLegalEmailSent($user);
 
                 return;
@@ -206,7 +189,6 @@ class LegalAgreementService
                 Mail::to($user->email)->send(new LegalAgreementAcceptedMail(
                     user: $user,
                     terms: $terms,
-                    nda: $nda,
                     acceptedAt: $acceptedAt,
                     ipAddress: $ip,
                     agreementVersion: $agreementVersion,
@@ -231,7 +213,6 @@ class LegalAgreementService
     private function sendAcceptanceEmailViaResendHttp(
         User $user,
         Page $terms,
-        Page $nda,
         $acceptedAt,
         ?string $ip,
         string $agreementVersion,
@@ -239,7 +220,6 @@ class LegalAgreementService
         $html = view('mail.legal-agreement-accepted', [
             'user' => $user,
             'terms' => $terms,
-            'nda' => $nda,
             'acceptedAt' => $acceptedAt,
             'ipAddress' => $ip,
             'agreementVersion' => $agreementVersion,
@@ -252,10 +232,6 @@ class LegalAgreementService
                 'filename' => 'SSU-Academy-Terms-and-Conditions.pdf',
                 'content' => base64_encode($this->renderPdf($terms->title, $terms->description ?? '')),
             ];
-            $attachments[] = [
-                'filename' => 'SSU-Academy-NDA.pdf',
-                'content' => base64_encode($this->renderPdf($nda->title, $nda->description ?? '')),
-            ];
         } catch (\Throwable $exception) {
             Log::warning('Legal email PDF generation failed for Resend HTTP; sending HTML only', [
                 'user_id' => $user->id,
@@ -266,7 +242,7 @@ class LegalAgreementService
         $payload = [
             'from' => config('mail.from.name').' <'.config('mail.from.address').'>',
             'to' => [$user->email],
-            'subject' => config('app.name').' — Your Terms & NDA Acceptance Record',
+            'subject' => config('app.name').' — Your Terms & Conditions Acceptance Record',
             'html' => $html,
         ];
 
@@ -312,7 +288,7 @@ class LegalAgreementService
     {
         if (! $page) {
             return [
-                'title' => $type === 'terms' ? 'Terms & Conditions' : 'Non-Disclosure Agreement (NDA)',
+                'title' => 'Terms & Conditions',
                 'html' => '<p>Document unavailable. Please contact support.</p>',
                 'url' => url('/'),
                 'version' => 'unavailable',
