@@ -187,6 +187,7 @@ class CourseService extends MediaService
          'course_category',
          'course_category_child',
          'sections.section_lessons',
+         'sections.section_quizzes',
       ])
          ->withCount('reviews')
          ->withCount('enrollments')

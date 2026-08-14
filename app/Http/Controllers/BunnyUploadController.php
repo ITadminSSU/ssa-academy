@@ -71,6 +71,7 @@ class BunnyUploadController extends Controller
                 'success' => true,
                 'bunny_video_id' => $result['bunny_video_id'],
                 'duration' => $result['duration'],
+                'length' => $result['length'],
                 'thumbnail' => $result['thumbnail'],
                 'status' => $result['status'],
                 'message' => 'Bunny Stream upload completed successfully',

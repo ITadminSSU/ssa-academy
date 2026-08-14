@@ -141,29 +141,83 @@ class BunnyStreamService
         return gmdate('H:i:s', max(0, $seconds));
     }
 
-    /**
-     * @return array{bunny_video_id: string, duration: string, thumbnail: string|null, status: int}
-     */
-    public function completeUpload(string $videoId): array
+    public function durationToSeconds(?string $duration): int
     {
-        $video = $this->getVideo($videoId);
+        $duration = trim((string) $duration);
 
-        if (!$video) {
-            throw new RuntimeException('Uploaded Bunny Stream video was not found.');
+        if ($duration === '' || $duration === '00:00:00') {
+            return 0;
         }
 
-        $status = (int) ($video['status'] ?? 0);
+        $parts = array_map('intval', explode(':', $duration));
 
-        if ($status === 5) {
-            throw new RuntimeException('Bunny Stream reported a processing error for this video.');
+        if (count($parts) === 3) {
+            return ($parts[0] * 3600) + ($parts[1] * 60) + $parts[2];
+        }
+
+        if (count($parts) === 2) {
+            return ($parts[0] * 60) + $parts[1];
+        }
+
+        return max(0, (int) $duration);
+    }
+
+    /**
+     * Wait briefly for Bunny to finish probing length after upload.
+     *
+     * @return array{bunny_video_id: string, duration: string, thumbnail: string|null, status: int, length: int}
+     */
+    public function completeUpload(string $videoId, int $maxAttempts = 8, int $delayMs = 1000): array
+    {
+        $video = null;
+        $length = 0;
+        $status = 0;
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            $video = $this->getVideo($videoId);
+
+            if (! $video) {
+                throw new RuntimeException('Uploaded Bunny Stream video was not found.');
+            }
+
+            $status = (int) ($video['status'] ?? 0);
+
+            if ($status === 5) {
+                throw new RuntimeException('Bunny Stream reported a processing error for this video.');
+            }
+
+            $length = (int) ($video['length'] ?? 0);
+
+            if ($length > 0) {
+                break;
+            }
+
+            // Status 4 = finished encoding on Bunny Stream; still retry if length is missing.
+            if ($attempt < $maxAttempts - 1) {
+                usleep($delayMs * 1000);
+            }
         }
 
         return [
             'bunny_video_id' => $videoId,
-            'duration' => $this->formatDuration((int) ($video['length'] ?? 0)),
+            'duration' => $this->formatDuration($length),
             'thumbnail' => $video['thumbnailUrl'] ?? $video['thumbnailFileName'] ?? null,
             'status' => $status,
+            'length' => $length,
         ];
+    }
+
+    public function resolveDurationForVideoId(string $videoId): ?string
+    {
+        $video = $this->getVideo($videoId);
+
+        if (! $video) {
+            return null;
+        }
+
+        $length = (int) ($video['length'] ?? 0);
+
+        return $length > 0 ? $this->formatDuration($length) : null;
     }
 
     private function signToken(string $videoId, int $expires): string

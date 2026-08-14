@@ -81,7 +81,62 @@ class LessonWatchProgressService
         $watchHistory->lesson_watch_progress = $progress;
         $watchHistory->save();
 
+        // Backfill lesson duration from real video length when trainers left it at 00:00:00.
+        if ($durationSeconds >= 1) {
+            $this->backfillLessonDuration($lessonId, (int) round($durationSeconds));
+        }
+
         return $watchHistory;
+    }
+
+    private function backfillLessonDuration(int|string $lessonId, int $durationSeconds): void
+    {
+        $lesson = SectionLesson::query()->find($lessonId);
+
+        if (! $lesson) {
+            return;
+        }
+
+        $existingSeconds = $this->durationStringToSeconds((string) ($lesson->duration ?? ''));
+
+        if ($existingSeconds > 0) {
+            return;
+        }
+
+        $lesson->forceFill([
+            'duration' => $this->secondsToDurationString($durationSeconds),
+        ])->save();
+    }
+
+    private function durationStringToSeconds(string $value): int
+    {
+        $value = trim($value);
+
+        if ($value === '' || $value === '00:00:00') {
+            return 0;
+        }
+
+        $parts = array_map('intval', explode(':', $value));
+
+        if (count($parts) === 3) {
+            return ($parts[0] * 3600) + ($parts[1] * 60) + $parts[2];
+        }
+
+        if (count($parts) === 2) {
+            return ($parts[0] * 60) + $parts[1];
+        }
+
+        return max(0, (int) $value);
+    }
+
+    private function secondsToDurationString(int $seconds): string
+    {
+        $seconds = max(0, $seconds);
+        $hours = intdiv($seconds, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+        $remaining = $seconds % 60;
+
+        return sprintf('%02d:%02d:%02d', $hours, $minutes, $remaining);
     }
 
     public function hasWatchedFully(WatchHistory $watchHistory, SectionLesson $lesson): bool

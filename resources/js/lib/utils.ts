@@ -26,35 +26,94 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
 
 type DurationFormat = 'hhmmss' | 'readable';
 
-// Calculate total duration from all sections and their lessons
-export const getCourseDuration = (course: Course, format: DurationFormat = 'hhmmss'): string => {
-   const totalSeconds = course.sections.reduce((totalTime, section) => {
-      return (
-         totalTime +
-         section.section_lessons.reduce((sectionTime, lesson) => {
-            // Convert "HH:mm:ss" format to seconds and add to total
-            const [hours, minutes, seconds] = (lesson.duration || '00:00:00').split(':').map(Number);
-            return sectionTime + (hours * 3600 + minutes * 60 + seconds);
-         }, 0)
-      );
-   }, 0);
-
-   const hours = Math.floor(totalSeconds / 3600);
-   const minutes = Math.floor((totalSeconds % 3600) / 60);
-
-   if (format === 'readable') {
-      if (hours > 0 && minutes > 0) {
-         return `${hours}hr ${minutes}min`;
-      } else if (hours > 0) {
-         return `${hours}hr`;
-      } else {
-         return `${minutes}min`;
-      }
+const parseDurationToSeconds = (value?: string | number | null): number => {
+   if (value == null || value === '') {
+      return 0;
    }
 
-   // Default to HH:MM:SS format
-   const seconds = totalSeconds % 60;
+   if (typeof value === 'number' && Number.isFinite(value)) {
+      return Math.max(0, Math.floor(value));
+   }
+
+   const raw = String(value).trim();
+   if (!raw || raw === '00:00:00') {
+      return 0;
+   }
+
+   // Plain seconds
+   if (/^\d+(\.\d+)?$/.test(raw)) {
+      return Math.max(0, Math.floor(Number(raw)));
+   }
+
+   const parts = raw.split(':').map((part) => Number(part) || 0);
+
+   if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + Math.floor(parts[2]);
+   }
+
+   if (parts.length === 2) {
+      return parts[0] * 60 + Math.floor(parts[1]);
+   }
+
+   return 0;
+};
+
+const formatDurationSeconds = (totalSeconds: number, format: DurationFormat): string => {
+   const safe = Math.max(0, Math.floor(totalSeconds));
+   const hours = Math.floor(safe / 3600);
+   const minutes = Math.floor((safe % 3600) / 60);
+   const seconds = safe % 60;
+
+   if (format === 'readable') {
+      if (safe <= 0) {
+         return '—';
+      }
+
+      if (hours > 0 && minutes > 0) {
+         return `${hours}hr ${minutes}min`;
+      }
+
+      if (hours > 0) {
+         return `${hours}hr`;
+      }
+
+      if (minutes > 0) {
+         return `${minutes}min`;
+      }
+
+      return `${seconds}sec`;
+   }
+
    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+// Calculate total duration from all section lessons and quizzes
+export const getCourseDuration = (course: Course, format: DurationFormat = 'hhmmss'): string => {
+   const sections = course?.sections ?? [];
+
+   const totalSeconds = sections.reduce((totalTime, section) => {
+      const lessonSeconds = (section.section_lessons ?? []).reduce((sectionTime, lesson) => {
+         return sectionTime + parseDurationToSeconds(lesson.duration);
+      }, 0);
+
+      const quizSeconds = (section.section_quizzes ?? []).reduce((sectionTime, quiz) => {
+         const fromClock = parseDurationToSeconds(quiz.duration);
+         if (fromClock > 0) {
+            return sectionTime + fromClock;
+         }
+
+         // Fallback when duration string is missing but H/M/S fields exist
+         const hours = Number(quiz.hours) || 0;
+         const minutes = Number(quiz.minutes) || 0;
+         const seconds = Number(quiz.seconds) || 0;
+
+         return sectionTime + hours * 3600 + minutes * 60 + seconds;
+      }, 0);
+
+      return totalTime + lessonSeconds + quizSeconds;
+   }, 0);
+
+   return formatDurationSeconds(totalSeconds, format);
 };
 
 // Get completed content like lessons or quizzes

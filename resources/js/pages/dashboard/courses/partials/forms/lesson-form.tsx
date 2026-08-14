@@ -249,7 +249,8 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                     onFileUploaded={(fileData) => {
                                        setIsFileUploaded(true);
                                        setData('bunny_video_id_new', fileData.bunny_video_id);
-                                       if (fileData.duration) {
+                                       // Don't overwrite client-detected length with Bunny's temporary 00:00:00.
+                                       if (fileData.duration && fileData.duration !== '00:00:00') {
                                           setData('duration', fileData.duration);
                                        }
                                     }}

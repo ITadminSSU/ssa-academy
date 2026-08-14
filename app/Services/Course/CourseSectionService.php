@@ -259,14 +259,27 @@ class CourseSectionService extends MediaService
                $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
 
                $bunny = app(BunnyStreamService::class);
-               $video = $bunny->getVideo($data['bunny_video_id_new']);
+               $video = $bunny->getVideo($data['bunny_video_id_new']) ?? [];
+               $bunnySeconds = (int) ($video['length'] ?? 0);
+               $submittedSeconds = $bunny->durationToSeconds($data['duration'] ?? null);
+
+               // Prefer Bunny length when ready; otherwise keep client-side metadata from the upload.
+               if ($bunnySeconds <= 0 && $submittedSeconds <= 0) {
+                  $polled = $bunny->completeUpload($data['bunny_video_id_new'], 6, 1000);
+                  $bunnySeconds = (int) ($polled['length'] ?? 0);
+                  $video = array_merge($video, [
+                     'thumbnailUrl' => $polled['thumbnail'] ?? ($video['thumbnailUrl'] ?? null),
+                  ]);
+               }
+
+               $durationSeconds = $bunnySeconds > 0 ? $bunnySeconds : $submittedSeconds;
 
                $updatedLesson = [
                   ...$updatedLesson,
                   'bunny_video_id' => $data['bunny_video_id_new'],
                   'lesson_src' => null,
                   'embed_source' => null,
-                  'duration' => $data['duration'] ?? $bunny->formatDuration((int) ($video['length'] ?? 0)),
+                  'duration' => $bunny->formatDuration($durationSeconds),
                   'thumbnail' => $video['thumbnailUrl'] ?? ($updatedLesson['thumbnail'] ?? null),
                ];
             } elseif (array_key_exists('lesson_src_new', $data) && $data['lesson_src_new']) {

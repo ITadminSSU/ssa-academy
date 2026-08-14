@@ -17,7 +17,7 @@ class SectionQuizService extends CourseSectionService
 
       $quiz = SectionQuiz::create([
          ...$data,
-         'duration' => $hours . ':' . $minutes . ':' . $seconds,
+         'duration' => sprintf('%02d:%02d:%02d', (int) $hours, (int) $minutes, (int) $seconds),
       ]);
 
       $this->initWatchHistory($data['course_id'], 'quiz', $userId);
@@ -31,10 +31,13 @@ class SectionQuizService extends CourseSectionService
       $minutes = $data['minutes'] ?? 0;
       $seconds = $data['seconds'] ?? 0;
 
-      return SectionQuiz::findOrFail($id)->update([
+      $quiz = SectionQuiz::findOrFail($id);
+      $quiz->update([
          ...$data,
-         'duration' => $hours . ':' . $minutes . ':' . $seconds,
+         'duration' => sprintf('%02d:%02d:%02d', (int) $hours, (int) $minutes, (int) $seconds),
       ]);
+
+      return $quiz->fresh();
    }
 
    public function deleteQuiz(string $id): bool

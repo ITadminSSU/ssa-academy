@@ -203,6 +203,9 @@ class CourseController extends Controller
             abort(404);
         }
 
+        // Backfill video lengths that were saved as 00:00:00 before Bunny finished probing.
+        app(\App\Services\Course\LessonDurationSyncService::class)->syncCourse($course);
+
         if (!$course->isPubliclyViewable($user)) {
             $message = $course->isCatalogListed()
                 ? 'You do not have access to view this course.'
@@ -289,6 +292,9 @@ class CourseController extends Controller
         $audiences = CourseAudience::cases();
         $expiries = ExpiryLimitType::cases();
         $course = $this->courseService->getUserCourseById($id, $user);
+        if ($course) {
+            app(\App\Services\Course\LessonDurationSyncService::class)->syncCourse($course);
+        }
         $watchHistory = $this->coursePlayerService->getWatchHistory($course->id, $user->id);
         $approvalStatus = $this->courseService->validateCourseForApproval($course);
         $lastSortValues = $this->courseService->lastSectionLessonSort($course);

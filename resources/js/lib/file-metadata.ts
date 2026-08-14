@@ -1,119 +1,153 @@
 interface FileMetadata {
-    duration?: string;
-    thumbnail?: string;
-    dimensions?: { width: number; height: number };
-    size: string;
-    name: string;
-    type: string;
+   duration?: string;
+   thumbnail?: string;
+   dimensions?: { width: number; height: number };
+   size: string;
+   name: string;
+   type: string;
 }
 
 const formatDuration = (seconds: number): string => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
+   if (!Number.isFinite(seconds) || seconds < 0) {
+      return '00:00:00';
+   }
 
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+   const total = Math.floor(seconds);
+   const hrs = Math.floor(total / 3600);
+   const mins = Math.floor((total % 3600) / 60);
+   const secs = total % 60;
+
+   return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
 const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+   if (bytes === 0) {
+      return '0 Bytes';
+   }
 
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+   const k = 1024;
+   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
-const createVideoThumbnail = (video: HTMLVideoElement): Promise<string> => {
-    return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+const createVideoThumbnail = (video: HTMLVideoElement, objectUrl: string): Promise<string | undefined> => {
+   return new Promise((resolve) => {
+      let settled = false;
 
-        video.currentTime = 1; // Get frame at 1 second
+      const capture = () => {
+         if (settled) {
+            return;
+         }
+         settled = true;
 
-        video.onseeked = () => {
+         try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 180;
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
             resolve(canvas.toDataURL('image/jpeg'));
-        };
-    });
+         } catch {
+            resolve(undefined);
+         } finally {
+            URL.revokeObjectURL(objectUrl);
+         }
+      };
+
+      if (!Number.isFinite(video.duration) || video.duration <= 0) {
+         capture();
+         return;
+      }
+
+      const seekTo = Math.min(1, Math.max(0.1, video.duration / 10));
+      video.currentTime = seekTo;
+      video.onseeked = () => capture();
+      // Fallback if seek never fires
+      window.setTimeout(capture, 1500);
+   });
 };
 
 export const getFileMetadata = (file: File): Promise<FileMetadata> => {
-    return new Promise((resolve, reject) => {
-        try {
-            const fileType = file.type.split('/')[0];
-            const size = formatFileSize(file.size);
+   return new Promise((resolve, reject) => {
+      try {
+         const fileType = file.type.split('/')[0];
+         const size = formatFileSize(file.size);
 
-            // Handle video files
-            if (fileType === 'video') {
-                const video = document.createElement('video');
-                const videoUrl = URL.createObjectURL(file);
-                video.preload = 'metadata';
+         if (fileType === 'video') {
+            const video = document.createElement('video');
+            const videoUrl = URL.createObjectURL(file);
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
 
-                video.onloadedmetadata = () => {
-                    URL.revokeObjectURL(videoUrl);
-                    const duration = formatDuration(video.duration);
-                    createVideoThumbnail(video).then((thumbnailUrl) => {
-                        resolve({
-                            duration,
-                            dimensions: {
-                                width: video.videoWidth,
-                                height: video.videoHeight,
-                            },
-                            size,
-                            thumbnail: thumbnailUrl,
-                            name: file.name,
-                            type: file.type,
-                        });
-                    });
-                };
+            video.onloadedmetadata = () => {
+               const duration = formatDuration(video.duration);
 
-                video.onerror = () => {
-                    URL.revokeObjectURL(videoUrl);
-                    reject(new Error('Error loading video metadata'));
-                };
+               createVideoThumbnail(video, videoUrl).then((thumbnailUrl) => {
+                  resolve({
+                     duration,
+                     dimensions: {
+                        width: video.videoWidth,
+                        height: video.videoHeight,
+                     },
+                     size,
+                     thumbnail: thumbnailUrl,
+                     name: file.name.replace(/\.[^/.]+$/, ''),
+                     type: file.type,
+                  });
+               });
+            };
 
-                video.src = videoUrl;
-            }
-            // Handle image files
-            else if (fileType === 'image') {
-                const img = new Image();
-                const imageUrl = URL.createObjectURL(file);
+            video.onerror = () => {
+               URL.revokeObjectURL(videoUrl);
+               // Still allow upload; duration can be filled from Bunny later.
+               resolve({
+                  duration: '00:00:00',
+                  size,
+                  name: file.name.replace(/\.[^/.]+$/, ''),
+                  type: file.type,
+               });
+            };
 
-                img.onload = () => {
-                    URL.revokeObjectURL(imageUrl);
-                    resolve({
-                        dimensions: {
-                            width: img.width,
-                            height: img.height,
-                        },
-                        size,
-                        thumbnail: imageUrl,
-                        name: file.name,
-                        type: file.type,
-                    });
-                };
+            video.src = videoUrl;
+            return;
+         }
 
-                img.onerror = () => {
-                    URL.revokeObjectURL(imageUrl);
-                    reject(new Error('Error loading image metadata'));
-                };
+         if (fileType === 'image') {
+            const img = new Image();
+            const imageUrl = URL.createObjectURL(file);
 
-                img.src = imageUrl;
-            }
-            // Handle other file types
-            else {
-                resolve({
-                    size,
-                    name: file.name,
-                    type: file.type,
-                });
-            }
-        } catch (error) {
-            reject(error);
-        }
-    });
+            img.onload = () => {
+               resolve({
+                  dimensions: {
+                     width: img.width,
+                     height: img.height,
+                  },
+                  size,
+                  thumbnail: imageUrl,
+                  name: file.name,
+                  type: file.type,
+               });
+            };
+
+            img.onerror = () => {
+               URL.revokeObjectURL(imageUrl);
+               reject(new Error('Error loading image metadata'));
+            };
+
+            img.src = imageUrl;
+            return;
+         }
+
+         resolve({
+            size,
+            name: file.name,
+            type: file.type,
+         });
+      } catch (error) {
+         reject(error);
+      }
+   });
 };
