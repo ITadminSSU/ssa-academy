@@ -34,7 +34,7 @@ const SubscriptionAccessBanner = ({ subscriptionAccess: accessProp, course: cour
                </SsuCheckoutButton>
             ) : (
                <Button asChild variant="outline" size="sm" className="sm:w-auto">
-                  <Link href={route('courses.show', { slug: course.slug, id: course.id })}>View course</Link>
+                  <Link href={route('course.details', { slug: course.slug, id: course.id })}>View course</Link>
                </Button>
             )}
          </AlertDescription>

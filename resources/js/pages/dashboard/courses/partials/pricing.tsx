@@ -13,9 +13,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import courseDurations from '@/data/course-durations';
 import DashboardLayout from '@/layouts/dashboard/layout';
+import { toDateTimeLocalValue } from '@/lib/course-launch';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { CourseUpdateProps } from '../update';
 
 const asOptionValue = (value: unknown): string => {
@@ -42,11 +43,24 @@ const billingModelLabel = (value: string) => {
    return 'One-time purchase';
 };
 
+const timezoneHint = (timezone?: string) => {
+   if (!timezone) {
+      return 'App timezone';
+   }
+
+   if (timezone === 'Asia/Manila') {
+      return 'Philippine Time (PHT)';
+   }
+
+   return timezone.replace(/_/g, ' ');
+};
+
 const Pricing = () => {
    const { props } = usePage<CourseUpdateProps>();
-   const { translate } = props;
+   const { translate, appTimezone } = props;
    const { dashboard, input, button } = translate;
    const { prices, expiries, course, billingModels = [], stripeActive, stripeSynced } = props;
+   const dateTimezoneLabel = timezoneHint(appTimezone);
 
    const priceOptions = useMemo(
       () => (Array.isArray(prices) ? prices.map(asOptionValue) : ['free', 'paid']),
@@ -92,22 +106,34 @@ const Pricing = () => {
       expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
       expiry_duration: course.expiry_duration || '',
       launch_offer_enabled: Boolean(course.launch_offer_enabled) && asOptionValue(course.billing_model) !== 'upfront_subscription',
-      launch_offer_starts_at: course.launch_offer_starts_at
-         ? String(course.launch_offer_starts_at).slice(0, 16)
-         : '2026-08-15T00:00',
-      launch_offer_ends_at: course.launch_offer_ends_at
-         ? String(course.launch_offer_ends_at).slice(0, 16)
-         : '2026-09-14T23:59',
+      launch_offer_starts_at: toDateTimeLocalValue(course.launch_offer_starts_at, appTimezone) || '2026-08-15T00:00',
+      launch_offer_ends_at: toDateTimeLocalValue(course.launch_offer_ends_at, appTimezone) || '2026-09-14T23:59',
       launch_list_price: course.launch_list_price ?? '75',
       launch_offer_price: course.launch_offer_price ?? '70',
       launch_deposit_amount: course.launch_deposit_amount ?? '20',
       launch_balance_amount: course.launch_balance_amount ?? '50',
       launch_balance_grace_days: course.launch_balance_grace_days ?? 5,
-      launch_subscription_trial_ends_at: course.launch_subscription_trial_ends_at
-         ? String(course.launch_subscription_trial_ends_at).slice(0, 16)
-         : '2026-10-15T23:59',
+      launch_subscription_trial_ends_at:
+         toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) || '2026-10-15T23:59',
       launch_full_upfront_price: course.launch_full_upfront_price ?? '75',
    });
+
+   useEffect(() => {
+      setData((current) => ({
+         ...current,
+         launch_offer_starts_at: toDateTimeLocalValue(course.launch_offer_starts_at, appTimezone) || current.launch_offer_starts_at,
+         launch_offer_ends_at: toDateTimeLocalValue(course.launch_offer_ends_at, appTimezone) || current.launch_offer_ends_at,
+         launch_subscription_trial_ends_at:
+            toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) ||
+            current.launch_subscription_trial_ends_at,
+      }));
+   }, [
+      course.launch_offer_starts_at,
+      course.launch_offer_ends_at,
+      course.launch_subscription_trial_ends_at,
+      appTimezone,
+      setData,
+   ]);
 
    transform((form) => {
       const isUpfront = form.billing_model === 'upfront_subscription';
@@ -337,8 +363,14 @@ const Pricing = () => {
 
                                     {data.launch_offer_enabled ? (
                                        <div className="grid gap-4 sm:grid-cols-2">
+                                          <div className="sm:col-span-2">
+                                             <p className="text-muted-foreground text-xs">
+                                                All early-bird dates below use {dateTimezoneLabel}. Enter times the same way
+                                                as Coming Soon / Launch date.
+                                             </p>
+                                          </div>
                                           <div>
-                                             <Label>Pre-register start</Label>
+                                             <Label>Pre-register start ({dateTimezoneLabel})</Label>
                                              <Input
                                                 type="datetime-local"
                                                 value={data.launch_offer_starts_at}
@@ -347,7 +379,7 @@ const Pricing = () => {
                                              <InputError message={errors.launch_offer_starts_at} />
                                           </div>
                                           <div>
-                                             <Label>Pre-register end</Label>
+                                             <Label>Pre-register end ({dateTimezoneLabel})</Label>
                                              <Input
                                                 type="datetime-local"
                                                 value={data.launch_offer_ends_at}
@@ -422,7 +454,7 @@ const Pricing = () => {
                                              <InputError message={errors.launch_full_upfront_price} />
                                           </div>
                                           <div className="sm:col-span-2">
-                                             <Label>First subscription charge (trial end)</Label>
+                                             <Label>First subscription charge / trial end ({dateTimezoneLabel})</Label>
                                              <Input
                                                 type="datetime-local"
                                                 value={data.launch_subscription_trial_ends_at}
@@ -430,7 +462,8 @@ const Pricing = () => {
                                              />
                                              <p className="text-muted-foreground mt-1 text-xs">
                                                 Pre-registrants: free until this date (e.g. Oct 15), then monthly price applies.
-                                                Deposit is non-refundable if balance is not paid within grace days.
+                                                Deposit is non-refundable if balance is not paid within grace days. Time is{' '}
+                                                {dateTimezoneLabel}.
                                              </p>
                                              <InputError message={errors.launch_subscription_trial_ends_at} />
                                           </div>

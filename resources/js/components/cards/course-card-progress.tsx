@@ -3,9 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { enrollmentBlocksPlayerAccess, enrollmentCourseDetailsUrl } from '@/lib/enrollment-access';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
-import { Award, PlayCircle } from 'lucide-react';
+import { Award, Eye, PlayCircle } from 'lucide-react';
 
 interface Props {
    className?: string;
@@ -26,23 +27,28 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
    const finalExam = course.final_exam;
    const instructorName = course.instructor?.user?.name || 'Instructor';
    const instructorPhoto = course.instructor?.user?.photo || '';
-   const instructorInitials = instructorName
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || 'IN';
+   const instructorInitials =
+      instructorName
+         .split(' ')
+         .filter(Boolean)
+         .slice(0, 2)
+         .map((part) => part[0]?.toUpperCase() ?? '')
+         .join('') || 'IN';
 
+   const detailsUrl =
+      enrollmentCourseDetailsUrl(enrollment) ??
+      route('student.course.show', { id: course.id, tab: 'modules' });
    const courseShowUrl = route('student.course.show', { id: course.id, tab: 'modules' });
-   const finalExamUrl = finalExam?.id
-      ? route('student.exam.show', { id: finalExam.id, tab: 'attempts' })
-      : null;
+   const finalExamUrl = finalExam?.id ? route('student.exam.show', { id: finalExam.id, tab: 'attempts' }) : null;
 
-   const canContinueInPlayer = Boolean(
-      watchHistory?.id && watchHistory.current_watching_type && watchHistory.current_watching_id,
-   );
+   const blockedFromPlayer = enrollmentBlocksPlayerAccess(enrollment);
+   const isReserved = enrollment.access_status === 'reserved';
 
-   const continueUrl = canContinueInPlayer
+   const canContinueInPlayer =
+      !blockedFromPlayer &&
+      Boolean(watchHistory?.id && watchHistory.current_watching_type && watchHistory.current_watching_id);
+
+   const continueUrl = blockedFromPlayer ? detailsUrl : canContinueInPlayer
       ? route('course.player', {
            type: watchHistory!.current_watching_type,
            watch_history: watchHistory!.id,
@@ -50,10 +56,19 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
         })
       : courseShowUrl;
 
+   const primaryHref = blockedFromPlayer ? detailsUrl : continueUrl;
+   const cardHref = blockedFromPlayer ? detailsUrl : courseShowUrl;
+
+   const primaryLabel = isReserved
+      ? 'View course details'
+      : blockedFromPlayer
+        ? 'View course details'
+        : 'Continue Learning';
+
    return (
       <Card className={cn('flex flex-col overflow-hidden shadow-sm', className)}>
          <CardHeader className="p-0">
-            <Link className="p-2 pb-0" href={courseShowUrl}>
+            <Link className="p-2 pb-0" href={cardHref}>
                <div className="relative h-[200px] w-full overflow-hidden rounded-lg">
                   <img
                      src={course.thumbnail || '/assets/images/blank-image.jpg'}
@@ -63,7 +78,17 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
                         (e.target as HTMLImageElement).src = '/assets/images/blank-image.jpg';
                      }}
                   />
-                  {isComplete && (
+                  {isReserved && (
+                     <span className="absolute top-2 right-2 rounded-full bg-amber-600 px-2 py-0.5 text-xs font-medium text-white">
+                        Seat reserved
+                     </span>
+                  )}
+                  {!isReserved && blockedFromPlayer && (
+                     <span className="absolute top-2 right-2 rounded-full bg-slate-700 px-2 py-0.5 text-xs font-medium text-white">
+                        Coming soon
+                     </span>
+                  )}
+                  {isComplete && !blockedFromPlayer && (
                      <span className="absolute top-2 right-2 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white">
                         Completed
                      </span>
@@ -81,20 +106,35 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
                <p className="text-xs font-medium">{instructorName}</p>
             </div>
 
-            <Link href={courseShowUrl}>
+            <Link href={cardHref}>
                <p className="hover:text-secondary-foreground line-clamp-2 text-sm font-semibold">{course.title}</p>
             </Link>
 
-            <div className="mt-auto space-y-3 pt-4">
-               <div className="space-y-1.5">
-                  <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                     <span>Progress</span>
-                     <span>{percent}%</span>
-                  </div>
-                  <Progress value={percent} className="h-1.5" />
-               </div>
+            {isReserved ? (
+               <p className="text-muted-foreground mt-2 text-xs">
+                  Full access unlocks after you pay the remaining balance on launch.
+               </p>
+            ) : null}
 
-               {isComplete && finalExamUrl ? (
+            <div className="mt-auto space-y-3 pt-4">
+               {!blockedFromPlayer ? (
+                  <div className="space-y-1.5">
+                     <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
+                        <span>Progress</span>
+                        <span>{percent}%</span>
+                     </div>
+                     <Progress value={percent} className="h-1.5" />
+                  </div>
+               ) : null}
+
+               {blockedFromPlayer ? (
+                  <ButtonGradientPrimary asChild shadow={false} containerClass="w-full" className="to-primary-light hover:to-primary-light h-9 w-full">
+                     <Link href={primaryHref}>
+                        <Eye className="h-4 w-4" />
+                        {primaryLabel}
+                     </Link>
+                  </ButtonGradientPrimary>
+               ) : isComplete && finalExamUrl ? (
                   <Button asChild variant="outline" className="w-full">
                      <Link href={finalExamUrl}>
                         <Award className="h-4 w-4" />

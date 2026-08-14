@@ -8,16 +8,20 @@ trait NormalizesLaunchAt
 {
     protected function normalizeLaunchAtInput(): void
     {
-        $launchAt = $this->input('launch_at');
+        $this->merge([
+            'launch_at' => $this->normalizeAppTimezoneDateTime($this->input('launch_at')),
+        ]);
+    }
 
-        if (!$launchAt) {
-            $this->merge(['launch_at' => null]);
-
-            return;
+    /**
+     * Parse a datetime-local value as app timezone (e.g. Asia/Manila) for storage.
+     */
+    protected function normalizeAppTimezoneDateTime(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
         }
 
-        $this->merge([
-            'launch_at' => Carbon::parse($launchAt, config('app.timezone'))->format('Y-m-d H:i:s'),
-        ]);
+        return Carbon::parse((string) $value, config('app.timezone'))->format('Y-m-d H:i:s');
     }
 }

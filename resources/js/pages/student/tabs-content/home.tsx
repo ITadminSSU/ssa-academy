@@ -1,10 +1,11 @@
 import ButtonGradientPrimary from '@/components/button-gradient-primary';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { enrollmentBlocksPlayerAccess, enrollmentCourseDetailsUrl } from '@/lib/enrollment-access';
 import { LearnerActivity, StudentDashboardProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
-import { Award, BookOpen, ClipboardList, FileQuestion, GraduationCap, ListChecks, PlayCircle } from 'lucide-react';
+import { Award, BookOpen, ClipboardList, Eye, FileQuestion, GraduationCap, ListChecks, PlayCircle } from 'lucide-react';
 import type { ComponentType } from 'react';
 
 const activityIcons: Record<LearnerActivity['type'], ComponentType<{ className?: string }>> = {
@@ -34,16 +35,22 @@ const Home = () => {
          return bTime - aTime;
       })[0];
 
+   const continueBlocked = continueEnrollment ? enrollmentBlocksPlayerAccess(continueEnrollment) : false;
+   const continueDetailsUrl = continueEnrollment ? enrollmentCourseDetailsUrl(continueEnrollment) : null;
+
    const continueHref = continueEnrollment?.course?.id
-      ? continueEnrollment.watch_history?.id
-         && continueEnrollment.watch_history.current_watching_type
-         && continueEnrollment.watch_history.current_watching_id
-         ? route('course.player', {
-              type: continueEnrollment.watch_history.current_watching_type,
-              watch_history: continueEnrollment.watch_history.id,
-              lesson_id: continueEnrollment.watch_history.current_watching_id,
-           })
-         : route('student.course.show', { id: continueEnrollment.course.id, tab: 'modules' })
+      ? continueBlocked && continueDetailsUrl
+         ? continueDetailsUrl
+         : continueEnrollment.watch_history?.id &&
+             continueEnrollment.watch_history.current_watching_type &&
+             continueEnrollment.watch_history.current_watching_id &&
+             !continueBlocked
+           ? route('course.player', {
+                type: continueEnrollment.watch_history.current_watching_type,
+                watch_history: continueEnrollment.watch_history.id,
+                lesson_id: continueEnrollment.watch_history.current_watching_id,
+             })
+           : route('student.course.show', { id: continueEnrollment.course.id, tab: 'modules' })
       : '';
 
    const firstName = auth.user?.name?.split(' ')[0] ?? 'there';
@@ -81,7 +88,11 @@ const Home = () => {
          {continueEnrollment && (
             <div className="space-y-3">
                <h2 className="text-lg font-semibold">
-                  {continueEnrollment.watch_history ? 'Continue where you left off' : 'Start learning'}
+                  {continueBlocked
+                     ? 'Your reserved course'
+                     : continueEnrollment.watch_history
+                       ? 'Continue where you left off'
+                       : 'Start learning'}
                </h2>
                <Card className="from-primary/5 to-primary/10 overflow-hidden border bg-gradient-to-r">
                   <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
@@ -95,17 +106,29 @@ const Home = () => {
                      />
                      <div className="flex-1 space-y-3">
                         <p className="font-semibold">{continueEnrollment.course.title}</p>
-                        <div className="space-y-1.5">
-                           <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                              <span>Progress</span>
-                              <span>{continueEnrollment.completion?.completion ?? 0}%</span>
+                        {continueBlocked ? (
+                           <p className="text-muted-foreground text-sm">
+                              {continueEnrollment.access_status === 'reserved'
+                                 ? 'Seat reserved. Open course details to pay the remaining balance when available.'
+                                 : 'This course is coming soon. Open course details for launch info.'}
+                           </p>
+                        ) : (
+                           <div className="space-y-1.5">
+                              <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
+                                 <span>Progress</span>
+                                 <span>{continueEnrollment.completion?.completion ?? 0}%</span>
+                              </div>
+                              <Progress value={Number(continueEnrollment.completion?.completion ?? 0)} className="h-1.5" />
                            </div>
-                           <Progress value={Number(continueEnrollment.completion?.completion ?? 0)} className="h-1.5" />
-                        </div>
+                        )}
                         <ButtonGradientPrimary asChild shadow={false} className="to-primary-light hover:to-primary-light h-9">
                            <Link href={continueHref}>
-                              <PlayCircle className="h-4 w-4" />
-                              {continueEnrollment.watch_history ? 'Continue Learning' : 'Start Learning'}
+                              {continueBlocked ? <Eye className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                              {continueBlocked
+                                 ? 'View course details'
+                                 : continueEnrollment.watch_history
+                                   ? 'Continue Learning'
+                                   : 'Start Learning'}
                            </Link>
                         </ButtonGradientPrimary>
                      </div>

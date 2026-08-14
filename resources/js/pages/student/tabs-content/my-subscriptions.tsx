@@ -144,7 +144,7 @@ const MySubscriptions = () => {
                         <CardFooter className="flex flex-wrap gap-2 border-t pt-4">
                            {course ? (
                               <Button asChild variant="outline" size="sm">
-                                 <Link href={route('courses.show', { slug: course.slug, id: course.id })}>View course</Link>
+                                 <Link href={route('course.details', { slug: course.slug, id: course.id })}>View course</Link>
                               </Button>
                            ) : null}
 

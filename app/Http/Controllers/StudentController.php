@@ -99,6 +99,27 @@ class StudentController extends Controller
 
         $user = Auth::user();
         $course = $this->studentService->getEnrolledCourse($id, $user);
+
+        $enrollment = \App\Models\Course\CourseEnrollment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $id)
+            ->first();
+
+        // Reserved / coming-soon seats: show public course details (pay balance / launch info), not the learner modules UI.
+        if (
+            ($enrollment && $enrollment->isReservedSeat())
+            || ($course && $course->isComingSoon() && ! $this->subscriptionAccess->canAccessPlayer($user, $course))
+        ) {
+            return redirect()
+                ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                ->with(
+                    'info',
+                    $enrollment?->isReservedSeat()
+                        ? 'Your seat is reserved. Full course access unlocks after you pay the remaining balance.'
+                        : 'This course is coming soon. You can view details here until launch.',
+                );
+        }
+
         $props = $this->studentService->getEnrolledCourseOverview($id, $tab, $user);
         $watchHistory = $this->coursePlayerService->getWatchHistory($id, $user->id);
         $completion = $this->coursePlayerService->calculateCompletion($course, $watchHistory);

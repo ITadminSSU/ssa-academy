@@ -83,10 +83,10 @@ class UpdateCourseRequest extends FormRequest
                 : null,
             'launch_offer_enabled' => $launchOfferEnabled,
             'launch_offer_starts_at' => $launchOfferEnabled && $this->filled('launch_offer_starts_at')
-                ? $this->input('launch_offer_starts_at')
+                ? $this->normalizeAppTimezoneDateTime($this->input('launch_offer_starts_at'))
                 : null,
             'launch_offer_ends_at' => $launchOfferEnabled && $this->filled('launch_offer_ends_at')
-                ? $this->input('launch_offer_ends_at')
+                ? $this->normalizeAppTimezoneDateTime($this->input('launch_offer_ends_at'))
                 : null,
             'launch_list_price' => $launchOfferEnabled && $this->filled('launch_list_price')
                 ? (float) $this->input('launch_list_price')
@@ -104,7 +104,7 @@ class UpdateCourseRequest extends FormRequest
                 ? (int) ($this->input('launch_balance_grace_days') ?: 5)
                 : 5,
             'launch_subscription_trial_ends_at' => $launchOfferEnabled && $this->filled('launch_subscription_trial_ends_at')
-                ? $this->input('launch_subscription_trial_ends_at')
+                ? $this->normalizeAppTimezoneDateTime($this->input('launch_subscription_trial_ends_at'))
                 : null,
             'launch_full_upfront_price' => $launchOfferEnabled && $this->filled('launch_full_upfront_price')
                 ? (float) $this->input('launch_full_upfront_price')

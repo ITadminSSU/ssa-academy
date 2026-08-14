@@ -61,7 +61,20 @@ class PlayerController extends Controller
                 ? 'This course launches on ' . $course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A') . '.'
                 : 'This course is coming soon.';
 
-            return back()->with('error', $message);
+            return redirect()
+                ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                ->with('error', $message);
+        }
+
+        if (!$this->subscriptionAccess->canAccessPlayer($user, $course)) {
+            $enrollment = $this->subscriptionAccess->resolveEnrollment($user, $course);
+            $message = $enrollment?->isReservedSeat()
+                ? 'Your seat is reserved. Pay the remaining balance on launch to unlock the full course.'
+                : 'You do not have access to this course player yet.';
+
+            return redirect()
+                ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                ->with('error', $message);
         }
 
         $watchHistory = $this->sectionService->initWatchHistory($validated['course_id'], 'lesson', $user->id);
@@ -89,14 +102,27 @@ class PlayerController extends Controller
 
             $course = $this->courseService->getUserCourseById($watch_history->course_id, $user);
 
+            if (! $course) {
+                return redirect()
+                    ->route('student.index', ['tab' => 'courses'])
+                    ->with('error', 'Course not found.');
+            }
+
             if (!$this->subscriptionAccess->canAccessPlayer($user, $course)) {
-                $message = $course->usesSubscriptionBilling()
-                    ? 'Your access to this course has expired. Resubscribe to continue.'
-                    : 'Your access to this course has expired.';
+                $enrollment = $this->subscriptionAccess->resolveEnrollment($user, $course);
+                $redirectMessage = $enrollment?->isReservedSeat()
+                    ? 'Your seat is reserved. Pay the remaining balance on launch to unlock the full course.'
+                    : ($course->isComingSoon()
+                        ? ($course->launch_at
+                            ? 'This course launches on '.$course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A').'.'
+                            : 'This course is coming soon.')
+                        : ($course->usesSubscriptionBilling()
+                            ? 'Your access to this course has expired. Resubscribe to continue.'
+                            : 'Your access to this course has expired.'));
 
                 return redirect()
-                    ->route('courses.show', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('error', $message);
+                    ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                    ->with('error', $redirectMessage);
             }
 
             $watch_history = $this->coursePlay->syncPassedQuizzes($watch_history, $user->id);
