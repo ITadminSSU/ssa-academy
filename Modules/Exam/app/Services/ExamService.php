@@ -9,10 +9,11 @@ use Modules\Exam\Models\Exam;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Exam\Notifications\ExamApprovalNotification;
 use Modules\Exam\Services\ExamAttemptService;
 use Modules\Exam\Services\ExamQuestionService;
-use Illuminate\Support\Facades\DB;
 
 class ExamService extends MediaService
 {
@@ -136,10 +137,19 @@ class ExamService extends MediaService
             $exam->update($data);
 
             if (array_key_exists('feedback', $data)) {
-               $instructor = Instructor::find($exam->instructor_id);
-               $user = User::find($instructor->user_id);
+               try {
+                  $instructor = Instructor::find($exam->instructor_id);
+                  $user = $instructor ? User::find($instructor->user_id) : null;
 
-               $user->notify(new ExamApprovalNotification($exam, $data));
+                  if ($user) {
+                     $user->notify(new ExamApprovalNotification($exam, $data));
+                  }
+               } catch (\Throwable $exception) {
+                  Log::warning('Exam status updated but approval notification email failed', [
+                     'exam_id' => $exam->id,
+                     'error' => $exception->getMessage(),
+                  ]);
+               }
             }
             break;
 
