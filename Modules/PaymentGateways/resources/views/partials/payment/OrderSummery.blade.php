@@ -8,6 +8,12 @@
             <span>{{ number_format($subtotal, 2) }} {{ $currency }}</span>
          </div>
 
+         @if (($checkoutMode ?? null) === 'upfront_subscription')
+            <p class="text-muted-foreground text-xs">
+               {{ __('Pay this enrollment amount now. Monthly subscription billing begins after the first free month.') }}
+            </p>
+         @endif
+
          @if (isset($coupon) && $coupon && $couponDiscount > 0)
             <div class="flex justify-between text-emerald-600">
                <span>{{ __('Coupon Discount') }} ({{ strtoupper($coupon->code) }})</span>

@@ -90,6 +90,7 @@ class StripeController extends Controller
                 'deposit' => $this->startFixedAmountCheckout($request, $user, $course, 'deposit', $this->launchOffer->depositAmount($course)),
                 'balance' => $this->startBalanceWithSubscriptionCheckout($request, $user, $course),
                 'full_launch' => $this->startFullLaunchCheckout($request, $user, $course),
+                'upfront_subscription' => $this->startUpfrontSubscriptionCheckout($request, $user, $course),
                 'legacy_subscription' => $this->startSubscriptionCheckout($request, $user, $course),
                 default => $this->startOneTimeCheckout($request, $user),
             };
@@ -345,6 +346,83 @@ class StripeController extends Controller
         return redirect()->away($response->url);
     }
 
+    protected function startUpfrontSubscriptionCheckout(Request $request, $user, Course $course)
+    {
+        if (empty($course->stripe_price_id)) {
+            return redirect()
+                ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                ->with('error', 'Monthly subscription is not synced to Stripe yet. Please contact support.');
+        }
+
+        $upfront = (float) ($course->price ?? 0);
+
+        if ($upfront < 1) {
+            return redirect()
+                ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                ->with('error', 'This course is missing an upfront enrollment price.');
+        }
+
+        $this->stripeCustomer->configureStripe();
+        $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
+        Stripe::setApiKey($this->stripeSecret);
+
+        $response = Session::create([
+            'mode' => 'subscription',
+            'customer' => $customerId,
+            'line_items' => [
+                [
+                    'price_data' => [
+                        'currency' => strtolower($this->stripe->fields['currency']),
+                        'product_data' => [
+                            'name' => 'Course enrollment — '.$course->title,
+                        ],
+                        'unit_amount' => (int) round($upfront * 100),
+                    ],
+                    'quantity' => 1,
+                ],
+                [
+                    'price' => $course->stripe_price_id,
+                    'quantity' => 1,
+                ],
+            ],
+            'success_url' => route('payments.stripe.success'),
+            'cancel_url' => route('payments.stripe.cancel'),
+            'client_reference_id' => (string) $user->id,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'item_type' => 'course',
+                'item_id' => (string) $course->id,
+                'billing_model' => CourseBillingModel::UPFRONT_SUBSCRIPTION->value,
+                'launch_offer_mode' => 'upfront_subscription',
+            ],
+            'subscription_data' => [
+                // First monthly charge ~30 days after enrollment.
+                'trial_period_days' => 30,
+                'metadata' => [
+                    'user_id' => (string) $user->id,
+                    'course_id' => (string) $course->id,
+                    'launch_offer_mode' => 'upfront_subscription',
+                ],
+            ],
+        ]);
+
+        setTempStore([
+            'user_id' => $user->id,
+            'properties' => [
+                'from' => $request->from,
+                'item_type' => 'course',
+                'item_id' => $course->id,
+                'billing_model' => CourseBillingModel::UPFRONT_SUBSCRIPTION->value,
+                'launch_offer_mode' => 'upfront_subscription',
+                'stripe_id' => $response->id,
+                'tax_amount' => 0,
+                'coupon_code' => null,
+            ],
+        ]);
+
+        return redirect()->away($response->url);
+    }
+
     protected function startSubscriptionCheckout(Request $request, $user, Course $course)
     {
         if (empty($course->stripe_price_id)) {
@@ -474,7 +552,11 @@ class StripeController extends Controller
                     ->with('success', 'Balance paid. Full course access is unlocked. Your $6/mo subscription starts after the free period.');
             }
 
-            if ($billing_model === CourseBillingModel::SUBSCRIPTION->value || $order->mode === 'subscription') {
+            if (
+                $billing_model === CourseBillingModel::SUBSCRIPTION->value
+                || $billing_model === CourseBillingModel::UPFRONT_SUBSCRIPTION->value
+                || $order->mode === 'subscription'
+            ) {
                 $this->subscriptionService->activateFromCheckoutSession($order);
 
                 if ($from == 'api') {
@@ -482,9 +564,10 @@ class StripeController extends Controller
                 }
 
                 if ($course) {
-                    $message = $offerMode === 'full_launch'
-                        ? 'Enrollment complete. You have access now. Monthly subscription billing begins after the first free month.'
-                        : 'Subscription active. You now have access to this course.';
+                    $message = match ($offerMode) {
+                        'full_launch', 'upfront_subscription' => 'Enrollment complete. You have access now. Monthly subscription billing begins after the first free month.',
+                        default => 'Subscription active. You now have access to this course.',
+                    };
 
                     return redirect()
                         ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])

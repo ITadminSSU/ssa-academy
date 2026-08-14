@@ -3,7 +3,7 @@ import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
-import { isSubscriptionCourse } from '@/lib/subscription-billing';
+import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -30,6 +30,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const countdownShort = comingSoon ? formatLaunchCountdownShort(course.launch_at) : null;
    const showPreviewCta = Boolean(course.can_preview_before_launch) && comingSoon;
    const isSubscription = isSubscriptionCourse(course);
+   const isUpfrontSubscription = isUpfrontSubscriptionCourse(course);
 
    const handleWishlist = () => {
       if (isWishlisted) {
@@ -156,6 +157,17 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                            <span className="text-muted-foreground ml-2 text-sm font-medium line-through normal-case">
                               {currency?.symbol}
                               {course.launch_list_price ?? 75}
+                           </span>
+                        </>
+                     ) : isUpfrontSubscription ? (
+                        <>
+                           <span>
+                              {currency?.symbol}
+                              {course.price}
+                           </span>
+                           <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
+                              +{currency?.symbol}
+                              {course.subscription_price}/mo
                            </span>
                         </>
                      ) : isSubscription ? (

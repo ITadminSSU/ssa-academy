@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
 import { getLaunchOfferView } from '@/lib/launch-offer';
-import { isSubscriptionCourse } from '@/lib/subscription-billing';
+import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { BarChart3, Calendar, Clock, Languages, Mail, Play, Users } from 'lucide-react';
@@ -19,6 +19,7 @@ const CoursePreview = () => {
    const currency = systemCurrency(system.fields['selling_currency']);
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
    const isSubscription = isSubscriptionCourse(course);
+   const isUpfrontSubscription = isUpfrontSubscriptionCourse(course);
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
 
    return (
@@ -81,6 +82,17 @@ const CoursePreview = () => {
                         {offer.subscriptionPrice}/mo
                      </span>
                   </>
+               ) : isUpfrontSubscription ? (
+                  <>
+                     <span className="font-semibold">
+                        {currency?.symbol}
+                        {course.price}
+                     </span>
+                     <span className="text-muted-foreground ml-2 text-base font-medium">
+                        + {currency?.symbol}
+                        {course.subscription_price}/mo
+                     </span>
+                  </>
                ) : course.billing_model === 'subscription' ? (
                   <>
                      <span className="font-semibold">
@@ -116,6 +128,12 @@ const CoursePreview = () => {
                   {offer.depositAmount} now (seat reserved). Pay remaining {currency?.symbol}
                   {offer.balanceAmount} on launch for full access. Then {currency?.symbol}
                   {offer.subscriptionPrice}/mo after the free month. Deposit is non-refundable.
+               </p>
+            ) : isUpfrontSubscription ? (
+               <p className="text-muted-foreground text-sm">
+                  Pay {currency?.symbol}
+                  {course.price} now for full access. Then {currency?.symbol}
+                  {course.subscription_price}/mo after the first free month. Cancel anytime from My Subscriptions.
                </p>
             ) : null}
 

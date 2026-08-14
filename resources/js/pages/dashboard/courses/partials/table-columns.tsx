@@ -118,6 +118,9 @@ const TableColumn = (): ColumnDef<Course>[] => {
                      : monthly
                        ? `${symbol}${monthly}/mo`
                        : 'Paid';
+               } else if (course.billing_model === 'upfront_subscription' && course.price) {
+                  const monthly = course.subscription_price;
+                  label = `${symbol}${course.price}${monthly ? ` + ${symbol}${monthly}/mo` : ''}`;
                } else if (course.billing_model === 'subscription' && course.subscription_price) {
                   label = `${symbol}${course.subscription_price}/mo`;
                } else if (course.discount && course.discount_price) {

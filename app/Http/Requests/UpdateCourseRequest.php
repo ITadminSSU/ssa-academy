@@ -47,22 +47,27 @@ class UpdateCourseRequest extends FormRequest
         $pricingType = (string) $this->input('pricing_type', '');
         $isFree = $pricingType === CoursePricingType::FREE->value;
         $billingModel = (string) $this->input('billing_model', CourseBillingModel::ONE_TIME->value);
-        $isSubscription = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
-        $isOneTime = ! $isFree && ! $isSubscription;
-        $launchOfferEnabled = ! $isFree && filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN);
+        $isUpfrontSubscription = ! $isFree && $billingModel === CourseBillingModel::UPFRONT_SUBSCRIPTION->value;
+        $launchOfferEnabled = ! $isFree
+            && ! $isUpfrontSubscription
+            && filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN);
 
         // Launch offers always use monthly subscription after deposit/full pay.
         if ($launchOfferEnabled) {
             $billingModel = CourseBillingModel::SUBSCRIPTION->value;
-            $isSubscription = true;
-            $isOneTime = false;
+            $isUpfrontSubscription = false;
         }
+
+        $isMonthlyOnly = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
+        $isOneTime = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME->value;
+        $needsMonthlyPrice = $isMonthlyOnly || $isUpfrontSubscription || $launchOfferEnabled;
+        $needsUpfrontPrice = $isOneTime || $isUpfrontSubscription;
 
         $this->merge([
             'pricing_type' => $pricingType,
             'billing_model' => $isFree ? CourseBillingModel::ONE_TIME->value : $billingModel,
-            'price' => $isOneTime && $this->filled('price') ? (float) $this->input('price') : null,
-            'subscription_price' => $isSubscription && $this->filled('subscription_price')
+            'price' => $needsUpfrontPrice && $this->filled('price') ? (float) $this->input('price') : null,
+            'subscription_price' => $needsMonthlyPrice && $this->filled('subscription_price')
                 ? (float) $this->input('subscription_price')
                 : null,
             'discount' => $isOneTime
@@ -181,21 +186,26 @@ class UpdateCourseRequest extends FormRequest
         $limited = ExpiryLimitType::LIMITED_TIME->value;
         $oneTime = CourseBillingModel::ONE_TIME->value;
         $subscription = CourseBillingModel::SUBSCRIPTION->value;
+        $upfrontSubscription = CourseBillingModel::UPFRONT_SUBSCRIPTION->value;
+        $billingModels = "$oneTime,$subscription,$upfrontSubscription";
         $pricingType = (string) $this->input('pricing_type');
         $billingModel = (string) $this->input('billing_model', $oneTime);
         $isPaid = $pricingType === $paid;
         $isOneTime = $isPaid && $billingModel === $oneTime;
-        $isSubscription = $isPaid && $billingModel === $subscription;
+        $isUpfrontSubscription = $isPaid && $billingModel === $upfrontSubscription;
+        $isSubscription = $isPaid && ($billingModel === $subscription || $isUpfrontSubscription);
+        $launchOfferEnabled = filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN)
+            && ! $isUpfrontSubscription;
 
         return [
             'pricing_type' => "required|string|in:$free,$paid",
             'billing_model' => $isPaid
-                ? "required|string|in:$oneTime,$subscription"
-                : "nullable|string|in:$oneTime,$subscription",
-            'price' => $isOneTime
+                ? "required|string|in:$billingModels"
+                : "nullable|string|in:$billingModels",
+            'price' => ($isOneTime || $isUpfrontSubscription)
                 ? 'required|numeric|min:1'
                 : 'nullable|numeric|min:1',
-            'subscription_price' => ($isSubscription || filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN))
+            'subscription_price' => ($isSubscription || $launchOfferEnabled)
                 ? 'required|numeric|min:1'
                 : 'nullable|numeric|min:1',
             'discount' => 'boolean',

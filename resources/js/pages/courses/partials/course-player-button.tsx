@@ -85,6 +85,10 @@ const checkoutLabel = (course: Course, resubscribe: boolean, launchLabel?: strin
       return launchLabel;
    }
 
+   if (course.billing_model === 'upfront_subscription') {
+      return 'Enroll now';
+   }
+
    return course.billing_model === 'subscription' ? 'Subscribe now' : undefined;
 };
 

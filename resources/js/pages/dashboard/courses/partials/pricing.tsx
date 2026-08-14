@@ -35,6 +35,10 @@ const billingModelLabel = (value: string) => {
       return 'Monthly subscription';
    }
 
+   if (value === 'upfront_subscription') {
+      return 'Upfront + monthly subscription';
+   }
+
    return 'One-time purchase';
 };
 
@@ -73,6 +77,7 @@ const Pricing = () => {
       return [
          { value: 'one_time', label: 'One-time purchase' },
          { value: 'subscription', label: 'Monthly subscription' },
+         { value: 'upfront_subscription', label: 'Upfront + monthly subscription' },
       ];
    }, [billingModels]);
 
@@ -86,7 +91,7 @@ const Pricing = () => {
       discount_price: course.discount_price ?? '',
       expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
       expiry_duration: course.expiry_duration || '',
-      launch_offer_enabled: Boolean(course.launch_offer_enabled),
+      launch_offer_enabled: Boolean(course.launch_offer_enabled) && asOptionValue(course.billing_model) !== 'upfront_subscription',
       launch_offer_starts_at: course.launch_offer_starts_at
          ? String(course.launch_offer_starts_at).slice(0, 16)
          : '2026-08-15T00:00',
@@ -104,34 +109,41 @@ const Pricing = () => {
       launch_full_upfront_price: course.launch_full_upfront_price ?? '75',
    });
 
-   transform((form) => ({
-      ...form,
-      tab: 'pricing',
-      discount: Boolean(form.discount),
-      launch_offer_enabled: Boolean(form.launch_offer_enabled),
-      price: form.price === '' || form.price === null ? null : Number(form.price),
-      subscription_price:
-         form.subscription_price === '' || form.subscription_price === null ? null : Number(form.subscription_price),
-      discount_price:
-         form.discount && form.discount_price !== '' && form.discount_price !== null
-            ? Number(form.discount_price)
-            : null,
-      expiry_duration: form.expiry_type === limitedValue ? form.expiry_duration || null : null,
-      launch_list_price: form.launch_offer_enabled ? Number(form.launch_list_price) : null,
-      launch_offer_price: form.launch_offer_enabled ? Number(form.launch_offer_price) : null,
-      launch_deposit_amount: form.launch_offer_enabled ? Number(form.launch_deposit_amount) : null,
-      launch_balance_amount: form.launch_offer_enabled ? Number(form.launch_balance_amount) : null,
-      launch_balance_grace_days: form.launch_offer_enabled ? Number(form.launch_balance_grace_days || 5) : 5,
-      launch_full_upfront_price: form.launch_offer_enabled ? Number(form.launch_full_upfront_price) : null,
-      launch_offer_starts_at: form.launch_offer_enabled ? form.launch_offer_starts_at : null,
-      launch_offer_ends_at: form.launch_offer_enabled ? form.launch_offer_ends_at : null,
-      launch_subscription_trial_ends_at: form.launch_offer_enabled ? form.launch_subscription_trial_ends_at : null,
-      billing_model: form.launch_offer_enabled ? 'subscription' : form.billing_model,
-   }));
+   transform((form) => {
+      const isUpfront = form.billing_model === 'upfront_subscription';
+      const launchEnabled = Boolean(form.launch_offer_enabled) && !isUpfront;
+
+      return {
+         ...form,
+         tab: 'pricing',
+         discount: Boolean(form.discount),
+         launch_offer_enabled: launchEnabled,
+         price: form.price === '' || form.price === null ? null : Number(form.price),
+         subscription_price:
+            form.subscription_price === '' || form.subscription_price === null ? null : Number(form.subscription_price),
+         discount_price:
+            form.discount && form.discount_price !== '' && form.discount_price !== null
+               ? Number(form.discount_price)
+               : null,
+         expiry_duration: form.expiry_type === limitedValue ? form.expiry_duration || null : null,
+         launch_list_price: launchEnabled ? Number(form.launch_list_price) : null,
+         launch_offer_price: launchEnabled ? Number(form.launch_offer_price) : null,
+         launch_deposit_amount: launchEnabled ? Number(form.launch_deposit_amount) : null,
+         launch_balance_amount: launchEnabled ? Number(form.launch_balance_amount) : null,
+         launch_balance_grace_days: launchEnabled ? Number(form.launch_balance_grace_days || 5) : 5,
+         launch_full_upfront_price: launchEnabled ? Number(form.launch_full_upfront_price) : null,
+         launch_offer_starts_at: launchEnabled ? form.launch_offer_starts_at : null,
+         launch_offer_ends_at: launchEnabled ? form.launch_offer_ends_at : null,
+         launch_subscription_trial_ends_at: launchEnabled ? form.launch_subscription_trial_ends_at : null,
+         billing_model: launchEnabled ? 'subscription' : form.billing_model,
+      };
+   });
 
    const [syncing, setSyncing] = useState(false);
    const isPaid = data.pricing_type === paidValue;
-   const isSubscription = isPaid && (data.billing_model === 'subscription' || data.launch_offer_enabled);
+   const isUpfrontSubscription = isPaid && data.billing_model === 'upfront_subscription' && !data.launch_offer_enabled;
+   const isSubscription =
+      isPaid && (data.billing_model === 'subscription' || data.billing_model === 'upfront_subscription' || data.launch_offer_enabled);
    const isOneTime = isPaid && data.billing_model === 'one_time' && !data.launch_offer_enabled;
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -182,13 +194,22 @@ const Pricing = () => {
                         <Label>Billing model *</Label>
                         <RadioGroup
                            value={data.billing_model}
-                           className="grid gap-3 sm:grid-cols-2"
+                           className="grid gap-3 sm:grid-cols-1 lg:grid-cols-3"
                            onValueChange={(value) => {
                               setData((current) => ({
                                  ...current,
                                  billing_model: value,
-                                 discount: value === 'subscription' ? false : current.discount,
-                                 discount_price: value === 'subscription' ? '' : current.discount_price,
+                                 discount: value === 'one_time' ? current.discount : false,
+                                 discount_price: value === 'one_time' ? current.discount_price : '',
+                                 launch_offer_enabled: value === 'upfront_subscription' ? false : current.launch_offer_enabled,
+                                 price:
+                                    value === 'upfront_subscription' && !current.price
+                                       ? '75'
+                                       : current.price,
+                                 subscription_price:
+                                    (value === 'subscription' || value === 'upfront_subscription') && !current.subscription_price
+                                       ? '6'
+                                       : current.subscription_price,
                               }));
                            }}
                         >
@@ -204,10 +225,10 @@ const Pricing = () => {
                         <InputError message={errors.billing_model} />
                      </div>
 
-                     {isOneTime ? (
+                     {isOneTime || isUpfrontSubscription ? (
                         <>
                            <div>
-                              <Label>{dashboard.price} *</Label>
+                              <Label>{isUpfrontSubscription ? 'Upfront enrollment price *' : `${dashboard.price} *`}</Label>
                               <Input
                                  type="number"
                                  name="price"
@@ -215,40 +236,47 @@ const Pricing = () => {
                                  step="0.01"
                                  value={data.price === null || data.price === undefined ? '' : String(data.price)}
                                  onChange={(e) => setData('price', e.target.value)}
-                                 placeholder={input.course_price_placeholder}
+                                 placeholder={isUpfrontSubscription ? '75.00' : input.course_price_placeholder}
                               />
+                              {isUpfrontSubscription ? (
+                                 <p className="text-muted-foreground mt-1 text-xs">
+                                    Students pay this amount at checkout for immediate access (tax-inclusive).
+                                 </p>
+                              ) : null}
                               <InputError message={errors.price} />
                            </div>
 
-                           <div className="space-y-2">
-                              <div className="flex items-center space-x-2">
-                                 <Checkbox
-                                    id="discount"
-                                    checked={Boolean(data.discount)}
-                                    onCheckedChange={(checked) => setData('discount', checked === true)}
-                                 />
-                                 <Label htmlFor="discount">{dashboard.check_course_discount}</Label>
-                              </div>
-
-                              {data.discount ? (
-                                 <div>
-                                    <Input
-                                       type="number"
-                                       name="discount_price"
-                                       min="1"
-                                       step="0.01"
-                                       value={
-                                          data.discount_price === null || data.discount_price === undefined
-                                             ? ''
-                                             : String(data.discount_price)
-                                       }
-                                       onChange={(e) => setData('discount_price', e.target.value)}
-                                       placeholder={input.discount_price_placeholder}
+                           {isOneTime ? (
+                              <div className="space-y-2">
+                                 <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                       id="discount"
+                                       checked={Boolean(data.discount)}
+                                       onCheckedChange={(checked) => setData('discount', checked === true)}
                                     />
-                                    <InputError message={errors.discount_price} />
+                                    <Label htmlFor="discount">{dashboard.check_course_discount}</Label>
                                  </div>
-                              ) : null}
-                           </div>
+
+                                 {data.discount ? (
+                                    <div>
+                                       <Input
+                                          type="number"
+                                          name="discount_price"
+                                          min="1"
+                                          step="0.01"
+                                          value={
+                                             data.discount_price === null || data.discount_price === undefined
+                                                ? ''
+                                                : String(data.discount_price)
+                                          }
+                                          onChange={(e) => setData('discount_price', e.target.value)}
+                                          placeholder={input.discount_price_placeholder}
+                                       />
+                                       <InputError message={errors.discount_price} />
+                                    </div>
+                                 ) : null}
+                              </div>
+                           ) : null}
                         </>
                      ) : null}
 
@@ -270,138 +298,152 @@ const Pricing = () => {
                                  placeholder="6.00"
                               />
                               <p className="text-muted-foreground mt-1 text-xs">
-                                 Students are billed this amount every month while subscribed (tax-inclusive).
+                                 {isUpfrontSubscription
+                                    ? 'After the first free month, students are billed this amount every month until they cancel (tax-inclusive).'
+                                    : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
                               <InputError message={errors.subscription_price} />
                            </div>
 
-                           <Separator />
+                           {!isUpfrontSubscription ? (
+                              <>
+                                 <Separator />
 
-                           <div className="space-y-4 rounded-md border p-4">
-                              <div className="flex items-center space-x-2">
-                                 <Checkbox
-                                    id="launch_offer_enabled"
-                                    checked={data.launch_offer_enabled}
-                                    onCheckedChange={(checked) => {
-                                       const enabled = Boolean(checked);
-                                       setData((current) => ({
-                                          ...current,
-                                          launch_offer_enabled: enabled,
-                                          billing_model: enabled ? 'subscription' : current.billing_model,
-                                          subscription_price: enabled && !current.subscription_price ? '6' : current.subscription_price,
-                                       }));
-                                    }}
-                                 />
-                                 <Label htmlFor="launch_offer_enabled">Enable launch / early-bird offer</Label>
-                              </div>
-                              <p className="text-muted-foreground text-xs">
-                                 Pre-register window shows ~~list~~ offer price with a $ deposit now and balance due on
-                                 launch. After the window, students pay the full upfront amount + monthly subscription.
-                              </p>
-                              <InputError message={errors.launch_offer_enabled} />
+                                 <div className="space-y-4 rounded-md border p-4">
+                                    <div className="flex items-center space-x-2">
+                                       <Checkbox
+                                          id="launch_offer_enabled"
+                                          checked={data.launch_offer_enabled}
+                                          onCheckedChange={(checked) => {
+                                             const enabled = Boolean(checked);
+                                             setData((current) => ({
+                                                ...current,
+                                                launch_offer_enabled: enabled,
+                                                billing_model: enabled ? 'subscription' : current.billing_model,
+                                                subscription_price:
+                                                   enabled && !current.subscription_price ? '6' : current.subscription_price,
+                                             }));
+                                          }}
+                                       />
+                                       <Label htmlFor="launch_offer_enabled">Enable launch / early-bird offer</Label>
+                                    </div>
+                                    <p className="text-muted-foreground text-xs">
+                                       Pre-register window shows ~~list~~ offer price with a $ deposit now and balance due on
+                                       launch. After the window, students pay the full upfront amount + monthly subscription.
+                                       For regular $75 + $6/mo with no early-bird window, use “Upfront + monthly subscription”
+                                       instead.
+                                    </p>
+                                    <InputError message={errors.launch_offer_enabled} />
 
-                              {data.launch_offer_enabled ? (
-                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <div>
-                                       <Label>Pre-register start</Label>
-                                       <Input
-                                          type="datetime-local"
-                                          value={data.launch_offer_starts_at}
-                                          onChange={(e) => setData('launch_offer_starts_at', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_offer_starts_at} />
-                                    </div>
-                                    <div>
-                                       <Label>Pre-register end</Label>
-                                       <Input
-                                          type="datetime-local"
-                                          value={data.launch_offer_ends_at}
-                                          onChange={(e) => setData('launch_offer_ends_at', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_offer_ends_at} />
-                                    </div>
-                                    <div>
-                                       <Label>List price (was)</Label>
-                                       <Input
-                                          type="number"
-                                          min="1"
-                                          step="0.01"
-                                          value={String(data.launch_list_price)}
-                                          onChange={(e) => setData('launch_list_price', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_list_price} />
-                                    </div>
-                                    <div>
-                                       <Label>Early bird total (display)</Label>
-                                       <Input
-                                          type="number"
-                                          min="1"
-                                          step="0.01"
-                                          value={String(data.launch_offer_price)}
-                                          onChange={(e) => setData('launch_offer_price', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_offer_price} />
-                                    </div>
-                                    <div>
-                                       <Label>Deposit (pay now)</Label>
-                                       <Input
-                                          type="number"
-                                          min="1"
-                                          step="0.01"
-                                          value={String(data.launch_deposit_amount)}
-                                          onChange={(e) => setData('launch_deposit_amount', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_deposit_amount} />
-                                    </div>
-                                    <div>
-                                       <Label>Balance (pay on launch)</Label>
-                                       <Input
-                                          type="number"
-                                          min="1"
-                                          step="0.01"
-                                          value={String(data.launch_balance_amount)}
-                                          onChange={(e) => setData('launch_balance_amount', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_balance_amount} />
-                                    </div>
-                                    <div>
-                                       <Label>Grace days after launch</Label>
-                                       <Input
-                                          type="number"
-                                          min="1"
-                                          max="30"
-                                          value={String(data.launch_balance_grace_days)}
-                                          onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_balance_grace_days} />
-                                    </div>
-                                    <div>
-                                       <Label>Full upfront (from Sept 15+)</Label>
-                                       <Input
-                                          type="number"
-                                          min="1"
-                                          step="0.01"
-                                          value={String(data.launch_full_upfront_price)}
-                                          onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
-                                       />
-                                       <InputError message={errors.launch_full_upfront_price} />
-                                    </div>
-                                    <div className="sm:col-span-2">
-                                       <Label>First subscription charge (trial end)</Label>
-                                       <Input
-                                          type="datetime-local"
-                                          value={data.launch_subscription_trial_ends_at}
-                                          onChange={(e) => setData('launch_subscription_trial_ends_at', e.target.value)}
-                                       />
-                                       <p className="text-muted-foreground mt-1 text-xs">
-                                          Pre-registrants: free until this date (e.g. Oct 15), then monthly price applies.
-                                          Deposit is non-refundable if balance is not paid within grace days.
-                                       </p>
-                                       <InputError message={errors.launch_subscription_trial_ends_at} />
-                                    </div>
+                                    {data.launch_offer_enabled ? (
+                                       <div className="grid gap-4 sm:grid-cols-2">
+                                          <div>
+                                             <Label>Pre-register start</Label>
+                                             <Input
+                                                type="datetime-local"
+                                                value={data.launch_offer_starts_at}
+                                                onChange={(e) => setData('launch_offer_starts_at', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_offer_starts_at} />
+                                          </div>
+                                          <div>
+                                             <Label>Pre-register end</Label>
+                                             <Input
+                                                type="datetime-local"
+                                                value={data.launch_offer_ends_at}
+                                                onChange={(e) => setData('launch_offer_ends_at', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_offer_ends_at} />
+                                          </div>
+                                          <div>
+                                             <Label>List price (was)</Label>
+                                             <Input
+                                                type="number"
+                                                min="1"
+                                                step="0.01"
+                                                value={String(data.launch_list_price)}
+                                                onChange={(e) => setData('launch_list_price', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_list_price} />
+                                          </div>
+                                          <div>
+                                             <Label>Early bird total (display)</Label>
+                                             <Input
+                                                type="number"
+                                                min="1"
+                                                step="0.01"
+                                                value={String(data.launch_offer_price)}
+                                                onChange={(e) => setData('launch_offer_price', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_offer_price} />
+                                          </div>
+                                          <div>
+                                             <Label>Deposit (pay now)</Label>
+                                             <Input
+                                                type="number"
+                                                min="1"
+                                                step="0.01"
+                                                value={String(data.launch_deposit_amount)}
+                                                onChange={(e) => setData('launch_deposit_amount', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_deposit_amount} />
+                                          </div>
+                                          <div>
+                                             <Label>Balance (pay on launch)</Label>
+                                             <Input
+                                                type="number"
+                                                min="1"
+                                                step="0.01"
+                                                value={String(data.launch_balance_amount)}
+                                                onChange={(e) => setData('launch_balance_amount', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_balance_amount} />
+                                          </div>
+                                          <div>
+                                             <Label>Grace days after launch</Label>
+                                             <Input
+                                                type="number"
+                                                min="1"
+                                                max="30"
+                                                value={String(data.launch_balance_grace_days)}
+                                                onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_balance_grace_days} />
+                                          </div>
+                                          <div>
+                                             <Label>Full upfront (from Sept 15+)</Label>
+                                             <Input
+                                                type="number"
+                                                min="1"
+                                                step="0.01"
+                                                value={String(data.launch_full_upfront_price)}
+                                                onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
+                                             />
+                                             <InputError message={errors.launch_full_upfront_price} />
+                                          </div>
+                                          <div className="sm:col-span-2">
+                                             <Label>First subscription charge (trial end)</Label>
+                                             <Input
+                                                type="datetime-local"
+                                                value={data.launch_subscription_trial_ends_at}
+                                                onChange={(e) => setData('launch_subscription_trial_ends_at', e.target.value)}
+                                             />
+                                             <p className="text-muted-foreground mt-1 text-xs">
+                                                Pre-registrants: free until this date (e.g. Oct 15), then monthly price applies.
+                                                Deposit is non-refundable if balance is not paid within grace days.
+                                             </p>
+                                             <InputError message={errors.launch_subscription_trial_ends_at} />
+                                          </div>
+                                       </div>
+                                    ) : null}
                                  </div>
-                              ) : null}
-                           </div>
+                              </>
+                           ) : (
+                              <p className="text-muted-foreground text-sm">
+                                 Regular pricing: students pay the upfront amount now for full access, then the monthly
+                                 subscription after 30 days. Early-bird / deposit setup is not used with this model.
+                              </p>
+                           )}
 
                            <Separator />
 

@@ -352,6 +352,19 @@ class Course extends Model implements HasMedia
 
     public function usesSubscriptionBilling(): bool
     {
+        return in_array($this->billing_model, [
+            CourseBillingModel::SUBSCRIPTION,
+            CourseBillingModel::UPFRONT_SUBSCRIPTION,
+        ], true);
+    }
+
+    public function usesUpfrontSubscription(): bool
+    {
+        return $this->billing_model === CourseBillingModel::UPFRONT_SUBSCRIPTION;
+    }
+
+    public function usesMonthlyOnlySubscription(): bool
+    {
         return $this->billing_model === CourseBillingModel::SUBSCRIPTION;
     }
 

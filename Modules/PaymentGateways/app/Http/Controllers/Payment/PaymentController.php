@@ -126,6 +126,18 @@ class PaymentController extends Controller
                 'coupon' => null,
             ];
             $itemCoupons = collect();
+        } elseif ($checkoutMode === 'upfront_subscription' && isset($course)) {
+            $amount = (float) ($course->price ?? 0);
+            $checkoutItem = [
+                ...$checkoutItem,
+                'subtotal' => $amount,
+                'taxAmount' => 0,
+                'couponDiscount' => 0,
+                'discountedPrice' => $amount,
+                'finalPrice' => $amount,
+                'coupon' => null,
+            ];
+            $itemCoupons = collect();
         }
 
         return view('paymentgateways::payment', [

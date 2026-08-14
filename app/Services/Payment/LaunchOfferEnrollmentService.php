@@ -22,7 +22,7 @@ class LaunchOfferEnrollmentService
     ) {}
 
     /**
-     * @return 'deposit'|'balance'|'full_launch'|'legacy_subscription'|'legacy_one_time'|null
+     * @return 'deposit'|'balance'|'full_launch'|'upfront_subscription'|'legacy_subscription'|'legacy_one_time'|null
      */
     public function resolveCheckoutMode(User $user, Course $course): ?string
     {
@@ -55,7 +55,11 @@ class LaunchOfferEnrollmentService
             return 'full_launch';
         }
 
-        if ($course->usesSubscriptionBilling()) {
+        if ($course->usesUpfrontSubscription()) {
+            return 'upfront_subscription';
+        }
+
+        if ($course->usesMonthlyOnlySubscription()) {
             return 'legacy_subscription';
         }
 
