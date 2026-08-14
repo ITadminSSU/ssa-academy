@@ -212,13 +212,29 @@ class StudentService extends MediaService
    private function hydrateCourseEnrollments($enrollments, User $user): void
    {
       foreach ($enrollments as $enrollment) {
-         $watch_history = $this->coursePlayer->getWatchHistory($enrollment->course_id, $user->id);
-         $enrollment->watch_history = $watch_history;
-         $enrollment->completion = $watch_history
-            ? $this->coursePlayer->calculateCompletion($enrollment->course, $watch_history)
-            : null;
+         if (! $enrollment->course) {
+            $enrollment->watch_history = null;
+            $enrollment->completion = [
+               'total_items' => 0,
+               'completed_items' => 0,
+               'completion' => 0,
+            ];
 
-         if ($enrollment->course?->final_exam_id && (float) ($enrollment->completion['completion'] ?? 0) >= 100) {
+            continue;
+         }
+
+         $enrollment->course->loadMissing([
+            'instructor.user',
+            'final_exam:id,title,slug',
+            'sections.section_lessons',
+            'sections.section_quizzes',
+         ]);
+
+         $watchHistory = $this->coursePlayer->getWatchHistory($enrollment->course_id, $user->id);
+         $enrollment->watch_history = $watchHistory;
+         $enrollment->completion = $this->coursePlayer->calculateCompletion($enrollment->course, $watchHistory);
+
+         if ($enrollment->course->final_exam_id && (float) ($enrollment->completion['completion'] ?? 0) >= 100) {
             $this->courseFinalExamService->ensureFinalExamEnrollment($enrollment->course, $user);
          }
       }

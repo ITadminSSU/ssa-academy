@@ -26,14 +26,18 @@ const Home = () => {
 
    const completedCount = courseEnrollments.filter((enrollment) => Number(enrollment.completion?.completion ?? 0) >= 100).length;
 
-   const continueEnrollment = [...activeEnrollments].sort((a, b) => {
-      const aTime = a.watch_history?.updated_at ? new Date(a.watch_history.updated_at).getTime() : 0;
-      const bTime = b.watch_history?.updated_at ? new Date(b.watch_history.updated_at).getTime() : 0;
-      return bTime - aTime;
-   })[0];
+   const continueEnrollment = [...activeEnrollments]
+      .filter((enrollment) => Boolean(enrollment.course?.id))
+      .sort((a, b) => {
+         const aTime = a.watch_history?.updated_at ? new Date(a.watch_history.updated_at).getTime() : 0;
+         const bTime = b.watch_history?.updated_at ? new Date(b.watch_history.updated_at).getTime() : 0;
+         return bTime - aTime;
+      })[0];
 
-   const continueHref = continueEnrollment
-      ? continueEnrollment.watch_history
+   const continueHref = continueEnrollment?.course?.id
+      ? continueEnrollment.watch_history?.id
+         && continueEnrollment.watch_history.current_watching_type
+         && continueEnrollment.watch_history.current_watching_id
          ? route('course.player', {
               type: continueEnrollment.watch_history.current_watching_type,
               watch_history: continueEnrollment.watch_history.id,

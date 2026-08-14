@@ -78,7 +78,7 @@ export function LearnerNavMain() {
             })}
 
             {/* 3. My Courses */}
-            {tabItem('courses', button.courses, GraduationCap)}
+            {tabItem('courses', button.my_courses || 'My Courses', GraduationCap)}
 
             {/* 4. Certificates */}
             {tabItem('certificates', 'Certificates', Award)}

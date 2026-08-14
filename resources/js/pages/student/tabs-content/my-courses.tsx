@@ -7,7 +7,9 @@ const MyCourses = () => {
    const { courseEnrollments, translate } = usePage<StudentDashboardProps>().props;
    const { frontend } = translate;
 
-   return courseEnrollments && courseEnrollments.length > 0 ? (
+   const enrollments = (courseEnrollments ?? []).filter((enrollment) => Boolean(enrollment.course?.id));
+
+   return enrollments.length > 0 ? (
       <div className="space-y-6">
          <div>
             <h1 className="text-2xl font-bold tracking-tight">My Courses</h1>
@@ -15,7 +17,7 @@ const MyCourses = () => {
          </div>
 
          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courseEnrollments.map((enrollment) => (
+            {enrollments.map((enrollment) => (
                <CourseCardProgress key={enrollment.id} enrollment={enrollment} />
             ))}
          </div>

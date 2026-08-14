@@ -13,20 +13,40 @@ interface Props {
 }
 
 const CourseCardProgress = ({ enrollment, className }: Props) => {
-   const { course, watch_history, completion } = enrollment;
-   const percent = Number(completion?.completion ?? 0);
+   const course = enrollment.course;
+
+   // Orphan enrollments (deleted course) must not crash the My Courses page.
+   if (!course?.id) {
+      return null;
+   }
+
+   const watchHistory = enrollment.watch_history;
+   const percent = Number(enrollment.completion?.completion ?? 0);
    const isComplete = percent >= 100;
    const finalExam = course.final_exam;
+   const instructorName = course.instructor?.user?.name || 'Instructor';
+   const instructorPhoto = course.instructor?.user?.photo || '';
+   const instructorInitials = instructorName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'IN';
 
    const courseShowUrl = route('student.course.show', { id: course.id, tab: 'modules' });
-   const finalExamUrl = finalExam
+   const finalExamUrl = finalExam?.id
       ? route('student.exam.show', { id: finalExam.id, tab: 'attempts' })
       : null;
-   const continueUrl = watch_history
+
+   const canContinueInPlayer = Boolean(
+      watchHistory?.id && watchHistory.current_watching_type && watchHistory.current_watching_id,
+   );
+
+   const continueUrl = canContinueInPlayer
       ? route('course.player', {
-           type: watch_history.current_watching_type,
-           watch_history: watch_history.id,
-           lesson_id: watch_history.current_watching_id,
+           type: watchHistory!.current_watching_type,
+           watch_history: watchHistory!.id,
+           lesson_id: watchHistory!.current_watching_id,
         })
       : courseShowUrl;
 
@@ -44,7 +64,7 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
                      }}
                   />
                   {isComplete && (
-                     <span className="absolute right-2 top-2 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white">
+                     <span className="absolute top-2 right-2 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white">
                         Completed
                      </span>
                   )}
@@ -55,10 +75,10 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
          <CardContent className="flex flex-1 flex-col p-4">
             <div className="mb-3 flex items-center gap-2">
                <Avatar className="h-5 w-5">
-                  <AvatarImage src={course.instructor.user.photo || ''} alt={course.instructor.user.name} className="object-cover" />
-                  <AvatarFallback>IM</AvatarFallback>
+                  <AvatarImage src={instructorPhoto} alt={instructorName} className="object-cover" />
+                  <AvatarFallback>{instructorInitials}</AvatarFallback>
                </Avatar>
-               <p className="text-xs font-medium">{course.instructor.user.name}</p>
+               <p className="text-xs font-medium">{instructorName}</p>
             </div>
 
             <Link href={courseShowUrl}>
