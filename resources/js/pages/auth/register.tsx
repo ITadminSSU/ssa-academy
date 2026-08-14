@@ -62,6 +62,7 @@ export default function Register({
       construction_experience: '',
       worked_as_construction_va: '' as '' | '1' | '0',
       cv_resume: null as File | null,
+      referred_by: '',
       accept_terms: false,
       accept_nda: false,
    });
@@ -379,6 +380,21 @@ export default function Register({
                            </p>
                         )}
                         <InputError message={errors.cv_resume} />
+                     </div>
+
+                     <div className="order-10 grid gap-2 lg:col-start-3 lg:row-start-3">
+                        <Label htmlFor="referred_by">Who referred you?</Label>
+                        <Input
+                           id="referred_by"
+                           type="text"
+                           autoComplete="off"
+                           value={data.referred_by}
+                           onChange={(e) => setData('referred_by', e.target.value)}
+                           disabled={processing}
+                           placeholder="e.g. Juan Dela Cruz"
+                        />
+                        <p className="text-muted-foreground text-xs">Optional. Enter their full name.</p>
+                        <InputError message={errors.referred_by} />
                      </div>
                   </div>
 

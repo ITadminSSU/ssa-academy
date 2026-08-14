@@ -147,7 +147,7 @@ class CoursePlayerService
                'prev_watching_type' => $prevItem ? $prevItem['type'] : null,
                'next_watching_id' => $nextItem ? $nextItem['id'] : null,
                'next_watching_type' => $nextItem ? $nextItem['type'] : null,
-               'completed_watching' => json_encode([]), // Start with empty completed items
+               'completed_watching' => [], // Start with empty completed items
             ]);
          } else {
             $watchHistory = WatchHistory::create([
@@ -160,7 +160,7 @@ class CoursePlayerService
                'prev_watching_type' => $prevItem ? $prevItem['type'] : null,
                'next_watching_id' => $nextItem ? $nextItem['id'] : null,
                'next_watching_type' => $nextItem ? $nextItem['type'] : null,
-               'completed_watching' => json_encode([]), // Start with empty completed items
+               'completed_watching' => [], // Start with empty completed items
             ]);
 
             WatchHistory::create([
@@ -173,7 +173,7 @@ class CoursePlayerService
                'prev_watching_type' => $prevItem ? $prevItem['type'] : null,
                'next_watching_id' => $nextItem ? $nextItem['id'] : null,
                'next_watching_type' => $nextItem ? $nextItem['type'] : null,
-               'completed_watching' => json_encode([]), // Start with empty completed items
+               'completed_watching' => [], // Start with empty completed items
             ]);
          }
       }
@@ -196,10 +196,7 @@ class CoursePlayerService
          ];
       }
 
-      $completedWatching = $watchHistory->completed_watching;
-      $completedItems = is_array($completedWatching)
-         ? $completedWatching
-         : (json_decode($completedWatching, true) ?: []);
+      $completedItems = $watchHistory->getCompletedWatchingItems();
 
       // Count the total number of items (lessons + quizzes) across all sections
       $totalItems = 0;
@@ -266,7 +263,7 @@ class CoursePlayerService
 
    public function markItemComplete(WatchHistory $watchHistory, string|int $itemId, string $itemType): WatchHistory
    {
-      $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
+      $completedItems = $watchHistory->getCompletedWatchingItems();
       $itemToComplete = [
          'id' => (string) $itemId,
          'type' => $itemType,
@@ -280,37 +277,9 @@ class CoursePlayerService
          $completedItems[] = $itemToComplete;
       }
 
-      $watchHistory->completed_watching = json_encode($this->cleanupCompletedItems($completedItems));
+      $watchHistory->setCompletedWatchingItems($completedItems);
       $watchHistory->save();
 
       return $watchHistory;
-   }
-
-   /**
-    * Clean up completed items to remove duplicates and ensure consistent data types
-    */
-   private function cleanupCompletedItems(array $completedItems): array
-   {
-      $cleaned = [];
-      $seen = [];
-
-      foreach ($completedItems as $item) {
-         // Ensure consistent data types (string for ID)
-         $normalizedItem = [
-            'id' => (string)$item['id'],
-            'type' => $item['type']
-         ];
-
-         // Create unique key for duplicate checking
-         $key = $normalizedItem['id'] . '|' . $normalizedItem['type'];
-
-         // Only add if not already seen
-         if (!isset($seen[$key])) {
-            $seen[$key] = true;
-            $cleaned[] = $normalizedItem;
-         }
-      }
-
-      return $cleaned;
    }
 }

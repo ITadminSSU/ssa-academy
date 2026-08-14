@@ -39,25 +39,29 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
       progressReported.current = false;
    }, [lesson?.id]);
 
-   const markLessonComplete = useCallback(() => {
-      if (!lesson || !canMarkProgress) {
-         return;
-      }
+   const markLessonComplete = useCallback(
+      (fromVideoEnd = false) => {
+         if (!lesson || !canMarkProgress) {
+            return;
+         }
 
-      router.post(
-         route('course.player.complete', { watch_history: watchHistory.id }),
-         {
-            item_id: lesson.id,
-            item_type: 'lesson',
-         },
-         {
-            preserveScroll: true,
-            preserveState: true,
-            only: ['watchHistory', 'courseGates', 'lessonWatchProgress'],
-            onError: () => setHasVideoEnded(true),
-         },
-      );
-   }, [lesson, watchHistory.id, canMarkProgress]);
+         router.post(
+            route('course.player.complete', { watch_history: watchHistory.id }),
+            {
+               item_id: lesson.id,
+               item_type: 'lesson',
+               from_video_end: fromVideoEnd ? 1 : 0,
+            },
+            {
+               preserveScroll: true,
+               preserveState: true,
+               only: ['watchHistory', 'courseGates', 'lessonWatchProgress'],
+               onError: () => setHasVideoEnded(true),
+            },
+         );
+      },
+      [lesson, watchHistory.id, canMarkProgress],
+   );
 
    const reportWatchProgress = useCallback(
       (currentTime: number, duration: number) => {
@@ -74,7 +78,7 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
 
          // The watch-progress endpoint returns plain JSON (not an Inertia
          // response), so report it with axios instead of the Inertia router.
-         axios
+         return axios
             .post(route('course.player.watch-progress', { watch_history: watchHistory.id }), {
                lesson_id: lesson.id,
                current_time: currentTime,
@@ -88,10 +92,27 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
       [lesson, watchHistory.id, canMarkProgress],
    );
 
-   const handleVideoEnded = useCallback(() => {
+   const handleVideoEnded = useCallback(async () => {
       setHasVideoEnded(true);
-      markLessonComplete();
-   }, [markLessonComplete]);
+
+      if (!lesson || !canMarkProgress) {
+         return;
+      }
+
+      // Persist full watch progress before mark-complete so the server gate
+      // cannot lose a race against the async progress POST from the player.
+      try {
+         await axios.post(route('course.player.watch-progress', { watch_history: watchHistory.id }), {
+            lesson_id: lesson.id,
+            current_time: 999999,
+            duration: 999999,
+         });
+      } catch {
+         // from_video_end still records full progress on the server.
+      }
+
+      markLessonComplete(true);
+   }, [lesson, canMarkProgress, watchHistory.id, markLessonComplete]);
 
    if (!lesson) {
       return (
@@ -212,12 +233,12 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                               : `This lesson is marked complete automatically when the video ends. If it does not, you can mark it complete here (${Math.round(watchPercent)}% watched).`}
                   </p>
 
-                  {canMarkProgress ? <Button onClick={markLessonComplete}>Mark lesson as complete</Button> : null}
+                  {canMarkProgress ? <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button> : null}
                </div>
             ) : (
                <div className="flex justify-end">
                   {canMarkProgress ? (
-                     <Button onClick={markLessonComplete}>Mark lesson as complete</Button>
+                     <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button>
                   ) : (
                      <p className="text-muted-foreground text-sm">This lesson is read-only while your subscription is inactive.</p>
                   )}

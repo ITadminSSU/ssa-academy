@@ -72,6 +72,7 @@ class RegisteredUserController extends Controller
             'construction_experience' => ['required', 'string', Rule::in($experienceOptions)],
             'worked_as_construction_va' => 'required|boolean',
             'cv_resume' => 'required|file|mimes:pdf,doc,docx|max:10240',
+            'referred_by' => 'nullable|string|max:255',
             'accept_terms' => 'accepted',
             'accept_nda' => 'accepted',
         ];
@@ -122,6 +123,9 @@ class RegisteredUserController extends Controller
             'estimating_software_other' => $validated['estimating_software_other'] ?? null,
             'construction_experience' => $validated['construction_experience'],
             'worked_as_construction_va' => (bool) $validated['worked_as_construction_va'],
+            'referred_by' => filled($validated['referred_by'] ?? null)
+                ? trim((string) $validated['referred_by'])
+                : null,
             'email_verified_at' => now(),
         ]);
 

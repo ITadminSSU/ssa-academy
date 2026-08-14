@@ -46,6 +46,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'estimating_software_other',
         'construction_experience',
         'worked_as_construction_va',
+        'referred_by',
         'candidate_status',
         'candidate_notes',
         'candidate_status_updated_at',

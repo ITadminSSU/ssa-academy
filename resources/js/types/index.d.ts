@@ -36,6 +36,7 @@ interface User extends TableCommon {
    estimating_software_other?: string | null;
    construction_experience?: string | null;
    worked_as_construction_va?: boolean | null;
+   referred_by?: string | null;
    cv_resume_url?: string | null;
    cv_resume_name?: string | null;
    has_cv?: boolean;

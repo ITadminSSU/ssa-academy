@@ -255,6 +255,7 @@ class PlayerController extends Controller
         $request->validate([
             'item_id' => 'required',
             'item_type' => 'required|in:lesson,quiz',
+            'from_video_end' => 'sometimes|boolean',
         ]);
 
         if (
@@ -272,7 +273,12 @@ class PlayerController extends Controller
             }
 
             if ($lesson && $this->lessonWatchProgress->isVideoLesson($lesson)) {
-                if ($this->lessonWatchProgress->isExternalVideoLesson($lesson)) {
+                // Video `ended` can race ahead of the async watch-progress POST.
+                // Treat a genuine end event (or external video) as fully watched.
+                if (
+                    $request->boolean('from_video_end')
+                    || $this->lessonWatchProgress->isExternalVideoLesson($lesson)
+                ) {
                     $this->lessonWatchProgress->recordFullProgress($watch_history, $lesson->id);
                 } elseif (!$this->lessonWatchProgress->hasWatchedFully($watch_history, $lesson)) {
                     return back()->with('error', 'Watch the entire video before marking this lesson complete.');
@@ -288,10 +294,26 @@ class PlayerController extends Controller
     public function finish_course(WatchHistory $watch_history)
     {
         $user = Auth::user();
-        $course = $watch_history->course()->with(['sections.section_lessons', 'assignments'])->firstOrFail();
+
+        if ((int) $watch_history->user_id !== (int) $user->id) {
+            abort(403);
+        }
+
+        $course = $watch_history->course()->with(['sections.section_lessons', 'sections.section_quizzes', 'assignments'])->firstOrFail();
 
         if (!$this->subscriptionAccess->canFinishCourse($user, $course)) {
             return back()->with('error', 'Your subscription is inactive. Resubscribe to finish the course.');
+        }
+
+        // Keep quiz completions in sync before gating / percentage checks.
+        $watch_history = $this->coursePlay->syncPassedQuizzes($watch_history, $user->id);
+
+        // Backfill video lessons that were fully watched but never auto-marked
+        // (e.g. progress POST raced the old complete endpoint).
+        foreach ($this->lessonWatchProgress->getVideoLessons($course) as $lesson) {
+            if ($this->lessonWatchProgress->hasWatchedFully($watch_history, $lesson)) {
+                $watch_history = $this->coursePlay->markItemComplete($watch_history, $lesson->id, 'lesson');
+            }
         }
 
         $completion = $this->coursePlay->calculateCompletion($course, $watch_history);
@@ -301,9 +323,9 @@ class PlayerController extends Controller
             return back()->with('error', 'Complete all required phases before finishing the course.');
         }
 
-        $completedItems = json_decode($watch_history->completed_watching, true) ?: [];
+        $completedItems = $watch_history->getCompletedWatchingItems();
         $lastItem = [
-            'id' => $watch_history->current_watching_id,
+            'id' => (string) $watch_history->current_watching_id,
             'type' => $watch_history->current_watching_type,
         ];
 
@@ -315,39 +337,19 @@ class PlayerController extends Controller
             }
         }
 
-        if (!$itemExists) {
+        if (!$itemExists && $lastItem['id'] !== '' && $lastItem['type']) {
             $completedItems[] = $lastItem;
         }
 
-        $watch_history->completed_watching = json_encode($this->cleanupCompletedItems($completedItems));
+        $watch_history->setCompletedWatchingItems($completedItems);
         $watch_history->completion_date = now();
         $watch_history->save();
 
         $this->certificateIssuance->issueForCourse($course, $user);
         $this->courseFinalExamService->ensureFinalExamEnrollment($course, $user);
 
-        return back()->with('success', 'Course completed successfully. Your certificate has been issued.');
-    }
-
-    private function cleanupCompletedItems(array $completedItems): array
-    {
-        $cleaned = [];
-        $seen = [];
-
-        foreach ($completedItems as $item) {
-            $normalizedItem = [
-                'id' => (string) $item['id'],
-                'type' => $item['type'],
-            ];
-
-            $key = $normalizedItem['id'] . '|' . $normalizedItem['type'];
-
-            if (!isset($seen[$key])) {
-                $seen[$key] = true;
-                $cleaned[] = $normalizedItem;
-            }
-        }
-
-        return $cleaned;
+        return redirect()
+            ->route('student.course.show', ['id' => $course->id, 'tab' => 'certificate'])
+            ->with('success', 'Course completed successfully. Your certificate has been issued.');
     }
 }

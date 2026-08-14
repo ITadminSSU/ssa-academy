@@ -22,7 +22,7 @@ const ContentList = ({ completedContents, courseCompletion }: ContentListProps) 
    const canFinishCourse = subscriptionAccess?.can_finish_course ?? true;
 
    const finishCourseHandler = () => {
-      router.get(route('course.player.finish', { watch_history: watchHistory.id }));
+      router.post(route('course.player.finish', { watch_history: watchHistory.id }));
    };
 
    return (
@@ -61,7 +61,7 @@ const ContentList = ({ completedContents, courseCompletion }: ContentListProps) 
                            tab: 'certificate',
                         })}
                      >
-                        <Button className="w-full" variant="default" size="lg" disabled={courseCompletion.percentage !== '100.00'}>
+                        <Button className="w-full" variant="default" size="lg">
                            Course Certificate
                         </Button>
                      </Link>

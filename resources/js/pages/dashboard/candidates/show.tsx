@@ -251,6 +251,10 @@ const CandidateShow = (props: Props) => {
                      )}
                   </div>
                   <div>
+                     <p className="text-muted-foreground text-sm">Referred by</p>
+                     <p className="font-medium">{candidate.referred_by?.trim() || '—'}</p>
+                  </div>
+                  <div>
                      <p className="text-muted-foreground text-sm">{dashboard.paid_enrollments ?? 'Paid Enrollments'}</p>
                      <p className="font-medium">
                         {paid_courses.length} {dashboard.courses ?? 'courses'}, {paid_exams.length} {dashboard.exams ?? 'exams'}

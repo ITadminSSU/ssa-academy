@@ -105,14 +105,14 @@ class CourseSectionService extends MediaService
             $updateNeeded = false;
 
             // 1. Remove from completed_watching if exists
-            $completedWatching = json_decode($history->completed_watching, true) ?? [];
+            $completedWatching = $history->getCompletedWatchingItems();
             $originalCount = count($completedWatching);
             $completedWatching = array_filter($completedWatching, function ($item) use ($lesson_id) {
-               return $item['id'] != $lesson_id;
+               return (string) $item['id'] != (string) $lesson_id || ($item['type'] ?? '') !== 'lesson';
             });
 
             if (count($completedWatching) !== $originalCount) {
-               $history->completed_watching = !empty($completedWatching) ? json_encode(array_values($completedWatching)) : null;
+               $history->setCompletedWatchingItems(array_values($completedWatching));
                $updateNeeded = true;
             }
 

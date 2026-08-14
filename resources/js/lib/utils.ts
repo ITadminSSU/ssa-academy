@@ -59,10 +59,36 @@ export const getCourseDuration = (course: Course, format: DurationFormat = 'hhmm
 
 // Get completed content like lessons or quizzes
 export const getCompletedContents = (watchHistory: WatchHistory): CompletedContent[] => {
-   const completed =
-      typeof watchHistory.completed_watching === 'string' ? JSON.parse(watchHistory.completed_watching) : watchHistory.completed_watching || [];
+   try {
+      let completed: unknown = watchHistory?.completed_watching;
 
-   return completed;
+      if (typeof completed === 'string') {
+         completed = JSON.parse(completed);
+         if (typeof completed === 'string') {
+            completed = JSON.parse(completed);
+         }
+      }
+
+      if (!Array.isArray(completed)) {
+         return [];
+      }
+
+      // Legacy double-encode sometimes yields a single JSON string element.
+      if (typeof completed[0] === 'string') {
+         completed = JSON.parse(completed[0]);
+      }
+
+      if (!Array.isArray(completed)) {
+         return [];
+      }
+
+      return completed.filter(
+         (item): item is CompletedContent =>
+            Boolean(item) && typeof item === 'object' && 'id' in item && 'type' in item,
+      );
+   } catch {
+      return [];
+   }
 };
 
 // Add completion calculation

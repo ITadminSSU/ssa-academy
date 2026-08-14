@@ -397,9 +397,7 @@ class CourseCompletionGateService
 
     private function isItemInCompletedWatching(WatchHistory $watchHistory, int|string $itemId, string $itemType): bool
     {
-        $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
-
-        foreach ($completedItems as $item) {
+        foreach ($watchHistory->getCompletedWatchingItems() as $item) {
             if ((string) $item['id'] === (string) $itemId && $item['type'] === $itemType) {
                 return true;
             }

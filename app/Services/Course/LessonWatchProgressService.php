@@ -141,9 +141,7 @@ class LessonWatchProgressService
 
     private function isLessonMarkedComplete(WatchHistory $watchHistory, int|string $lessonId): bool
     {
-        $completedItems = json_decode($watchHistory->completed_watching, true) ?: [];
-
-        foreach ($completedItems as $item) {
+        foreach ($watchHistory->getCompletedWatchingItems() as $item) {
             if ((string) $item['id'] === (string) $lessonId && $item['type'] === 'lesson') {
                 return true;
             }

@@ -93,7 +93,7 @@ Route::controller(PlayerController::class)->middleware(['checkEnroll'])->group(f
     Route::get('play-course/{type}/{watch_history}/{lesson_id}', 'course_player')->name('course.player');
     Route::post('play-course/complete/{watch_history}', 'mark_complete')->name('course.player.complete');
     Route::post('play-course/watch-progress/{watch_history}', 'record_watch_progress')->name('course.player.watch-progress');
-    Route::get('play-course/finish/{watch_history}', 'finish_course')->name('course.player.finish');
+    Route::post('play-course/finish/{watch_history}', 'finish_course')->name('course.player.finish');
 });
 
 Route::middleware('auth')->group(function () {
