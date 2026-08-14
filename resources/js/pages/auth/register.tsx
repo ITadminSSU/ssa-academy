@@ -152,99 +152,114 @@ export default function Register({
                </div>
 
                <form className="space-y-8" onSubmit={submit}>
-                  <div className="grid gap-8 lg:grid-cols-3">
-                     {/* Column 1 */}
-                     <div className="space-y-5">
-                        <div className="grid gap-2">
-                           <Label htmlFor="name">{inputCopy.name}</Label>
-                           <Input
-                              id="name"
-                              type="text"
-                              required
-                              autoFocus
-                              autoComplete="name"
-                              value={data.name}
-                              onChange={(e) => setData('name', e.target.value)}
-                              disabled={processing}
-                              placeholder={inputCopy.full_name_placeholder}
-                           />
-                           <InputError message={errors.name} />
-                        </div>
-
-                        <div className="grid gap-2">
-                           <Label htmlFor="email">{inputCopy.email}</Label>
-                           <Input
-                              id="email"
-                              type="email"
-                              required
-                              autoComplete="email"
-                              value={data.email}
-                              onChange={(e) => setData('email', e.target.value)}
-                              disabled={processing}
-                              placeholder={inputCopy.email_placeholder}
-                           />
-                           <InputError message={errors.email} />
-                        </div>
-
-                        <fieldset className="space-y-3">
-                           <legend className="text-sm font-medium">
-                              Which estimating software have you used? <span className="text-destructive">*</span>
-                           </legend>
-                           <p className="text-muted-foreground text-xs">Check all that apply</p>
-                           <div className="space-y-2.5">
-                              {estimatingSoftwareOptions.map((option) => {
-                                 const id = `software-${option}`;
-                                 const checked = data.estimating_software.includes(option);
-                                 const disabled = processing || (hasNoneSoftware && option !== 'None');
-
-                                 return (
-                                    <div key={option} className="flex items-start gap-2">
-                                       <Checkbox
-                                          id={id}
-                                          checked={checked}
-                                          disabled={disabled}
-                                          onCheckedChange={(value) => toggleSoftware(option, value === true)}
-                                       />
-                                       <Label htmlFor={id} className="font-normal">
-                                          {option}
-                                          {option === 'Others' ? ':' : ''}
-                                       </Label>
-                                    </div>
-                                 );
-                              })}
-                           </div>
-                           {hasOthersSoftware && (
-                              <Input
-                                 id="estimating_software_other"
-                                 type="text"
-                                 value={data.estimating_software_other}
-                                 onChange={(e) => setData('estimating_software_other', e.target.value)}
-                                 disabled={processing}
-                                 placeholder="Please specify"
-                              />
-                           )}
-                           <InputError message={errors.estimating_software || errors['estimating_software.0']} />
-                           <InputError message={errors.estimating_software_other} />
-                        </fieldset>
+                  {/*
+                    Mobile/small: Password → Confirm password → Estimating software (then remaining fields).
+                    Desktop (lg+): keep the original 3-column layout via explicit grid placement.
+                  */}
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:items-start lg:gap-x-8 lg:gap-y-5">
+                     <div className="order-1 grid gap-2 lg:col-start-1 lg:row-start-1">
+                        <Label htmlFor="name">{inputCopy.name}</Label>
+                        <Input
+                           id="name"
+                           type="text"
+                           required
+                           autoFocus
+                           autoComplete="name"
+                           value={data.name}
+                           onChange={(e) => setData('name', e.target.value)}
+                           disabled={processing}
+                           placeholder={inputCopy.full_name_placeholder}
+                        />
+                        <InputError message={errors.name} />
                      </div>
 
-                     {/* Column 2 */}
-                     <div className="space-y-5">
-                        <div className="grid gap-2">
-                           <Label htmlFor="password">{inputCopy.password}</Label>
-                           <Input
-                              id="password"
-                              type="password"
-                              required
-                              autoComplete="new-password"
-                              value={data.password}
-                              onChange={(e) => setData('password', e.target.value)}
-                              disabled={processing}
-                              placeholder={inputCopy.password_placeholder}
-                           />
-                           <InputError message={errors.password} />
-                        </div>
+                     <div className="order-2 grid gap-2 lg:col-start-1 lg:row-start-2">
+                        <Label htmlFor="email">{inputCopy.email}</Label>
+                        <Input
+                           id="email"
+                           type="email"
+                           required
+                           autoComplete="email"
+                           value={data.email}
+                           onChange={(e) => setData('email', e.target.value)}
+                           disabled={processing}
+                           placeholder={inputCopy.email_placeholder}
+                        />
+                        <InputError message={errors.email} />
+                     </div>
 
+                     <div className="order-3 grid gap-2 lg:col-start-2 lg:row-start-1">
+                        <Label htmlFor="password">{inputCopy.password}</Label>
+                        <Input
+                           id="password"
+                           type="password"
+                           required
+                           autoComplete="new-password"
+                           value={data.password}
+                           onChange={(e) => setData('password', e.target.value)}
+                           disabled={processing}
+                           placeholder={inputCopy.password_placeholder}
+                        />
+                        <InputError message={errors.password} />
+                     </div>
+
+                     <div className="order-4 grid gap-2 lg:col-start-3 lg:row-start-1">
+                        <Label htmlFor="password_confirmation">{inputCopy.confirm_password}</Label>
+                        <Input
+                           id="password_confirmation"
+                           type="password"
+                           required
+                           autoComplete="new-password"
+                           value={data.password_confirmation}
+                           onChange={(e) => setData('password_confirmation', e.target.value)}
+                           disabled={processing}
+                           placeholder={inputCopy.confirm_password}
+                        />
+                        <InputError message={errors.password_confirmation} />
+                     </div>
+
+                     <fieldset className="order-5 space-y-3 lg:col-start-1 lg:row-start-3 lg:row-span-3">
+                        <legend className="text-sm font-medium">
+                           Which estimating software have you used? <span className="text-destructive">*</span>
+                        </legend>
+                        <p className="text-muted-foreground text-xs">Check all that apply</p>
+                        <div className="space-y-2.5">
+                           {estimatingSoftwareOptions.map((option) => {
+                              const id = `software-${option}`;
+                              const checked = data.estimating_software.includes(option);
+                              const disabled = processing || (hasNoneSoftware && option !== 'None');
+
+                              return (
+                                 <div key={option} className="flex items-start gap-2">
+                                    <Checkbox
+                                       id={id}
+                                       checked={checked}
+                                       disabled={disabled}
+                                       onCheckedChange={(value) => toggleSoftware(option, value === true)}
+                                    />
+                                    <Label htmlFor={id} className="font-normal">
+                                       {option}
+                                       {option === 'Others' ? ':' : ''}
+                                    </Label>
+                                 </div>
+                              );
+                           })}
+                        </div>
+                        {hasOthersSoftware && (
+                           <Input
+                              id="estimating_software_other"
+                              type="text"
+                              value={data.estimating_software_other}
+                              onChange={(e) => setData('estimating_software_other', e.target.value)}
+                              disabled={processing}
+                              placeholder="Please specify"
+                           />
+                        )}
+                        <InputError message={errors.estimating_software || errors['estimating_software.0']} />
+                        <InputError message={errors.estimating_software_other} />
+                     </fieldset>
+
+                     <div className="order-6 space-y-5 lg:col-start-2 lg:row-start-2">
                         <div className="grid gap-2">
                            <Label htmlFor="professional_type_id">
                               Professional Type <span className="text-destructive">*</span>
@@ -291,97 +306,79 @@ export default function Register({
                               <InputError message={errors.professional_type_other} />
                            </div>
                         )}
-
-                        <fieldset className="space-y-3">
-                           <legend className="text-sm font-medium">
-                              Years of Construction Experience <span className="text-destructive">*</span>
-                           </legend>
-                           <RadioGroup
-                              value={data.construction_experience}
-                              onValueChange={(value) => setData('construction_experience', value)}
-                              disabled={processing}
-                              className="space-y-2.5"
-                           >
-                              {constructionExperienceOptions.map((option) => {
-                                 const id = `experience-${option}`;
-
-                                 return (
-                                    <div key={option} className="flex items-center gap-2">
-                                       <RadioGroupItem value={option} id={id} />
-                                       <Label htmlFor={id} className="font-normal">
-                                          {option}
-                                       </Label>
-                                    </div>
-                                 );
-                              })}
-                           </RadioGroup>
-                           <InputError message={errors.construction_experience} />
-                        </fieldset>
-
-                        <fieldset className="space-y-3">
-                           <legend className="text-sm font-medium">
-                              Have you worked as a Construction Virtual Assistant? <span className="text-destructive">*</span>
-                           </legend>
-                           <RadioGroup
-                              value={data.worked_as_construction_va}
-                              onValueChange={(value) => setData('worked_as_construction_va', value as '1' | '0')}
-                              disabled={processing}
-                              className="space-y-2.5"
-                           >
-                              <div className="flex items-center gap-2">
-                                 <RadioGroupItem value="1" id="va-yes" />
-                                 <Label htmlFor="va-yes" className="font-normal">
-                                    Yes
-                                 </Label>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                 <RadioGroupItem value="0" id="va-no" />
-                                 <Label htmlFor="va-no" className="font-normal">
-                                    No
-                                 </Label>
-                              </div>
-                           </RadioGroup>
-                           <InputError message={errors.worked_as_construction_va} />
-                        </fieldset>
                      </div>
 
-                     {/* Column 3 */}
-                     <div className="space-y-5">
-                        <div className="grid gap-2">
-                           <Label htmlFor="password_confirmation">{inputCopy.confirm_password}</Label>
-                           <Input
-                              id="password_confirmation"
-                              type="password"
-                              required
-                              autoComplete="new-password"
-                              value={data.password_confirmation}
-                              onChange={(e) => setData('password_confirmation', e.target.value)}
-                              disabled={processing}
-                              placeholder={inputCopy.confirm_password}
-                           />
-                           <InputError message={errors.password_confirmation} />
-                        </div>
+                     <fieldset className="order-7 space-y-3 lg:col-start-2 lg:row-start-3">
+                        <legend className="text-sm font-medium">
+                           Years of Construction Experience <span className="text-destructive">*</span>
+                        </legend>
+                        <RadioGroup
+                           value={data.construction_experience}
+                           onValueChange={(value) => setData('construction_experience', value)}
+                           disabled={processing}
+                           className="space-y-2.5"
+                        >
+                           {constructionExperienceOptions.map((option) => {
+                              const id = `experience-${option}`;
 
-                        <div className="grid gap-2">
-                           <Label htmlFor="cv_resume">
-                              CV / Resume <span className="text-destructive">*</span>
-                           </Label>
-                           <Input
-                              id="cv_resume"
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              required
-                              onChange={(e) => setData('cv_resume', e.target.files?.[0] || null)}
-                              disabled={processing}
-                           />
-                           <p className="text-muted-foreground text-xs">Accepted formats: PDF, DOC, DOCX (Max 10MB)</p>
-                           {data.cv_resume && (
-                              <p className="text-muted-foreground text-xs">
-                                 Selected file: <span className="text-foreground font-medium">{data.cv_resume.name}</span>
-                              </p>
-                           )}
-                           <InputError message={errors.cv_resume} />
-                        </div>
+                              return (
+                                 <div key={option} className="flex items-center gap-2">
+                                    <RadioGroupItem value={option} id={id} />
+                                    <Label htmlFor={id} className="font-normal">
+                                       {option}
+                                    </Label>
+                                 </div>
+                              );
+                           })}
+                        </RadioGroup>
+                        <InputError message={errors.construction_experience} />
+                     </fieldset>
+
+                     <fieldset className="order-8 space-y-3 lg:col-start-2 lg:row-start-4">
+                        <legend className="text-sm font-medium">
+                           Have you worked as a Construction Virtual Assistant? <span className="text-destructive">*</span>
+                        </legend>
+                        <RadioGroup
+                           value={data.worked_as_construction_va}
+                           onValueChange={(value) => setData('worked_as_construction_va', value as '1' | '0')}
+                           disabled={processing}
+                           className="space-y-2.5"
+                        >
+                           <div className="flex items-center gap-2">
+                              <RadioGroupItem value="1" id="va-yes" />
+                              <Label htmlFor="va-yes" className="font-normal">
+                                 Yes
+                              </Label>
+                           </div>
+                           <div className="flex items-center gap-2">
+                              <RadioGroupItem value="0" id="va-no" />
+                              <Label htmlFor="va-no" className="font-normal">
+                                 No
+                              </Label>
+                           </div>
+                        </RadioGroup>
+                        <InputError message={errors.worked_as_construction_va} />
+                     </fieldset>
+
+                     <div className="order-9 grid gap-2 lg:col-start-3 lg:row-start-2">
+                        <Label htmlFor="cv_resume">
+                           CV / Resume <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                           id="cv_resume"
+                           type="file"
+                           accept=".pdf,.doc,.docx"
+                           required
+                           onChange={(e) => setData('cv_resume', e.target.files?.[0] || null)}
+                           disabled={processing}
+                        />
+                        <p className="text-muted-foreground text-xs">Accepted formats: PDF, DOC, DOCX (Max 10MB)</p>
+                        {data.cv_resume && (
+                           <p className="text-muted-foreground text-xs">
+                              Selected file: <span className="text-foreground font-medium">{data.cv_resume.name}</span>
+                           </p>
+                        )}
+                        <InputError message={errors.cv_resume} />
                      </div>
                   </div>
 
