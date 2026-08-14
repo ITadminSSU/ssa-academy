@@ -15,10 +15,12 @@
             </div>
          @endif
 
-         <div class="flex justify-between">
-            <span>{{ __('Tax') }}</span>
-            <span>+ {{ number_format($taxAmount, 2) }} {{ $currency }}</span>
-         </div>
+         @if (config('payment.apply_selling_tax') && $taxAmount > 0)
+            <div class="flex justify-between">
+               <span>{{ __('Tax') }}</span>
+               <span>+ {{ number_format($taxAmount, 2) }} {{ $currency }}</span>
+            </div>
+         @endif
 
          <div class="bg-border my-2 h-[1px] w-full"></div>
 

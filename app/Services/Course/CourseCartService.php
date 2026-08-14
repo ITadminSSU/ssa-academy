@@ -51,7 +51,9 @@ class CourseCartService
       }), 2);
       $sellingTax = app('system_settings')->fields['selling_tax'];
       $discountedPrice = round($subtotal - ($coupon ? $coupon->discount : 0), 2);
-      $taxAmount = round(($discountedPrice * $sellingTax) / 100, 2);
+      $taxAmount = config('payment.apply_selling_tax')
+         ? round(($discountedPrice * $sellingTax) / 100, 2)
+         : 0;
       $totalPrice = round($discountedPrice + $taxAmount, 2);
 
       return [
@@ -81,7 +83,9 @@ class CourseCartService
       }
 
       $discountedPrice = round($subtotal - $couponDiscount, 2);
-      $taxAmount = round(($discountedPrice * $sellingTax) / 100, 2);
+      $taxAmount = config('payment.apply_selling_tax')
+         ? round(($discountedPrice * $sellingTax) / 100, 2)
+         : 0;
       $finalPrice = round($discountedPrice + $taxAmount, 2);
 
       return [

@@ -233,7 +233,9 @@ class PaymentService
         }
 
         $discountedPrice = round($subtotal - $couponDiscount, 2);
-        $taxAmount = round(($discountedPrice * $sellingTax) / 100, 2);
+        $taxAmount = config('payment.apply_selling_tax')
+            ? round(($discountedPrice * $sellingTax) / 100, 2)
+            : 0;
         $finalPrice = round($discountedPrice + $taxAmount, 2);
 
         return [

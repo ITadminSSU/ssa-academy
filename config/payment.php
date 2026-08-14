@@ -24,4 +24,17 @@ return [
         'grace_days' => (int) env('SUBSCRIPTION_GRACE_DAYS', 3),
         'portal_return_url' => env('SUBSCRIPTION_PORTAL_RETURN_URL'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Course selling tax at checkout
+    |--------------------------------------------------------------------------
+    |
+    | When false, one-time checkout charges the exact course/coupon price and
+    | hides the Tax line. Set true (or PAYMENT_APPLY_SELLING_TAX=true) later to
+    | apply Website → Course Selling Tax (%) again.
+    |
+    */
+    'apply_selling_tax' => filter_var(env('PAYMENT_APPLY_SELLING_TAX', false), FILTER_VALIDATE_BOOLEAN),
 ];
+
