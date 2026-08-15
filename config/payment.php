@@ -58,6 +58,9 @@ return [
         'subscription_trial_ends_at' => env('LAUNCH_OFFER_TRIAL_ENDS', '2026-10-15'),
         'full_upfront_price' => (float) env('LAUNCH_OFFER_FULL_UPFRONT', 75),
         'deposit_non_refundable' => true,
+        // Comma-separated BCC list for launch-offer student emails (deposit, reminders, cancel).
+        'admin_bcc' => env('LAUNCH_OFFER_ADMIN_BCC', 'training@smartsourcingusa.com'),
     ],
 ];
+
 

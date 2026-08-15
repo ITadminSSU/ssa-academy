@@ -32,6 +32,12 @@ class CourseEnrollment extends Model
         'balance_payment_history_id',
         'forfeited_at',
         'launch_offer_cohort',
+        'deposit_confirmation_sent_at',
+        'balance_due_notice_sent_at',
+        'balance_mid_reminder_sent_at',
+        'balance_final_reminder_sent_at',
+        'balance_paid_confirmation_sent_at',
+        'forfeit_notice_sent_at',
     ];
 
     protected $casts = [
@@ -46,7 +52,14 @@ class CourseEnrollment extends Model
         'balance_deadline_at' => 'datetime',
         'balance_paid_at' => 'datetime',
         'forfeited_at' => 'datetime',
+        'deposit_confirmation_sent_at' => 'datetime',
+        'balance_due_notice_sent_at' => 'datetime',
+        'balance_mid_reminder_sent_at' => 'datetime',
+        'balance_final_reminder_sent_at' => 'datetime',
+        'balance_paid_confirmation_sent_at' => 'datetime',
+        'forfeit_notice_sent_at' => 'datetime',
     ];
+
 
     public function user(): BelongsTo
     {

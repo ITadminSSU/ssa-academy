@@ -19,6 +19,7 @@ class LaunchOfferEnrollmentService
         private LaunchOfferService $launchOffer,
         private CourseEnrollmentService $courseEnrollment,
         private PaymentService $paymentService,
+        private LaunchOfferMailService $launchOfferMail,
     ) {}
 
     /**
@@ -73,7 +74,7 @@ class LaunchOfferEnrollmentService
         string $transactionId,
         float $amount,
     ): CourseEnrollment {
-        return DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount) {
+        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount) {
             if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
                 return CourseEnrollment::query()
                     ->where('user_id', $user->id)
@@ -115,11 +116,16 @@ class LaunchOfferEnrollmentService
             if ($enrollment) {
                 $enrollment->update($payload);
 
-                return $enrollment->fresh();
+                return $enrollment->fresh(['user', 'course']);
             }
 
-            return $this->courseEnrollment->createCourseEnroll($payload, allowBeforeLaunch: true);
+            return $this->courseEnrollment->createCourseEnroll($payload, allowBeforeLaunch: true)
+                ->load(['user', 'course']);
         });
+
+        $this->launchOfferMail->sendDepositConfirmation($enrollment->fresh(['user', 'course']));
+
+        return $enrollment;
     }
 
     public function recordBalancePayment(
@@ -129,7 +135,7 @@ class LaunchOfferEnrollmentService
         string $transactionId,
         float $amount,
     ): CourseEnrollment {
-        return DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount) {
+        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount) {
             $enrollment = CourseEnrollment::query()
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
@@ -140,7 +146,7 @@ class LaunchOfferEnrollmentService
             }
 
             if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
-                return $enrollment->fresh();
+                return $enrollment->fresh(['user', 'course']);
             }
 
             $balance = (float) ($enrollment->balance_amount ?? $this->launchOffer->balanceAmount($course));
@@ -161,31 +167,42 @@ class LaunchOfferEnrollmentService
                 'enrollment_type' => 'paid',
             ]);
 
-            return $enrollment->fresh();
+            return $enrollment->fresh(['user', 'course']);
         });
+
+        $this->launchOfferMail->sendBalancePaidConfirmation($enrollment->fresh(['user', 'course']));
+
+        return $enrollment;
     }
 
     public function forfeitExpiredReservations(?Carbon $now = null): int
     {
         $now ??= now();
         $count = 0;
+        $toNotify = [];
 
         CourseEnrollment::query()
+            ->with(['user', 'course'])
             ->where('access_status', EnrollmentAccessStatus::RESERVED->value)
             ->whereNull('balance_paid_at')
             ->whereNull('forfeited_at')
             ->whereNotNull('balance_deadline_at')
             ->where('balance_deadline_at', '<', $now)
             ->orderBy('id')
-            ->chunkById(100, function ($enrollments) use (&$count) {
+            ->chunkById(100, function ($enrollments) use (&$count, &$toNotify) {
                 foreach ($enrollments as $enrollment) {
                     $enrollment->update([
                         'access_status' => EnrollmentAccessStatus::CANCELED,
                         'forfeited_at' => now(),
                     ]);
+                    $toNotify[] = $enrollment->fresh(['user', 'course']);
                     $count++;
                 }
             });
+
+        foreach ($toNotify as $enrollment) {
+            $this->launchOfferMail->sendForfeitNotice($enrollment);
+        }
 
         return $count;
     }
