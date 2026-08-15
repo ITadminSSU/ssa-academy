@@ -2,21 +2,26 @@
    $isFree = ($item->pricing_type ?? null) === 'free';
    $hasDiscount = !empty($item->discount);
 
-   // Prefer a freshly signed media URL (thumbnail, then banner). Empty/invalid → placeholder only.
-   $rawImage = $item->getRawOriginal('thumbnail')
-      ?: $item->getRawOriginal('banner')
-      ?: null;
-   $thumbnailUrl = \App\Support\S3CompatibleStorage::attributeGet(
-      is_string($rawImage) ? $rawImage : null
-   );
-   $thumbnailUrl = is_string($thumbnailUrl) ? trim($thumbnailUrl) : '';
-   $thumbnailUrl = $thumbnailUrl !== '' ? $thumbnailUrl : null;
+   // Prefer same-origin cover URL for courses (fresh R2 signature via redirect).
+   // Direct private R2 URLs often fail in this Blade checkout page.
+   if (($item_type ?? null) === 'course' && ! empty($item->id)) {
+      $thumbnailUrl = route('course.cover', $item->id);
+   } else {
+      $rawImage = method_exists($item, 'getRawOriginal')
+         ? ($item->getRawOriginal('thumbnail') ?: $item->getRawOriginal('banner'))
+         : null;
+      $thumbnailUrl = \App\Support\S3CompatibleStorage::attributeGet(
+         is_string($rawImage) ? $rawImage : null
+      );
+      $thumbnailUrl = is_string($thumbnailUrl) ? trim($thumbnailUrl) : '';
+      $thumbnailUrl = $thumbnailUrl !== '' ? $thumbnailUrl : null;
+   }
 @endphp
 
 <div class="border-border bg-background space-y-6 rounded-xl border p-6 shadow-sm">
    <div class="flex flex-col gap-4 md:flex-row">
       <div class="bg-muted relative h-48 w-full overflow-hidden rounded-lg md:h-40 md:w-56">
-         {{-- Always render the branded placeholder underneath so a failed R2/signed URL never shows a broken icon. --}}
+         {{-- Placeholder underneath; shown only if the real cover fails to load. --}}
          <div
             class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#1a2744] via-[#243b66] to-[#2d4a7a] px-3 text-center"
             aria-hidden="true"
@@ -45,7 +50,6 @@
                class="relative z-10 h-full w-full bg-muted object-cover"
                loading="eager"
                decoding="async"
-               referrerpolicy="no-referrer"
                onerror="this.remove()"
             >
          @endif

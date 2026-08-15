@@ -32,6 +32,10 @@ Route::get('job-circulars/{job_circular}', [JobCircularController::class, 'show'
 // course page
 Route::redirect('courses', '/courses/all');
 
+Route::get('courses/{course}/cover', \App\Http\Controllers\Course\CourseCoverController::class)
+    ->whereNumber('course')
+    ->name('course.cover');
+
 Route::controller(CourseController::class)->group(function () {
     Route::get('courses/details/{slug}/{id}', 'show')->name('course.details');
     Route::get('courses/{category}/{category_child?}', 'category_courses')->name('category.courses');
