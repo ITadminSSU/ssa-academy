@@ -64,37 +64,33 @@ class SignWellService
         }
 
         try {
-            $response = $this->client()
-                ->post($this->apiUrl('document_templates/documents/'), $payload)
-                ->throw()
-                ->json();
+            $response = $this->createDocumentFromTemplate($payload);
         } catch (RequestException $e) {
             $status = $e->response?->status();
             $body = $e->response?->json() ?? $e->response?->body();
-            $detail = strtolower($this->extractErrorDetail($body));
+            $detail = $this->extractErrorDetail($body);
+            $unassigned = $this->parseUnassignedPlaceholders($detail);
 
-            // If exclude_placeholders is rejected (required sender fields), retry with sender assigned.
-            if (
-                $status === 422
-                && $excludePlaceholders !== []
-                && str_contains($detail, 'document_sender')
-            ) {
-                $retry = $this->buildRecipientsWithSenderAssigned($user, $studentPlaceholder, $placeholderNames);
-                $payload['recipients'] = $retry;
+            // Retry: assign every missing role (e.g. "document sender") to the academy sender.
+            if ($status === 422 && $unassigned !== []) {
+                $payload['recipients'] = $this->buildRecipientsCoveringUnassigned(
+                    $user,
+                    $studentPlaceholder,
+                    $placeholderNames,
+                    $unassigned,
+                );
                 unset($payload['exclude_placeholders']);
 
                 try {
-                    $response = $this->client()
-                        ->post($this->apiUrl('document_templates/documents/'), $payload)
-                        ->throw()
-                        ->json();
+                    $response = $this->createDocumentFromTemplate($payload);
                 } catch (RequestException $retryException) {
                     $status = $retryException->response?->status();
                     $body = $retryException->response?->json() ?? $retryException->response?->body();
 
-                    Log::error('SignWell create document failed after sender retry', [
+                    Log::error('SignWell create document failed after assigning missing placeholders', [
                         'user_id' => $user->id,
                         'status' => $status,
+                        'unassigned' => $unassigned,
                         'body' => $body,
                     ]);
 
@@ -309,33 +305,30 @@ class SignWellService
     }
 
     /**
-     * Assign the student to their placeholder and cover other template roles
-     * (e.g. document_sender). Extra roles without a sender email are excluded.
+     * Assign the student to their placeholder. Sender/requester roles are assigned
+     * to the academy mailbox (not left blank — SignWell rejects that).
      *
      * @param  list<string>  $placeholderNames
      * @return array{0: list<array<string, string>>, 1: list<string>}
      */
     private function buildRecipients(User $user, string $studentPlaceholder, array $placeholderNames): array
     {
-        $senderName = trim((string) (config('signwell.sender_name') ?: config('mail.from.name') ?: config('app.name') ?: 'SMARTSOURCING USA Academy'));
-        $senderEmail = trim((string) (config('signwell.sender_email') ?: config('mail.from.address') ?: ''));
+        $sender = $this->senderIdentity();
 
-        if ($placeholderNames === []) {
-            return [[
-                [
-                    'id' => '1',
-                    'placeholder_name' => $studentPlaceholder,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ],
-            ], []];
+        // Template fetch can miss roles; always plan for the common SignWell sender placeholder.
+        $names = $placeholderNames !== []
+            ? $placeholderNames
+            : array_values(array_unique([$studentPlaceholder, 'document sender', 'Student']));
+
+        if (! collect($names)->contains(fn (string $name) => strcasecmp($name, $studentPlaceholder) === 0)) {
+            array_unshift($names, $studentPlaceholder);
         }
 
         $recipients = [];
         $exclude = [];
         $nextId = 1;
 
-        foreach ($placeholderNames as $name) {
+        foreach ($names as $name) {
             if (strcasecmp($name, $studentPlaceholder) === 0) {
                 $recipients[] = [
                     'id' => (string) $nextId++,
@@ -347,19 +340,30 @@ class SignWellService
                 continue;
             }
 
-            // Prefer excluding sender/requester roles so only the student must sign.
             if ($this->isSenderPlaceholder($name)) {
-                $exclude[] = $name;
+                if ($sender['email'] === '') {
+                    // Can't assign without an email — exclude and hope SignWell allows it.
+                    $exclude[] = $name;
+
+                    continue;
+                }
+
+                $recipients[] = [
+                    'id' => (string) $nextId++,
+                    'placeholder_name' => $name,
+                    'name' => $sender['name'],
+                    'email' => $sender['email'],
+                ];
 
                 continue;
             }
 
-            if ($senderEmail !== '') {
+            if ($sender['email'] !== '') {
                 $recipients[] = [
                     'id' => (string) $nextId++,
                     'placeholder_name' => $name,
-                    'name' => $senderName,
-                    'email' => $senderEmail,
+                    'name' => $sender['name'],
+                    'email' => $sender['email'],
                 ];
 
                 continue;
@@ -368,20 +372,6 @@ class SignWellService
             $exclude[] = $name;
         }
 
-        $hasStudent = collect($recipients)->contains(
-            fn (array $recipient) => strcasecmp($recipient['placeholder_name'], $studentPlaceholder) === 0
-        );
-
-        if (! $hasStudent) {
-            array_unshift($recipients, [
-                'id' => (string) $nextId++,
-                'placeholder_name' => $studentPlaceholder,
-                'name' => $user->name,
-                'email' => $user->email,
-            ]);
-        }
-
-        // Re-number ids sequentially after unshift / skips.
         $recipients = collect($recipients)
             ->values()
             ->map(function (array $recipient, int $index) {
@@ -396,23 +386,39 @@ class SignWellService
 
     /**
      * @param  list<string>  $placeholderNames
+     * @param  list<string>  $unassigned
      * @return list<array<string, string>>
      */
-    private function buildRecipientsWithSenderAssigned(User $user, string $studentPlaceholder, array $placeholderNames): array
-    {
-        $senderName = trim((string) (config('signwell.sender_name') ?: config('mail.from.name') ?: config('app.name') ?: 'SMARTSOURCING USA Academy'));
-        $senderEmail = trim((string) (config('signwell.sender_email') ?: config('mail.from.address') ?: ''));
+    private function buildRecipientsCoveringUnassigned(
+        User $user,
+        string $studentPlaceholder,
+        array $placeholderNames,
+        array $unassigned,
+    ): array {
+        $sender = $this->senderIdentity();
 
-        if ($senderEmail === '') {
+        if ($sender['email'] === '') {
             throw new RuntimeException(
-                'SignWell template requires a document_sender recipient. Set SIGNWELL_SENDER_EMAIL (or MAIL_FROM_ADDRESS) on Forge, then run php artisan config:clear.'
+                'SignWell requires a recipient for “'.implode(', ', $unassigned).'”. '
+                .'Set SIGNWELL_SENDER_EMAIL (or MAIL_FROM_ADDRESS) on Forge to your academy email, then run php artisan config:clear.'
             );
         }
+
+        $names = array_values(array_unique([
+            ...$placeholderNames,
+            ...$unassigned,
+            $studentPlaceholder,
+        ]));
 
         $recipients = [];
         $nextId = 1;
 
-        foreach ($placeholderNames as $name) {
+        foreach ($names as $name) {
+            $name = trim($name);
+            if ($name === '') {
+                continue;
+            }
+
             if (strcasecmp($name, $studentPlaceholder) === 0) {
                 $recipients[] = [
                     'id' => (string) $nextId++,
@@ -427,21 +433,51 @@ class SignWellService
             $recipients[] = [
                 'id' => (string) $nextId++,
                 'placeholder_name' => $name,
-                'name' => $senderName,
-                'email' => $senderEmail,
-            ];
-        }
-
-        if ($recipients === []) {
-            $recipients[] = [
-                'id' => '1',
-                'placeholder_name' => $studentPlaceholder,
-                'name' => $user->name,
-                'email' => $user->email,
+                'name' => $sender['name'],
+                'email' => $sender['email'],
             ];
         }
 
         return $recipients;
+    }
+
+    /**
+     * @return array{name: string, email: string}
+     */
+    private function senderIdentity(): array
+    {
+        return [
+            'name' => trim((string) (config('signwell.sender_name') ?: config('mail.from.name') ?: config('app.name') ?: 'SMARTSOURCING USA Academy')),
+            'email' => trim((string) (config('signwell.sender_email') ?: config('mail.from.address') ?: '')),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parseUnassignedPlaceholders(string $detail): array
+    {
+        if (! preg_match('/placeholder_names do not have a recipient assigned:\s*(.+)$/i', $detail, $matches)) {
+            return [];
+        }
+
+        return collect(explode(',', $matches[1]))
+            ->map(fn (string $name) => trim($name, " \t\n\r\0\x0B."))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function createDocumentFromTemplate(array $payload): array
+    {
+        return $this->client()
+            ->post($this->apiUrl('document_templates/documents/'), $payload)
+            ->throw()
+            ->json();
     }
 
     private function isSenderPlaceholder(string $name): bool
@@ -512,6 +548,13 @@ class SignWellService
         }
 
         if ($status === 422) {
+            $unassigned = $this->parseUnassignedPlaceholders($detail);
+            if ($unassigned !== []) {
+                return 'SignWell template has extra recipient roles that need an email: '
+                    .implode(', ', $unassigned)
+                    .'. Set SIGNWELL_SENDER_EMAIL to your academy email on Forge (or remove the “document sender” role from the SignWell template), then run php artisan config:clear.';
+            }
+
             $hint = $detail !== '' ? ' SignWell said: '.$detail : '';
 
             return 'SignWell could not create the agreement (often a recipient placeholder mismatch).'
