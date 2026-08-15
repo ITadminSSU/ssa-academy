@@ -13,8 +13,12 @@ return [
     'external_primary_gateway' => env('PAYMENT_EXTERNAL_PRIMARY_GATEWAY', 'stripe'),
 
     'stripe' => [
+        // Test keys (STRIPE_TEST_MODE=true)
         'test_public_key' => env('STRIPE_KEY', env('STRIPE_TEST_PUBLIC_KEY')),
         'test_secret_key' => env('STRIPE_SECRET', env('STRIPE_TEST_SECRET_KEY')),
+        // Live keys (STRIPE_TEST_MODE=false)
+        'live_public_key' => env('STRIPE_LIVE_KEY', env('STRIPE_LIVE_PUBLIC_KEY')),
+        'live_secret_key' => env('STRIPE_LIVE_SECRET', env('STRIPE_LIVE_SECRET_KEY')),
         'force_test_mode' => filter_var(env('STRIPE_TEST_MODE', true), FILTER_VALIDATE_BOOLEAN),
         'sync_from_env' => filter_var(env('STRIPE_SYNC_FROM_ENV', true), FILTER_VALIDATE_BOOLEAN),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
