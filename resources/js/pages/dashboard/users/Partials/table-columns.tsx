@@ -131,6 +131,31 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
          },
       },
       {
+         id: 'referred_by',
+         header: 'Referrer',
+         cell: ({ row }) => {
+            const referrer = row.original.referred_by?.trim();
+
+            if (!referrer) {
+               return <span className="text-muted-foreground text-sm">—</span>;
+            }
+
+            const employeeLabel =
+               row.original.referrer_is_employee === true
+                  ? 'Smart Sourcing employee'
+                  : row.original.referrer_is_employee === false
+                    ? 'Not an employee'
+                    : null;
+
+            return (
+               <div className="max-w-[12rem]">
+                  <p className="text-sm font-medium">{referrer}</p>
+                  {employeeLabel ? <p className="text-muted-foreground text-xs">{employeeLabel}</p> : null}
+               </div>
+            );
+         },
+      },
+      {
          accessorKey: 'created_at',
          header: ({ column }) => {
             return (
