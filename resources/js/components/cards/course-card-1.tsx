@@ -3,6 +3,7 @@ import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
+import { getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -15,6 +16,9 @@ interface Props {
    className?: string;
    wishlists?: CourseWishlist[];
 }
+
+const formatOfferAmount = (amount: number): string =>
+   Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
 
 const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props) => {
    const { props } = usePage<SharedData>();
@@ -31,6 +35,9 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const showPreviewCta = Boolean(course.can_preview_before_launch) && comingSoon;
    const isSubscription = isSubscriptionCourse(course);
    const isUpfrontSubscription = isUpfrontSubscriptionCourse(course);
+   const launchOffer = getLaunchOfferView(course);
+   const isLaunchPreRegister = launchOffer.enabled && launchOffer.phase === 'pre_register';
+   const symbol = currency?.symbol ?? '$';
 
    const handleWishlist = () => {
       if (isWishlisted) {
@@ -144,43 +151,39 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                   <div className="ssu-course-card__price capitalize">
                      {course.pricing_type === 'free' ? (
                         common.free
-                     ) : course.launch_offer_enabled &&
-                       course.launch_offer_starts_at &&
-                       course.launch_offer_ends_at &&
-                       Date.now() >= new Date(course.launch_offer_starts_at).getTime() &&
-                       Date.now() <= new Date(course.launch_offer_ends_at).getTime() ? (
+                     ) : isLaunchPreRegister ? (
                         <>
                            <span>
-                              {currency?.symbol}
-                              {course.launch_offer_price ?? 70}
+                              {symbol}
+                              {formatOfferAmount(launchOffer.offerPrice)}
                            </span>
                            <span className="text-muted-foreground ml-2 text-sm font-medium line-through normal-case">
-                              {currency?.symbol}
-                              {course.launch_list_price ?? 75}
+                              {symbol}
+                              {formatOfferAmount(launchOffer.listPrice)}
                            </span>
                         </>
                      ) : isUpfrontSubscription ? (
                         <>
                            <span>
-                              {currency?.symbol}
+                              {symbol}
                               {course.price}
                            </span>
                            <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
-                              +{currency?.symbol}
+                              +{symbol}
                               {course.subscription_price}/mo
                            </span>
                         </>
                      ) : isSubscription ? (
                         <>
                            <span>
-                              {currency?.symbol}
+                              {symbol}
                               {course.launch_offer_enabled
                                  ? (course.launch_full_upfront_price ?? 75)
                                  : (course.subscription_price ?? course.price)}
                            </span>
                            {course.launch_offer_enabled ? (
                               <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
-                                 +{currency?.symbol}
+                                 +{symbol}
                                  {course.subscription_price}/mo
                               </span>
                            ) : (
@@ -190,17 +193,17 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      ) : course.discount ? (
                         <>
                            <span>
-                              {currency?.symbol}
+                              {symbol}
                               {course.discount_price}
                            </span>
                            <span className="text-muted-foreground ml-2 text-sm font-medium line-through">
-                              {currency?.symbol}
+                              {symbol}
                               {course.price}
                            </span>
                         </>
                      ) : (
                         <span>
-                           {currency?.symbol}
+                           {symbol}
                            {course.price}
                         </span>
                      )}
@@ -214,7 +217,16 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                   </Button>
                </div>
 
-               {isSubscription ? <SubscriptionBillingNotice course={course} variant="compact" /> : null}
+               {isLaunchPreRegister ? (
+                  <p className="text-muted-foreground text-xs leading-snug normal-case">
+                     Early bird · {symbol}
+                     {formatOfferAmount(launchOffer.depositAmount)} now · {symbol}
+                     {formatOfferAmount(launchOffer.balanceAmount)} at launch · then {symbol}
+                     {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
+                  </p>
+               ) : isSubscription ? (
+                  <SubscriptionBillingNotice course={course} variant="compact" />
+               ) : null}
             </CardFooter>
          </div>
       </article>
