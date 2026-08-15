@@ -45,6 +45,12 @@ class LegalAgreementService
 
     public function currentVersion(): string
     {
+        $signWell = app(SignWellService::class);
+
+        if ($signWell->isEnabled()) {
+            return $signWell->agreementVersion();
+        }
+
         $terms = $this->getTermsPage();
 
         if (! $terms) {
@@ -77,21 +83,47 @@ class LegalAgreementService
             return false;
         }
 
+        $signWell = app(SignWellService::class);
+
+        if ($signWell->isEnabled()) {
+            // Completed SignWell for the current template.
+            if ($user->signwell_completed_at && $user->legal_agreement_version === $signWell->agreementVersion()) {
+                return true;
+            }
+
+            // Grandfather students who already accepted before SignWell was turned on.
+            if (! $user->signwell_document_id && ! str_starts_with((string) $user->legal_agreement_version, 'signwell:')) {
+                return true;
+            }
+
+            return false;
+        }
+
         return $user->legal_agreement_version === $this->currentVersion();
     }
 
-    public function documentPayload(): array
+    public function documentPayload(?User $user = null): array
     {
         $terms = $this->getTermsPage();
+        $signWell = app(SignWellService::class);
 
         return [
             'version' => $this->currentVersion(),
             'terms' => $this->formatDocument($terms, 'terms'),
+            'signwell' => [
+                'enabled' => $signWell->isEnabled(),
+                'status' => $user?->signwell_status,
+                'has_signing_url' => filled($user?->signwell_signing_url),
+            ],
         ];
     }
 
     public function recordAcceptance(User $user, Request $request, bool $sendEmail = true): User
     {
+        if (app(SignWellService::class)->isEnabled()) {
+            throw new \RuntimeException('Please complete the SignWell student agreement to continue.');
+        }
+
         $terms = $this->getTermsPage();
         $ip = $request->ip();
         $acceptedAt = now();
@@ -129,6 +161,61 @@ class LegalAgreementService
         }
 
         return $user;
+    }
+
+    /**
+     * Persist legal acceptance after SignWell document completion.
+     */
+    public function recordSignWellAcceptance(User $user, ?string $ip = null): User
+    {
+        $terms = $this->getTermsPage();
+        $acceptedAt = $user->legal_agreement_accepted_at ?? now();
+        $version = app(SignWellService::class)->agreementVersion();
+        $ip ??= $user->legal_agreement_ip;
+
+        $alreadyLogged = UserLegalAcceptance::query()
+            ->where('user_id', $user->id)
+            ->where('document_type', 'signwell')
+            ->where('version', $version)
+            ->exists();
+
+        if (! $alreadyLogged) {
+            UserLegalAcceptance::create([
+                'user_id' => $user->id,
+                'document_type' => 'signwell',
+                'document_slug' => 'student-agreement',
+                'version' => $version,
+                'ip' => $ip,
+                'accepted_at' => $acceptedAt,
+            ]);
+        }
+
+        if ($terms) {
+            $termsLogged = UserLegalAcceptance::query()
+                ->where('user_id', $user->id)
+                ->where('document_type', 'terms')
+                ->where('version', $this->documentVersion($terms))
+                ->exists();
+
+            if (! $termsLogged) {
+                UserLegalAcceptance::create([
+                    'user_id' => $user->id,
+                    'document_type' => 'terms',
+                    'document_slug' => $terms->slug,
+                    'version' => $this->documentVersion($terms),
+                    'ip' => $ip,
+                    'accepted_at' => $acceptedAt,
+                ]);
+            }
+        }
+
+        $user->forceFill([
+            'legal_agreement_accepted_at' => $acceptedAt,
+            'legal_agreement_version' => $version,
+            'legal_agreement_ip' => $ip,
+        ])->save();
+
+        return $user->fresh();
     }
 
     public function sendAcceptanceEmail(User $user, ?Page $terms = null, $acceptedAt = null, ?string $ip = null): void

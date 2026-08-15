@@ -10,6 +10,7 @@ use App\Services\Auth\SingleSessionService;
 use App\Services\AuthService;
 use App\Services\LearnerTypeResolver;
 use App\Services\LegalAgreementService;
+use App\Services\SignWellService;
 use App\Support\RegistrationProfileOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class RegisteredUserController extends Controller
         private LearnerTypeResolver $learnerTypeResolver,
         private LegalAgreementService $legalAgreement,
         private SingleSessionService $singleSession,
+        private SignWellService $signWell,
     ) {}
 
     /**
@@ -45,6 +47,7 @@ class RegisteredUserController extends Controller
             'legalDocument' => $this->legalAgreement->documentPayload(),
             'estimatingSoftwareOptions' => RegistrationProfileOptions::estimatingSoftware(),
             'constructionExperienceOptions' => RegistrationProfileOptions::constructionExperience(),
+            'signwellEnabled' => $this->signWell->isEnabled(),
         ]);
     }
 
@@ -98,7 +101,9 @@ class RegisteredUserController extends Controller
             'cv_resume.required' => 'Please upload your CV or resume.',
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
             'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
-            'accept_terms.accepted' => 'You must agree to the Terms & Conditions to create an account.',
+            'accept_terms.accepted' => $this->signWell->isEnabled()
+                ? 'You must agree to the Terms & Conditions and complete the Student Agreement to create an account.'
+                : 'You must agree to the Terms & Conditions to create an account.',
         ]);
 
         if (in_array('None', $selectedSoftware, true)) {
@@ -131,7 +136,10 @@ class RegisteredUserController extends Controller
             ->withCustomProperties(['name' => 'cv_resume'])
             ->toMediaCollection('cv_resume');
 
-        $this->legalAgreement->recordAcceptance($user, $request, false);
+        // When SignWell is enabled, e-sign replaces immediate checkbox acceptance.
+        if (! $this->signWell->isEnabled()) {
+            $this->legalAgreement->recordAcceptance($user, $request, false);
+        }
 
         SendRegistrationNotificationsJob::dispatch($user->id)
             ->onConnection('sync')
@@ -140,6 +148,18 @@ class RegisteredUserController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         $this->singleSession->claim($user);
+
+        if ($this->signWell->isEnabled()) {
+            try {
+                $signingUrl = $this->signWell->startSigning($user);
+
+                return redirect()->away($signingUrl);
+            } catch (\Throwable $e) {
+                return redirect()
+                    ->route('legal.agreement.show')
+                    ->with('error', $e->getMessage());
+            }
+        }
 
         return redirect()->intended($this->authService->homeUrlFor($user));
     }

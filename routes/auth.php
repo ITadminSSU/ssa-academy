@@ -52,6 +52,9 @@ Route::middleware('auth')->group(function () {
     Route::get('legal/agreement', [LegalAgreementController::class, 'show'])->name('legal.agreement.show');
     Route::post('legal/agreement', [LegalAgreementController::class, 'store'])->name('legal.agreement.store');
 
+    Route::get('legal/signwell/start', [\App\Http\Controllers\SignWellController::class, 'start'])->name('signwell.start');
+    Route::get('legal/signwell/complete', [\App\Http\Controllers\SignWellController::class, 'complete'])->name('signwell.complete');
+
     Route::get('two-factor-challenge', [TwoFactorChallengeController::class, 'create'])
         ->name('two-factor.challenge');
     Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])

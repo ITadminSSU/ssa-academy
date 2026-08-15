@@ -127,6 +127,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'error' => fn() => $request->session()->get('error'),
                 'warning' => fn() => $request->session()->get('warning'),
+                'info' => fn() => $request->session()->get('info'),
                 'success' => fn() => $request->session()->get('success'),
                 'status' => fn() => $request->session()->get('status'),
                 'two_factor_setup' => fn() => $request->session()->get('two_factor_setup'),

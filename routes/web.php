@@ -6,12 +6,18 @@ use App\Http\Controllers\Course\CourseLaunchNotificationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\JobCircularController;
+use App\Http\Controllers\SignWellWebhookController;
 use App\Http\Controllers\SubscribeController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('about-us', [HomeController::class, 'about'])->name('about');
 Route::get('faqs', [HomeController::class, 'faqs'])->name('faqs');
+
+Route::post('signwell/webhook', [SignWellWebhookController::class, 'handle'])
+    ->withoutMiddleware([ValidateCsrfToken::class])
+    ->name('signwell.webhook');
 
 // Certificate verification — restricted to admin & trainer for verification purposes.
 Route::middleware(['auth', 'role:admin,instructor'])->group(function () {

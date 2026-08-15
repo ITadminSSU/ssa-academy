@@ -55,6 +55,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'legal_agreement_ip',
         'legal_confirmation_email_sent_at',
         'legal_confirmation_email_last_error',
+        'signwell_document_id',
+        'signwell_recipient_id',
+        'signwell_signing_url',
+        'signwell_status',
+        'signwell_completed_at',
     ];
 
     /**
@@ -84,6 +89,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'candidate_status_updated_at' => 'datetime',
         'legal_agreement_accepted_at' => 'datetime',
         'legal_confirmation_email_sent_at' => 'datetime',
+        'signwell_completed_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
 

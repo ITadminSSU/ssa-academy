@@ -33,6 +33,7 @@ interface RegisterProps {
    legalDocument: LegalDocumentPayload;
    estimatingSoftwareOptions: string[];
    constructionExperienceOptions: string[];
+   signwellEnabled?: boolean;
 }
 
 export default function Register({
@@ -42,6 +43,7 @@ export default function Register({
    legalDocument,
    estimatingSoftwareOptions,
    constructionExperienceOptions,
+   signwellEnabled = false,
 }: RegisterProps) {
    const { props } = usePage<SharedData>();
    const { branding } = props;
@@ -403,6 +405,7 @@ export default function Register({
                         onAcceptTermsChange={(value) => setData('accept_terms', value)}
                         disabled={processing}
                         termsError={errors.accept_terms}
+                        signwellEnabled={signwellEnabled}
                      />
 
                      {recaptcha.status && (

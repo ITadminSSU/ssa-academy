@@ -21,6 +21,7 @@ class EnsureLegalAgreementAccepted
 
         if ($request->routeIs(
             'legal.agreement.*',
+            'signwell.*',
             'logout',
             'verification.*',
             'password.*',
@@ -30,9 +31,13 @@ class EnsureLegalAgreementAccepted
 
         if ($request->expectsJson()) {
             return response()->json([
-                'message' => 'You must accept the Terms & Conditions and NDA before continuing.',
+                'message' => 'You must complete the student agreement before continuing.',
                 'redirect' => route('legal.agreement.show'),
             ], 403);
+        }
+
+        if (app(\App\Services\SignWellService::class)->isEnabled()) {
+            return redirect()->route('legal.agreement.show');
         }
 
         return redirect()->route('legal.agreement.show');
