@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class SignWellService
@@ -28,7 +29,7 @@ class SignWellService
     public function startSigning(User $user): string
     {
         if (! $this->isEnabled()) {
-            throw new RuntimeException('SignWell is not configured.');
+            throw new RuntimeException('SignWell is not configured. Set SIGNWELL_ENABLED, SIGNWELL_API_KEY, and SIGNWELL_TEMPLATE_ID on the server.');
         }
 
         if ($user->signwell_completed_at || $user->signwell_status === 'completed') {
@@ -39,17 +40,20 @@ class SignWellService
             return $user->signwell_signing_url;
         }
 
+        $placeholderName = $this->resolveRecipientPlaceholder();
+
         $payload = [
             'test_mode' => (bool) config('signwell.test_mode', true),
             'template_id' => (string) config('signwell.template_id'),
             'name' => 'SMARTSOURCING USA Academy Student Agreement — '.$user->name,
+            'draft' => false,
             'embedded_signing' => true,
-            'embedded_signing_notifications' => true,
-            'redirect_url' => route('signwell.complete'),
+            'embedded_signing_notifications' => false,
+            'redirect_url' => route('signwell.complete', absolute: true),
             'recipients' => [
                 [
                     'id' => '1',
-                    'placeholder_name' => (string) config('signwell.recipient_placeholder', 'Student'),
+                    'placeholder_name' => $placeholderName,
                     'name' => $user->name,
                     'email' => $user->email,
                 ],
@@ -61,23 +65,23 @@ class SignWellService
         ];
 
         try {
-            $response = Http::withHeaders([
-                'X-Api-Key' => (string) config('signwell.api_key'),
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])
-                ->timeout(30)
-                ->post(rtrim((string) config('signwell.api_base'), '/').'/document_templates/documents', $payload)
+            $response = $this->client()
+                ->post($this->apiUrl('document_templates/documents/'), $payload)
                 ->throw()
                 ->json();
         } catch (RequestException $e) {
+            $status = $e->response?->status();
+            $body = $e->response?->json() ?? $e->response?->body();
+
             Log::error('SignWell create document failed', [
                 'user_id' => $user->id,
-                'status' => $e->response?->status(),
-                'body' => $e->response?->json() ?? $e->response?->body(),
+                'status' => $status,
+                'placeholder' => $placeholderName,
+                'template_id' => config('signwell.template_id'),
+                'body' => $body,
             ]);
 
-            throw new RuntimeException('Unable to start the student agreement signing session. Please try again or contact support.');
+            throw new RuntimeException($this->friendlyCreateError($status, $body, $placeholderName));
         }
 
         $documentId = (string) ($response['id'] ?? '');
@@ -91,7 +95,7 @@ class SignWellService
                 'response' => $response,
             ]);
 
-            throw new RuntimeException('SignWell did not return a signing link.');
+            throw new RuntimeException('SignWell created the document but did not return a signing link. Check that the template allows embedded signing.');
         }
 
         $user->forceFill([
@@ -105,15 +109,56 @@ class SignWellService
         return $signingUrl;
     }
 
+    /**
+     * @return list<string>
+     */
+    public function templatePlaceholderNames(): array
+    {
+        $template = $this->getTemplate((string) config('signwell.template_id'));
+
+        if (! $template) {
+            return [];
+        }
+
+        $placeholders = $template['placeholders'] ?? [];
+
+        if (! is_array($placeholders)) {
+            return [];
+        }
+
+        return collect($placeholders)
+            ->map(fn ($placeholder) => is_array($placeholder) ? (string) ($placeholder['name'] ?? '') : '')
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    public function getTemplate(string $templateId): ?array
+    {
+        if ($templateId === '') {
+            return null;
+        }
+
+        try {
+            return $this->client()
+                ->get($this->apiUrl('document_templates/'.$templateId))
+                ->throw()
+                ->json();
+        } catch (\Throwable $e) {
+            Log::warning('SignWell get template failed', [
+                'template_id' => $templateId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
     public function getDocument(string $documentId): ?array
     {
         try {
-            return Http::withHeaders([
-                'X-Api-Key' => (string) config('signwell.api_key'),
-                'Accept' => 'application/json',
-            ])
-                ->timeout(20)
-                ->get(rtrim((string) config('signwell.api_base'), '/').'/documents/'.$documentId)
+            return $this->client()
+                ->get($this->apiUrl('documents/'.$documentId))
                 ->throw()
                 ->json();
         } catch (\Throwable $e) {
@@ -190,5 +235,117 @@ class SignWellService
         }
 
         return null;
+    }
+
+    /**
+     * Prefer the configured placeholder when it exists on the template;
+     * otherwise use the first template placeholder (common misconfiguration).
+     */
+    private function resolveRecipientPlaceholder(): string
+    {
+        $configured = trim((string) config('signwell.recipient_placeholder', 'Student'));
+        $available = $this->templatePlaceholderNames();
+
+        if ($available === []) {
+            return $configured !== '' ? $configured : 'Student';
+        }
+
+        foreach ($available as $name) {
+            if (strcasecmp($name, $configured) === 0) {
+                return $name;
+            }
+        }
+
+        Log::warning('SignWell placeholder mismatch; using first template placeholder', [
+            'configured' => $configured,
+            'available' => $available,
+        ]);
+
+        return $available[0];
+    }
+
+    private function client()
+    {
+        return Http::withHeaders([
+            'X-Api-Key' => (string) config('signwell.api_key'),
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ])->timeout(30);
+    }
+
+    private function apiUrl(string $path): string
+    {
+        return rtrim((string) config('signwell.api_base'), '/').'/'.ltrim($path, '/');
+    }
+
+    private function friendlyCreateError(?int $status, mixed $body, string $placeholderName): string
+    {
+        $detail = $this->extractErrorDetail($body);
+
+        if ($status === 401 || $status === 403) {
+            return 'SignWell rejected the API key. Check SIGNWELL_API_KEY in Forge and run php artisan config:clear.';
+        }
+
+        if ($status === 404) {
+            return 'SignWell template was not found. Check SIGNWELL_TEMPLATE_ID matches the template URL in SignWell.';
+        }
+
+        if ($status === 422) {
+            $hint = $detail !== '' ? ' SignWell said: '.$detail : '';
+
+            return 'SignWell could not create the agreement (often a recipient placeholder mismatch).'
+                .' Template placeholder must match SIGNWELL_RECIPIENT_PLACEHOLDER (tried “'.$placeholderName.'”).'
+                .$hint;
+        }
+
+        if (is_string($detail) && $detail !== '') {
+            return 'Unable to start SignWell signing: '.$detail;
+        }
+
+        return 'Unable to start the student agreement signing session. Please try again or contact support.';
+    }
+
+    private function extractErrorDetail(mixed $body): string
+    {
+        if (is_string($body) && $body !== '') {
+            return Str::limit($body, 240);
+        }
+
+        if (! is_array($body)) {
+            return '';
+        }
+
+        if (isset($body['error']) && is_string($body['error'])) {
+            return $body['error'];
+        }
+
+        if (isset($body['message']) && is_string($body['message'])) {
+            return $body['message'];
+        }
+
+        $errors = $body['errors'] ?? null;
+
+        if (is_string($errors)) {
+            return $errors;
+        }
+
+        if (is_array($errors)) {
+            $parts = [];
+
+            foreach ($errors as $key => $value) {
+                if (is_string($value)) {
+                    $parts[] = $key.': '.$value;
+                } elseif (is_array($value)) {
+                    $flat = collect($value)->flatten()->filter(fn ($item) => is_string($item))->implode('; ');
+                    if ($flat !== '') {
+                        $parts[] = is_string($key) ? $key.': '.$flat : $flat;
+                    }
+                }
+            }
+
+            return implode(' | ', $parts);
+        }
+
+        return '';
     }
 }
