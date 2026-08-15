@@ -40,7 +40,9 @@ class SignWellService
             return $user->signwell_signing_url;
         }
 
-        $placeholderName = $this->resolveRecipientPlaceholder();
+        $placeholderNames = $this->templatePlaceholderNames();
+        $studentPlaceholder = $this->resolveRecipientPlaceholder($placeholderNames);
+        [$recipients, $excludePlaceholders] = $this->buildRecipients($user, $studentPlaceholder, $placeholderNames);
 
         $payload = [
             'test_mode' => (bool) config('signwell.test_mode', true),
@@ -50,19 +52,16 @@ class SignWellService
             'embedded_signing' => true,
             'embedded_signing_notifications' => false,
             'redirect_url' => route('signwell.complete', absolute: true),
-            'recipients' => [
-                [
-                    'id' => '1',
-                    'placeholder_name' => $placeholderName,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ],
-            ],
+            'recipients' => $recipients,
             'metadata' => [
                 'user_id' => (string) $user->id,
                 'email' => $user->email,
             ],
         ];
+
+        if ($excludePlaceholders !== []) {
+            $payload['exclude_placeholders'] = $excludePlaceholders;
+        }
 
         try {
             $response = $this->client()
@@ -72,21 +71,52 @@ class SignWellService
         } catch (RequestException $e) {
             $status = $e->response?->status();
             $body = $e->response?->json() ?? $e->response?->body();
+            $detail = strtolower($this->extractErrorDetail($body));
 
-            Log::error('SignWell create document failed', [
-                'user_id' => $user->id,
-                'status' => $status,
-                'placeholder' => $placeholderName,
-                'template_id' => config('signwell.template_id'),
-                'body' => $body,
-            ]);
+            // If exclude_placeholders is rejected (required sender fields), retry with sender assigned.
+            if (
+                $status === 422
+                && $excludePlaceholders !== []
+                && str_contains($detail, 'document_sender')
+            ) {
+                $retry = $this->buildRecipientsWithSenderAssigned($user, $studentPlaceholder, $placeholderNames);
+                $payload['recipients'] = $retry;
+                unset($payload['exclude_placeholders']);
 
-            throw new RuntimeException($this->friendlyCreateError($status, $body, $placeholderName));
+                try {
+                    $response = $this->client()
+                        ->post($this->apiUrl('document_templates/documents/'), $payload)
+                        ->throw()
+                        ->json();
+                } catch (RequestException $retryException) {
+                    $status = $retryException->response?->status();
+                    $body = $retryException->response?->json() ?? $retryException->response?->body();
+
+                    Log::error('SignWell create document failed after sender retry', [
+                        'user_id' => $user->id,
+                        'status' => $status,
+                        'body' => $body,
+                    ]);
+
+                    throw new RuntimeException($this->friendlyCreateError($status, $body, $studentPlaceholder));
+                }
+            } else {
+                Log::error('SignWell create document failed', [
+                    'user_id' => $user->id,
+                    'status' => $status,
+                    'placeholder' => $studentPlaceholder,
+                    'recipients' => $recipients,
+                    'exclude_placeholders' => $excludePlaceholders,
+                    'template_id' => config('signwell.template_id'),
+                    'body' => $body,
+                ]);
+
+                throw new RuntimeException($this->friendlyCreateError($status, $body, $studentPlaceholder));
+            }
         }
 
         $documentId = (string) ($response['id'] ?? '');
-        $recipients = $response['recipients'] ?? [];
-        $recipient = is_array($recipients) ? ($recipients[0] ?? []) : [];
+        $recipient = $this->findStudentRecipient($response['recipients'] ?? [], $user, $studentPlaceholder);
         $signingUrl = (string) ($recipient['embedded_signing_url'] ?? $recipient['signing_url'] ?? '');
 
         if ($documentId === '' || $signingUrl === '') {
@@ -238,13 +268,15 @@ class SignWellService
     }
 
     /**
-     * Prefer the configured placeholder when it exists on the template;
-     * otherwise use the first template placeholder (common misconfiguration).
+     * Prefer the configured student placeholder when it exists on the template;
+     * otherwise use the first non-sender placeholder.
+     *
+     * @param  list<string>  $available
      */
-    private function resolveRecipientPlaceholder(): string
+    private function resolveRecipientPlaceholder(array $available = []): string
     {
         $configured = trim((string) config('signwell.recipient_placeholder', 'Student'));
-        $available = $this->templatePlaceholderNames();
+        $available = $available !== [] ? $available : $this->templatePlaceholderNames();
 
         if ($available === []) {
             return $configured !== '' ? $configured : 'Student';
@@ -256,12 +288,201 @@ class SignWellService
             }
         }
 
+        foreach ($available as $name) {
+            if (! $this->isSenderPlaceholder($name)) {
+                Log::warning('SignWell placeholder mismatch; using first student-like placeholder', [
+                    'configured' => $configured,
+                    'available' => $available,
+                    'chosen' => $name,
+                ]);
+
+                return $name;
+            }
+        }
+
         Log::warning('SignWell placeholder mismatch; using first template placeholder', [
             'configured' => $configured,
             'available' => $available,
         ]);
 
         return $available[0];
+    }
+
+    /**
+     * Assign the student to their placeholder and cover other template roles
+     * (e.g. document_sender). Extra roles without a sender email are excluded.
+     *
+     * @param  list<string>  $placeholderNames
+     * @return array{0: list<array<string, string>>, 1: list<string>}
+     */
+    private function buildRecipients(User $user, string $studentPlaceholder, array $placeholderNames): array
+    {
+        $senderName = trim((string) (config('signwell.sender_name') ?: config('mail.from.name') ?: config('app.name') ?: 'SMARTSOURCING USA Academy'));
+        $senderEmail = trim((string) (config('signwell.sender_email') ?: config('mail.from.address') ?: ''));
+
+        if ($placeholderNames === []) {
+            return [[
+                [
+                    'id' => '1',
+                    'placeholder_name' => $studentPlaceholder,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ],
+            ], []];
+        }
+
+        $recipients = [];
+        $exclude = [];
+        $nextId = 1;
+
+        foreach ($placeholderNames as $name) {
+            if (strcasecmp($name, $studentPlaceholder) === 0) {
+                $recipients[] = [
+                    'id' => (string) $nextId++,
+                    'placeholder_name' => $name,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ];
+
+                continue;
+            }
+
+            // Prefer excluding sender/requester roles so only the student must sign.
+            if ($this->isSenderPlaceholder($name)) {
+                $exclude[] = $name;
+
+                continue;
+            }
+
+            if ($senderEmail !== '') {
+                $recipients[] = [
+                    'id' => (string) $nextId++,
+                    'placeholder_name' => $name,
+                    'name' => $senderName,
+                    'email' => $senderEmail,
+                ];
+
+                continue;
+            }
+
+            $exclude[] = $name;
+        }
+
+        $hasStudent = collect($recipients)->contains(
+            fn (array $recipient) => strcasecmp($recipient['placeholder_name'], $studentPlaceholder) === 0
+        );
+
+        if (! $hasStudent) {
+            array_unshift($recipients, [
+                'id' => (string) $nextId++,
+                'placeholder_name' => $studentPlaceholder,
+                'name' => $user->name,
+                'email' => $user->email,
+            ]);
+        }
+
+        // Re-number ids sequentially after unshift / skips.
+        $recipients = collect($recipients)
+            ->values()
+            ->map(function (array $recipient, int $index) {
+                $recipient['id'] = (string) ($index + 1);
+
+                return $recipient;
+            })
+            ->all();
+
+        return [$recipients, array_values(array_unique($exclude))];
+    }
+
+    /**
+     * @param  list<string>  $placeholderNames
+     * @return list<array<string, string>>
+     */
+    private function buildRecipientsWithSenderAssigned(User $user, string $studentPlaceholder, array $placeholderNames): array
+    {
+        $senderName = trim((string) (config('signwell.sender_name') ?: config('mail.from.name') ?: config('app.name') ?: 'SMARTSOURCING USA Academy'));
+        $senderEmail = trim((string) (config('signwell.sender_email') ?: config('mail.from.address') ?: ''));
+
+        if ($senderEmail === '') {
+            throw new RuntimeException(
+                'SignWell template requires a document_sender recipient. Set SIGNWELL_SENDER_EMAIL (or MAIL_FROM_ADDRESS) on Forge, then run php artisan config:clear.'
+            );
+        }
+
+        $recipients = [];
+        $nextId = 1;
+
+        foreach ($placeholderNames as $name) {
+            if (strcasecmp($name, $studentPlaceholder) === 0) {
+                $recipients[] = [
+                    'id' => (string) $nextId++,
+                    'placeholder_name' => $name,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ];
+
+                continue;
+            }
+
+            $recipients[] = [
+                'id' => (string) $nextId++,
+                'placeholder_name' => $name,
+                'name' => $senderName,
+                'email' => $senderEmail,
+            ];
+        }
+
+        if ($recipients === []) {
+            $recipients[] = [
+                'id' => '1',
+                'placeholder_name' => $studentPlaceholder,
+                'name' => $user->name,
+                'email' => $user->email,
+            ];
+        }
+
+        return $recipients;
+    }
+
+    private function isSenderPlaceholder(string $name): bool
+    {
+        $normalized = strtolower((string) preg_replace('/[\s_\-]+/', '', $name));
+
+        return in_array($normalized, ['documentsender', 'sender', 'requester'], true)
+            || str_contains($normalized, 'documentsender');
+    }
+
+    /**
+     * @param  mixed  $recipients
+     * @return array<string, mixed>
+     */
+    private function findStudentRecipient(mixed $recipients, User $user, string $studentPlaceholder): array
+    {
+        if (! is_array($recipients)) {
+            return [];
+        }
+
+        foreach ($recipients as $recipient) {
+            if (! is_array($recipient)) {
+                continue;
+            }
+
+            if (strcasecmp((string) ($recipient['email'] ?? ''), $user->email) === 0) {
+                return $recipient;
+            }
+        }
+
+        foreach ($recipients as $recipient) {
+            if (! is_array($recipient)) {
+                continue;
+            }
+
+            if (strcasecmp((string) ($recipient['placeholder_name'] ?? ''), $studentPlaceholder) === 0) {
+                return $recipient;
+            }
+        }
+
+        return is_array($recipients[0] ?? null) ? $recipients[0] : [];
     }
 
     private function client()

@@ -19,6 +19,14 @@ return [
     */
     'recipient_placeholder' => trim((string) env('SIGNWELL_RECIPIENT_PLACEHOLDER', 'Student')),
 
+    /*
+    | Used only if the template has extra non-student roles that cannot be excluded.
+    | document_sender is excluded by default so only the student signs.
+    */
+    'sender_name' => trim((string) env('SIGNWELL_SENDER_NAME', env('MAIL_FROM_NAME', 'SMARTSOURCING USA Academy'))),
+
+    'sender_email' => trim((string) env('SIGNWELL_SENDER_EMAIL', env('MAIL_FROM_ADDRESS', ''))),
+
     'test_mode' => filter_var(env('SIGNWELL_TEST_MODE', true), FILTER_VALIDATE_BOOLEAN),
 
     /*
