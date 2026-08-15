@@ -153,7 +153,7 @@ class RegisteredUserController extends Controller
             try {
                 $signingUrl = $this->signWell->startSigning($user);
 
-                return redirect()->away($signingUrl);
+                return \Inertia\Inertia::location($signingUrl);
             } catch (\Throwable $e) {
                 return redirect()
                     ->route('legal.agreement.show')

@@ -2,8 +2,8 @@ import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import LegalAgreementFields, { LegalDocumentPayload } from '@/components/legal-agreement-fields';
 import AuthLayout from '@/layouts/auth-layout';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { FormEventHandler, useState } from 'react';
 import { SharedData } from '@/types/global';
 
 interface Props {
@@ -21,18 +21,22 @@ interface Props {
 const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = null }: Props) => {
    const { flash } = usePage<SharedData>().props;
    const useSignWell = Boolean(signwellEnabled || document.signwell?.enabled);
+   const [startingSignWell, setStartingSignWell] = useState(false);
 
    const { data, setData, post, processing, errors } = useForm({
       accept_terms: false,
    });
 
    const canSubmit = data.accept_terms;
+   const isBusy = processing || startingSignWell;
 
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
 
       if (useSignWell) {
-         router.get(route('signwell.start'));
+         // Full browser navigation — Inertia XHR cannot follow SignWell's external URL.
+         setStartingSignWell(true);
+         window.location.assign(route('signwell.start'));
          return;
       }
 
@@ -75,15 +79,15 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
                   document={document}
                   acceptTerms={data.accept_terms}
                   onAcceptTermsChange={(value) => setData('accept_terms', value)}
-                  disabled={processing}
+                  disabled={isBusy}
                   termsError={errors.accept_terms}
                />
             )}
 
             {!useSignWell ? <InputError message={errors.accept_terms} /> : null}
 
-            <LoadingButton className="w-full" loading={processing} disabled={useSignWell ? false : !canSubmit}>
-               {useSignWell ? 'Sign Student Agreement' : 'Accept and Continue'}
+            <LoadingButton className="w-full" loading={isBusy} disabled={useSignWell ? isBusy : !canSubmit || isBusy}>
+               {useSignWell ? (startingSignWell ? 'Opening SignWell…' : 'Sign Student Agreement') : 'Accept and Continue'}
             </LoadingButton>
          </form>
       </AuthLayout>

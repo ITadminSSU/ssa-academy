@@ -68,7 +68,7 @@ class GoogleAuthController extends Controller
                     try {
                         $url = app(\App\Services\SignWellService::class)->startSigning($registered);
 
-                        return redirect()->away($url);
+                        return \Inertia\Inertia::location($url);
                     } catch (\Throwable) {
                         return redirect()->route('legal.agreement.show');
                     }

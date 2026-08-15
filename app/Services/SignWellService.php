@@ -315,10 +315,12 @@ class SignWellService
     {
         $sender = $this->senderIdentity();
 
-        // Template fetch can miss roles; always plan for the common SignWell sender placeholder.
+        // Only use placeholders that actually exist on the template.
+        // Do not invent "document sender" — that causes SignWell 422s when the
+        // template (like yours) only has Student.
         $names = $placeholderNames !== []
             ? $placeholderNames
-            : array_values(array_unique([$studentPlaceholder, 'document sender', 'Student']));
+            : [$studentPlaceholder];
 
         if (! collect($names)->contains(fn (string $name) => strcasecmp($name, $studentPlaceholder) === 0)) {
             array_unshift($names, $studentPlaceholder);

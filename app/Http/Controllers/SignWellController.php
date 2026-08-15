@@ -41,7 +41,9 @@ class SignWellController extends Controller
         try {
             $url = $this->signWell->startSigning($user);
 
-            return redirect()->away($url);
+            // External SignWell URL — must use Inertia::location for Inertia visits,
+            // and works as a normal redirect for full-page GET navigations.
+            return Inertia::location($url);
         } catch (\Throwable $e) {
             Log::warning('SignWell start failed', [
                 'user_id' => $user->id,
