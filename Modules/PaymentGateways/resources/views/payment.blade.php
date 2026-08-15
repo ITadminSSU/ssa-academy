@@ -18,10 +18,8 @@
 
    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700" rel="stylesheet" />
 
-   {{-- vites --}}
-   {{-- @routes
-    @viteReactRefresh --}}
-   @vite(['resources/js/app.tsx'])
+   {{-- CSS only — do not boot the Inertia React app on this Blade checkout page. --}}
+   @vite(['resources/css/app.css'])
 </head>
 
 <body class="ssu-page-shell flex min-h-screen items-center justify-center font-sans">

@@ -1,23 +1,63 @@
 @php
    $isFree = ($item->pricing_type ?? null) === 'free';
    $hasDiscount = !empty($item->discount);
+
+   // Prefer a freshly signed media URL (thumbnail, then banner). Empty/invalid → placeholder only.
+   $rawImage = $item->getRawOriginal('thumbnail')
+      ?: $item->getRawOriginal('banner')
+      ?: null;
+   $thumbnailUrl = \App\Support\S3CompatibleStorage::attributeGet(
+      is_string($rawImage) ? $rawImage : null
+   );
+   $thumbnailUrl = is_string($thumbnailUrl) ? trim($thumbnailUrl) : '';
+   $thumbnailUrl = $thumbnailUrl !== '' ? $thumbnailUrl : null;
 @endphp
 
 <div class="border-border bg-background space-y-6 rounded-xl border p-6 shadow-sm">
    <div class="flex flex-col gap-4 md:flex-row">
       <div class="bg-muted relative h-48 w-full overflow-hidden rounded-lg md:h-40 md:w-56">
-         <img
-            alt="{{ $item->title }}"
-            src="{{ $item->thumbnail ?? asset('assets/images/blank-image.jpg') }}"
-            class="h-full w-full object-cover"
+         {{-- Always render the branded placeholder underneath so a failed R2/signed URL never shows a broken icon. --}}
+         <div
+            class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#1a2744] via-[#243b66] to-[#2d4a7a] px-3 text-center"
+            aria-hidden="true"
          >
+            <svg
+               xmlns="http://www.w3.org/2000/svg"
+               viewBox="0 0 24 24"
+               fill="none"
+               stroke="currentColor"
+               stroke-width="1.5"
+               class="h-10 w-10 text-white/90"
+            >
+               <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 19.75a48.62 48.62 0 0 1 8.232-3.256 60.438 60.438 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 4.5c2.97 0 5.822.655 8.4 1.834a50.636 50.636 0 0 0-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 9.75c2.585 0 5.077-.655 7.24-1.803"
+               />
+            </svg>
+            <span class="line-clamp-2 text-sm font-semibold text-white/90">{{ $item->title }}</span>
+         </div>
+
+         @if ($thumbnailUrl)
+            <img
+               alt="{{ $item->title }}"
+               src="{{ $thumbnailUrl }}"
+               class="relative z-10 h-full w-full bg-muted object-cover"
+               loading="eager"
+               decoding="async"
+               referrerpolicy="no-referrer"
+               onerror="this.remove()"
+            >
+         @endif
       </div>
 
       <div class="flex-1">
          <h3 class="mb-2 text-xl font-semibold">{{ $item->title }}</h3>
-         <p class="text-muted-foreground mb-4 line-clamp-3">
-            {{ $item->short_description }}
-         </p>
+         @if (filled($item->short_description) && $item->short_description !== $item->title)
+            <p class="text-muted-foreground mb-4 line-clamp-3">
+               {{ $item->short_description }}
+            </p>
+         @endif
       </div>
    </div>
 

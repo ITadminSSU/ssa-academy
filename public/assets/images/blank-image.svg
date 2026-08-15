@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400" role="img" aria-label="Course placeholder">
+  <defs>
+    <linearGradient id="ssuCoursePlaceholder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a2744"/>
+      <stop offset="55%" stop-color="#243b66"/>
+      <stop offset="100%" stop-color="#2d4a7a"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#ssuCoursePlaceholder)"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" transform="translate(272 140) scale(4)">
+    <path d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 19.75a48.62 48.62 0 0 1 8.232-3.256 60.438 60.438 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 4.5c2.97 0 5.822.655 8.4 1.834a50.636 50.636 0 0 0-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 9.75c2.585 0 5.077-.655 7.24-1.803"/>
+  </g>
+</svg>
