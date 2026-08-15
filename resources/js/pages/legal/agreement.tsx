@@ -1,6 +1,11 @@
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
-import LegalAgreementFields, { LegalDocumentPayload } from '@/components/legal-agreement-fields';
+import LegalAgreementFields, {
+   LegalAcknowledgementKey,
+   LegalDocumentPayload,
+   allLegalAcknowledgementsAccepted,
+   emptyLegalAcknowledgements,
+} from '@/components/legal-agreement-fields';
 import AuthLayout from '@/layouts/auth-layout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
@@ -24,10 +29,21 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
    const [startingSignWell, setStartingSignWell] = useState(false);
 
    const { data, setData, post, processing, errors } = useForm({
-      accept_terms: false,
+      ...emptyLegalAcknowledgements(),
    });
 
-   const canSubmit = data.accept_terms;
+   const legalValues = {
+      accept_terms: data.accept_terms,
+      accept_legal_age: data.accept_legal_age,
+      accept_single_account: data.accept_single_account,
+      accept_student_integrity: data.accept_student_integrity,
+   };
+
+   const setLegalAcknowledgement = (key: LegalAcknowledgementKey, checked: boolean) => {
+      setData(key, checked);
+   };
+
+   const canSubmit = allLegalAcknowledgementsAccepted(legalValues);
    const isBusy = processing || startingSignWell;
 
    const submit: FormEventHandler = (e) => {
@@ -79,14 +95,26 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
             ) : (
                <LegalAgreementFields
                   document={document}
-                  acceptTerms={data.accept_terms}
-                  onAcceptTermsChange={(value) => setData('accept_terms', value)}
+                  values={legalValues}
+                  onChange={setLegalAcknowledgement}
                   disabled={isBusy}
-                  termsError={errors.accept_terms}
+                  errors={{
+                     accept_terms: errors.accept_terms,
+                     accept_legal_age: errors.accept_legal_age,
+                     accept_single_account: errors.accept_single_account,
+                     accept_student_integrity: errors.accept_student_integrity,
+                  }}
                />
             )}
 
-            {!useSignWell ? <InputError message={errors.accept_terms} /> : null}
+            {!useSignWell ? (
+               <>
+                  <InputError message={errors.accept_terms} />
+                  <InputError message={errors.accept_legal_age} />
+                  <InputError message={errors.accept_single_account} />
+                  <InputError message={errors.accept_student_integrity} />
+               </>
+            ) : null}
 
             <LoadingButton className="w-full" loading={isBusy} disabled={useSignWell ? isBusy : !canSubmit || isBusy}>
                {useSignWell ? (startingSignWell ? 'Opening SignWell…' : 'Sign Student Agreement') : 'Accept and Continue'}

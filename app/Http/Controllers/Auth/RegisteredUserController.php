@@ -79,6 +79,9 @@ class RegisteredUserController extends Controller
             'referred_by' => 'nullable|string|max:255',
             'referrer_is_employee' => 'nullable|in:0,1',
             'accept_terms' => 'accepted',
+            'accept_legal_age' => 'accepted',
+            'accept_single_account' => 'accepted',
+            'accept_student_integrity' => 'accepted',
         ];
 
         if ($request->professional_type_id) {
@@ -103,9 +106,12 @@ class RegisteredUserController extends Controller
             'cv_resume.required' => 'Please upload your CV or resume.',
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
             'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
-            'accept_terms.accepted' => $this->signWell->isEnabled()
-                ? 'You must agree to the Terms & Conditions and complete the Student Agreement to create an account.'
-                : 'You must agree to the Terms & Conditions to create an account.',
+            'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
+            'accept_legal_age.accepted' => 'You must confirm that you are of legal age and capable of entering into these Terms.',
+            'accept_single_account.accepted' => 'You must confirm that you understand the one-account / no-sharing rule.',
+            'accept_student_integrity.accepted' => $this->signWell->isEnabled()
+                ? 'You must confirm that you will also review and accept the Student Integrity, Confidentiality, and Participation Agreement (via SignWell).'
+                : 'You must confirm that you will also review and accept the Student Integrity, Confidentiality, and Participation Agreement.',
         ]);
 
         if (in_array('None', $selectedSoftware, true)) {

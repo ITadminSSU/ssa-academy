@@ -1,6 +1,11 @@
 import AppLogo from '@/components/app-logo';
 import InputError from '@/components/input-error';
-import LegalAgreementFields, { LegalDocumentPayload } from '@/components/legal-agreement-fields';
+import LegalAgreementFields, {
+   LegalAcknowledgementKey,
+   LegalDocumentPayload,
+   allLegalAcknowledgementsAccepted,
+   emptyLegalAcknowledgements,
+} from '@/components/legal-agreement-fields';
 import LoadingButton from '@/components/loading-button';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -66,7 +71,7 @@ export default function Register({
       cv_resume: null as File | null,
       referred_by: '',
       referrer_is_employee: '' as '' | '1' | '0',
-      accept_terms: false,
+      ...emptyLegalAcknowledgements(),
    });
 
    const selectedProfessionalType = professionalTypes.find((type) => type.id.toString() === data.professional_type_id);
@@ -95,6 +100,17 @@ export default function Register({
       setData('estimating_software', next);
    };
 
+   const legalValues = {
+      accept_terms: data.accept_terms,
+      accept_legal_age: data.accept_legal_age,
+      accept_single_account: data.accept_single_account,
+      accept_student_integrity: data.accept_student_integrity,
+   };
+
+   const setLegalAcknowledgement = (key: LegalAcknowledgementKey, checked: boolean) => {
+      setData(key, checked);
+   };
+
    const isFormComplete =
       Boolean(data.name.trim()) &&
       Boolean(data.email.trim()) &&
@@ -107,7 +123,7 @@ export default function Register({
       Boolean(data.construction_experience) &&
       data.worked_as_construction_va !== '' &&
       Boolean(data.cv_resume) &&
-      data.accept_terms &&
+      allLegalAcknowledgementsAccepted(legalValues) &&
       (!recaptcha.status || Boolean(data.recaptcha));
 
    const submit: FormEventHandler = (e) => {
@@ -428,10 +444,15 @@ export default function Register({
                   <div className="border-border/70 space-y-6 border-t pt-8">
                      <LegalAgreementFields
                         document={legalDocument}
-                        acceptTerms={data.accept_terms}
-                        onAcceptTermsChange={(value) => setData('accept_terms', value)}
+                        values={legalValues}
+                        onChange={setLegalAcknowledgement}
                         disabled={processing}
-                        termsError={errors.accept_terms}
+                        errors={{
+                           accept_terms: errors.accept_terms,
+                           accept_legal_age: errors.accept_legal_age,
+                           accept_single_account: errors.accept_single_account,
+                           accept_student_integrity: errors.accept_student_integrity,
+                        }}
                         signwellEnabled={signwellEnabled}
                      />
 

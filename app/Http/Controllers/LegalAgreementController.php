@@ -61,8 +61,14 @@ class LegalAgreementController extends Controller
 
         $request->validate([
             'accept_terms' => 'accepted',
+            'accept_legal_age' => 'accepted',
+            'accept_single_account' => 'accepted',
+            'accept_student_integrity' => 'accepted',
         ], [
-            'accept_terms.accepted' => 'You must agree to the Terms & Conditions to continue.',
+            'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
+            'accept_legal_age.accepted' => 'You must confirm that you are of legal age and capable of entering into these Terms.',
+            'accept_single_account.accepted' => 'You must confirm that you understand the one-account / no-sharing rule.',
+            'accept_student_integrity.accepted' => 'You must confirm that you will also review and accept the Student Integrity, Confidentiality, and Participation Agreement.',
         ]);
 
         $this->legalAgreement->recordAcceptance($user, $request);
