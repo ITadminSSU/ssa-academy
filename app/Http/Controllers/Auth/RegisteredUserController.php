@@ -20,6 +20,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class RegisteredUserController extends Controller
 {
@@ -56,7 +57,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|SymfonyResponse
     {
         $softwareOptions = RegistrationProfileOptions::estimatingSoftware();
         $experienceOptions = RegistrationProfileOptions::constructionExperience();
@@ -160,7 +161,7 @@ class RegisteredUserController extends Controller
             try {
                 $signingUrl = $this->signWell->startSigning($user);
 
-                return \Inertia\Inertia::location($signingUrl);
+                return Inertia::location($signingUrl);
             } catch (\Throwable $e) {
                 return redirect()
                     ->route('legal.agreement.show')
