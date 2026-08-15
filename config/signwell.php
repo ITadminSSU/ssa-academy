@@ -27,6 +27,18 @@ return [
 
     'sender_email' => trim((string) env('SIGNWELL_SENDER_EMAIL', env('MAIL_FROM_ADDRESS', ''))),
 
+    /*
+    | Comma-separated emails that receive the final signed PDF (CC / copied contacts).
+    | Example: legal@smartsourcingusa.com,admin@smartsourcingacademy.com
+    */
+    'cc_emails' => trim((string) env('SIGNWELL_CC_EMAILS', '')),
+
+    /*
+    | When true (default), SignWell emails the completed PDF to the student signer,
+    | document owner, and copied contacts after embedded signing finishes.
+    */
+    'completion_emails' => filter_var(env('SIGNWELL_COMPLETION_EMAILS', true), FILTER_VALIDATE_BOOLEAN),
+
     'test_mode' => filter_var(env('SIGNWELL_TEST_MODE', true), FILTER_VALIDATE_BOOLEAN),
 
     /*

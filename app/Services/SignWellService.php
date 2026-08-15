@@ -50,7 +50,8 @@ class SignWellService
             'name' => 'SMARTSOURCING USA Academy Student Agreement — '.$user->name,
             'draft' => false,
             'embedded_signing' => true,
-            'embedded_signing_notifications' => false,
+            // Required for SignWell to email the completed PDF after embedded signing.
+            'embedded_signing_notifications' => (bool) config('signwell.completion_emails', true),
             'redirect_url' => route('signwell.complete', absolute: true),
             'recipients' => $recipients,
             'metadata' => [
@@ -58,6 +59,11 @@ class SignWellService
                 'email' => $user->email,
             ],
         ];
+
+        $copiedContacts = $this->copiedContacts();
+        if ($copiedContacts !== []) {
+            $payload['copied_contacts'] = $copiedContacts;
+        }
 
         if ($excludePlaceholders !== []) {
             $payload['exclude_placeholders'] = $excludePlaceholders;
@@ -480,6 +486,34 @@ class SignWellService
         }
 
         return $recipients;
+    }
+
+    /**
+     * Admin / legal inboxes that should receive the final signed PDF.
+     *
+     * @return list<array{name: string, email: string}>
+     */
+    private function copiedContacts(): array
+    {
+        $emails = collect(explode(',', (string) config('signwell.cc_emails', '')))
+            ->map(fn (string $email) => strtolower(trim($email)))
+            ->filter(fn (string $email) => $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values();
+
+        $senderEmail = strtolower(trim((string) (config('signwell.sender_email') ?: '')));
+        if ($senderEmail !== '' && filter_var($senderEmail, FILTER_VALIDATE_EMAIL) && ! $emails->contains($senderEmail)) {
+            $emails->push($senderEmail);
+        }
+
+        $senderName = trim((string) (config('signwell.sender_name') ?: 'SMARTSOURCING USA Academy'));
+
+        return $emails
+            ->map(fn (string $email) => [
+                'name' => $senderName,
+                'email' => $email,
+            ])
+            ->all();
     }
 
     /**
