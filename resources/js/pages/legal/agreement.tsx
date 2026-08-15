@@ -71,7 +71,9 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
                      dashboard or enroll in courses.
                   </p>
                   {signwellStatus === 'pending' ? (
-                     <p className="text-muted-foreground text-xs">You have a signing session in progress. Continue below.</p>
+                     <p className="text-muted-foreground text-xs">
+                        If you already finished signing in SignWell, click the button below — we will unlock your account.
+                     </p>
                   ) : null}
                </div>
             ) : (

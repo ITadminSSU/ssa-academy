@@ -28,7 +28,14 @@ class SignWellController extends Controller
             return redirect()->route('login');
         }
 
-        if (! $this->legalAgreement->requiresAcceptance($user)) {
+        // Recover stuck users who already signed in SignWell but DB save failed.
+        if ($this->signWell->syncCompletionFromSignWell($user->fresh(), $request->ip())) {
+            return redirect()
+                ->intended($this->authService->homeUrlFor($user->fresh()))
+                ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
+        }
+
+        if (! $this->legalAgreement->requiresAcceptance($user->fresh())) {
             return redirect($this->authService->homeUrlFor($user));
         }
 
@@ -39,10 +46,8 @@ class SignWellController extends Controller
         }
 
         try {
-            $url = $this->signWell->startSigning($user);
+            $url = $this->signWell->startSigning($user->fresh());
 
-            // External SignWell URL — must use Inertia::location for Inertia visits,
-            // and works as a normal redirect for full-page GET navigations.
             return Inertia::location($url);
         } catch (\Throwable $e) {
             Log::warning('SignWell start failed', [
@@ -67,27 +72,41 @@ class SignWellController extends Controller
             return redirect()->route('login');
         }
 
-        // Prefer webhook as source of truth; if already completed, go to dashboard.
-        if (! $this->legalAgreement->requiresAcceptance($user->fresh())) {
+        $user = $user->fresh();
+
+        if (! $this->legalAgreement->requiresAcceptance($user)) {
             return redirect()
                 ->intended($this->authService->homeUrlFor($user))
                 ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
         }
 
-        if ($user->signwell_document_id) {
-            $document = $this->signWell->getDocument($user->signwell_document_id);
+        $redirectSaysCompleted = strtolower((string) $request->query('document_status', '')) === 'completed';
 
-            if ($this->signWell->documentIsCompleted($document)) {
-                $this->signWell->markCompleted($user, $user->signwell_document_id, $request->ip());
+        try {
+            $synced = $this->signWell->syncCompletionFromSignWell(
+                $user,
+                $request->ip(),
+                trustRedirectCompleted: $redirectSaysCompleted,
+            );
+        } catch (\Throwable $e) {
+            Log::error('SignWell complete sync failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
 
-                return redirect()
-                    ->intended($this->authService->homeUrlFor($user->fresh()))
-                    ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
-            }
+            return redirect()
+                ->route('legal.agreement.show')
+                ->with('error', 'Your signature was received but we could not unlock your account yet. Please contact support or try again. ('.$e->getMessage().')');
+        }
+
+        if ($synced) {
+            return redirect()
+                ->intended($this->authService->homeUrlFor($user->fresh()))
+                ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
         }
 
         return redirect()
             ->route('legal.agreement.show')
-            ->with('info', 'Please finish signing the student agreement to continue.');
+            ->with('info', 'Please finish signing the student agreement to continue. If you already signed, click Sign Student Agreement again.');
     }
 }

@@ -20,14 +20,34 @@ class LegalAgreementController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || ! $this->legalAgreement->requiresAcceptance($user)) {
+        if (! $user) {
+            return redirect()->route('login');
+        }
+
+        // Recover students who signed in SignWell but never got marked complete in DB.
+        if ($this->signWell->isEnabled()) {
+            try {
+                if ($this->signWell->syncCompletionFromSignWell($user->fresh(), $request->ip())) {
+                    return redirect()
+                        ->intended($this->authService->homeUrlFor($user->fresh()))
+                        ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('SignWell sync on agreement page failed', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        if (! $this->legalAgreement->requiresAcceptance($user->fresh())) {
             return redirect($this->authService->homeUrlFor($user));
         }
 
         return Inertia::render('legal/agreement', [
             'document' => $this->legalAgreement->documentPayload($user),
             'signwellEnabled' => $this->signWell->isEnabled(),
-            'signwellStatus' => $user->signwell_status,
+            'signwellStatus' => $user->fresh()->signwell_status,
         ]);
     }
 

@@ -203,14 +203,53 @@ class SignWellService
             return false;
         }
 
-        $status = strtolower((string) ($document['status'] ?? ''));
+        $status = strtolower(trim((string) ($document['status'] ?? '')));
 
-        return in_array($status, ['completed', 'signed'], true);
+        return in_array($status, ['completed', 'signed', 'complete', 'finished'], true)
+            || str_contains($status, 'completed');
+    }
+
+    /**
+     * If SignWell already shows the user's document as completed, persist acceptance.
+     * Used to recover students stuck after a failed save / missed webhook.
+     */
+    public function syncCompletionFromSignWell(User $user, ?string $ip = null, bool $trustRedirectCompleted = false): bool
+    {
+        if ($user->signwell_completed_at && $user->legal_agreement_accepted_at) {
+            return true;
+        }
+
+        if ($trustRedirectCompleted && $user->signwell_document_id) {
+            $this->markCompleted($user, $user->signwell_document_id, $ip);
+
+            return true;
+        }
+
+        if (! $user->signwell_document_id) {
+            return false;
+        }
+
+        $document = $this->getDocument($user->signwell_document_id);
+
+        if (! $this->documentIsCompleted($document)) {
+            return false;
+        }
+
+        $this->markCompleted($user, $user->signwell_document_id, $ip);
+
+        return true;
     }
 
     public function markCompleted(User $user, ?string $documentId = null, ?string $ip = null): void
     {
         if ($user->legal_agreement_accepted_at && $user->signwell_completed_at) {
+            // Still ensure version string is current (e.g. after column widen recovery).
+            if ($user->legal_agreement_version !== $this->agreementVersion()) {
+                $user->forceFill([
+                    'legal_agreement_version' => $this->agreementVersion(),
+                ])->save();
+            }
+
             return;
         }
 
@@ -226,7 +265,7 @@ class SignWellService
             'legal_agreement_ip' => $ip ?: $user->legal_agreement_ip,
         ])->save();
 
-        app(LegalAgreementService::class)->recordSignWellAcceptance($user, $ip);
+        app(LegalAgreementService::class)->recordSignWellAcceptance($user->fresh(), $ip);
     }
 
     public function findUserByDocumentId(string $documentId): ?User
