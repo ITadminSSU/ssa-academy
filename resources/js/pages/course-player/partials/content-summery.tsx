@@ -81,7 +81,7 @@ const ContentSummery = () => {
          <Separator className="mt-[1px]" />
 
          <TabsContent value="summery" className="m-0 p-5">
-            <Renderer value={props.watching.summary as any} />
+            <Renderer value={(props.watching?.summary ?? '') as any} />
          </TabsContent>
          {isResource && (
             <TabsContent value="resource" className="m-0 p-5">

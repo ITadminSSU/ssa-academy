@@ -152,14 +152,19 @@ export const getCompletedContents = (watchHistory: WatchHistory): CompletedConte
 
 // Add completion calculation
 export const getCourseCompletion = (course: Course, completed: CompletedContent[]) => {
-   const totalItems = course.sections.reduce((total, section) => total + section.section_lessons.length + section.section_quizzes.length, 0);
+   const sections = course.sections ?? [];
 
-   const completedItems = course.sections.reduce((total, section) => {
-      const completedLessons = section.section_lessons.filter((lesson) =>
+   const totalItems = sections.reduce(
+      (total, section) => total + (section.section_lessons?.length ?? 0) + (section.section_quizzes?.length ?? 0),
+      0,
+   );
+
+   const completedItems = sections.reduce((total, section) => {
+      const completedLessons = (section.section_lessons ?? []).filter((lesson) =>
          completed.some((item) => String(item.id) === String(lesson.id) && item.type === 'lesson'),
       ).length;
 
-      const completedQuizzes = section.section_quizzes.filter((quiz) =>
+      const completedQuizzes = (section.section_quizzes ?? []).filter((quiz) =>
          completed.some((item) => String(item.id) === String(quiz.id) && item.type === 'quiz'),
       ).length;
 

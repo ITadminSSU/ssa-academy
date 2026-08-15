@@ -1,12 +1,13 @@
 import ChunkedUploaderInput from '@/components/chunked-uploader-input';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
+import PlayerNavLink from '@/components/player-nav-link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CoursePlayerProps } from '@/types/page';
-import { Link, router, useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2, Clock, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -42,13 +43,14 @@ const PracticalActivityPanel = ({ lesson, isLessonComplete }: Props) => {
       comment: '',
    });
 
-   const nextLessonHref = watchHistory.next_watching_id
-      ? route('course.player', {
-           type: watchHistory.next_watching_type,
-           watch_history: watchHistory.id,
-           lesson_id: watchHistory.next_watching_id,
-        })
-      : null;
+   const nextLessonHref =
+      watchHistory.next_watching_id && watchHistory.next_watching_type
+         ? route('course.player', {
+              type: watchHistory.next_watching_type,
+              watch_history: watchHistory.id,
+              lesson_id: watchHistory.next_watching_id,
+           })
+         : null;
 
    const submitForm = () => {
       clearErrors();
@@ -106,7 +108,7 @@ const PracticalActivityPanel = ({ lesson, isLessonComplete }: Props) => {
                </div>
                {nextLessonHref ? (
                   <Button asChild>
-                     <Link href={nextLessonHref}>Continue to next lesson</Link>
+                     <PlayerNavLink href={nextLessonHref}>Continue to next lesson</PlayerNavLink>
                   </Button>
                ) : (
                   <p className="text-muted-foreground text-sm">You have reached the last item in this module.</p>

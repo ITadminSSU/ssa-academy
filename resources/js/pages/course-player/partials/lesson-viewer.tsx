@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import PlayerNavLink from '@/components/player-nav-link';
 import VideoPlayer from '@/components/video-player';
 import { isExternalVideoLesson, isVideoLesson } from '@/lib/lesson';
 import { cn, getCompletedContents } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
-import { Link, router, usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CheckCircle2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -128,13 +129,14 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
    const externalVideo = isExternalVideoLesson(lesson);
    const isPracticalActivity = Boolean(lesson.requires_submission);
    const watchPercent = Math.max(lessonWatchProgress?.percent ?? 0, livePercent);
-   const nextLessonHref = watchHistory.next_watching_id
-      ? route('course.player', {
-           type: watchHistory.next_watching_type,
-           watch_history: watchHistory.id,
-           lesson_id: watchHistory.next_watching_id,
-        })
-      : null;
+   const nextLessonHref =
+      watchHistory.next_watching_id && watchHistory.next_watching_type
+         ? route('course.player', {
+              type: watchHistory.next_watching_type,
+              watch_history: watchHistory.id,
+              lesson_id: watchHistory.next_watching_id,
+           })
+         : null;
 
    return (
       <Card
@@ -162,6 +164,7 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
 
          {lessonIsVideo && (
             <VideoPlayer
+               key={lesson.id}
                protectDownload
                secureStream={Boolean(lesson.stream_protected)}
                lessonId={lesson.id}
@@ -213,7 +216,7 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
 
                   {nextLessonHref ? (
                      <Button asChild>
-                        <Link href={nextLessonHref}>Continue to next lesson</Link>
+                        <PlayerNavLink href={nextLessonHref}>Continue to next lesson</PlayerNavLink>
                      </Button>
                   ) : (
                      <p className="text-muted-foreground text-sm">You have reached the last item in this module.</p>

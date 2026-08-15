@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CoursePlayerService
 {
-   function getWatchingLesson(string $lesson_id, string $watching_type): SectionLesson | SectionQuiz
+   function getWatchingLesson(string $lesson_id, string $watching_type): SectionLesson|SectionQuiz|null
    {
       $user = Auth::user();
 

@@ -43,7 +43,7 @@ const ContentList = ({ completedContents, courseCompletion }: ContentListProps) 
 
          <ScrollArea className="min-h-0 flex-1">
             <CurriculumSectionList
-               sections={course.sections}
+               sections={course.sections ?? []}
                renderLesson={(lesson, index) => (
                   <Lesson key={lesson.id} lesson={lesson} completed={completedContents} variant="simple" index={index} />
                )}
@@ -52,7 +52,7 @@ const ContentList = ({ completedContents, courseCompletion }: ContentListProps) 
                )}
             />
 
-            {course.sections.length > 0 && (
+            {(course.sections?.length ?? 0) > 0 && (
                <div className="px-4 pt-4 pb-6">
                   {watchHistory.completion_date ? (
                      <Link

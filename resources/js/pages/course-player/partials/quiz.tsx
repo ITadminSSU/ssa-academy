@@ -1,6 +1,7 @@
+import PlayerNavLink from '@/components/player-nav-link';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { CheckCircle2, Circle, CircleCheck, CirclePause, CirclePlay, FileQuestion, Lock } from 'lucide-react';
 
 interface Props {
@@ -68,7 +69,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
       }
 
       return (
-         <Link
+         <PlayerNavLink
             href={route('course.player', {
                type: 'quiz',
                watch_history: watchHistory.id,
@@ -81,7 +82,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
             )}
          >
             {content}
-         </Link>
+         </PlayerNavLink>
       );
    }
 
@@ -100,7 +101,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
    return !dripContent ? (
       <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
          {quizzesUnlocked ? (
-            <Link
+            <PlayerNavLink
                className={cn(
                   'flex cursor-pointer items-center gap-3 py-1',
                   isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : 'text-primary',
@@ -114,7 +115,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
                {isCompleted ? <CircleCheck className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
 
                <QuizIcon quiz={quiz} />
-            </Link>
+            </PlayerNavLink>
          ) : (
             <div className="flex items-center gap-3 py-1 text-muted-foreground">
                <Lock className="h-4 w-4" />
@@ -128,7 +129,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
       <>
          {canAccess ? (
             <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
-               <Link
+               <PlayerNavLink
                   className={cn(
                      'flex cursor-pointer items-center gap-3 py-1',
                      isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-muted-foreground',
@@ -150,7 +151,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
                   )}
 
                   <QuizIcon quiz={quiz} />
-               </Link>
+               </PlayerNavLink>
 
                <span>{quiz.duration}</span>
             </div>

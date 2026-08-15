@@ -147,12 +147,19 @@ class PlayerController extends Controller
                     : ($subscriptionAccess['mode'] === 'completed_only'
                         ? 'This lesson is locked.'
                         : 'Complete the previous lesson before continuing.');
+
+                if ($watch_history->current_watching_type && $watch_history->current_watching_id) {
+                    return redirect()
+                        ->route('course.player', [
+                            'type' => $watch_history->current_watching_type,
+                            'watch_history' => $watch_history->id,
+                            'lesson_id' => $watch_history->current_watching_id,
+                        ])
+                        ->with('error', $errorMessage);
+                }
+
                 return redirect()
-                    ->route('course.player', [
-                        'type' => $watch_history->current_watching_type,
-                        'watch_history' => $watch_history->id,
-                        'lesson_id' => $watch_history->current_watching_id,
-                    ])
+                    ->route('student.course.show', ['id' => $course->id, 'tab' => 'modules'])
                     ->with('error', $errorMessage);
             }
 

@@ -48,7 +48,10 @@ const Index = (props: CoursePlayerProps) => {
    }, []);
 
    return (
-      <div className="course-player-protected ssu-player-shell min-h-screen">
+      <div
+         key={`${type}-${watching?.id ?? 'none'}`}
+         className="course-player-protected ssu-player-shell min-h-screen"
+      >
          <SidebarProvider
             className="flex-col"
             style={
@@ -68,10 +71,16 @@ const Index = (props: CoursePlayerProps) => {
 
                <SidebarInset>
                   <Main>
+                     {/* Remount viewer on each lesson/quiz so Plyr/Bunny are not
+                         reused across Inertia visits — source swaps on a live
+                         Plyr instance crash React with insertBefore (white screen). */}
                      {type === 'lesson' ? (
-                        <LessonViewer lesson={(watching as SectionLesson) ?? null} />
+                        <LessonViewer
+                           key={`lesson-${watching?.id ?? 'none'}`}
+                           lesson={(watching as SectionLesson) ?? null}
+                        />
                      ) : (
-                        <QuizViewer quiz={watching as SectionQuiz} />
+                        <QuizViewer key={`quiz-${watching?.id ?? 'none'}`} quiz={watching as SectionQuiz} />
                      )}
 
                      <ContentSummery />

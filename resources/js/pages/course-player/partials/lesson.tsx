@@ -1,7 +1,8 @@
 import LessonIcons from '@/components/lesson-icons';
+import PlayerNavLink from '@/components/player-nav-link';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { CheckCircle2, Lock } from 'lucide-react';
 import { ReactNode } from 'react';
 
@@ -80,7 +81,7 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
       }
 
       return (
-         <Link
+         <PlayerNavLink
             href={route('course.player', {
                type: 'lesson',
                watch_history: watchHistory.id,
@@ -93,13 +94,13 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
             )}
          >
             {content}
-         </Link>
+         </PlayerNavLink>
       );
    }
 
    return !dripContent ? (
       <LessonWrapper lesson={lesson}>
-         <Link
+         <PlayerNavLink
             className={cn(
                'flex cursor-pointer items-center gap-3 py-1',
                isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : 'text-primary',
@@ -113,13 +114,13 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
             <LessonIcons type="active" lesson={lesson} dripContent={true} isCompleted={isCompleted} />
 
             <p>{lesson.title}</p>
-         </Link>
+         </PlayerNavLink>
       </LessonWrapper>
    ) : (
       <>
          {canAccess ? (
             <LessonWrapper lesson={lesson}>
-               <Link
+               <PlayerNavLink
                   className={cn(
                      'flex cursor-pointer items-center gap-3 py-1',
                      isCompleted ? 'text-blue-500' : isCurrentLesson ? 'text-green-500' : isNext ? 'text-primary' : 'text-muted-foreground',
@@ -140,7 +141,7 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
                   />
 
                   <p>{lesson.title}</p>
-               </Link>
+               </PlayerNavLink>
             </LessonWrapper>
          ) : (
             <LessonWrapper lesson={lesson}>

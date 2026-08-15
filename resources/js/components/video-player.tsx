@@ -311,6 +311,7 @@ const VideoPlayer = ({
    if (delivery === 'bunny_embed' && embedUrl) {
       return (
          <BunnyEmbedPlayer
+            key={embedUrl}
             embedUrl={embedUrl}
             onEnded={onEnded}
             onWatchProgress={onWatchProgress}

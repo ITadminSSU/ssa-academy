@@ -1,7 +1,8 @@
+import PlayerNavLink from '@/components/player-nav-link';
 import { Button } from '@/components/ui/button';
 import { cn, getCompletedContents } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const LessonControl = ({ className }: { className?: string }) => {
@@ -18,8 +19,8 @@ const LessonControl = ({ className }: { className?: string }) => {
 
    return (
       <>
-         {watchHistory.prev_watching_id ? (
-            <Link
+         {watchHistory.prev_watching_id && watchHistory.prev_watching_type ? (
+            <PlayerNavLink
                href={route('course.player', {
                   type: watchHistory.prev_watching_type,
                   watch_history: watchHistory.id,
@@ -35,7 +36,7 @@ const LessonControl = ({ className }: { className?: string }) => {
                >
                   <ChevronLeft className="!h-6 !w-6" />
                </Button>
-            </Link>
+            </PlayerNavLink>
          ) : (
             <Button
                disabled
@@ -49,8 +50,8 @@ const LessonControl = ({ className }: { className?: string }) => {
             </Button>
          )}
 
-         {canGoNext ? (
-            <Link
+         {canGoNext && watchHistory.next_watching_type ? (
+            <PlayerNavLink
                href={route('course.player', {
                   type: watchHistory.next_watching_type,
                   watch_history: watchHistory.id,
@@ -66,7 +67,7 @@ const LessonControl = ({ className }: { className?: string }) => {
                >
                   <ChevronRight className="!h-6 !w-6" />
                </Button>
-            </Link>
+            </PlayerNavLink>
          ) : (
             <Button
                disabled
