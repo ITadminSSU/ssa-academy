@@ -37,6 +37,7 @@ interface User extends TableCommon {
    construction_experience?: string | null;
    worked_as_construction_va?: boolean | null;
    referred_by?: string | null;
+   referrer_is_employee?: boolean | null;
    cv_resume_url?: string | null;
    cv_resume_name?: string | null;
    has_cv?: boolean;

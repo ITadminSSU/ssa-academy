@@ -65,6 +65,7 @@ export default function Register({
       worked_as_construction_va: '' as '' | '1' | '0',
       cv_resume: null as File | null,
       referred_by: '',
+      referrer_is_employee: '' as '' | '1' | '0',
       accept_terms: false,
    });
 
@@ -389,12 +390,38 @@ export default function Register({
                            type="text"
                            autoComplete="off"
                            value={data.referred_by}
-                           onChange={(e) => setData('referred_by', e.target.value)}
+                           onChange={(e) => {
+                              const value = e.target.value;
+                              setData({
+                                 ...data,
+                                 referred_by: value,
+                                 referrer_is_employee: value.trim() ? data.referrer_is_employee : '',
+                              });
+                           }}
                            disabled={processing}
                            placeholder="e.g. Juan Dela Cruz"
                         />
                         <p className="text-muted-foreground text-xs">Optional. Enter their full name.</p>
                         <InputError message={errors.referred_by} />
+
+                        <Label htmlFor="referrer_is_employee" className="mt-2">
+                           Is your referrer a Smart Sourcing employee?
+                        </Label>
+                        <Select
+                           value={data.referrer_is_employee || undefined}
+                           onValueChange={(value) => setData('referrer_is_employee', value as '1' | '0')}
+                           disabled={processing || !data.referred_by.trim()}
+                        >
+                           <SelectTrigger id="referrer_is_employee">
+                              <SelectValue placeholder="Select an option" />
+                           </SelectTrigger>
+                           <SelectContent>
+                              <SelectItem value="1">Yes</SelectItem>
+                              <SelectItem value="0">No</SelectItem>
+                           </SelectContent>
+                        </Select>
+                        <p className="text-muted-foreground text-xs">Optional. Available after you enter a referrer name.</p>
+                        <InputError message={errors.referrer_is_employee} />
                      </div>
                   </div>
 

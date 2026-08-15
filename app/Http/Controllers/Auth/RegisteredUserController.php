@@ -76,6 +76,7 @@ class RegisteredUserController extends Controller
             'worked_as_construction_va' => 'required|boolean',
             'cv_resume' => 'required|file|mimes:pdf,doc,docx|max:10240',
             'referred_by' => 'nullable|string|max:255',
+            'referrer_is_employee' => 'nullable|in:0,1',
             'accept_terms' => 'accepted',
         ];
 
@@ -129,6 +130,12 @@ class RegisteredUserController extends Controller
             'referred_by' => filled($validated['referred_by'] ?? null)
                 ? trim((string) $validated['referred_by'])
                 : null,
+            'referrer_is_employee' => filled($validated['referred_by'] ?? null)
+                && array_key_exists('referrer_is_employee', $validated)
+                && $validated['referrer_is_employee'] !== null
+                && $validated['referrer_is_employee'] !== ''
+                    ? (bool) (int) $validated['referrer_is_employee']
+                    : null,
             'email_verified_at' => now(),
         ]);
 

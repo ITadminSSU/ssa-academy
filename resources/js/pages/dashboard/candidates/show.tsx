@@ -253,6 +253,16 @@ const CandidateShow = (props: Props) => {
                   <div>
                      <p className="text-muted-foreground text-sm">Referred by</p>
                      <p className="font-medium">{candidate.referred_by?.trim() || '—'}</p>
+                     {candidate.referred_by?.trim() ? (
+                        <p className="text-muted-foreground mt-1 text-xs">
+                           Smart Sourcing employee:{' '}
+                           {candidate.referrer_is_employee === true
+                              ? 'Yes'
+                              : candidate.referrer_is_employee === false
+                                ? 'No'
+                                : '—'}
+                        </p>
+                     ) : null}
                   </div>
                   <div>
                      <p className="text-muted-foreground text-sm">{dashboard.paid_enrollments ?? 'Paid Enrollments'}</p>
