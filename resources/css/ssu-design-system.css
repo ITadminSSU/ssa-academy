@@ -59,6 +59,21 @@
       font-family: var(--font-display);
       letter-spacing: -0.02em;
    }
+
+   /*
+    * Prefer clip over hidden for page-level X containment.
+    * overflow-x-hidden on layout wrappers creates a scroll container that
+    * Safari/iPad uses to incorrectly clip rounded + sticky descendants
+    * (triangular bites on avatars, tabs, and CTA buttons).
+    */
+   html {
+      overflow-x: clip;
+   }
+
+   body {
+      overflow-x: clip;
+      max-width: 100vw;
+   }
 }
 
 @layer utilities {
@@ -71,7 +86,10 @@
    }
 
    .ssu-surface-card {
-      @apply border-border/70 bg-card rounded-xl border shadow-sm;
+      @apply border-border/70 bg-card relative isolate rounded-xl border shadow-sm;
+      /* Force a compositing layer so Safari honors border-radius clipping. */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
    }
 
    .ssu-kicker {
@@ -375,15 +393,21 @@
    }
 
    .ssu-enrollment-shell {
-      @apply border-border/70 bg-card rounded-xl border shadow-sm;
+      @apply border-border/70 bg-card relative isolate overflow-clip rounded-xl border shadow-sm;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
    }
 
    .ssu-enrollment-panel {
-      @apply border-border/60 rounded-xl border bg-[color:var(--brand-grey)] p-4 dark:bg-muted/20;
+      @apply border-border/60 relative isolate overflow-clip rounded-xl border bg-[color:var(--brand-grey)] p-4 dark:bg-muted/20;
    }
 
    .ssu-checkout-button {
-      @apply font-display;
+      @apply font-display relative isolate;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
    }
 
    .ssu-player-shell {

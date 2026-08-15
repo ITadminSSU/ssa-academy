@@ -25,11 +25,11 @@ const CoursePreview = () => {
    return (
       <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
          <div className="space-y-4">
-            <div className="relative">
+            <div className="relative isolate overflow-clip rounded-lg">
                {course.thumbnail ? (
-                  <img className="aspect-video w-full rounded-lg object-cover" src={course.thumbnail} alt={course.title} />
+                  <img className="aspect-video w-full object-cover" src={course.thumbnail} alt={course.title} />
                ) : (
-                  <CourseBannerPlaceholder title={course.title} className="aspect-video w-full rounded-lg" />
+                  <CourseBannerPlaceholder title={course.title} className="aspect-video w-full" />
                )}
 
                {course.preview && (

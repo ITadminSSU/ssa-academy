@@ -157,15 +157,15 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
 
          <div className="ssu-page-shell">
             <div className="container grid grid-cols-1 gap-7 pb-14 md:grid-cols-3 md:-mt-12">
-               <div className="space-y-8 md:col-span-2">
-                  <Tabs defaultValue="overview" className="ssu-surface-card relative z-10 overflow-hidden">
-                     <div className="border-border/70 overflow-x-auto overflow-y-hidden border-b">
-                        <TabsList className="flex h-auto w-full justify-start gap-2 rounded-none bg-transparent p-3">
+               <div className="min-w-0 space-y-8 md:col-span-2">
+                  <Tabs defaultValue="overview" className="ssu-surface-card relative z-10 isolate overflow-clip">
+                     <div className="border-border/70 overflow-x-auto border-b">
+                        <TabsList className="flex h-auto w-max min-w-full justify-start gap-2 rounded-none bg-transparent p-3">
                            {tabs.map(({ label, value }) => (
                               <TabsTrigger
                                  key={value}
                                  value={value}
-                                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap"
+                                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary relative isolate rounded-full border px-4 py-2 text-sm font-medium whitespace-nowrap"
                               >
                                  <span>{label}</span>
                               </TabsTrigger>
@@ -181,7 +181,7 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
                   </Tabs>
                </div>
 
-               <div className="relative z-10">
+               <div className="relative z-10 min-w-0">
                   <CoursePreview />
                </div>
             </div>

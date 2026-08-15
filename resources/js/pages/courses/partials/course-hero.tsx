@@ -10,7 +10,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Clock, GraduationCap, Languages, Users } from 'lucide-react';
 
 const Chip = ({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) => (
-   <span className="inline-flex items-center gap-2 rounded-full bg-card/10 px-3 py-1.5 text-sm font-medium text-white ring-1 ring-white/15 backdrop-blur-sm">
+   <span className="inline-flex items-center gap-2 rounded-full bg-card/10 px-3 py-1.5 text-sm font-medium text-white ring-1 ring-white/15 [transform:translateZ(0)]">
       <Icon className="h-4 w-4 opacity-90" />
       {children}
    </span>
