@@ -13,6 +13,7 @@ import { Renderer } from 'richtor';
 import 'richtor/styles';
 import DocumentViewer from './document-viewer';
 import EmbedViewer from './embed-viewer';
+import FacebookGroupButton from './facebook-group-button';
 import LessonControl from './lesson-control';
 import PracticalActivityPanel from './practical-activity-panel';
 
@@ -214,13 +215,16 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                      <span>Lesson completed</span>
                   </div>
 
-                  {nextLessonHref ? (
-                     <Button asChild>
-                        <PlayerNavLink href={nextLessonHref}>Continue to next lesson</PlayerNavLink>
-                     </Button>
-                  ) : (
-                     <p className="text-muted-foreground text-sm">You have reached the last item in this module.</p>
-                  )}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                     <FacebookGroupButton />
+                     {nextLessonHref ? (
+                        <Button asChild>
+                           <PlayerNavLink href={nextLessonHref}>Continue to next lesson</PlayerNavLink>
+                        </Button>
+                     ) : (
+                        <p className="text-muted-foreground text-sm">You have reached the last item in this module.</p>
+                     )}
+                  </div>
                </div>
             ) : lessonIsVideo ? (
                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -236,10 +240,14 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                               : `This lesson is marked complete automatically when the video ends. If it does not, you can mark it complete here (${Math.round(watchPercent)}% watched).`}
                   </p>
 
-                  {canMarkProgress ? <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button> : null}
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                     <FacebookGroupButton />
+                     {canMarkProgress ? <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button> : null}
+                  </div>
                </div>
             ) : (
-               <div className="flex justify-end">
+               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                  <FacebookGroupButton />
                   {canMarkProgress ? (
                      <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button>
                   ) : (
