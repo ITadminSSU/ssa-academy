@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
                 return redirect()->route('two-factor.challenge');
             }
 
-            return redirect($this->authService->homeUrlFor($user));
+            return redirect($this->authService->continueUrlAfterAuth($user));
         }
 
         if ($request->filled('redirect') && $this->isSafeRedirect($request->query('redirect'))) {
@@ -118,6 +118,12 @@ class AuthenticatedSessionController extends Controller
     {
         $user = $request->user();
 
+        if ($user && $this->authService->needsEmailVerification($user)) {
+            $request->session()->forget('url.intended');
+
+            return route('verification.notice');
+        }
+
         if ($user && $this->legalAgreement->requiresAcceptance($user)) {
             $request->session()->forget('url.intended');
 
@@ -155,8 +161,9 @@ class AuthenticatedSessionController extends Controller
     {
         $path = parse_url($url, PHP_URL_PATH) ?? $url;
 
-        return in_array($path, ['/login', '/register', '/forgot-password'], true)
-            || str_starts_with($path, '/password-reset');
+        return in_array($path, ['/login', '/register', '/forgot-password', '/verify-email'], true)
+            || str_starts_with($path, '/password-reset')
+            || str_starts_with($path, '/verify-email/');
     }
 
     private function shouldShowTestAccounts(): bool

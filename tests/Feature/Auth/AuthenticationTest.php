@@ -11,7 +11,10 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create([
+        'legal_agreement_accepted_at' => now(),
+        'legal_agreement_version' => config('legal.agreement_version', '2026-07-16'),
+    ]);
 
     $response = $this->post('/login', [
         'email' => $user->email,
@@ -19,7 +22,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('dashboard.external', ['tab' => 'home'], false));
 });
 
 test('users can not authenticate with invalid password', function () {

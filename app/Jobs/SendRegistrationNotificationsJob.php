@@ -34,6 +34,10 @@ class SendRegistrationNotificationsJob implements ShouldQueue
             return;
         }
 
+        if (! $user->legal_agreement_accepted_at) {
+            return;
+        }
+
         if ($user->legal_confirmation_email_sent_at) {
             return;
         }

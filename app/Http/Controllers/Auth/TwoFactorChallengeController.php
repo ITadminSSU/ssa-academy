@@ -74,10 +74,6 @@ class TwoFactorChallengeController extends Controller
         $request->session()->put('auth.two_factor_confirmed', true);
         $this->singleSession->claim($user);
 
-        if ($this->legalAgreement->requiresAcceptance($user)) {
-            return redirect()->route('legal.agreement.show');
-        }
-
-        return redirect()->intended($this->authService->homeUrlFor($user));
+        return redirect()->intended($this->authService->continueUrlAfterAuth($user));
     }
 }

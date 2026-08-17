@@ -5,7 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-   <title>{{ config('app.name') }}</title>
+   <title>Verify your email — {{ config('app.name') }}</title>
    <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"
@@ -44,11 +44,19 @@
 </head>
 
 <body>
+   @php
+      $expireMinutes = (int) ($expireMinutes ?? 1440);
+      $expireHours = max(1, (int) ceil($expireMinutes / 60));
+   @endphp
+
    <h1 style="font-size: 1.5em; font-weight: 600; margin-bottom: 1em;">
       Hello, {{ $user->name }}!
    </h1>
    <p style="margin-bottom: 1.5em;">
-      Thank you for registering with us. Please verify your email address by clicking the button below:
+      Confirm this email address to finish creating your {{ config('app.name') }} account:
+   </p>
+   <p style="margin-bottom: 1.5em; font-weight: 600;">
+      {{ $user->email }}
    </p>
    <a
       href="{{ $url }}"
@@ -57,10 +65,17 @@
       Verify Email Address
    </a>
    <p style="margin-bottom: 1em;">
-      This verification link will expire in 5 minutes.
+      This link expires in {{ $expireHours }} {{ $expireHours === 1 ? 'hour' : 'hours' }}. After that, sign in and request a new one.
    </p>
    <p style="margin-bottom: 1em;">
-      If you did not create an account, no further action is required.
+      If you do not see this message in your inbox, check spam, junk, and promotions. Mark it as Not spam so the next message lands in your inbox.
+   </p>
+   <p style="margin-bottom: 1em; word-break: break-all;">
+      If the button does not work, paste this link into your browser:<br>
+      <a href="{{ $url }}">{{ $url }}</a>
+   </p>
+   <p style="margin-bottom: 1em;">
+      If you did not create an account, you can ignore this email.
    </p>
 
    <p style="margin: 2em 0 0;">

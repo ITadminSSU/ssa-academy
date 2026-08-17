@@ -52,13 +52,13 @@ class ResendRegistrationEmailsCommand extends Command
             if ($user->hasVerifiedEmail()) {
                 $this->warn('  Verification: skipped (email already verified).');
             } else {
-                SendEmailVerificationNotificationJob::dispatchSync($user->id, autoVerifyOnFailure: false);
-                $user->refresh();
+                try {
+                    SendEmailVerificationNotificationJob::dispatchSync($user->id);
+                    $this->info('  Verification: sent. Ask the student to check inbox and spam.');
+                } catch (\Throwable $exception) {
+                    $this->error('  Verification: send failed — '.$exception->getMessage());
 
-                if ($user->hasVerifiedEmail()) {
-                    $this->error('  Verification: send failed and user was not verified. Check SMTP and logs.');
-                } else {
-                    $this->info('  Verification: sent.');
+                    return self::FAILURE;
                 }
             }
         }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendRegistrationNotificationsJob;
 use App\Mail\LegalAgreementAcceptedMail;
 use App\Models\Page;
 use App\Models\User;
@@ -215,7 +216,15 @@ class LegalAgreementService
             'legal_agreement_ip' => $ip,
         ])->save();
 
-        return $user->fresh();
+        $user = $user->fresh();
+
+        if (! $user->legal_confirmation_email_sent_at) {
+            SendRegistrationNotificationsJob::dispatch($user->id)
+                ->onConnection('sync')
+                ->afterResponse();
+        }
+
+        return $user;
     }
 
     public function sendAcceptanceEmail(User $user, ?Page $terms = null, $acceptedAt = null, ?string $ip = null): void

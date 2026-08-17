@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\SendRegistrationNotificationsJob;
+use App\Jobs\SendEmailVerificationNotificationJob;
 use App\Models\ProfessionalType;
 use App\Models\User;
 use App\Services\Auth\SingleSessionService;
@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
@@ -143,7 +144,6 @@ class RegisteredUserController extends Controller
                 && $validated['referrer_is_employee'] !== ''
                     ? (bool) (int) $validated['referrer_is_employee']
                     : null,
-            'email_verified_at' => now(),
         ]);
 
         $user->addMediaFromRequest('cv_resume')
@@ -155,26 +155,29 @@ class RegisteredUserController extends Controller
             $this->legalAgreement->recordAcceptance($user, $request, false);
         }
 
-        SendRegistrationNotificationsJob::dispatch($user->id)
-            ->onConnection('sync')
-            ->afterResponse();
+        $verificationError = null;
+
+        try {
+            SendEmailVerificationNotificationJob::dispatchSync($user->id);
+        } catch (\Throwable $exception) {
+            $verificationError = 'We created your account but could not send the verification email. Click the button below to try again, and check your spam folder if it still does not arrive.';
+            Log::error('Email verification send failed during registration', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
         $this->singleSession->claim($user);
 
-        if ($this->signWell->isEnabled()) {
-            try {
-                $signingUrl = $this->signWell->startSigning($user);
+        $redirect = redirect()->route('verification.notice');
 
-                return Inertia::location($signingUrl);
-            } catch (\Throwable $e) {
-                return redirect()
-                    ->route('legal.agreement.show')
-                    ->with('error', $e->getMessage());
-            }
+        if ($verificationError) {
+            return $redirect->with('error', $verificationError);
         }
 
-        return redirect()->intended($this->authService->homeUrlFor($user));
+        return $redirect->with('status', 'verification-link-sent');
     }
 }

@@ -16,7 +16,6 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Enums\LearnerUserType;
-use App\Notifications\VerifyEmailNotification;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -172,8 +171,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             ->acceptsMimeTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
     }
 
-    public function sendEmailVerificationNotification()
+    public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmailNotification);
+        app(\App\Services\AccountMailService::class)->sendEmailVerification($this);
     }
 }

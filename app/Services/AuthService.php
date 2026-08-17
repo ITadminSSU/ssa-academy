@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthService
 {
-    public function __construct(private LearnerTypeResolver $learnerTypeResolver) {}
+    public function __construct(
+        private LearnerTypeResolver $learnerTypeResolver,
+        private LegalAgreementService $legalAgreement,
+    ) {}
     public function recaptchaStatus()
     {
         $recaptchaStatus = false;
@@ -139,5 +142,39 @@ class AuthService
         }
 
         return route($routeName, $parameters);
+    }
+
+    public function needsEmailVerification(?User $user): bool
+    {
+        return $user instanceof User && ! $user->hasVerifiedEmail();
+    }
+
+    /**
+     * Where a signed-in user should go next: verify email, then SignWell/legal, then dashboard.
+     */
+    public function continueUrlAfterAuth(?User $user, array $parameters = []): string
+    {
+        if (! $user) {
+            return route('login');
+        }
+
+        if ($this->needsEmailVerification($user)) {
+            return route('verification.notice');
+        }
+
+        if ($this->legalAgreement->requiresAcceptance($user)) {
+            return route('legal.agreement.show');
+        }
+
+        return $this->homeUrlFor($user, $parameters);
+    }
+
+    public function continueUrlAfterVerification(User $user): string
+    {
+        if ($this->legalAgreement->requiresAcceptance($user)) {
+            return route('legal.agreement.show');
+        }
+
+        return $this->homeUrlFor($user).'?verified=1';
     }
 }

@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\HomeController;
 use App\Services\AuthService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\EnsureCanonicalHost;
@@ -47,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:admin,instructor'])->group(base_path('routes/instructor.php'));
 
                 // Student routes
-                Route::middleware(['auth', 'twoFactor', 'legalAgreement', 'role:student,instructor,admin'])->group(base_path('routes/student.php'));
+                Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:student,instructor,admin'])->group(base_path('routes/student.php'));
 
                 Route::get('/{slug}', [HomeController::class, 'inner_page'])->name('inner.page');
             });
@@ -55,7 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectUsersTo(function (Request $request) {
-            return app(AuthService::class)->homeUrlFor($request->user());
+            return app(AuthService::class)->continueUrlAfterAuth($request->user());
         });
 
         $middleware->api(prepend: [
@@ -121,6 +123,24 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->back(fallback: route('login'))->with('error', $message);
+        });
+
+        $verificationLinkMessage = 'That verification link is invalid or has expired. Request a new one below — it is valid for 24 hours.';
+
+        $exceptions->render(function (InvalidSignatureException $e, Request $request) use ($inertiaLocation, $verificationLinkMessage) {
+            if ($request->routeIs('verification.verify') || $request->is('verify-email/*')) {
+                $request->session()->flash('error', $verificationLinkMessage);
+
+                return $inertiaLocation($request, route('verification.notice'));
+            }
+        });
+
+        $exceptions->render(function (AuthorizationException $e, Request $request) use ($inertiaLocation, $verificationLinkMessage) {
+            if ($request->routeIs('verification.verify') || $request->is('verify-email/*')) {
+                $request->session()->flash('error', $verificationLinkMessage);
+
+                return $inertiaLocation($request, route('verification.notice'));
+            }
         });
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {

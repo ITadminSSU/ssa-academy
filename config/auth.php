@@ -112,4 +112,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email verification
+    |--------------------------------------------------------------------------
+    |
+    | How long a signed verification link stays valid. 24 hours gives students
+    | time to find the message in spam without the site looking "broken".
+    |
+    */
+    'verification' => [
+        'expire' => (int) env('AUTH_VERIFICATION_EXPIRE_MINUTES', 1440),
+    ],
+
 ];

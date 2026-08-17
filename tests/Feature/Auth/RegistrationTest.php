@@ -2,7 +2,10 @@
 
 use App\Models\Page;
 use App\Models\ProfessionalType;
+use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -13,8 +16,9 @@ test('registration screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('new users can register', function () {
+test('new users can register and must verify email', function () {
     Storage::fake('public');
+    Notification::fake();
 
     $professionalType = ProfessionalType::create([
         'name' => 'Architect',
@@ -43,8 +47,18 @@ test('new users can register', function () {
         'worked_as_construction_va' => false,
         'cv_resume' => UploadedFile::fake()->create('resume.pdf', 100, 'application/pdf'),
         'accept_terms' => true,
+        'accept_legal_age' => true,
+        'accept_single_account' => true,
+        'accept_student_integrity' => true,
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('verification.notice', absolute: false));
+
+    $user = User::query()->where('email', 'test@example.com')->first();
+
+    expect($user)->not->toBeNull()
+        ->and($user->hasVerifiedEmail())->toBeFalse();
+
+    Notification::assertSentTo($user, VerifyEmailNotification::class);
 });

@@ -6,6 +6,8 @@ use App\Mail\ChangeEmailAlert;
 use App\Mail\ChangeEmailVerification;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
+use App\Support\EmailVerificationUrl;
 use App\Support\PasswordResetUrl;
 use App\Support\ResendHttpClient;
 use Illuminate\Support\Facades\Log;
@@ -47,6 +49,47 @@ class AccountMailService
 
         throw new \RuntimeException(
             $errors !== [] ? implode(' | ', $errors) : 'Password reset email could not be sent.'
+        );
+    }
+
+    public function sendEmailVerification(User $user): void
+    {
+        if ($user->hasVerifiedEmail()) {
+            return;
+        }
+
+        $errors = [];
+
+        if (ResendHttpClient::isAvailable()) {
+            try {
+                $this->sendEmailVerificationViaResendHttp($user);
+
+                return;
+            } catch (\Throwable $exception) {
+                $errors[] = 'Resend API: '.$exception->getMessage();
+                Log::warning('Email verification Resend HTTP failed, trying Laravel Mail', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        try {
+            $user->notify(new VerifyEmailNotification);
+
+            return;
+        } catch (\Throwable $exception) {
+            $errors[] = 'Mail: '.$exception->getMessage();
+            Log::warning('Email verification Laravel Mail failed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        throw new \RuntimeException(
+            $errors !== [] ? implode(' | ', $errors) : 'Email verification could not be sent.'
         );
     }
 
@@ -132,6 +175,34 @@ class AccountMailService
             'to' => [$user->getEmailForPasswordReset()],
             'subject' => 'Reset Password Notification',
             'html' => $html,
+        ]);
+    }
+
+    private function sendEmailVerificationViaResendHttp(User $user): void
+    {
+        $url = EmailVerificationUrl::forUser($user);
+        $expireMinutes = EmailVerificationUrl::expireMinutes();
+
+        $html = view('mail.email-verification', [
+            'user' => $user,
+            'url' => $url,
+            'expireMinutes' => $expireMinutes,
+        ])->render();
+
+        $text = view('mail.email-verification-text', [
+            'user' => $user,
+            'url' => $url,
+            'expireMinutes' => $expireMinutes,
+        ])->render();
+
+        $appName = config('branding.short_name', config('app.name'));
+
+        ResendHttpClient::send([
+            'from' => $this->fromAddress(),
+            'to' => [$user->getEmailForVerification()],
+            'subject' => "Verify your email — {$appName}",
+            'html' => $html,
+            'text' => $text,
         ]);
     }
 

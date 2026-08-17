@@ -15,14 +15,14 @@ class VerifiedAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if user is logged in
-        if (!$request->user()) {
+        if (! $request->user()) {
             return redirect()->route('login');
         }
 
-        // Check if user has verified their email
-        if (!$request->user()->hasVerifiedEmail()) {
-            return redirect()->back()->with('error', 'Please verify your email address.');
+        if (! $request->user()->hasVerifiedEmail()) {
+            return redirect()
+                ->route('verification.notice')
+                ->with('error', 'Please verify your email address before continuing.');
         }
 
         return $next($request);

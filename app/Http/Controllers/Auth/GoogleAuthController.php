@@ -47,6 +47,11 @@ class GoogleAuthController extends Controller
             if ($registered) {
                 // Update existing user's tokens
                 $this->authService->updateGoogleTokens($registered, $user);
+
+                if (! $registered->hasVerifiedEmail()) {
+                    $registered->markEmailAsVerified();
+                }
+
                 Auth::login($registered, true);
             } else {
                 $registered = $this->authService->googleAuthRegister($user);

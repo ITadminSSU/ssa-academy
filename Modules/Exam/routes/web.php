@@ -31,7 +31,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('dashboard')->group(function (
 | Instructor Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'legalAgreement', 'role:instructor,admin'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth', 'verified', 'legalAgreement', 'role:instructor,admin'])->prefix('dashboard')->group(function () {
     // Exams (Admin can manage all; trainers can delete only their own — enforced in controller)
     Route::resource('exams', ExamController::class)->except(['show', 'update']);
     Route::post('exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
@@ -70,7 +70,7 @@ Route::middleware(['auth', 'legalAgreement', 'role:instructor,admin'])->prefix('
 | Student Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'legalAgreement', 'role:student,instructor,admin'])->prefix('student')->group(function () {
+Route::middleware(['auth', 'verified', 'legalAgreement', 'role:student,instructor,admin'])->prefix('student')->group(function () {
     Route::get('exam/resources/download/{id}', [ExamResourceController::class, 'download'])->name('exam-resources.download');
 
     // Exam Attempts

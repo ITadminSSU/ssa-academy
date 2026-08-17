@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendRegistrationNotificationsJob;
 use App\Services\AuthService;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -17,19 +18,24 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
-        $dashboardUrl = $this->authService->homeUrlFor($request->user()) . '?verified=1';
+        $user = $request->user();
 
-        if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended($dashboardUrl);
-        }
-
-        if ($request->user()->markEmailAsVerified()) {
-            /** @var \Illuminate\Contracts\Auth\MustVerifyEmail $user */
-            $user = $request->user();
-
+        if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 
-        return redirect()->intended($dashboardUrl);
+        $user = $user->fresh();
+
+        if ($user->legal_agreement_accepted_at && ! $user->legal_confirmation_email_sent_at) {
+            SendRegistrationNotificationsJob::dispatch($user->id)
+                ->onConnection('sync')
+                ->afterResponse();
+        }
+
+        $destination = $this->authService->continueUrlAfterVerification($user);
+
+        return redirect()
+            ->intended($destination)
+            ->with('success', 'Your email is verified. You can continue.');
     }
 }

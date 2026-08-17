@@ -26,12 +26,23 @@ class EmailVerificationNotificationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended($this->authService->homeUrlFor($request->user()));
+            return redirect()->intended($this->authService->continueUrlAfterAuth($request->user()));
         }
 
-        SendEmailVerificationNotificationJob::dispatch($request->user()->id)
-            ->onConnection('sync')
-            ->afterResponse();
+        try {
+            SendEmailVerificationNotificationJob::dispatchSync($request->user()->id);
+        } catch (\Throwable $exception) {
+            Log::error('Email verification resend failed', [
+                'user_id' => $request->user()->id,
+                'email' => $request->user()->email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return back()->with(
+                'error',
+                'We could not send the verification email just now. Please try again in a minute. If this keeps happening, contact training@smartsourcingusa.com.'
+            );
+        }
 
         return back()->with('status', 'verification-link-sent');
     }
