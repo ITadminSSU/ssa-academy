@@ -59,6 +59,16 @@ const AppLogo = ({ className, theme, variant = 'wordmark' }: { theme?: 'light' |
    }
 
    if (className?.includes('ssu-nav-logo')) {
+      // theme="dark" = white wordmark for navy bars (course player, landing).
+      // Without a theme, keep a single black mark so OS dark mode cannot invert public nav.
+      if (theme === 'dark') {
+         return logoLight ? renderLogoImage(logoLight) : renderPlaceholder();
+      }
+
+      if (theme === 'light') {
+         return logoDark ? renderLogoImage(logoDark) : renderPlaceholder();
+      }
+
       const src = logoDark || logoLight;
       return src ? renderLogoImage(src) : renderPlaceholder();
    }
