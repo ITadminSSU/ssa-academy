@@ -50,7 +50,7 @@ const IntroNavbar = () => {
                {/* Logo */}
                <div className="flex items-center gap-0 sm:gap-4">
                   <div className="ssu-logo-frame ssu-logo-frame--nav">
-                     <DashboardLogoLink className="ssu-nav-logo" theme="dark" />
+                     <DashboardLogoLink className="ssu-nav-logo" theme="light" />
                   </div>
                </div>
 
