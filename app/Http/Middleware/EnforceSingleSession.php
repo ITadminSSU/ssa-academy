@@ -28,6 +28,17 @@ class EnforceSingleSession
         if (Auth::check()) {
             $user = $request->user();
 
+            if ($user && ! $user->isAccountActive()) {
+                Auth::guard('web')->logout();
+
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()
+                    ->route('login')
+                    ->with('error', __('auth.account_disabled'));
+            }
+
             if ($user && ! $this->singleSession->isActiveSession($user, $sessionId)) {
                 Auth::guard('web')->logout();
 

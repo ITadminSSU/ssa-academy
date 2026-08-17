@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\LearnerUserType;
 use App\Models\User;
+use App\Services\Auth\SingleSessionService;
 use App\Support\MasterAdmin;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -95,7 +96,13 @@ class UserService
                 $payload['user_type'] = $data['user_type'];
             }
 
+            $wasActive = $user->isAccountActive();
+
             $user->update($payload);
+
+            if ($wasActive && (int) $payload['status'] === 0) {
+                app(SingleSessionService::class)->revokeAll($user->fresh());
+            }
 
             if ($user->role === 'instructor' && $user->instructor && array_key_exists('designation', $data)) {
                 $user->instructor->update([

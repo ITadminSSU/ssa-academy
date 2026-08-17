@@ -45,6 +45,26 @@ class SingleSessionService
         Cache::forget($this->activeSessionKey($user->id));
     }
 
+    /**
+     * Sign the user out of every device. Used when staff disable an account.
+     */
+    public function revokeAll(User $user): void
+    {
+        if (config('session.driver') === 'database') {
+            $table = config('session.table', 'sessions');
+            $sessionIds = DB::table($table)->where('user_id', $user->id)->pluck('id');
+
+            foreach ($sessionIds as $sessionId) {
+                Cache::put($this->kickedKey((string) $sessionId), true, now()->addMinutes(45));
+            }
+
+            DB::table($table)->where('user_id', $user->id)->delete();
+        }
+
+        $this->clear($user);
+        $this->rotateRememberToken($user);
+    }
+
     public function isKickedSession(?string $sessionId): bool
     {
         if (! $sessionId) {

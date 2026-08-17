@@ -13,6 +13,7 @@ return [
 
     // Authentication Messages
     'failed' => 'These credentials do not match our records.',
+    'account_disabled' => 'This account has been disabled. If you believe this is a mistake, contact training@smartsourcingusa.com.',
     'password' => 'The provided password is incorrect.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'password_updated' => 'Your password has been updated.',

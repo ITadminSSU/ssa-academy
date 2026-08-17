@@ -45,6 +45,12 @@ class GoogleAuthController extends Controller
             $registered = User::where('google_id', $user->id)->orWhere('email', $user->email)->first();
 
             if ($registered) {
+                if (! $registered->isAccountActive()) {
+                    return redirect()
+                        ->route('login')
+                        ->with('error', __('auth.account_disabled'));
+                }
+
                 // Update existing user's tokens
                 $this->authService->updateGoogleTokens($registered, $user);
 

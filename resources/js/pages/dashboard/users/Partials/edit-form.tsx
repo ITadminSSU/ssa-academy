@@ -155,6 +155,9 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                   {!isPrimaryAdmin && (
                      <div>
                         <Label>{text(input.status, 'Status')}</Label>
+                        <p className="text-muted-foreground mb-2 text-sm">
+                           Inactive accounts cannot sign in. Use this for suspicious emails, unpaid fake signups, or a CV that does not match the name.
+                        </p>
                         <Select
                            required
                            value={statusValue}
@@ -167,7 +170,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                            </SelectTrigger>
                            <SelectContent>
                               <SelectItem value="active">{text(common.active, 'Active')}</SelectItem>
-                              <SelectItem value="inactive">{text(common.inactive, 'Inactive')}</SelectItem>
+                              <SelectItem value="inactive">{text(common.inactive, 'Inactive — cannot sign in')}</SelectItem>
                            </SelectContent>
                         </Select>
                         <InputError message={errors.status} />

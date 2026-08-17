@@ -140,7 +140,11 @@ class UsersController extends Controller
             default => 'User',
         };
 
-        return redirect()->back()->with('success', "{$label} account updated successfully.");
+        $message = $updated->isAccountActive()
+            ? "{$label} account updated successfully."
+            : "{$label} account disabled. They can no longer sign in.";
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**

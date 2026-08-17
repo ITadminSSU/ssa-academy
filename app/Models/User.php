@@ -175,4 +175,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         app(\App\Services\AccountMailService::class)->sendEmailVerification($this);
     }
+
+    public function isAccountActive(): bool
+    {
+        return (int) $this->status === 1;
+    }
 }
