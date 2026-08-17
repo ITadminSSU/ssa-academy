@@ -76,11 +76,27 @@ const LegalAgreementFields = ({
 
    return (
       <div className="space-y-4">
-         <p className="text-muted-foreground text-sm">
-            {signwellEnabled
-               ? 'Read the Terms & Conditions in full, confirm each statement below, then create your account. You will be redirected to SignWell to electronically sign the Student Agreement before accessing the dashboard.'
-               : 'Read the document in full and confirm each statement below before continuing. You must scroll to the bottom before the checkboxes are enabled.'}
-         </p>
+         <div className="text-muted-foreground space-y-3 text-sm">
+            {signwellEnabled ? (
+               <>
+                  <p>
+                     Read the Terms & Conditions in full, confirm each statement below, then create your account. You must
+                     register using your official, real legal name—aliases, pseudonyms, or nicknames are strictly
+                     prohibited. Accounts created with fake, modified, or suspicious names will be immediately disabled,
+                     blocked, and permanently banned from the site. Please verify your email.
+                  </p>
+                  <p>
+                     You will be redirected to SignWell to electronically sign the Student Agreement under your real
+                     name before accessing the dashboard.
+                  </p>
+               </>
+            ) : (
+               <p>
+                  Read the document in full and confirm each statement below before continuing. You must scroll to the
+                  bottom before the checkboxes are enabled.
+               </p>
+            )}
+         </div>
 
          <ScrollToAcceptDocument title={document.terms.title} html={document.terms.html} onCanAcceptChange={setCanAccept}>
             <div className="space-y-3">
