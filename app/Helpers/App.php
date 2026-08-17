@@ -202,9 +202,11 @@ function media_public_url(\Spatie\MediaLibrary\MediaCollections\Models\Media $me
 
    if (in_array($media->disk, $cloudDisks, true)) {
       try {
-         return $media->getTemporaryUrl(now()->addDay());
+         return $media->getTemporaryUrl(now()->addHours(12));
       } catch (\Throwable) {
-         return $media->getUrl();
+         $raw = $media->getUrl();
+
+         return \App\Support\S3CompatibleStorage::attributeGet($raw) ?? $raw;
       }
    }
 

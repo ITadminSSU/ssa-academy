@@ -57,7 +57,7 @@ class CandidatePipelineService
 
         $candidates->getCollection()->transform(function (User $user) {
             $cvMedia = $user->getFirstMedia('cv_resume');
-            $user->cv_resume_url = $cvMedia ? $cvMedia->getFullUrl() : null;
+            $user->cv_resume_url = $cvMedia ? media_public_url($cvMedia) : null;
             $user->cv_resume_name = $cvMedia ? $cvMedia->file_name : null;
             $user->has_cv = (bool) $cvMedia;
 
@@ -75,7 +75,7 @@ class CandidatePipelineService
             ->findOrFail($userId);
 
         $cvMedia = $user->getFirstMedia('cv_resume');
-        $user->cv_resume_url = $cvMedia ? $cvMedia->getFullUrl() : null;
+        $user->cv_resume_url = $cvMedia ? media_public_url($cvMedia) : null;
         $user->cv_resume_name = $cvMedia ? $cvMedia->file_name : null;
         $user->has_cv = (bool) $cvMedia;
 

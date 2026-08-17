@@ -61,45 +61,52 @@ class UsersController extends Controller
      */
     public function viewCv(string $id)
     {
+        return $this->serveCv($id, download: false);
+    }
+
+    /**
+     * Download user's CV/Resume
+     */
+    public function downloadCv(string $id)
+    {
+        return $this->serveCv($id, download: true);
+    }
+
+    private function serveCv(string $id, bool $download)
+    {
         $user = User::findOrFail($id);
         $cvMedia = $user->getFirstMedia('cv_resume');
 
-        if (!$cvMedia) {
+        if (! $cvMedia) {
             abort(404, 'CV/Resume not found');
         }
 
-        try {
-            $filePath = $cvMedia->getPath();
-            $fileName = $cvMedia->file_name;
-            $mimeType = $cvMedia->mime_type;
+        $fileName = $cvMedia->file_name;
+        $mimeType = $cvMedia->mime_type ?: 'application/octet-stream';
+        $disposition = ($download ? 'attachment' : 'inline').'; filename="'.$fileName.'"';
 
-            // Check if file exists on local disk
-            if (file_exists($filePath)) {
-                return response()->file(
-                    $filePath,
-                    [
+        if ($cvMedia->disk !== 's3') {
+            $localPath = $cvMedia->getPath();
+            if (is_string($localPath) && $localPath !== '' && file_exists($localPath)) {
+                return $download
+                    ? response()->download($localPath, $fileName, [
                         'Content-Type' => $mimeType,
-                        'Content-Disposition' => 'inline; filename="' . $fileName . '"',
-                    ]
-                );
+                        'Content-Disposition' => $disposition,
+                    ])
+                    : response()->file($localPath, [
+                        'Content-Type' => $mimeType,
+                        'Content-Disposition' => $disposition,
+                    ]);
             }
-
-            // For S3 or remote storage, get the URL
-            $fileUrl = $cvMedia->getFullUrl();
-            if ($fileUrl) {
-                return redirect($fileUrl);
-            }
-
-            abort(404, 'CV/Resume file not found');
-        } catch (\Exception $e) {
-            // Fallback: try to get URL from media
-            $fileUrl = $cvMedia->getFullUrl();
-            if ($fileUrl) {
-                return redirect($fileUrl);
-            }
-            
-            abort(404, 'CV/Resume not accessible: ' . $e->getMessage());
         }
+
+        $fileUrl = media_public_url($cvMedia);
+
+        if ($fileUrl === '') {
+            abort(404, 'CV/Resume file not found');
+        }
+
+        return redirect()->away($fileUrl);
     }
 
     /**
@@ -170,52 +177,5 @@ class UsersController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
-    }
-
-    /**
-     * Download user's CV/Resume
-     */
-    public function downloadCv(string $id)
-    {
-        $user = User::findOrFail($id);
-        $cvMedia = $user->getFirstMedia('cv_resume');
-
-        if (!$cvMedia) {
-            abort(404, 'CV/Resume not found');
-        }
-
-        try {
-            $filePath = $cvMedia->getPath();
-            $fileName = $cvMedia->file_name;
-            $mimeType = $cvMedia->mime_type;
-
-            // Check if file exists on local disk
-            if (file_exists($filePath)) {
-                return response()->download(
-                    $filePath,
-                    $fileName,
-                    [
-                        'Content-Type' => $mimeType,
-                        'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-                    ]
-                );
-            }
-
-            // For S3 or remote storage, get the URL
-            $fileUrl = $cvMedia->getFullUrl();
-            if ($fileUrl) {
-                return redirect($fileUrl);
-            }
-
-            abort(404, 'CV/Resume file not found');
-        } catch (\Exception $e) {
-            // Fallback: try to get URL from media
-            $fileUrl = $cvMedia->getFullUrl();
-            if ($fileUrl) {
-                return redirect($fileUrl);
-            }
-            
-            abort(404, 'CV/Resume not accessible: ' . $e->getMessage());
-        }
     }
 }

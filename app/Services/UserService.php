@@ -51,7 +51,7 @@ class UserService
 
         $transform = function (User $user): User {
             $cvMedia = $user->getFirstMedia('cv_resume');
-            $user->cv_resume_url = $cvMedia ? $cvMedia->getFullUrl() : null;
+            $user->cv_resume_url = $cvMedia ? media_public_url($cvMedia) : null;
             $user->cv_resume_name = $cvMedia ? $cvMedia->name : null;
 
             return $user;
