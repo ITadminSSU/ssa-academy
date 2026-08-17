@@ -1,18 +1,13 @@
 Hello, {{ $user->name }}!
 
-Confirm this email address to finish creating your {{ config('app.name') }} account:
+Enter this code on the {{ config('app.name') }} website to confirm {{ $user->email }}:
 
-{{ $user->email }}
-
-Open this link in your browser:
-
-{{ $url }}
+{{ $code }}
 
 @php
-   $expireMinutes = (int) ($expireMinutes ?? 1440);
-   $expireHours = max(1, (int) ceil($expireMinutes / 60));
+   $expireMinutes = (int) ($expireMinutes ?? 15);
 @endphp
-This link expires in {{ $expireHours }} {{ $expireHours === 1 ? 'hour' : 'hours' }}. After that, sign in and request a new one.
+This code expires in {{ $expireMinutes }} minutes. If it expires, sign in and request a new one.
 
 If you do not see this message in your inbox, check spam, junk, and promotions.
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\Auth\EmailVerificationCodeService;
 use App\Services\AuthService;
-use App\Support\EmailVerificationUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,7 +12,10 @@ use Inertia\Response;
 
 class EmailVerificationPromptController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private EmailVerificationCodeService $codes,
+    ) {}
 
     /**
      * Show the email verification prompt page.
@@ -28,7 +31,9 @@ class EmailVerificationPromptController extends Controller
         return Inertia::render('auth/verify-email', [
             'status' => $request->session()->get('status'),
             'email' => $user->email,
-            'expireHours' => max(1, (int) ceil(EmailVerificationUrl::expireMinutes() / 60)),
+            'expireMinutes' => $this->codes->expireMinutes(),
+            'hasLiveCode' => $this->codes->hasLiveCode($user),
+            'resendAvailableIn' => $this->codes->resendAvailableIn($user),
         ]);
     }
 }

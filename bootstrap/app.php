@@ -2,10 +2,8 @@
 
 use App\Http\Controllers\HomeController;
 use App\Services\AuthService;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\EnsureCanonicalHost;
@@ -123,24 +121,6 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->back(fallback: route('login'))->with('error', $message);
-        });
-
-        $verificationLinkMessage = 'That verification link is invalid or has expired. Request a new one below — it is valid for 24 hours.';
-
-        $exceptions->render(function (InvalidSignatureException $e, Request $request) use ($inertiaLocation, $verificationLinkMessage) {
-            if ($request->routeIs('verification.verify') || $request->is('verify-email/*')) {
-                $request->session()->flash('error', $verificationLinkMessage);
-
-                return $inertiaLocation($request, route('verification.notice'));
-            }
-        });
-
-        $exceptions->render(function (AuthorizationException $e, Request $request) use ($inertiaLocation, $verificationLinkMessage) {
-            if ($request->routeIs('verification.verify') || $request->is('verify-email/*')) {
-                $request->session()->flash('error', $verificationLinkMessage);
-
-                return $inertiaLocation($request, route('verification.notice'));
-            }
         });
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {

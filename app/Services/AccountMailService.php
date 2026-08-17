@@ -7,7 +7,7 @@ use App\Mail\ChangeEmailVerification;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
-use App\Support\EmailVerificationUrl;
+use App\Services\Auth\EmailVerificationCodeService;
 use App\Support\PasswordResetUrl;
 use App\Support\ResendHttpClient;
 use Illuminate\Support\Facades\Log;
@@ -58,11 +58,14 @@ class AccountMailService
             return;
         }
 
+        $codes = app(EmailVerificationCodeService::class);
+        $code = $codes->issue($user);
         $errors = [];
 
         if (ResendHttpClient::isAvailable()) {
             try {
-                $this->sendEmailVerificationViaResendHttp($user);
+                $this->sendEmailVerificationViaResendHttp($user, $code);
+                $codes->markSent($user);
 
                 return;
             } catch (\Throwable $exception) {
@@ -76,7 +79,8 @@ class AccountMailService
         }
 
         try {
-            $user->notify(new VerifyEmailNotification);
+            $user->notify(new VerifyEmailNotification($code));
+            $codes->markSent($user);
 
             return;
         } catch (\Throwable $exception) {
@@ -178,20 +182,19 @@ class AccountMailService
         ]);
     }
 
-    private function sendEmailVerificationViaResendHttp(User $user): void
+    private function sendEmailVerificationViaResendHttp(User $user, string $code): void
     {
-        $url = EmailVerificationUrl::forUser($user);
-        $expireMinutes = EmailVerificationUrl::expireMinutes();
+        $expireMinutes = app(EmailVerificationCodeService::class)->expireMinutes();
 
         $html = view('mail.email-verification', [
             'user' => $user,
-            'url' => $url,
+            'code' => $code,
             'expireMinutes' => $expireMinutes,
         ])->render();
 
         $text = view('mail.email-verification-text', [
             'user' => $user,
-            'url' => $url,
+            'code' => $code,
             'expireMinutes' => $expireMinutes,
         ])->render();
 
@@ -200,7 +203,7 @@ class AccountMailService
         ResendHttpClient::send([
             'from' => $this->fromAddress(),
             'to' => [$user->getEmailForVerification()],
-            'subject' => "Verify your email — {$appName}",
+            'subject' => "Your verification code — {$appName}",
             'html' => $html,
             'text' => $text,
         ]);

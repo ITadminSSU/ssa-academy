@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateEmailRequest;
 use App\Jobs\SendEmailVerificationNotificationJob;
 use App\Models\User;
 use App\Services\AccountService;
+use App\Services\Auth\EmailVerificationCodeService;
 use App\Services\AuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,17 @@ class EmailVerificationNotificationController extends Controller
             return redirect()->intended($this->authService->continueUrlAfterAuth($request->user()));
         }
 
+        $codes = app(EmailVerificationCodeService::class);
+
+        if (! $codes->canResend($request->user())) {
+            $seconds = $codes->resendAvailableIn($request->user());
+
+            return back()->with(
+                'error',
+                "Please wait {$seconds} seconds before requesting a new code."
+            );
+        }
+
         try {
             SendEmailVerificationNotificationJob::dispatchSync($request->user()->id);
         } catch (\Throwable $exception) {
@@ -44,7 +56,7 @@ class EmailVerificationNotificationController extends Controller
             );
         }
 
-        return back()->with('status', 'verification-link-sent');
+        return back()->with('status', 'verification-code-sent');
     }
 
     /**

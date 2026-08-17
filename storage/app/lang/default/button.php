@@ -120,7 +120,7 @@ return [
     'continue_with_google' => 'Continue With Google',
     'forgot_password' => 'Forgot password?',
     'email_password_reset_link' => 'Email password reset link',
-    'resend_verification_email' => 'Resend verification email',
+    'resend_verification_email' => 'Resend code',
     'confirm_password' => 'Confirm password',
     'reset_password' => 'Reset password',
     'change_email' => 'Change Email',

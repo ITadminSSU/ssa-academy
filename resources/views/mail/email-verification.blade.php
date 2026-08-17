@@ -5,7 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-   <title>Verify your email — {{ config('app.name') }}</title>
+   <title>Your verification code — {{ config('app.name') }}</title>
    <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"
@@ -32,12 +32,6 @@
             width: 100% !important;
          }
       }
-
-      @media only screen and (max-width: 500px) {
-         .button {
-            width: 100% !important;
-         }
-      }
    </style>
 
    {{ $head ?? '' }}
@@ -45,34 +39,24 @@
 
 <body>
    @php
-      $expireMinutes = (int) ($expireMinutes ?? 1440);
-      $expireHours = max(1, (int) ceil($expireMinutes / 60));
+      $expireMinutes = (int) ($expireMinutes ?? 15);
    @endphp
 
    <h1 style="font-size: 1.5em; font-weight: 600; margin-bottom: 1em;">
       Hello, {{ $user->name }}!
    </h1>
    <p style="margin-bottom: 1.5em;">
-      Confirm this email address to finish creating your {{ config('app.name') }} account:
+      Enter this code on the {{ config('app.name') }} website to confirm
+      <strong>{{ $user->email }}</strong>:
    </p>
-   <p style="margin-bottom: 1.5em; font-weight: 600;">
-      {{ $user->email }}
-   </p>
-   <a
-      href="{{ $url }}"
-      style="display: inline-block; padding: 0.75em 1.5em; background-color: #0969da; color: #fff; border-radius: 0.5em; text-decoration: none; font-weight: 600; margin-bottom: 1.5em;"
-   >
-      Verify Email Address
-   </a>
-   <p style="margin-bottom: 1em;">
-      This link expires in {{ $expireHours }} {{ $expireHours === 1 ? 'hour' : 'hours' }}. After that, sign in and request a new one.
+   <p style="font-size: 2em; font-weight: 700; letter-spacing: 0.25em; margin: 0 0 1.5em; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
+      {{ $code }}
    </p>
    <p style="margin-bottom: 1em;">
-      If you do not see this message in your inbox, check spam, junk, and promotions. Mark it as Not spam so the next message lands in your inbox.
+      This code expires in {{ $expireMinutes }} minutes. If it expires, sign in and request a new one.
    </p>
-   <p style="margin-bottom: 1em; word-break: break-all;">
-      If the button does not work, paste this link into your browser:<br>
-      <a href="{{ $url }}">{{ $url }}</a>
+   <p style="margin-bottom: 1em;">
+      If you do not see this message in your inbox, check spam, junk, and promotions.
    </p>
    <p style="margin-bottom: 1em;">
       If you did not create an account, you can ignore this email.

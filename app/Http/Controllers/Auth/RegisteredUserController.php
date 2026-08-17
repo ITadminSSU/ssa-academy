@@ -160,7 +160,7 @@ class RegisteredUserController extends Controller
         try {
             SendEmailVerificationNotificationJob::dispatchSync($user->id);
         } catch (\Throwable $exception) {
-            $verificationError = 'We created your account but could not send the verification email. Click the button below to try again, and check your spam folder if it still does not arrive.';
+            $verificationError = 'We created your account but could not send the verification code. Click Resend below, and check your spam folder if it still does not arrive.';
             Log::error('Email verification send failed during registration', [
                 'user_id' => $user->id,
                 'email' => $user->email,
@@ -178,6 +178,6 @@ class RegisteredUserController extends Controller
             return $redirect->with('error', $verificationError);
         }
 
-        return $redirect->with('status', 'verification-link-sent');
+        return $redirect->with('status', 'verification-code-sent');
     }
 }

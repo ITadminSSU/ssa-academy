@@ -117,12 +117,14 @@ return [
     | Email verification
     |--------------------------------------------------------------------------
     |
-    | How long a signed verification link stays valid. 24 hours gives students
-    | time to find the message in spam without the site looking "broken".
+    | Students confirm signup with a 6-digit email code. Keep expiry short;
+    | they can request a new code if the first one lapses in spam.
     |
     */
     'verification' => [
-        'expire' => (int) env('AUTH_VERIFICATION_EXPIRE_MINUTES', 1440),
+        'expire' => (int) env('AUTH_VERIFICATION_EXPIRE_MINUTES', 15),
+        'max_attempts' => (int) env('AUTH_VERIFICATION_MAX_ATTEMPTS', 5),
+        'resend_cooldown' => (int) env('AUTH_VERIFICATION_RESEND_COOLDOWN', 60),
     ],
 
 ];

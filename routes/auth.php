@@ -74,9 +74,15 @@ Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
 
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
+    Route::post('verify-email', [VerifyEmailController::class, 'store'])
+        ->middleware('throttle:10,1')
         ->name('verification.verify');
+
+    Route::get('verify-email/{id}/{hash}', function () {
+        return redirect()
+            ->route('verification.notice')
+            ->with('error', 'Email verification now uses a 6-digit code. Enter the code we emailed, or request a new one.');
+    });
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
         ->middleware(['checkSmtp', 'throttle:6,1'])

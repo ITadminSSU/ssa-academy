@@ -20,7 +20,7 @@ return [
             'password' => 'The provided password is incorrect.',
             'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
             'password_updated' => 'Your password has been updated.',
-            'verification_link_sent' => 'A fresh verification link has been sent to your email address.',
+            'verification_link_sent' => 'A fresh verification code has been sent to your email address.',
             'password_reset_sent' => 'We have emailed your password reset link.',
             'google_auth_settings' => 'Google Auth Settings',
             'google_auth_description' => 'Google Auth Description',
@@ -58,7 +58,7 @@ return [
         'slug' => 'register_page',
         'properties' => [
             'register_title' => 'Create an account',
-            'register_description' => 'Enter your details below to create your account',
+            'register_description' => 'External learners can register here. After you create an account, we email a 6-digit code — enter it on the next screen before the student agreement and dashboard.',
             'have_account' => 'Already have an account?',
         ]
     ],
@@ -99,9 +99,9 @@ return [
         'slug' => 'verify_email',
         'properties' => [
             'change_email' => 'Change Email',
-            'verify_title' => 'Verify email',
-            'verify_description' => 'Please verify your email address by clicking on the link we just emailed to you.',
-            'verification_sent' => 'A new verification link has been sent to the email address you provided during registration.',
+            'verify_title' => 'Verify your email',
+            'verify_description' => 'Enter the 6-digit code we emailed you to continue to the student agreement and your dashboard.',
+            'verification_sent' => 'A new verification code has been sent. Check your inbox and spam folder — the code is valid for 15 minutes.',
         ]
     ],
 ];

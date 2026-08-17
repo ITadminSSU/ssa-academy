@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Support\EmailVerificationUrl;
+use App\Services\Auth\EmailVerificationCodeService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -11,6 +11,8 @@ class VerifyEmailNotification extends Notification
 {
     use Queueable;
 
+    public function __construct(public string $code) {}
+
     public function via(object $notifiable): array
     {
         return ['mail'];
@@ -18,14 +20,14 @@ class VerifyEmailNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $verificationUrl = EmailVerificationUrl::forUser($notifiable);
+        $expireMinutes = app(EmailVerificationCodeService::class)->expireMinutes();
 
         return (new MailMessage)
-            ->subject('Verify your email — '.config('branding.short_name', config('app.name')))
+            ->subject('Your verification code — '.config('branding.short_name', config('app.name')))
             ->view('mail.email-verification', [
                 'user' => $notifiable,
-                'url' => $verificationUrl,
-                'expireMinutes' => EmailVerificationUrl::expireMinutes(),
+                'code' => $this->code,
+                'expireMinutes' => $expireMinutes,
             ]);
     }
 

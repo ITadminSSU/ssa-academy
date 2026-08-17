@@ -13,7 +13,7 @@ class ResendRegistrationEmailsCommand extends Command
 {
     protected $signature = 'ssu:resend-registration-emails
                             {email : The user email address}
-                            {--verification : Resend the email verification link}
+                            {--verification : Resend the email verification code}
                             {--legal : Resend the Terms & NDA acceptance email}
                             {--all : Resend both emails}';
 
@@ -54,7 +54,7 @@ class ResendRegistrationEmailsCommand extends Command
             } else {
                 try {
                     SendEmailVerificationNotificationJob::dispatchSync($user->id);
-                    $this->info('  Verification: sent. Ask the student to check inbox and spam.');
+                    $this->info('  Verification: sent. Ask the student to enter the 6-digit code (check inbox and spam).');
                 } catch (\Throwable $exception) {
                     $this->error('  Verification: send failed — '.$exception->getMessage());
 

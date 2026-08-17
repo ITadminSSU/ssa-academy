@@ -4,23 +4,41 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendRegistrationNotificationsJob;
+use App\Services\Auth\EmailVerificationCodeService;
 use App\Services\AuthService;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class VerifyEmailController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private EmailVerificationCodeService $codes,
+    ) {}
 
     /**
-     * Mark the authenticated user's email address as verified.
+     * Confirm the 6-digit email verification code.
      */
-    public function __invoke(EmailVerificationRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
+        $request->validate([
+            'code' => ['required', 'string', 'max:12'],
+        ]);
+
         $user = $request->user();
 
-        if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->intended($this->authService->continueUrlAfterAuth($user));
+        }
+
+        $result = $this->codes->attempt($user, (string) $request->input('code'));
+
+        if (! $result['ok']) {
+            return back()->withErrors(['code' => $result['message']]);
+        }
+
+        if ($user->markEmailAsVerified()) {
             event(new Verified($user));
         }
 

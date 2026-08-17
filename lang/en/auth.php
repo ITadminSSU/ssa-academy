@@ -17,7 +17,7 @@ return [
     'password' => 'The provided password is incorrect.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'password_updated' => 'Your password has been updated.',
-    'verification_link_sent' => 'A fresh verification link has been sent to your email address.',
+    'verification_link_sent' => 'A fresh verification code has been sent to your email address.',
     'password_reset_sent' => 'We have emailed your password reset link.',
     'google_auth_settings' => 'Google Auth Settings',
     'google_auth_description' => 'Google Auth Description',
@@ -44,7 +44,7 @@ return [
 
     // Register Page
     'register_title' => 'Create your account',
-    'register_description' => 'External learners can register here. After you create an account, we email a verification link — confirm that email before the student agreement and dashboard.',
+    'register_description' => 'External learners can register here. After you create an account, we email a 6-digit code — enter it on the next screen before the student agreement and dashboard.',
     'have_account' => 'Already have an account?',
     'register_learner_type_note' => 'Company email addresses are recognized automatically for internal access. Other accounts are registered as public learners. Admins can update learner type if needed.',
     'register_required_fields_note' => 'All fields are required. You must upload a CV/resume and agree to the Terms & Conditions and NDA before creating an account.',
@@ -64,8 +64,8 @@ return [
     // Verify Email
     'change_email' => 'Change Email',
     'verify_title' => 'Verify your email',
-    'verify_description' => 'We emailed you a verification link. Open it to continue to the student agreement and your dashboard.',
-    'verification_sent' => 'A new verification link has been sent. Check your inbox and spam folder — the link is valid for 24 hours.',
+    'verify_description' => 'Enter the 6-digit code we emailed you to continue to the student agreement and your dashboard.',
+    'verification_sent' => 'A new verification code has been sent. Check your inbox and spam folder — the code is valid for 15 minutes.',
 
     // Two-factor authentication
     'two_factor_title' => 'Two-factor authentication',

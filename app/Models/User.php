@@ -72,6 +72,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'email_verification_code_hash',
     ];
 
     /**
@@ -85,6 +86,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'worked_as_construction_va' => 'boolean',
         'referrer_is_employee' => 'boolean',
         'status' => 'integer',
+        'email_verification_expires_at' => 'datetime',
+        'email_verification_attempts' => 'integer',
         'user_type' => LearnerUserType::class,
         'candidate_status' => CandidateStatus::class,
         'candidate_status_updated_at' => 'datetime',
