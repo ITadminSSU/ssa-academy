@@ -16,10 +16,24 @@ const ReviewEdit = ({ review }: { review: CourseReview }) => {
    const { props } = usePage<SharedData>();
    const { translate } = props;
    const { button, input, frontend, common } = translate;
-   const { data, setData, put, errors, processing, reset } = useForm({
+   const initialData = () => ({
       rating: review.rating,
       review: review.review,
    });
+
+   const { data, setData, put, errors, processing, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -27,13 +41,12 @@ const ReviewEdit = ({ review }: { review: CourseReview }) => {
       put(route('course-reviews.update', review.id), {
          onSuccess: () => {
             setOpen(false);
-            reset();
          },
       });
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger asChild>
             <Button size="icon" variant="secondary">
                <SquarePen className="h-4 w-4" />

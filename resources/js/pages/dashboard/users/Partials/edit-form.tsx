@@ -49,7 +49,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
          ? text(input.user_type_employee, 'Employee (internal, free access)')
          : text(input.user_type_external, 'External (public, may pay)');
 
-   const { data, put, setData, processing, errors, reset } = useForm({
+   const initialData = () => ({
       name: user.name,
       email: user.email,
       status: user.status,
@@ -59,13 +59,28 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
       password_confirmation: '',
    });
 
+   const { data, put, setData, processing, errors, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
+
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
       put(route('users.update', user.id), {
+         preserveScroll: true,
          onSuccess: () => {
-            reset();
             setOpen(false);
+            restoreSavedValues();
          },
       });
    };
@@ -73,141 +88,129 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
    const statusValue = data.status === 1 ? 'active' : 'inactive';
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger asChild>{actionComponent}</DialogTrigger>
          <DialogContent>
             <DialogHeader>
                <DialogTitle>{dialogTitle}</DialogTitle>
+            </DialogHeader>
 
-               <form onSubmit={handleSubmit} className="space-y-4 text-start">
-                  {isPrimaryAdmin && (
-                     <p className="text-muted-foreground text-sm">
+            <form onSubmit={handleSubmit} className="space-y-4 text-start">
+               {isPrimaryAdmin && (
+                  <p className="text-muted-foreground text-sm">
+                     {text(
+                        dashboard.primary_admin_edit_note,
+                        'Only the name and email can be updated for the primary admin. Status, password, and deletion remain protected.',
+                     )}
+                  </p>
+               )}
+
+               <div>
+                  <Label>{text(input.name, 'Name')}</Label>
+                  <Input required value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                  <InputError message={errors.name} />
+               </div>
+
+               <div>
+                  <Label>{text(input.email, 'Email')}</Label>
+                  <Input
+                     required
+                     type="email"
+                     value={data.email}
+                     onChange={(e) => setData('email', e.target.value)}
+                     placeholder={text(input.email_placeholder, 'email@example.com')}
+                  />
+                  <InputError message={errors.email} />
+               </div>
+
+               {!isPrimaryAdmin && accountKind === 'student' && (
+                  <div>
+                     <Label>{text(input.user_type, 'Learner Type')}</Label>
+                     <p className="text-muted-foreground mb-2 text-sm">
                         {text(
-                           dashboard.primary_admin_edit_note,
-                           'Only the name and email can be updated for the primary admin. Status, password, and deletion remain protected.',
+                           dashboard.learner_type_help,
+                           'Internal employees get free course access. External learners may need to pay for public courses.',
                         )}
                      </p>
-                  )}
-
-                  <div>
-                     <Label>{text(input.name, 'Name')}</Label>
-                     <Input required value={data.name} onChange={(e) => setData('name', e.target.value)} />
-                     <InputError message={errors.name} />
+                     <Select required value={data.user_type} onValueChange={(value: 'employee' | 'external') => setData('user_type', value)}>
+                        <SelectTrigger>
+                           <SelectValue placeholder={text(dashboard.select_user_type, 'Select learner type')}>
+                              {learnerTypeLabel(data.user_type)}
+                           </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="employee">{text(input.user_type_employee, 'Employee (internal, free access)')}</SelectItem>
+                           <SelectItem value="external">{text(input.user_type_external, 'External (public, may pay)')}</SelectItem>
+                        </SelectContent>
+                     </Select>
+                     <InputError message={errors.user_type} />
                   </div>
+               )}
 
+               {!isPrimaryAdmin && accountKind === 'trainer' && (
                   <div>
-                     <Label>{text(input.email, 'Email')}</Label>
+                     <Label>{text(input.designation, 'Designation')}</Label>
                      <Input
                         required
-                        type="email"
-                        value={data.email}
-                        onChange={(e) => setData('email', e.target.value)}
-                        placeholder={text(input.email_placeholder, 'email@example.com')}
+                        value={data.designation}
+                        onChange={(e) => setData('designation', e.target.value)}
+                        placeholder={text(input.designation_placeholder, 'Enter designation')}
                      />
-                     <InputError message={errors.email} />
+                     <InputError message={errors.designation} />
                   </div>
+               )}
 
-                  {!isPrimaryAdmin && accountKind === 'student' && (
-                     <div>
-                        <Label>{text(input.user_type, 'Learner Type')}</Label>
-                        <p className="text-muted-foreground mb-2 text-sm">
-                           {text(
-                              dashboard.learner_type_help,
-                              'Internal employees get free course access. External learners may need to pay for public courses.',
-                           )}
-                        </p>
-                        <Select
-                           required
-                           value={data.user_type}
-                           onValueChange={(value: 'employee' | 'external') => setData('user_type', value)}
-                        >
-                           <SelectTrigger>
-                              <SelectValue placeholder={text(dashboard.select_user_type, 'Select learner type')}>
-                                 {learnerTypeLabel(data.user_type)}
-                              </SelectValue>
-                           </SelectTrigger>
-                           <SelectContent>
-                              <SelectItem value="employee">
-                                 {text(input.user_type_employee, 'Employee (internal, free access)')}
-                              </SelectItem>
-                              <SelectItem value="external">
-                                 {text(input.user_type_external, 'External (public, may pay)')}
-                              </SelectItem>
-                           </SelectContent>
-                        </Select>
-                        <InputError message={errors.user_type} />
-                     </div>
-                  )}
+               {!isPrimaryAdmin && (
+                  <div>
+                     <Label>{text(input.status, 'Status')}</Label>
+                     <p className="text-muted-foreground mb-2 text-sm">
+                        Inactive accounts cannot sign in. Use this for suspicious emails, unpaid fake signups, or a CV that does not match the name.
+                     </p>
+                     <Select required value={statusValue} onValueChange={(value) => setData('status', value === 'active' ? 1 : 0)}>
+                        <SelectTrigger>
+                           <SelectValue placeholder={text(dashboard.select_approval_status, 'Select the approval status')}>
+                              {statusValue === 'active' ? text(common.active, 'Active') : text(common.inactive, 'Inactive')}
+                           </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="active">{text(common.active, 'Active')}</SelectItem>
+                           <SelectItem value="inactive">{text(common.inactive, 'Inactive — cannot sign in')}</SelectItem>
+                        </SelectContent>
+                     </Select>
+                     <InputError message={errors.status} />
+                  </div>
+               )}
 
-                  {!isPrimaryAdmin && accountKind === 'trainer' && (
+               {!isPrimaryAdmin && (accountKind === 'admin' || accountKind === 'trainer') && (
+                  <>
                      <div>
-                        <Label>{text(input.designation, 'Designation')}</Label>
+                        <Label>{text(dashboard.new_password_optional, 'New password (optional)')}</Label>
                         <Input
-                           required
-                           value={data.designation}
-                           onChange={(e) => setData('designation', e.target.value)}
-                           placeholder={text(input.designation_placeholder, 'Enter designation')}
+                           type="password"
+                           value={data.password}
+                           onChange={(e) => setData('password', e.target.value)}
+                           autoComplete="new-password"
                         />
-                        <InputError message={errors.designation} />
+                        <InputError message={errors.password} />
                      </div>
-                  )}
 
-                  {!isPrimaryAdmin && (
                      <div>
-                        <Label>{text(input.status, 'Status')}</Label>
-                        <p className="text-muted-foreground mb-2 text-sm">
-                           Inactive accounts cannot sign in. Use this for suspicious emails, unpaid fake signups, or a CV that does not match the name.
-                        </p>
-                        <Select
-                           required
-                           value={statusValue}
-                           onValueChange={(value) => setData('status', value === 'active' ? 1 : 0)}
-                        >
-                           <SelectTrigger>
-                              <SelectValue placeholder={text(dashboard.select_approval_status, 'Select the approval status')}>
-                                 {statusValue === 'active' ? text(common.active, 'Active') : text(common.inactive, 'Inactive')}
-                              </SelectValue>
-                           </SelectTrigger>
-                           <SelectContent>
-                              <SelectItem value="active">{text(common.active, 'Active')}</SelectItem>
-                              <SelectItem value="inactive">{text(common.inactive, 'Inactive — cannot sign in')}</SelectItem>
-                           </SelectContent>
-                        </Select>
-                        <InputError message={errors.status} />
+                        <Label>{text(input.confirm_password, 'Confirm password')}</Label>
+                        <Input
+                           type="password"
+                           value={data.password_confirmation}
+                           onChange={(e) => setData('password_confirmation', e.target.value)}
+                           autoComplete="new-password"
+                        />
+                        <InputError message={errors.password_confirmation} />
                      </div>
-                  )}
+                  </>
+               )}
 
-                  {!isPrimaryAdmin && (accountKind === 'admin' || accountKind === 'trainer') && (
-                     <>
-                        <div>
-                           <Label>{text(dashboard.new_password_optional, 'New password (optional)')}</Label>
-                           <Input
-                              type="password"
-                              value={data.password}
-                              onChange={(e) => setData('password', e.target.value)}
-                              autoComplete="new-password"
-                           />
-                           <InputError message={errors.password} />
-                        </div>
-
-                        <div>
-                           <Label>{text(input.confirm_password, 'Confirm password')}</Label>
-                           <Input
-                              type="password"
-                              value={data.password_confirmation}
-                              onChange={(e) => setData('password_confirmation', e.target.value)}
-                              autoComplete="new-password"
-                           />
-                           <InputError message={errors.password_confirmation} />
-                        </div>
-                     </>
-                  )}
-
-                  <LoadingButton loading={processing} className="w-full">
-                     {text(button.submit, 'Submit')}
-                  </LoadingButton>
-               </form>
-            </DialogHeader>
+               <LoadingButton loading={processing} className="w-full">
+                  {text(button.submit, 'Submit')}
+               </LoadingButton>
+            </form>
          </DialogContent>
       </Dialog>
    );

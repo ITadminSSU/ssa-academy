@@ -23,13 +23,27 @@ const CategoryForm = ({ title, category, handler }: Props) => {
    const [open, setOpen] = useState(false);
    const { input, button } = useLang();
 
-   const { data, setData, post, errors, processing, reset } = useForm({
+   const initialData = () => ({
       title: category ? category.title : '',
       icon: category ? category.icon : '',
       status: category ? (category.status ? 1 : 0) : 1,
       description: category ? category.description : '',
       thumbnail: null,
    });
+
+   const { data, setData, post, errors, processing, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -41,7 +55,7 @@ const CategoryForm = ({ title, category, handler }: Props) => {
       } else {
          post(route('exam-categories.store'), {
             onSuccess: () => {
-               reset();
+               restoreSavedValues();
                setOpen(false);
             },
          });
@@ -49,7 +63,7 @@ const CategoryForm = ({ title, category, handler }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">

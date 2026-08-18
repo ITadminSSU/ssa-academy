@@ -33,10 +33,24 @@ const NewsletterForm = ({ title, newsletter, handler, translate }: Props) => {
       button: { close: 'Close', submit: 'Submit' },
    };
 
-   const { data, setData, post, put, errors, processing } = useForm({
+   const initialData = () => ({
       subject: newsletter ? newsletter.subject : '',
       description: newsletter ? newsletter.description : '',
    });
+
+   const { data, setData, post, put, errors, processing, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -47,13 +61,16 @@ const NewsletterForm = ({ title, newsletter, handler, translate }: Props) => {
          });
       } else {
          post(route('newsletters.store'), {
-            onSuccess: () => setOpen(false),
+            onSuccess: () => {
+               restoreSavedValues();
+               setOpen(false);
+            },
          });
       }
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">

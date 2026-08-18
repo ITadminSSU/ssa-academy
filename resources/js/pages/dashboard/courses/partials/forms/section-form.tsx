@@ -22,11 +22,25 @@ const SectionForm = ({ title, section, handler }: Props) => {
    const { translate } = props;
    const { dashboard, input, button } = translate;
 
-   const { data, setData, post, put, errors, processing } = useForm({
+   const initialData = () => ({
       title: section ? section.title : '',
       sort: section ? section.sort : props.lastSectionSort + 1,
       course_id: props.course.id,
    });
+
+   const { data, setData, post, put, errors, processing, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -37,13 +51,16 @@ const SectionForm = ({ title, section, handler }: Props) => {
          });
       } else {
          post(route('section.store'), {
-            onSuccess: () => setOpen(false),
+            onSuccess: () => {
+               restoreSavedValues();
+               setOpen(false);
+            },
          });
       }
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">
