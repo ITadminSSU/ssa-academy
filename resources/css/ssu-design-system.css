@@ -299,12 +299,21 @@
    .ssu-landing-overlay__headline {
       @apply font-bold tracking-[0.08em] text-white uppercase;
       font-family: 'Barlow', var(--font-sans);
+      font-size: var(--ov-headline, 56px);
       text-shadow: 0 2px 18px rgb(0 16 40 / 55%);
    }
 
    .ssu-landing-overlay__section-title {
       @apply font-bold tracking-[0.18em] text-white uppercase;
       font-family: 'Barlow', var(--font-sans);
+   }
+
+   .ssu-landing-overlay__section-title--pains {
+      font-size: var(--ov-pains-title, 20px);
+   }
+
+   .ssu-landing-overlay__section-title--solution {
+      font-size: var(--ov-solution-title, 20px);
    }
 
    .ssu-landing-overlay__highlight-wrap {
@@ -317,6 +326,7 @@
       background: #e8eef2;
       color: #8c2a23;
       font-family: 'Barlow', var(--font-sans);
+      font-size: var(--ov-highlight, 19px);
       font-weight: 800;
       letter-spacing: 0.06em;
       line-height: 1.3;
@@ -331,10 +341,12 @@
    .ssu-landing-overlay__pains-intro {
       @apply mb-3 font-bold tracking-[0.18em] text-white uppercase;
       font-family: 'Barlow', var(--font-sans);
+      font-size: var(--ov-pains-intro, 20px);
    }
 
    .ssu-landing-overlay__pains {
       @apply w-full space-y-3 text-left;
+      font-size: var(--ov-pains, 16px);
    }
 
    .ssu-landing-overlay__pains li {
@@ -354,6 +366,7 @@
 
    .ssu-landing-overlay__solution {
       @apply mx-auto w-full max-w-full text-left font-normal text-white/85;
+      font-size: var(--ov-solution, 16px);
       line-height: 1.5;
    }
 
@@ -392,62 +405,81 @@
 
    @media (max-width: 639px) {
       .ssu-landing-overlay {
-         @apply items-start justify-start px-3 py-4;
-         padding-top: max(1rem, env(safe-area-inset-top, 0px));
-         padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+         @apply items-start justify-start px-2 py-3;
+         padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+         padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
       }
 
       .ssu-landing-overlay__close {
-         @apply top-3 right-3 h-9 w-9;
+         @apply top-2.5 right-2.5 h-8 w-8;
       }
 
       .ssu-landing-overlay__panel {
-         @apply my-2 rounded-xl px-4 py-6;
+         @apply my-1 rounded-lg px-3 py-4;
          width: 100%;
          max-width: 100% !important;
       }
 
       .ssu-landing-overlay__sheet {
-         opacity: 0.42;
+         opacity: 0.3;
       }
 
       .ssu-landing-overlay__content {
-         @apply space-y-4;
+         @apply space-y-3;
       }
 
       .ssu-landing-overlay__content::before {
-         inset: -0.75rem -0.5rem;
+         inset: -0.5rem -0.25rem;
       }
 
       .ssu-landing-overlay__headline {
-         @apply leading-[1.08] tracking-[0.04em];
+         @apply leading-tight tracking-[0.03em];
+         font-size: min(var(--ov-headline, 56px), clamp(1.125rem, 5.4vw, 1.5rem));
       }
 
-      .ssu-landing-overlay__section-title,
+      .ssu-landing-overlay__section-title--pains,
+      .ssu-landing-overlay__section-title--solution,
       .ssu-landing-overlay__pains-intro {
-         @apply leading-snug tracking-[0.05em];
+         @apply leading-snug tracking-[0.03em];
+         font-size: min(var(--ov-pains-title, 20px), clamp(0.6875rem, 2.55vw, 0.8125rem));
          text-wrap: balance;
+      }
+
+      .ssu-landing-overlay__section-title--solution {
+         font-size: min(var(--ov-solution-title, 20px), clamp(0.6875rem, 2.55vw, 0.8125rem));
+      }
+
+      .ssu-landing-overlay__pains-intro {
+         @apply mb-2;
+         font-size: min(var(--ov-pains-intro, 20px), clamp(0.6875rem, 2.55vw, 0.8125rem));
       }
 
       .ssu-landing-overlay__pains-block {
          @apply w-full max-w-full;
       }
 
+      .ssu-landing-overlay__pains {
+         @apply space-y-2;
+         font-size: min(var(--ov-pains, 16px), clamp(0.75rem, 2.75vw, 0.8125rem));
+      }
+
       .ssu-landing-overlay__pains li {
-         @apply gap-2.5 leading-snug;
+         @apply gap-2 leading-snug;
       }
 
       .ssu-landing-overlay__pain-icon {
-         @apply mt-1 h-5 w-7;
+         @apply mt-0.5 h-4 w-6;
       }
 
       .ssu-landing-overlay__highlight {
-         @apply w-full px-3 py-2 tracking-[0.03em];
+         @apply w-full px-2.5 py-1.5 leading-snug tracking-[0.02em];
+         font-size: min(var(--ov-highlight, 19px), clamp(0.6875rem, 2.55vw, 0.75rem));
          text-wrap: balance;
       }
 
       .ssu-landing-overlay__solution {
          @apply text-center leading-relaxed;
+         font-size: min(var(--ov-solution, 16px), clamp(0.75rem, 2.75vw, 0.8125rem));
       }
 
       .ssu-landing-overlay__solution p,
@@ -457,13 +489,17 @@
          text-wrap: pretty;
       }
 
+      .ssu-landing-overlay__cta {
+         @apply pt-1;
+      }
+
       .ssu-landing-overlay__cta-button {
-         @apply w-full px-4 py-3 text-sm tracking-[0.08em];
+         @apply min-h-10 w-full px-3 py-2.5 text-xs tracking-[0.06em];
       }
 
       .ssu-landing-overlay__continue {
-         @apply text-sm;
-         font-size: 14px;
+         @apply text-xs;
+         font-size: 12px;
       }
    }
 

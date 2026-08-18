@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -263,14 +262,16 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
    const showCta = ctaUrl !== '' && ctaLabel !== '';
    const solutionHtml = overlay.solution_html?.trim() || '';
    const sizes = overlay.sizes;
-   const px = (value: number | undefined, fallback: number) => {
-      const size = value || fallback;
-      const floor = Math.max(12, Math.round(size * 0.62));
-
-      return {
-         fontSize: `clamp(${floor}px, ${((size / 390) * 100).toFixed(2)}vw, ${size}px)`,
-      };
-   };
+   const panelStyle = {
+      maxWidth: `${overlay.panel_width || 1024}px`,
+      '--ov-headline': `${sizes?.headline ?? 56}px`,
+      '--ov-pains-title': `${sizes?.pains_title ?? 20}px`,
+      '--ov-pains-intro': `${sizes?.pains_intro ?? 20}px`,
+      '--ov-pains': `${sizes?.pains ?? 16}px`,
+      '--ov-solution-title': `${sizes?.solution_title ?? 20}px`,
+      '--ov-highlight': `${sizes?.highlight ?? 19}px`,
+      '--ov-solution': `${sizes?.solution ?? 16}px`,
+   } as React.CSSProperties;
 
    return (
       <div className="ssu-landing-overlay" role="dialog" aria-modal="true" aria-labelledby="ssu-landing-overlay-title">
@@ -283,22 +284,19 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             <X className="h-5 w-5" />
          </button>
 
-         <div
-            className="ssu-landing-overlay__panel"
-            style={{ maxWidth: `${overlay.panel_width || 1024}px` }}
-         >
+         <div className="ssu-landing-overlay__panel" style={panelStyle}>
             <div className="ssu-landing-overlay__sheet" aria-hidden>
                <OverlayBlueprintSheet />
             </div>
             <div className="ssu-landing-overlay__content">
             {overlay.headline && (
-               <h1 id="ssu-landing-overlay-title" className="ssu-landing-overlay__headline" style={px(sizes?.headline, 56)}>
+               <h1 id="ssu-landing-overlay-title" className="ssu-landing-overlay__headline">
                   {overlay.headline}
                </h1>
             )}
 
             {overlay.pains_title && (
-               <p className="ssu-landing-overlay__section-title" style={px(sizes?.pains_title, 20)}>
+               <p className="ssu-landing-overlay__section-title ssu-landing-overlay__section-title--pains">
                   {overlay.pains_title}
                </p>
             )}
@@ -306,13 +304,11 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             {(overlay.pains_intro?.trim() || overlay.pains.length > 0) && (
                <div className="ssu-landing-overlay__pains-block">
                   {overlay.pains_intro?.trim() && (
-                     <p className="ssu-landing-overlay__pains-intro" style={px(sizes?.pains_intro, 20)}>
-                        {overlay.pains_intro}
-                     </p>
+                     <p className="ssu-landing-overlay__pains-intro">{overlay.pains_intro}</p>
                   )}
 
                   {overlay.pains.length > 0 && (
-                     <ul className="ssu-landing-overlay__pains" style={px(sizes?.pains, 16)}>
+                     <ul className="ssu-landing-overlay__pains">
                         {overlay.pains.map((pain, index) => (
                            <li key={`${index}-${pain}`}>
                               <PainBarricadeIcon id={`ssu-pain-barricade-${index}`} className="ssu-landing-overlay__pain-icon" />
@@ -325,25 +321,19 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             )}
 
             {overlay.solution_title && (
-               <p className="ssu-landing-overlay__section-title" style={px(sizes?.solution_title, 20)}>
+               <p className="ssu-landing-overlay__section-title ssu-landing-overlay__section-title--solution">
                   {overlay.solution_title}
                </p>
             )}
 
             {overlay.highlight?.trim() && (
                <p className="ssu-landing-overlay__highlight-wrap">
-                  <span className="ssu-landing-overlay__highlight" style={px(sizes?.highlight, 19)}>
-                     {overlay.highlight}
-                  </span>
+                  <span className="ssu-landing-overlay__highlight">{overlay.highlight}</span>
                </p>
             )}
 
             {solutionHtml !== '' && (
-               <div
-                  className="ssu-landing-overlay__solution"
-                  style={px(sizes?.solution, 16)}
-                  dangerouslySetInnerHTML={{ __html: solutionHtml }}
-               />
+               <div className="ssu-landing-overlay__solution" dangerouslySetInnerHTML={{ __html: solutionHtml }} />
             )}
 
             {showCta && (
@@ -360,7 +350,7 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
                </div>
             )}
 
-            <Button type="button" variant="ghost" className={cn('ssu-landing-overlay__continue text-base')} onClick={dismiss}>
+            <Button type="button" variant="ghost" className="ssu-landing-overlay__continue" onClick={dismiss}>
                Continue to site
             </Button>
             </div>
