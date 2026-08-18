@@ -24,12 +24,26 @@ const LiveClassForm = ({ title, liveClass, handler, courseId }: Props) => {
    const { translate } = props;
    const { dashboard, input, button } = translate;
 
-   const { data, setData, post, put, reset, errors, processing } = useForm({
+   const initialData = () => ({
       course_id: courseId,
       class_topic: liveClass?.class_topic || '',
       class_note: liveClass?.class_note || '',
       class_date_and_time: liveClass?.class_date_and_time ? new Date(liveClass.class_date_and_time) : new Date(),
    });
+
+   const { data, setData, post, put, errors, processing, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -41,7 +55,7 @@ const LiveClassForm = ({ title, liveClass, handler, courseId }: Props) => {
       } else {
          post(route('live-class.store'), {
             onSuccess: () => {
-               reset();
+               restoreSavedValues();
                setOpen(false);
             },
          });
@@ -49,7 +63,7 @@ const LiveClassForm = ({ title, liveClass, handler, courseId }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">

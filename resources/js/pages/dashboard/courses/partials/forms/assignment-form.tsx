@@ -117,7 +117,13 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(nextOpen) => {
+         if (!nextOpen) {
+            reset();
+            clearErrors();
+         }
+         setOpen(nextOpen);
+      }}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">

@@ -17,25 +17,40 @@ const ForumEdit = ({ url, forum }: { url: string; forum: CourseForum }) => {
    const { translate } = props as any;
    const { button, input, frontend } = translate;
 
-   const { data, setData, put, errors, processing, reset } = useForm({
+   const { data, setData, put, errors, processing, setDefaults, clearErrors } = useForm({
       url,
       title: forum.title,
       description: forum.description,
    });
+
+   const restoreSavedValues = () => {
+      const fresh = {
+         url,
+         title: forum.title,
+         description: forum.description,
+      };
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
       put(route('course-forums.update', forum.id), {
          onSuccess: () => {
-            reset();
             setOpen(false);
          },
       });
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger asChild>
             <Button size="sm" variant="ghost" className="w-full cursor-pointer justify-start px-2">
                <SquarePen className="h-4 w-4" />

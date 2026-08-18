@@ -148,7 +148,13 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={() => (isSubmit ? setOpen(true) : setOpen((prev) => !prev))}>
+      <Dialog open={open} onOpenChange={(nextOpen) => {
+         if (!nextOpen && !isSubmit) {
+            reset();
+            clearErrors();
+         }
+         setOpen(nextOpen);
+      }}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">

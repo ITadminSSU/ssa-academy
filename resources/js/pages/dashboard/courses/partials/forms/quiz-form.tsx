@@ -25,7 +25,7 @@ const QuizForm = ({ title, quiz, handler, sectionId }: Props) => {
    const { translate } = props;
    const { dashboard, input, button } = translate;
 
-   const { data, setData, post, reset, errors, processing } = useForm({
+   const initialData = () => ({
       title: quiz?.title || '',
       course_section_id: sectionId,
       course_id: props.course.id,
@@ -38,20 +38,33 @@ const QuizForm = ({ title, quiz, handler, sectionId }: Props) => {
       seconds: quiz?.seconds || '',
    });
 
+   const { data, setData, post, errors, processing, setDefaults, clearErrors } = useForm(initialData());
+
+   const restoreSavedValues = () => {
+      const fresh = initialData();
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
+
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
       if (quiz) {
          post(route('quiz.update', quiz.id), {
             onSuccess: () => {
-               reset();
                setOpen(false);
             },
          });
       } else {
          post(route('quiz.store'), {
             onSuccess: () => {
-               reset();
+               restoreSavedValues();
                setOpen(false);
             },
          });
@@ -59,7 +72,7 @@ const QuizForm = ({ title, quiz, handler, sectionId }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">

@@ -43,7 +43,7 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
 
    const initialAnswer = question?.answer ? (typeof question.answer === 'string' ? JSON.parse(question.answer) : question.answer) : [];
 
-   const { data, setData, post, put, reset, processing, errors } = useForm({
+   const { data, setData, post, put, processing, errors, setDefaults, clearErrors } = useForm({
       title: question?.title || '',
       type: question?.type || 'single',
       options: initialOptions,
@@ -51,6 +51,27 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
       sort: question?.sort || maxSort + 1,
       section_quiz_id: quiz.id,
    });
+
+   const restoreSavedValues = () => {
+      const options = question?.options ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : [];
+      const answer = question?.answer ? (typeof question.answer === 'string' ? JSON.parse(question.answer) : question.answer) : [];
+      const fresh = {
+         title: question?.title || '',
+         type: question?.type || 'single',
+         options,
+         answer,
+         sort: question?.sort || maxSort + 1,
+         section_quiz_id: quiz.id,
+      };
+      setDefaults(fresh);
+      setData(fresh);
+      clearErrors();
+   };
+
+   const handleOpenChange = (nextOpen: boolean) => {
+      restoreSavedValues();
+      setOpen(nextOpen);
+   };
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -62,7 +83,7 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
       } else {
          post(route('quiz.question.store'), {
             onSuccess: () => {
-               reset();
+               restoreSavedValues();
                setOpen(false);
             },
          });
@@ -70,7 +91,7 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
    };
 
    return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
          <DialogContent className="p-0">
