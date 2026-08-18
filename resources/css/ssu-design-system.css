@@ -267,15 +267,27 @@
    }
 
    .ssu-landing-overlay__pains li {
-      @apply flex items-start gap-3 text-lg text-white/90;
+      @apply flex items-start gap-3 text-white/90;
+      font-size: 16px;
+      line-height: 1.5;
    }
 
    .ssu-landing-overlay__pain-icon {
-      @apply mt-0.5 h-6 w-6 shrink-0 text-[color:var(--brand-red)];
+      @apply mt-0.5 h-5 w-5 shrink-0 text-[color:var(--brand-red)];
    }
 
    .ssu-landing-overlay__solution {
-      @apply mx-auto max-w-2xl text-left text-lg text-white/85;
+      @apply mx-auto max-w-2xl text-left text-white/85;
+      font-size: 16px;
+      line-height: 1.5;
+   }
+
+   .ssu-landing-overlay__solution p,
+   .ssu-landing-overlay__solution li,
+   .ssu-landing-overlay__solution div,
+   .ssu-landing-overlay__solution span {
+      font-size: 16px;
+      line-height: 1.5;
    }
 
    .ssu-landing-overlay__solution p,
@@ -297,7 +309,8 @@
    }
 
    .ssu-landing-overlay__continue {
-      @apply mx-auto block text-white/70 hover:bg-transparent hover:text-white;
+      @apply mx-auto block text-base text-white/70 hover:bg-transparent hover:text-white;
+      font-size: 16px;
    }
 
    .ssu-logo-frame {

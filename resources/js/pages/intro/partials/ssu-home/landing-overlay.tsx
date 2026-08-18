@@ -132,7 +132,7 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
                </div>
             )}
 
-            <Button type="button" variant="ghost" className={cn('ssu-landing-overlay__continue')} onClick={dismiss}>
+            <Button type="button" variant="ghost" className={cn('ssu-landing-overlay__continue text-base')} onClick={dismiss}>
                Continue to site
             </Button>
          </div>
