@@ -197,6 +197,38 @@ class InstructorService extends MediaService
       return $instructor;
    }
 
+   function updateInstructorStatus(array $data, string $id): Instructor
+   {
+      if (! isAdmin()) {
+         abort(403);
+      }
+
+      $instructor = Instructor::findOrFail($id);
+      $user = User::findOrFail($instructor->user_id);
+      $status = $data['status'];
+      $feedback = $data['feedback'] ?? '';
+
+      $instructor->update(['status' => $status]);
+
+      if ($status === 'approved') {
+         $user->update([
+            'role' => 'instructor',
+            'instructor_id' => $instructor->id,
+         ]);
+      }
+
+      try {
+         $user->notify(new InstructorApprovalNotification([
+            'status' => $status,
+            'feedback' => $feedback,
+         ]));
+      } catch (\Throwable $exception) {
+         report($exception);
+      }
+
+      return $instructor->fresh(['user']);
+   }
+
    function updateUserRole(array $data, Instructor $instructor): void
    {
       $user = User::find($instructor->user_id);
@@ -207,7 +239,7 @@ class InstructorService extends MediaService
 
       $user->notify(new InstructorApprovalNotification([
          'status' => $instructor->status,
-         'feedback' => $data['feedback'],
+         'feedback' => $data['feedback'] ?? '',
       ]));
    }
 

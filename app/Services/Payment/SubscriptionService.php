@@ -9,6 +9,7 @@ use App\Models\Course\CourseEnrollment;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Course\CourseEnrollmentService;
+use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\PaymentGateways\Services\PaymentService;
@@ -176,7 +177,10 @@ class SubscriptionService
                 'suspended_at' => $accessStatus === EnrollmentAccessStatus::SUSPENDED ? now() : null,
             ]);
 
-            return $enrollment->fresh();
+            $enrollment = $enrollment->fresh();
+            app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
+
+            return $enrollment;
         }
 
         return $this->courseEnrollment->createCourseEnroll([
@@ -196,6 +200,19 @@ class SubscriptionService
                 'access_status' => $status,
                 'suspended_at' => $status === EnrollmentAccessStatus::SUSPENDED ? now() : null,
             ]);
+
+        if ($status !== EnrollmentAccessStatus::ACTIVE) {
+            return;
+        }
+
+        $enrollment = CourseEnrollment::query()
+            ->with(['user', 'course.instructor.user'])
+            ->where('subscription_id', $subscription->id)
+            ->first();
+
+        if ($enrollment) {
+            app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
+        }
     }
 
     protected function buildSubscriptionAttributes(object $stripeSubscription, SubscriptionStatus $status): array

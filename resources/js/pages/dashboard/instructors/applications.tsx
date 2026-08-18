@@ -33,13 +33,17 @@ const Applications = (props: Props) => {
       <Card>
          <TableFilter
             data={props.applications}
-            title={dashboard.instructor_list}
+            title={dashboard.instructor_applications ?? dashboard.instructor_list}
             globalSearch={true}
             tablePageSizes={[10, 15, 20, 25]}
             routeName="instructors.applications"
             // Icon={<Users className="h-6 w-6 text-primary" />}
             // exportPath={route('users.export')}
          />
+
+         {dashboard.instructor_applications_hint && (
+            <p className="text-muted-foreground border-border border-b px-6 pb-4 text-sm">{dashboard.instructor_applications_hint}</p>
+         )}
 
          <Table className="border-border border-y">
             <TableHeader table={table} tableHeadClass="px-6" />

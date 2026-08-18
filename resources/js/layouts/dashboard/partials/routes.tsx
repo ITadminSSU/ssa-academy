@@ -133,12 +133,6 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   access: ['admin', 'collaborative'],
                },
                {
-                  name: 'Create Instructor',
-                  slug: routeLastSegment(route('instructors.create')),
-                  path: route('instructors.create'),
-                  access: ['admin', 'collaborative'],
-               },
-               {
                   name: 'Applications',
                   slug: routeLastSegment(route('instructors.applications')),
                   path: route('instructors.applications', {

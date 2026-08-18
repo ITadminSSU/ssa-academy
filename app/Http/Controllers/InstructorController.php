@@ -123,9 +123,21 @@ class InstructorController extends Controller
 
     public function status(UpdateInstructorStatusRequest $request, string $id)
     {
-        $instructor = $this->instructorService->updateInstructor($request->validated(), $id);
-        $this->instructorService->updateUserRole($request->validated(), $instructor);
+        $validated = $request->validated();
+        $this->instructorService->updateInstructorStatus($validated, $id);
 
-        return back()->with('success', 'Instructor status updated successfully');
+        $message = match ($validated['status']) {
+            'approved' => 'Instructor approved. They now appear under Manage Instructors.',
+            'rejected' => 'Instructor application rejected.',
+            default => 'Instructor application status updated.',
+        };
+
+        if ($validated['status'] === 'approved') {
+            return redirect()
+                ->route('instructors.index')
+                ->with('success', $message);
+        }
+
+        return back()->with('success', $message);
     }
 }

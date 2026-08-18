@@ -36,8 +36,8 @@ const Index = (props: Props) => {
 
    return (
       <div>
-         <Link href={route('instructors.create')}>
-            <Button>{button.add_new_instructor}</Button>
+         <Link href={route('users.index')}>
+            <Button variant="outline">{dashboard.user_management}</Button>
          </Link>
 
          <Separator className="my-6" />

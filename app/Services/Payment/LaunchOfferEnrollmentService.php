@@ -8,6 +8,7 @@ use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
 use App\Services\Course\CourseEnrollmentService;
+use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\PaymentGateways\Models\PaymentHistory;
@@ -171,6 +172,7 @@ class LaunchOfferEnrollmentService
         });
 
         $this->launchOfferMail->sendBalancePaidConfirmation($enrollment->fresh(['user', 'course']));
+        app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user']));
 
         return $enrollment;
     }

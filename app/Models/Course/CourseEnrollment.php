@@ -38,6 +38,7 @@ class CourseEnrollment extends Model
         'balance_final_reminder_sent_at',
         'balance_paid_confirmation_sent_at',
         'forfeit_notice_sent_at',
+        'welcome_email_sent_at',
     ];
 
     protected $casts = [
@@ -58,6 +59,7 @@ class CourseEnrollment extends Model
         'balance_final_reminder_sent_at' => 'datetime',
         'balance_paid_confirmation_sent_at' => 'datetime',
         'forfeit_notice_sent_at' => 'datetime',
+        'welcome_email_sent_at' => 'datetime',
     ];
 
 

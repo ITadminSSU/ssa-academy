@@ -55,7 +55,7 @@ class CourseEnrollmentService extends MediaService
 
    function createCourseEnroll(array $data, bool $allowBeforeLaunch = false): CourseEnrollment
    {
-      return DB::transaction(function () use ($data, $allowBeforeLaunch) {
+      $enrollment = DB::transaction(function () use ($data, $allowBeforeLaunch) {
          $courseId = $data['course_id'];
          $course = Course::findOrFail($data['course_id']);
 
@@ -114,6 +114,10 @@ class CourseEnrollmentService extends MediaService
 
          return $enrollment;
       }, 5);
+
+      app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user']) ?? $enrollment);
+
+      return $enrollment;
    }
 
    function deleteEnrollment(string $id): void

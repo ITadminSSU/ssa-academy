@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateInstructorStatusRequest extends FormRequest
 {
@@ -11,7 +12,7 @@ class UpdateInstructorStatusRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return isAdmin();
     }
 
     /**
@@ -23,7 +24,37 @@ class UpdateInstructorStatusRequest extends FormRequest
     {
         return [
             'status' => 'required|string|in:approved,rejected,pending',
-            'feedback' => 'required|string',
+            'feedback' => 'nullable|string',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $feedback = $this->input('feedback');
+
+        if (! is_string($feedback)) {
+            return;
+        }
+
+        $plainText = trim(preg_replace('/\s+/', ' ', strip_tags($feedback)) ?? '');
+
+        if ($plainText === '') {
+            $this->merge(['feedback' => null]);
+        }
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($this->input('status') !== 'rejected') {
+                return;
+            }
+
+            $feedback = $this->input('feedback');
+
+            if (! is_string($feedback) || trim(strip_tags($feedback)) === '') {
+                $validator->errors()->add('feedback', 'Feedback is required when rejecting an application.');
+            }
+        });
     }
 }
