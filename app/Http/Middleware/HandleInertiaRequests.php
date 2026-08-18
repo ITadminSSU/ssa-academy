@@ -197,9 +197,7 @@ class HandleInertiaRequests extends Middleware
         $fields['author'] = Branding::resolveAuthor($fields['author'] ?? null);
         $fields['logo_dark'] = Branding::resolveLogo($fields['logo_dark'] ?? null, 'dark');
         $fields['logo_light'] = Branding::resolveLogo($fields['logo_light'] ?? null, 'light');
-        $fields['favicon'] = Branding::isLegacyLogo($fields['favicon'] ?? null)
-            ? (Branding::logo('favicon') ?? Branding::logo('icon'))
-            : ($fields['favicon'] ?? Branding::logo('favicon'));
+        $fields['favicon'] = Branding::versionPublicPath('/favicon.ico');
 
         if (empty($fields['keywords']) || Branding::isLegacyName($fields['keywords'])) {
             $fields['keywords'] = Branding::keywords();

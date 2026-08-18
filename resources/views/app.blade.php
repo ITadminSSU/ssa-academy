@@ -48,41 +48,32 @@
          content="{{ app('system_settings')->fields['author'] }}"
       >
 
-      @if (!empty(app('system_settings')->fields['favicon']))
-         <link
-            rel="icon"
-            href="{{ public_asset_url(app('system_settings')->fields['favicon']) }}"
-            type="image/png"
-         >
-         <link
-            rel="icon"
-            href="{{ asset('favicon-32x32.png') }}"
-            sizes="32x32"
-            type="image/png"
-         >
-         <link
-            rel="icon"
-            href="{{ asset('favicon-16x16.png') }}"
-            sizes="16x16"
-            type="image/png"
-         >
-         <link
-            rel="apple-touch-icon"
-            href="{{ asset('apple-touch-icon.png') }}"
-         >
-      @elseif (!empty(app('system_settings')->fields['logo_light']))
-         <link
-            rel="icon"
-            href="{{ public_asset_url(app('system_settings')->fields['logo_light']) }}"
-            type="image/png"
-         >
-      @else
-         <link
-            rel="icon"
-            href="{{ asset('favicon.png') }}"
-            type="image/png"
-         >
-      @endif
+      <link
+         rel="icon"
+         href="{{ \App\Support\Branding::versionPublicPath('/favicon.ico') }}"
+         sizes="any"
+      >
+      <link
+         rel="shortcut icon"
+         href="{{ \App\Support\Branding::versionPublicPath('/favicon.ico') }}"
+         type="image/x-icon"
+      >
+      <link
+         rel="icon"
+         href="{{ asset('favicon-32x32.png') }}"
+         sizes="32x32"
+         type="image/png"
+      >
+      <link
+         rel="icon"
+         href="{{ asset('favicon-16x16.png') }}"
+         sizes="16x16"
+         type="image/png"
+      >
+      <link
+         rel="apple-touch-icon"
+         href="{{ asset('apple-touch-icon.png') }}"
+      >
 
       <meta
          property="og:type"

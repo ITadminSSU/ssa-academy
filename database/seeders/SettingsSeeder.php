@@ -25,7 +25,7 @@ class SettingsSeeder extends Seeder
                     'description' => 'SMARTSOURCING USA ACADEMY is a professional training and development platform of Smart Sourcing USA and is not a CHED-accredited higher education institution.',
                     'logo_dark' => '/assets/branding/ssa-academy-logo-black.png',
                     'logo_light' => '/assets/branding/ssa-academy-logo-white.png',
-                    'favicon' => '/favicon.png',
+                    'favicon' => '/favicon.ico',
                     'banner' => '/banner.png',
                     'author' => 'Smart Sourcing USA',
                     'slogan' => 'Enterprise training for teams and professionals within the construction industry.',
