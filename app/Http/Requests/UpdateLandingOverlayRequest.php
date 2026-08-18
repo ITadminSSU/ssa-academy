@@ -35,6 +35,7 @@ class UpdateLandingOverlayRequest extends FormRequest
             'overlay_solution_title_size' => 'required|integer|min:12|max:96',
             'overlay_highlight_size' => 'required|integer|min:12|max:96',
             'overlay_solution_size' => 'required|integer|min:12|max:96',
+            'overlay_panel_width' => 'required|integer|min:640|max:1280',
         ];
     }
 

@@ -27,7 +27,19 @@ class LandingOverlay
             'overlay_solution_title_size' => 20,
             'overlay_highlight_size' => 19,
             'overlay_solution_size' => 16,
+            'overlay_panel_width' => 1024,
         ];
+    }
+
+    public static function clampPanelWidth(mixed $value, int $default): int
+    {
+        $width = (int) $value;
+
+        if ($width < 640 || $width > 1280) {
+            return $default;
+        }
+
+        return $width;
     }
 
     public static function clampSize(mixed $value, int $default): int
@@ -74,6 +86,7 @@ class LandingOverlay
             'overlay_solution_title_size' => self::clampSize($fields['overlay_solution_title_size'] ?? $defaults['overlay_solution_title_size'], $defaults['overlay_solution_title_size']),
             'overlay_highlight_size' => self::clampSize($fields['overlay_highlight_size'] ?? $defaults['overlay_highlight_size'], $defaults['overlay_highlight_size']),
             'overlay_solution_size' => self::clampSize($fields['overlay_solution_size'] ?? $defaults['overlay_solution_size'], $defaults['overlay_solution_size']),
+            'overlay_panel_width' => self::clampPanelWidth($fields['overlay_panel_width'] ?? $defaults['overlay_panel_width'], $defaults['overlay_panel_width']),
         ];
 
         $overlay['overlay_version'] = self::version($overlay);
@@ -132,6 +145,7 @@ class LandingOverlay
             'solution_html' => $overlay['overlay_solution_html'],
             'cta_label' => $overlay['overlay_cta_label'],
             'cta_url' => $overlay['overlay_cta_url'],
+            'panel_width' => $overlay['overlay_panel_width'],
             'sizes' => [
                 'headline' => $overlay['overlay_headline_size'],
                 'pains_title' => $overlay['overlay_pains_title_size'],

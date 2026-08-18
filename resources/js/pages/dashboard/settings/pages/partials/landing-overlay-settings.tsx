@@ -32,6 +32,7 @@ const defaults = {
    overlay_solution_title_size: 20,
    overlay_highlight_size: 19,
    overlay_solution_size: 16,
+   overlay_panel_width: 1024,
 };
 
 const FontSizeInput = ({
@@ -78,6 +79,7 @@ const LandingOverlaySettings = ({ home }: Props) => {
       overlay_solution_title_size: Number(fields.overlay_solution_title_size ?? defaults.overlay_solution_title_size),
       overlay_highlight_size: Number(fields.overlay_highlight_size ?? defaults.overlay_highlight_size),
       overlay_solution_size: Number(fields.overlay_solution_size ?? defaults.overlay_solution_size),
+      overlay_panel_width: Number(fields.overlay_panel_width ?? defaults.overlay_panel_width),
    });
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -140,6 +142,24 @@ const LandingOverlaySettings = ({ home }: Props) => {
             </div>
 
             <div className="space-y-5 p-4">
+               <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                  <div>
+                     <Label>{settings.overlay_panel_width ?? 'Panel width'}</Label>
+                     <Input
+                        type="number"
+                        min={640}
+                        max={1280}
+                        step={16}
+                        value={data.overlay_panel_width}
+                        onChange={(e) => setData('overlay_panel_width', Number(e.target.value))}
+                     />
+                     <p className="text-muted-foreground mt-1 text-xs">
+                        {settings.overlay_panel_width_hint ?? 'Maximum panel width in pixels (640–1280). Default is 1024.'}
+                     </p>
+                     <InputError message={errors.overlay_panel_width} />
+                  </div>
+               </div>
+
                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                   <div className="flex-1">
                      <Label>{settings.overlay_headline ?? 'Headline'}</Label>

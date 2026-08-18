@@ -191,6 +191,8 @@ interface SettingsLang {
    overlay_solution_title: string;
    overlay_highlight: string;
    overlay_highlight_hint: string;
+   overlay_panel_width: string;
+   overlay_panel_width_hint: string;
    overlay_solution: string;
    overlay_cta_label: string;
    overlay_cta_url: string;

@@ -138,6 +138,7 @@ interface PageFields {
    overlay_solution_title_size?: number;
    overlay_highlight_size?: number;
    overlay_solution_size?: number;
+   overlay_panel_width?: number;
 }
 
 interface LandingOverlayPublic {
@@ -150,6 +151,7 @@ interface LandingOverlayPublic {
    solution_html: string;
    cta_label: string;
    cta_url: string;
+   panel_width?: number;
    sizes?: {
       headline: number;
       pains_title: number;

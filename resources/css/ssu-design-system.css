@@ -259,7 +259,7 @@
    }
 
    .ssu-landing-overlay__panel {
-      @apply relative z-10 mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border px-5 py-8 text-center text-white shadow-2xl sm:px-10 sm:py-12;
+      @apply relative z-10 mx-auto w-full overflow-hidden rounded-2xl border px-5 py-8 text-center text-white shadow-2xl sm:px-12 sm:py-12;
       background: #0b3d73;
       border-color: rgb(170 210 255 / 28%);
       box-shadow:
@@ -306,7 +306,7 @@
    }
 
    .ssu-landing-overlay__highlight-wrap {
-      @apply mx-auto max-w-3xl;
+      @apply mx-auto w-full max-w-full;
    }
 
    .ssu-landing-overlay__highlight {
@@ -323,12 +323,11 @@
    }
 
    .ssu-landing-overlay__pains {
-      @apply mx-auto max-w-2xl space-y-3 text-left;
+      @apply mx-auto w-full max-w-full space-y-3 text-left;
    }
 
    .ssu-landing-overlay__pains li {
-      @apply flex items-start gap-3 font-bold;
-      color: #d4523a;
+      @apply flex items-start gap-3 font-bold text-white;
       font-size: inherit;
       line-height: 1.5;
    }
@@ -338,7 +337,7 @@
    }
 
    .ssu-landing-overlay__solution {
-      @apply mx-auto max-w-2xl text-left text-white/85;
+      @apply mx-auto w-full max-w-full text-left text-white/85;
       line-height: 1.5;
    }
 

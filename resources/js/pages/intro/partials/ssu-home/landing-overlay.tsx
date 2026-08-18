@@ -14,6 +14,7 @@ export interface LandingOverlayContent {
    solution_html: string;
    cta_label: string;
    cta_url: string;
+   panel_width?: number;
    sizes?: {
       headline: number;
       pains_title: number;
@@ -183,7 +184,10 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             <X className="h-5 w-5" />
          </button>
 
-         <div className="ssu-landing-overlay__panel">
+         <div
+            className="ssu-landing-overlay__panel"
+            style={{ maxWidth: `${overlay.panel_width || 1024}px` }}
+         >
             <div className="ssu-landing-overlay__sheet" aria-hidden>
                <OverlayBlueprintSheet />
             </div>
