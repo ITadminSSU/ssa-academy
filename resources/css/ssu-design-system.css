@@ -297,7 +297,8 @@
    }
 
    .ssu-landing-overlay__headline {
-      @apply font-bold tracking-[0.08em] text-white uppercase;
+      @apply font-bold tracking-[0.08em] uppercase;
+      color: #8c2a23;
       font-family: 'Barlow', var(--font-sans);
       font-size: var(--ov-headline, 56px);
       text-shadow: 0 2px 18px rgb(0 16 40 / 55%);
