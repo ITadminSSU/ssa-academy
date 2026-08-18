@@ -128,6 +128,7 @@ interface PageFields {
    overlay_pains_title?: string;
    overlay_pains?: string[];
    overlay_solution_title?: string;
+   overlay_highlight?: string;
    overlay_solution_html?: string;
    overlay_cta_label?: string;
    overlay_cta_url?: string;
@@ -139,6 +140,7 @@ interface LandingOverlayPublic {
    pains_title: string;
    pains: string[];
    solution_title: string;
+   highlight: string;
    solution_html: string;
    cta_label: string;
    cta_url: string;

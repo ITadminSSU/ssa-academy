@@ -10,6 +10,7 @@ export interface LandingOverlayContent {
    pains_title: string;
    pains: string[];
    solution_title: string;
+   highlight: string;
    solution_html: string;
    cta_label: string;
    cta_url: string;
@@ -197,6 +198,12 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             )}
 
             {overlay.solution_title && <p className="ssu-landing-overlay__section-title">{overlay.solution_title}</p>}
+
+            {overlay.highlight?.trim() && (
+               <p className="ssu-landing-overlay__highlight-wrap">
+                  <span className="ssu-landing-overlay__highlight">{overlay.highlight}</span>
+               </p>
+            )}
 
             {solutionHtml !== '' && (
                <div className="ssu-landing-overlay__solution" dangerouslySetInnerHTML={{ __html: solutionHtml }} />

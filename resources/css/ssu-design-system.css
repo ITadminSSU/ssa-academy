@@ -207,6 +207,16 @@
 
    .ssu-landing-overlay {
       @apply fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto px-4 py-10;
+      font-family: 'Barlow', var(--font-sans);
+   }
+
+   .ssu-landing-overlay button,
+   .ssu-landing-overlay a,
+   .ssu-landing-overlay h1,
+   .ssu-landing-overlay p,
+   .ssu-landing-overlay li,
+   .ssu-landing-overlay span {
+      font-family: 'Barlow', var(--font-sans);
    }
 
    .ssu-landing-overlay__backdrop {
@@ -285,13 +295,39 @@
    }
 
    .ssu-landing-overlay__headline {
-      @apply font-display text-4xl font-bold tracking-[0.08em] uppercase sm:text-[3.5rem];
-      color: #d4523a;
-      text-shadow: 0 0 18px rgb(212 82 58 / 70%), 0 0 42px rgb(212 82 58 / 45%);
+      @apply text-4xl font-bold tracking-[0.08em] text-white uppercase sm:text-[3.5rem];
+      font-family: 'Barlow', var(--font-sans);
+      text-shadow: 0 2px 18px rgb(0 16 40 / 55%);
    }
 
    .ssu-landing-overlay__section-title {
-      @apply font-display text-lg font-semibold tracking-[0.18em] text-white uppercase sm:text-xl;
+      @apply text-lg font-semibold tracking-[0.18em] text-white uppercase sm:text-xl;
+      font-family: 'Barlow', var(--font-sans);
+   }
+
+   .ssu-landing-overlay__highlight-wrap {
+      @apply mx-auto max-w-3xl;
+   }
+
+   .ssu-landing-overlay__highlight {
+      display: inline-block;
+      max-width: 100%;
+      background: #e8eef2;
+      color: #01123a;
+      font-family: 'Barlow', var(--font-sans);
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      line-height: 1.3;
+      padding: 0.55rem 0.95rem;
+      text-transform: uppercase;
+   }
+
+   @media (min-width: 640px) {
+      .ssu-landing-overlay__highlight {
+         font-size: 1.2rem;
+         padding: 0.65rem 1.15rem;
+      }
    }
 
    .ssu-landing-overlay__pains {
@@ -299,7 +335,8 @@
    }
 
    .ssu-landing-overlay__pains li {
-      @apply flex items-start gap-3 text-white/90;
+      @apply flex items-start gap-3;
+      color: #d4523a;
       font-size: 16px;
       line-height: 1.5;
    }
@@ -336,7 +373,8 @@
    }
 
    .ssu-landing-overlay__cta-button {
-      @apply font-display inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[color:var(--brand-red)] bg-black/50 px-8 py-3 text-base font-semibold tracking-[0.12em] text-white uppercase transition hover:bg-[color:var(--brand-red)];
+      @apply inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[color:var(--brand-red)] bg-black/50 px-8 py-3 text-base font-semibold tracking-[0.12em] text-white uppercase transition hover:bg-[color:var(--brand-red)];
+      font-family: 'Barlow', var(--font-sans);
       box-shadow: 0 0 24px color-mix(in srgb, var(--brand-red) 45%, transparent);
    }
 

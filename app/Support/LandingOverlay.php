@@ -17,6 +17,7 @@ class LandingOverlay
                 'Add a pain point visitors will recognize.',
             ],
             'overlay_solution_title' => 'OUR SOLUTION:',
+            'overlay_highlight' => 'INTRODUCING SMARTSOURCING USA ACADEMY',
             'overlay_solution_html' => '<p>Describe what you are offering and why it is different. Visitors can close this overlay and continue to the site.</p>',
             'overlay_cta_label' => 'APPLY TO JOIN',
             'overlay_cta_url' => '/register',
@@ -46,6 +47,7 @@ class LandingOverlay
                 static fn (string $pain) => $pain !== ''
             )),
             'overlay_solution_title' => (string) ($fields['overlay_solution_title'] ?? $defaults['overlay_solution_title']),
+            'overlay_highlight' => (string) ($fields['overlay_highlight'] ?? $defaults['overlay_highlight']),
             'overlay_solution_html' => self::sanitizeHtml((string) ($fields['overlay_solution_html'] ?? $defaults['overlay_solution_html'])),
             'overlay_cta_label' => (string) ($fields['overlay_cta_label'] ?? $defaults['overlay_cta_label']),
             'overlay_cta_url' => (string) ($fields['overlay_cta_url'] ?? $defaults['overlay_cta_url']),
@@ -66,6 +68,7 @@ class LandingOverlay
             'pains_title' => $overlay['overlay_pains_title'] ?? '',
             'pains' => $overlay['overlay_pains'] ?? [],
             'solution_title' => $overlay['overlay_solution_title'] ?? '',
+            'highlight' => $overlay['overlay_highlight'] ?? '',
             'solution_html' => $overlay['overlay_solution_html'] ?? '',
             'cta_label' => $overlay['overlay_cta_label'] ?? '',
             'cta_url' => $overlay['overlay_cta_url'] ?? '',
@@ -88,6 +91,7 @@ class LandingOverlay
 
         $hasContent = trim($overlay['overlay_headline']) !== ''
             || $overlay['overlay_pains'] !== []
+            || trim($overlay['overlay_highlight']) !== ''
             || trim(strip_tags($overlay['overlay_solution_html'])) !== ''
             || trim($overlay['overlay_cta_label']) !== '';
 
@@ -101,6 +105,7 @@ class LandingOverlay
             'pains_title' => $overlay['overlay_pains_title'],
             'pains' => $overlay['overlay_pains'],
             'solution_title' => $overlay['overlay_solution_title'],
+            'highlight' => $overlay['overlay_highlight'],
             'solution_html' => $overlay['overlay_solution_html'],
             'cta_label' => $overlay['overlay_cta_label'],
             'cta_url' => $overlay['overlay_cta_url'],

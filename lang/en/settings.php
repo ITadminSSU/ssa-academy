@@ -206,6 +206,8 @@ return [
   'overlay_pains' => 'Pain points',
   'add_pain_point' => 'Add pain point',
   'overlay_solution_title' => 'Solution title',
+  'overlay_highlight' => 'Highlight line',
+  'overlay_highlight_hint' => 'Shown on a solid light rectangle, like INTRODUCING SMARTSOURCING USA ACADEMY.',
   'overlay_solution' => 'Solution message',
   'overlay_cta_label' => 'Button label',
   'overlay_cta_url' => 'Button link',

@@ -21,6 +21,7 @@ const defaults = {
    overlay_pains_title: 'USER PAINS:',
    overlay_pains: ['Add a pain point visitors will recognize.'],
    overlay_solution_title: 'OUR SOLUTION:',
+   overlay_highlight: 'INTRODUCING SMARTSOURCING USA ACADEMY',
    overlay_solution_html:
       '<p>Describe what you are offering and why it is different. Visitors can close this overlay and continue to the site.</p>',
    overlay_cta_label: 'APPLY TO JOIN',
@@ -39,6 +40,7 @@ const LandingOverlaySettings = ({ home }: Props) => {
       overlay_pains_title: fields.overlay_pains_title ?? defaults.overlay_pains_title,
       overlay_pains: fields.overlay_pains?.length ? fields.overlay_pains : defaults.overlay_pains,
       overlay_solution_title: fields.overlay_solution_title ?? defaults.overlay_solution_title,
+      overlay_highlight: fields.overlay_highlight ?? defaults.overlay_highlight,
       overlay_solution_html: fields.overlay_solution_html ?? defaults.overlay_solution_html,
       overlay_cta_label: fields.overlay_cta_label ?? defaults.overlay_cta_label,
       overlay_cta_url: fields.overlay_cta_url ?? defaults.overlay_cta_url,
@@ -151,6 +153,19 @@ const LandingOverlaySettings = ({ home }: Props) => {
                      placeholder="OUR SOLUTION:"
                   />
                   <InputError message={errors.overlay_solution_title} />
+               </div>
+
+               <div>
+                  <Label>{settings.overlay_highlight ?? 'Highlight line'}</Label>
+                  <Input
+                     value={data.overlay_highlight}
+                     onChange={(e) => setData('overlay_highlight', e.target.value)}
+                     placeholder="INTRODUCING SMARTSOURCING USA ACADEMY"
+                  />
+                  <p className="text-muted-foreground mt-1 text-xs">
+                     {settings.overlay_highlight_hint ?? 'Shown on a solid light rectangle, like INTRODUCING SMARTSOURCING USA ACADEMY.'}
+                  </p>
+                  <InputError message={errors.overlay_highlight} />
                </div>
 
                <div>

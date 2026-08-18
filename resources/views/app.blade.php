@@ -171,7 +171,7 @@
       href="https://fonts.bunny.net"
    >
    <link
-      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700"
+      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700|barlow:400,500,600,700,800"
       rel="stylesheet"
    />
 
