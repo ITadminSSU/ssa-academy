@@ -217,11 +217,11 @@
       pointer-events: none;
       position: absolute;
       inset: 0;
-      opacity: 0.18;
+      opacity: 0.1;
       background-image:
-         linear-gradient(to right, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-         linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
-      background-size: 48px 48px;
+         linear-gradient(to right, rgba(180, 220, 255, 0.22) 1px, transparent 1px),
+         linear-gradient(to bottom, rgba(180, 220, 255, 0.22) 1px, transparent 1px);
+      background-size: 40px 40px;
    }
 
    .ssu-landing-overlay__glow {
@@ -230,7 +230,7 @@
       height: 18rem;
       width: 18rem;
       border-radius: 9999px;
-      background: color-mix(in srgb, var(--brand-red) 45%, transparent);
+      background: color-mix(in srgb, var(--brand-red) 35%, transparent);
       filter: blur(64px);
    }
 
@@ -249,7 +249,39 @@
    }
 
    .ssu-landing-overlay__panel {
-      @apply relative z-10 mx-auto w-full max-w-4xl space-y-6 rounded-2xl border border-white/10 bg-[color:var(--primary)]/80 px-5 py-8 text-center text-white shadow-2xl sm:px-10 sm:py-12;
+      @apply relative z-10 mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border px-5 py-8 text-center text-white shadow-2xl sm:px-10 sm:py-12;
+      background: #0b3d73;
+      border-color: rgb(170 210 255 / 28%);
+      box-shadow:
+         0 0 0 1px rgb(255 255 255 / 8%) inset,
+         0 24px 60px rgb(0 8 24 / 45%);
+   }
+
+   .ssu-landing-overlay__sheet {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      color: rgb(210 232 255 / 55%);
+      opacity: 0.55;
+   }
+
+   .ssu-landing-overlay__sheet-svg {
+      height: 100%;
+      width: 100%;
+   }
+
+   .ssu-landing-overlay__content {
+      @apply relative z-10 space-y-6;
+   }
+
+   .ssu-landing-overlay__content::before {
+      content: '';
+      pointer-events: none;
+      position: absolute;
+      inset: -1.5rem -1rem;
+      border-radius: 1rem;
+      background: linear-gradient(180deg, rgb(11 61 115 / 35%) 0%, rgb(11 24 48 / 62%) 100%);
+      z-index: -1;
    }
 
    .ssu-landing-overlay__headline {
@@ -273,7 +305,7 @@
    }
 
    .ssu-landing-overlay__pain-icon {
-      @apply mt-0.5 h-5 w-5 shrink-0 text-[color:var(--brand-red)];
+      @apply mt-0.5 h-6 w-8 shrink-0;
    }
 
    .ssu-landing-overlay__solution {
