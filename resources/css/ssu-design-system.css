@@ -343,6 +343,11 @@
       line-height: 1.5;
    }
 
+   .ssu-landing-overlay__pains li span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+   }
+
    .ssu-landing-overlay__pain-icon {
       @apply mt-0.5 h-6 w-8 shrink-0;
    }
@@ -383,6 +388,83 @@
    .ssu-landing-overlay__continue {
       @apply mx-auto block text-base font-bold text-white/70 hover:bg-transparent hover:text-white;
       font-size: 16px;
+   }
+
+   @media (max-width: 639px) {
+      .ssu-landing-overlay {
+         @apply items-start justify-start px-3 py-4;
+         padding-top: max(1rem, env(safe-area-inset-top, 0px));
+         padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+      }
+
+      .ssu-landing-overlay__close {
+         @apply top-3 right-3 h-9 w-9;
+      }
+
+      .ssu-landing-overlay__panel {
+         @apply my-2 rounded-xl px-4 py-6;
+         width: 100%;
+         max-width: 100% !important;
+      }
+
+      .ssu-landing-overlay__sheet {
+         opacity: 0.42;
+      }
+
+      .ssu-landing-overlay__content {
+         @apply space-y-4;
+      }
+
+      .ssu-landing-overlay__content::before {
+         inset: -0.75rem -0.5rem;
+      }
+
+      .ssu-landing-overlay__headline {
+         @apply leading-[1.08] tracking-[0.04em];
+      }
+
+      .ssu-landing-overlay__section-title,
+      .ssu-landing-overlay__pains-intro {
+         @apply leading-snug tracking-[0.05em];
+         text-wrap: balance;
+      }
+
+      .ssu-landing-overlay__pains-block {
+         @apply w-full max-w-full;
+      }
+
+      .ssu-landing-overlay__pains li {
+         @apply gap-2.5 leading-snug;
+      }
+
+      .ssu-landing-overlay__pain-icon {
+         @apply mt-1 h-5 w-7;
+      }
+
+      .ssu-landing-overlay__highlight {
+         @apply w-full px-3 py-2 tracking-[0.03em];
+         text-wrap: balance;
+      }
+
+      .ssu-landing-overlay__solution {
+         @apply text-center leading-relaxed;
+      }
+
+      .ssu-landing-overlay__solution p,
+      .ssu-landing-overlay__solution li,
+      .ssu-landing-overlay__solution div,
+      .ssu-landing-overlay__solution span {
+         text-wrap: pretty;
+      }
+
+      .ssu-landing-overlay__cta-button {
+         @apply w-full px-4 py-3 text-sm tracking-[0.08em];
+      }
+
+      .ssu-landing-overlay__continue {
+         @apply text-sm;
+         font-size: 14px;
+      }
    }
 
    .ssu-logo-frame {

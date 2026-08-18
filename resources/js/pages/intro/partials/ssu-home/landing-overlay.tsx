@@ -263,7 +263,14 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
    const showCta = ctaUrl !== '' && ctaLabel !== '';
    const solutionHtml = overlay.solution_html?.trim() || '';
    const sizes = overlay.sizes;
-   const px = (value: number | undefined, fallback: number) => ({ fontSize: `${value || fallback}px` });
+   const px = (value: number | undefined, fallback: number) => {
+      const size = value || fallback;
+      const floor = Math.max(12, Math.round(size * 0.62));
+
+      return {
+         fontSize: `clamp(${floor}px, ${((size / 390) * 100).toFixed(2)}vw, ${size}px)`,
+      };
+   };
 
    return (
       <div className="ssu-landing-overlay" role="dialog" aria-modal="true" aria-labelledby="ssu-landing-overlay-title">
