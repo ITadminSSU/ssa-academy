@@ -25,5 +25,3 @@ const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps
 };
 
 export default SsuHome;
-
-export default SsuHome;
