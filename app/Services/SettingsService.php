@@ -8,6 +8,7 @@ use App\Models\Navbar;
 use App\Models\NavbarItem;
 use App\Models\Page;
 use App\Models\Setting;
+use App\Support\LandingOverlay;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -123,7 +124,37 @@ class SettingsService extends MediaService
     public function homePagesSelect(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {
-            return Setting::find($id)->update(['fields' => $data]);
+            $setting = Setting::find($id);
+
+            if (! $setting) {
+                return false;
+            }
+
+            $fields = is_array($setting->fields) ? $setting->fields : [];
+
+            return $setting->update([
+                'fields' => array_merge($fields, $data),
+            ]);
+        }, 5);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateLandingOverlay(array $data): Setting
+    {
+        return DB::transaction(function () use ($data) {
+            $setting = Setting::where('type', 'home_page')->firstOrFail();
+            $fields = is_array($setting->fields) ? $setting->fields : [];
+            $overlay = LandingOverlay::fromFields($data);
+
+            unset($overlay['overlay_version']);
+
+            $setting->update([
+                'fields' => array_merge($fields, $overlay),
+            ]);
+
+            return $setting->fresh();
         }, 5);
     }
 

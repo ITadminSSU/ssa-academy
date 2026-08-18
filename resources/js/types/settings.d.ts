@@ -123,6 +123,25 @@ interface PageFields {
    page_id: number;
    page_name: string;
    page_slug: string;
+   overlay_enabled?: boolean;
+   overlay_headline?: string;
+   overlay_pains_title?: string;
+   overlay_pains?: string[];
+   overlay_solution_title?: string;
+   overlay_solution_html?: string;
+   overlay_cta_label?: string;
+   overlay_cta_url?: string;
+}
+
+interface LandingOverlayPublic {
+   version: string;
+   headline: string;
+   pains_title: string;
+   pains: string[];
+   solution_title: string;
+   solution_html: string;
+   cta_label: string;
+   cta_url: string;
 }
 
 interface ZoomConfigFields {

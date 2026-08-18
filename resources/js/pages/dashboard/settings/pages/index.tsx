@@ -9,9 +9,10 @@ import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, us
 import * as React from 'react';
 import CustomPageCreateForm from './partials/custom-page-create-form';
 import CustomTableColumn from './partials/custom-pages-table-columns';
+import LandingOverlaySettings from './partials/landing-overlay-settings';
 import SsuLandingSettings from './partials/ssu-landing-settings';
 
-const Pages = ({ pages, ssuLandingPage, translate }: PageSelectProps) => {
+const Pages = ({ pages, ssuLandingPage, home, translate }: PageSelectProps) => {
    const { settings } = translate;
 
    const customPages = React.useMemo(() => pages.filter((page) => page.type === 'inner_page'), [pages]);
@@ -33,6 +34,8 @@ const Pages = ({ pages, ssuLandingPage, translate }: PageSelectProps) => {
             <div className="mb-6 flex items-center justify-between">
                <h1 className="text-2xl font-bold">{settings.page_settings}</h1>
             </div>
+
+            <LandingOverlaySettings home={home} />
 
             <SsuLandingSettings landingPage={ssuLandingPage} />
 

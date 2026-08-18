@@ -22,6 +22,7 @@ use App\Http\Requests\UpdateSmtpSettingsRequest;
 use App\Http\Requests\UpdateBunnyStreamRequest;
 use App\Http\Requests\UpdateStorageRequest;
 use App\Http\Requests\UpdateZoomConfigRequest;
+use App\Http\Requests\UpdateLandingOverlayRequest;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -120,6 +121,13 @@ class SettingController extends Controller
         return back()->with('success', 'Home page has been updated successfully');
     }
 
+    public function landing_overlay_update(UpdateLandingOverlayRequest $request)
+    {
+        $this->settingsService->updateLandingOverlay($request->validated());
+
+        return back()->with('success', 'Landing overlay updated successfully');
+    }
+
     public function system_type_update(Request $request)
     {
         $request->validate([
@@ -131,12 +139,14 @@ class SettingController extends Controller
         $homePage = Setting::where('type', 'home_page')->first();
 
         $system->update(['sub_type' => $request->sub_type]);
+
+        $existing = is_array($homePage->fields) ? $homePage->fields : [];
         $homePage->update([
-            'fields' => [
+            'fields' => array_merge($existing, [
                 'page_id' => $page->id,
                 'page_name' => $page->name,
                 'page_slug' => $page->slug,
-            ],
+            ]),
         ]);
 
         return back()->with('success', 'System type has been updated successfully');

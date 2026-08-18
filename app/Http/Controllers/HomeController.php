@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Requests\UpdatePageSectionRequest;
 use App\Models\Page;
+use App\Models\Setting;
 use App\Services\Course\CourseCategoryService;
 use App\Services\JobCircularService;
 use App\Services\AuthService;
 use App\Services\PageService;
 use App\Services\TeamMemberService;
+use App\Support\LandingOverlay;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
@@ -28,8 +30,13 @@ class HomeController extends Controller
 
    public function index(Request $request)
    {
-      if (Auth::check()) {
-         return redirect($this->authService->homeUrlFor(Auth::user()));
+      $user = Auth::user();
+      $previewOverlay = $request->boolean('preview_overlay')
+         && $user
+         && $user->canManagePlatformSettings();
+
+      if ($user && ! $previewOverlay) {
+         return redirect($this->authService->homeUrlFor($user));
       }
 
       $page = app('intro_page');
@@ -47,10 +54,14 @@ class HomeController extends Controller
       }
 
       $sections = $this->pageService->getPageSections($request->all(), $page);
+      $homeSetting = Setting::where('type', 'home_page')->first();
+      $homeFields = is_array($homeSetting?->fields) ? $homeSetting->fields : [];
 
       return Inertia::render('intro/ssu-home', [
          'page' => $page,
          'type' => 'intro',
+         'landingOverlay' => LandingOverlay::publicPayload($homeFields, $previewOverlay),
+         'landingOverlayForce' => $previewOverlay,
          ...$sections,
       ]);
    }

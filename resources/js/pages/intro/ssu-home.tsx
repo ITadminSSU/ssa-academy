@@ -4,12 +4,15 @@ import { Head } from '@inertiajs/react';
 import CallToAction from './partials/ssu-home/call-to-action';
 import FeaturedCourses from './partials/ssu-home/featured-courses';
 import Hero from './partials/ssu-home/hero';
+import LandingOverlay from './partials/ssu-home/landing-overlay';
 import Pillars from './partials/ssu-home/pillars';
 
-const SsuHome = ({ system }: IntroPageProps) => {
+const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps) => {
    return (
       <LandingLayout navbarHeight={true} customizable={false}>
          <Head title={system.fields.name} />
+
+         {landingOverlay && <LandingOverlay overlay={landingOverlay} force={Boolean(landingOverlayForce)} />}
 
          <div className="ssu-page-shell">
             <Hero />
@@ -20,5 +23,7 @@ const SsuHome = ({ system }: IntroPageProps) => {
       </LandingLayout>
    );
 };
+
+export default SsuHome;
 
 export default SsuHome;

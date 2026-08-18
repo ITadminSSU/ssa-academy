@@ -198,6 +198,19 @@ return [
   'administrative' => 'Administrative',
   'custom_pages' => 'Custom Pages',
 
+  'landing_overlay' => 'Landing overlay',
+  'landing_overlay_description' => 'Show a dismissible full-screen message on the public home page. Visitors who close it will not see it again until you change the content.',
+  'preview_overlay' => 'Preview overlay',
+  'overlay_headline' => 'Headline',
+  'overlay_pains_title' => 'Pain points title',
+  'overlay_pains' => 'Pain points',
+  'add_pain_point' => 'Add pain point',
+  'overlay_solution_title' => 'Solution title',
+  'overlay_solution' => 'Solution message',
+  'overlay_cta_label' => 'Button label',
+  'overlay_cta_url' => 'Button link',
+  'overlay_cta_url_hint' => 'Use a site path like /register, or a full http(s) URL.',
+
   // Maintenance
   'note' => 'Note',
   'what_backed_up' => 'What will be backed up?',

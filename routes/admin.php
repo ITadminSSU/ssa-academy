@@ -102,6 +102,7 @@ Route::prefix('dashboard/admin')->group(function () {
         Route::post('team-members/{teamMember}', [TeamMemberController::class, 'update'])->name('settings.team-members.update');
         Route::delete('team-members/{teamMember}', [TeamMemberController::class, 'destroy'])->name('settings.team-members.destroy');
         Route::post('home-page/{id}', 'home_pages_update')->name('settings.home-page.update');
+        Route::put('landing-overlay', 'landing_overlay_update')->name('settings.landing-overlay.update');
         Route::post('system-type', 'system_type_update')->name('settings.system-type.update');
 
         Route::get('custom-page/{id}', 'custom_pages_edit')->name('settings.custom-page.edit');

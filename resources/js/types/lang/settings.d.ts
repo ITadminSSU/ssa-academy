@@ -181,6 +181,18 @@ interface SettingsLang {
    collaborative: string;
    administrative: string;
    custom_pages: string;
+   landing_overlay: string;
+   landing_overlay_description: string;
+   preview_overlay: string;
+   overlay_headline: string;
+   overlay_pains_title: string;
+   overlay_pains: string;
+   add_pain_point: string;
+   overlay_solution_title: string;
+   overlay_solution: string;
+   overlay_cta_label: string;
+   overlay_cta_url: string;
+   overlay_cta_url_hint: string;
 
    // Maintenance
    what_backed_up: string;
