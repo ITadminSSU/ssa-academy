@@ -313,7 +313,7 @@
       display: inline-block;
       max-width: 100%;
       background: #e8eef2;
-      color: #01123a;
+      color: #8c2a23;
       font-family: 'Barlow', var(--font-sans);
       font-weight: 800;
       letter-spacing: 0.06em;
@@ -323,11 +323,11 @@
    }
 
    .ssu-landing-overlay__pains {
-      @apply mx-auto w-full max-w-full space-y-3 text-left;
+      @apply mx-auto flex w-full max-w-full flex-col items-center gap-3;
    }
 
    .ssu-landing-overlay__pains li {
-      @apply flex items-start gap-3 font-bold text-white;
+      @apply inline-flex max-w-[min(100%,52rem)] items-start gap-3 text-left font-bold text-white;
       font-size: inherit;
       line-height: 1.5;
    }
