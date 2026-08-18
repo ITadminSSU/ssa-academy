@@ -8,6 +8,7 @@ export interface LandingOverlayContent {
    version: string;
    headline: string;
    pains_title: string;
+   pains_intro?: string;
    pains: string[];
    solution_title: string;
    highlight: string;
@@ -18,6 +19,7 @@ export interface LandingOverlayContent {
    sizes?: {
       headline: number;
       pains_title: number;
+      pains_intro: number;
       pains: number;
       solution_title: number;
       highlight: number;
@@ -201,6 +203,12 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             {overlay.pains_title && (
                <p className="ssu-landing-overlay__section-title" style={px(sizes?.pains_title, 20)}>
                   {overlay.pains_title}
+               </p>
+            )}
+
+            {overlay.pains_intro?.trim() && (
+               <p className="ssu-landing-overlay__section-title" style={px(sizes?.pains_intro, 20)}>
+                  {overlay.pains_intro}
                </p>
             )}
 

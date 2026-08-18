@@ -19,6 +19,7 @@ const defaults = {
    overlay_enabled: false,
    overlay_headline: 'WE HEARD YOU!',
    overlay_pains_title: 'USER PAINS:',
+   overlay_pains_intro: '',
    overlay_pains: ['Add a pain point visitors will recognize.'],
    overlay_solution_title: 'OUR SOLUTION:',
    overlay_highlight: 'INTRODUCING SMARTSOURCING USA ACADEMY',
@@ -28,6 +29,7 @@ const defaults = {
    overlay_cta_url: '/register',
    overlay_headline_size: 56,
    overlay_pains_title_size: 20,
+   overlay_pains_intro_size: 20,
    overlay_pains_size: 16,
    overlay_solution_title_size: 20,
    overlay_highlight_size: 19,
@@ -67,6 +69,7 @@ const LandingOverlaySettings = ({ home }: Props) => {
       overlay_enabled: Boolean(fields.overlay_enabled),
       overlay_headline: fields.overlay_headline ?? defaults.overlay_headline,
       overlay_pains_title: fields.overlay_pains_title ?? defaults.overlay_pains_title,
+      overlay_pains_intro: fields.overlay_pains_intro ?? defaults.overlay_pains_intro,
       overlay_pains: fields.overlay_pains?.length ? fields.overlay_pains : defaults.overlay_pains,
       overlay_solution_title: fields.overlay_solution_title ?? defaults.overlay_solution_title,
       overlay_highlight: fields.overlay_highlight ?? defaults.overlay_highlight,
@@ -75,6 +78,7 @@ const LandingOverlaySettings = ({ home }: Props) => {
       overlay_cta_url: fields.overlay_cta_url ?? defaults.overlay_cta_url,
       overlay_headline_size: Number(fields.overlay_headline_size ?? defaults.overlay_headline_size),
       overlay_pains_title_size: Number(fields.overlay_pains_title_size ?? defaults.overlay_pains_title_size),
+      overlay_pains_intro_size: Number(fields.overlay_pains_intro_size ?? defaults.overlay_pains_intro_size),
       overlay_pains_size: Number(fields.overlay_pains_size ?? defaults.overlay_pains_size),
       overlay_solution_title_size: Number(fields.overlay_solution_title_size ?? defaults.overlay_solution_title_size),
       overlay_highlight_size: Number(fields.overlay_highlight_size ?? defaults.overlay_highlight_size),
@@ -191,6 +195,23 @@ const LandingOverlaySettings = ({ home }: Props) => {
                      value={data.overlay_pains_title_size}
                      onChange={(value) => setData('overlay_pains_title_size', value)}
                      error={errors.overlay_pains_title_size}
+                  />
+               </div>
+
+               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                     <Label>{settings.overlay_pains_intro ?? 'Line above pain points'}</Label>
+                     <Input
+                        value={data.overlay_pains_intro}
+                        onChange={(e) => setData('overlay_pains_intro', e.target.value)}
+                        placeholder="Optional line shown directly above the pain points list"
+                     />
+                     <InputError message={errors.overlay_pains_intro} />
+                  </div>
+                  <FontSizeInput
+                     value={data.overlay_pains_intro_size}
+                     onChange={(value) => setData('overlay_pains_intro_size', value)}
+                     error={errors.overlay_pains_intro_size}
                   />
                </div>
 

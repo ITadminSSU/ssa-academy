@@ -13,6 +13,7 @@ class LandingOverlay
             'overlay_enabled' => false,
             'overlay_headline' => 'WE HEARD YOU!',
             'overlay_pains_title' => 'USER PAINS:',
+            'overlay_pains_intro' => '',
             'overlay_pains' => [
                 'Add a pain point visitors will recognize.',
             ],
@@ -23,6 +24,7 @@ class LandingOverlay
             'overlay_cta_url' => '/register',
             'overlay_headline_size' => 56,
             'overlay_pains_title_size' => 20,
+            'overlay_pains_intro_size' => 20,
             'overlay_pains_size' => 16,
             'overlay_solution_title_size' => 20,
             'overlay_highlight_size' => 19,
@@ -71,6 +73,7 @@ class LandingOverlay
             'overlay_enabled' => filter_var($fields['overlay_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'overlay_headline' => (string) ($fields['overlay_headline'] ?? $defaults['overlay_headline']),
             'overlay_pains_title' => (string) ($fields['overlay_pains_title'] ?? $defaults['overlay_pains_title']),
+            'overlay_pains_intro' => (string) ($fields['overlay_pains_intro'] ?? $defaults['overlay_pains_intro']),
             'overlay_pains' => array_values(array_filter(
                 array_map(static fn ($pain) => trim((string) $pain), $pains),
                 static fn (string $pain) => $pain !== ''
@@ -82,6 +85,7 @@ class LandingOverlay
             'overlay_cta_url' => (string) ($fields['overlay_cta_url'] ?? $defaults['overlay_cta_url']),
             'overlay_headline_size' => self::clampSize($fields['overlay_headline_size'] ?? $defaults['overlay_headline_size'], $defaults['overlay_headline_size']),
             'overlay_pains_title_size' => self::clampSize($fields['overlay_pains_title_size'] ?? $defaults['overlay_pains_title_size'], $defaults['overlay_pains_title_size']),
+            'overlay_pains_intro_size' => self::clampSize($fields['overlay_pains_intro_size'] ?? $defaults['overlay_pains_intro_size'], $defaults['overlay_pains_intro_size']),
             'overlay_pains_size' => self::clampSize($fields['overlay_pains_size'] ?? $defaults['overlay_pains_size'], $defaults['overlay_pains_size']),
             'overlay_solution_title_size' => self::clampSize($fields['overlay_solution_title_size'] ?? $defaults['overlay_solution_title_size'], $defaults['overlay_solution_title_size']),
             'overlay_highlight_size' => self::clampSize($fields['overlay_highlight_size'] ?? $defaults['overlay_highlight_size'], $defaults['overlay_highlight_size']),
@@ -102,6 +106,7 @@ class LandingOverlay
         $content = [
             'headline' => $overlay['overlay_headline'] ?? '',
             'pains_title' => $overlay['overlay_pains_title'] ?? '',
+            'pains_intro' => $overlay['overlay_pains_intro'] ?? '',
             'pains' => $overlay['overlay_pains'] ?? [],
             'solution_title' => $overlay['overlay_solution_title'] ?? '',
             'highlight' => $overlay['overlay_highlight'] ?? '',
@@ -139,6 +144,7 @@ class LandingOverlay
             'version' => $overlay['overlay_version'],
             'headline' => $overlay['overlay_headline'],
             'pains_title' => $overlay['overlay_pains_title'],
+            'pains_intro' => $overlay['overlay_pains_intro'],
             'pains' => $overlay['overlay_pains'],
             'solution_title' => $overlay['overlay_solution_title'],
             'highlight' => $overlay['overlay_highlight'],
@@ -149,6 +155,7 @@ class LandingOverlay
             'sizes' => [
                 'headline' => $overlay['overlay_headline_size'],
                 'pains_title' => $overlay['overlay_pains_title_size'],
+                'pains_intro' => $overlay['overlay_pains_intro_size'],
                 'pains' => $overlay['overlay_pains_size'],
                 'solution_title' => $overlay['overlay_solution_title_size'],
                 'highlight' => $overlay['overlay_highlight_size'],

@@ -126,6 +126,7 @@ interface PageFields {
    overlay_enabled?: boolean;
    overlay_headline?: string;
    overlay_pains_title?: string;
+   overlay_pains_intro?: string;
    overlay_pains?: string[];
    overlay_solution_title?: string;
    overlay_highlight?: string;
@@ -134,6 +135,7 @@ interface PageFields {
    overlay_cta_url?: string;
    overlay_headline_size?: number;
    overlay_pains_title_size?: number;
+   overlay_pains_intro_size?: number;
    overlay_pains_size?: number;
    overlay_solution_title_size?: number;
    overlay_highlight_size?: number;
@@ -145,6 +147,7 @@ interface LandingOverlayPublic {
    version: string;
    headline: string;
    pains_title: string;
+   pains_intro?: string;
    pains: string[];
    solution_title: string;
    highlight: string;
@@ -155,6 +158,7 @@ interface LandingOverlayPublic {
    sizes?: {
       headline: number;
       pains_title: number;
+      pains_intro: number;
       pains: number;
       solution_title: number;
       highlight: number;

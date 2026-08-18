@@ -203,6 +203,7 @@ return [
   'preview_overlay' => 'Preview overlay',
   'overlay_headline' => 'Headline',
   'overlay_pains_title' => 'Pain points title',
+  'overlay_pains_intro' => 'Line above pain points',
   'overlay_pains' => 'Pain points',
   'add_pain_point' => 'Add pain point',
   'overlay_solution_title' => 'Solution title',

@@ -323,11 +323,11 @@
    }
 
    .ssu-landing-overlay__pains {
-      @apply mx-auto flex w-full max-w-full flex-col items-center gap-3;
+      @apply mx-auto w-fit max-w-full space-y-3 text-left;
    }
 
    .ssu-landing-overlay__pains li {
-      @apply inline-flex max-w-[min(100%,52rem)] items-start gap-3 text-left font-bold text-white;
+      @apply flex items-start gap-3 font-bold text-white;
       font-size: inherit;
       line-height: 1.5;
    }
