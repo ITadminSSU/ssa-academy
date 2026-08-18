@@ -303,7 +303,7 @@
    }
 
    .ssu-landing-overlay__section-title {
-      @apply font-semibold tracking-[0.18em] text-white uppercase;
+      @apply font-bold tracking-[0.18em] text-white uppercase;
       font-family: 'Barlow', var(--font-sans);
    }
 
@@ -324,8 +324,17 @@
       text-transform: uppercase;
    }
 
+   .ssu-landing-overlay__pains-block {
+      @apply mx-auto w-fit max-w-full text-left;
+   }
+
+   .ssu-landing-overlay__pains-intro {
+      @apply mb-3 font-bold tracking-[0.18em] text-white uppercase;
+      font-family: 'Barlow', var(--font-sans);
+   }
+
    .ssu-landing-overlay__pains {
-      @apply mx-auto w-fit max-w-full space-y-3 text-left;
+      @apply w-full space-y-3 text-left;
    }
 
    .ssu-landing-overlay__pains li {
@@ -339,7 +348,7 @@
    }
 
    .ssu-landing-overlay__solution {
-      @apply mx-auto w-full max-w-full text-left text-white/85;
+      @apply mx-auto w-full max-w-full text-left font-normal text-white/85;
       line-height: 1.5;
    }
 
@@ -348,6 +357,7 @@
    .ssu-landing-overlay__solution div,
    .ssu-landing-overlay__solution span {
       font-size: inherit;
+      font-weight: normal;
       line-height: 1.5;
    }
 
@@ -365,13 +375,13 @@
    }
 
    .ssu-landing-overlay__cta-button {
-      @apply inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[color:var(--brand-red)] bg-black/50 px-8 py-3 text-base font-semibold tracking-[0.12em] text-white uppercase transition hover:bg-[color:var(--brand-red)];
+      @apply inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[color:var(--brand-red)] bg-black/50 px-8 py-3 text-base font-bold tracking-[0.12em] text-white uppercase transition hover:bg-[color:var(--brand-red)];
       font-family: 'Barlow', var(--font-sans);
       box-shadow: 0 0 24px color-mix(in srgb, var(--brand-red) 45%, transparent);
    }
 
    .ssu-landing-overlay__continue {
-      @apply mx-auto block text-base text-white/70 hover:bg-transparent hover:text-white;
+      @apply mx-auto block text-base font-bold text-white/70 hover:bg-transparent hover:text-white;
       font-size: 16px;
    }
 

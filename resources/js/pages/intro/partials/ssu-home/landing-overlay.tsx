@@ -296,21 +296,25 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
                </p>
             )}
 
-            {overlay.pains_intro?.trim() && (
-               <p className="ssu-landing-overlay__section-title" style={px(sizes?.pains_intro, 20)}>
-                  {overlay.pains_intro}
-               </p>
-            )}
+            {(overlay.pains_intro?.trim() || overlay.pains.length > 0) && (
+               <div className="ssu-landing-overlay__pains-block">
+                  {overlay.pains_intro?.trim() && (
+                     <p className="ssu-landing-overlay__pains-intro" style={px(sizes?.pains_intro, 20)}>
+                        {overlay.pains_intro}
+                     </p>
+                  )}
 
-            {overlay.pains.length > 0 && (
-               <ul className="ssu-landing-overlay__pains" style={px(sizes?.pains, 16)}>
-                  {overlay.pains.map((pain, index) => (
-                     <li key={`${index}-${pain}`}>
-                        <PainBarricadeIcon id={`ssu-pain-barricade-${index}`} className="ssu-landing-overlay__pain-icon" />
-                        <span>{pain}</span>
-                     </li>
-                  ))}
-               </ul>
+                  {overlay.pains.length > 0 && (
+                     <ul className="ssu-landing-overlay__pains" style={px(sizes?.pains, 16)}>
+                        {overlay.pains.map((pain, index) => (
+                           <li key={`${index}-${pain}`}>
+                              <PainBarricadeIcon id={`ssu-pain-barricade-${index}`} className="ssu-landing-overlay__pain-icon" />
+                              <span>{pain}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  )}
+               </div>
             )}
 
             {overlay.solution_title && (
