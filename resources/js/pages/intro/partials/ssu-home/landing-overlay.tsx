@@ -14,6 +14,14 @@ export interface LandingOverlayContent {
    solution_html: string;
    cta_label: string;
    cta_url: string;
+   sizes?: {
+      headline: number;
+      pains_title: number;
+      pains: number;
+      solution_title: number;
+      highlight: number;
+      solution: number;
+   };
 }
 
 interface Props {
@@ -161,6 +169,8 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
    const ctaLabel = overlay.cta_label?.trim() || '';
    const showCta = ctaUrl !== '' && ctaLabel !== '';
    const solutionHtml = overlay.solution_html?.trim() || '';
+   const sizes = overlay.sizes;
+   const px = (value: number | undefined, fallback: number) => ({ fontSize: `${value || fallback}px` });
 
    return (
       <div className="ssu-landing-overlay" role="dialog" aria-modal="true" aria-labelledby="ssu-landing-overlay-title">
@@ -179,15 +189,19 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
             </div>
             <div className="ssu-landing-overlay__content">
             {overlay.headline && (
-               <h1 id="ssu-landing-overlay-title" className="ssu-landing-overlay__headline">
+               <h1 id="ssu-landing-overlay-title" className="ssu-landing-overlay__headline" style={px(sizes?.headline, 56)}>
                   {overlay.headline}
                </h1>
             )}
 
-            {overlay.pains_title && <p className="ssu-landing-overlay__section-title">{overlay.pains_title}</p>}
+            {overlay.pains_title && (
+               <p className="ssu-landing-overlay__section-title" style={px(sizes?.pains_title, 20)}>
+                  {overlay.pains_title}
+               </p>
+            )}
 
             {overlay.pains.length > 0 && (
-               <ul className="ssu-landing-overlay__pains">
+               <ul className="ssu-landing-overlay__pains" style={px(sizes?.pains, 16)}>
                   {overlay.pains.map((pain, index) => (
                      <li key={`${index}-${pain}`}>
                         <PainBarricadeIcon id={`ssu-pain-barricade-${index}`} className="ssu-landing-overlay__pain-icon" />
@@ -197,16 +211,26 @@ const LandingOverlay = ({ overlay, force = false }: Props) => {
                </ul>
             )}
 
-            {overlay.solution_title && <p className="ssu-landing-overlay__section-title">{overlay.solution_title}</p>}
+            {overlay.solution_title && (
+               <p className="ssu-landing-overlay__section-title" style={px(sizes?.solution_title, 20)}>
+                  {overlay.solution_title}
+               </p>
+            )}
 
             {overlay.highlight?.trim() && (
                <p className="ssu-landing-overlay__highlight-wrap">
-                  <span className="ssu-landing-overlay__highlight">{overlay.highlight}</span>
+                  <span className="ssu-landing-overlay__highlight" style={px(sizes?.highlight, 19)}>
+                     {overlay.highlight}
+                  </span>
                </p>
             )}
 
             {solutionHtml !== '' && (
-               <div className="ssu-landing-overlay__solution" dangerouslySetInnerHTML={{ __html: solutionHtml }} />
+               <div
+                  className="ssu-landing-overlay__solution"
+                  style={px(sizes?.solution, 16)}
+                  dangerouslySetInnerHTML={{ __html: solutionHtml }}
+               />
             )}
 
             {showCta && (

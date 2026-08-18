@@ -26,7 +26,35 @@ const defaults = {
       '<p>Describe what you are offering and why it is different. Visitors can close this overlay and continue to the site.</p>',
    overlay_cta_label: 'APPLY TO JOIN',
    overlay_cta_url: '/register',
+   overlay_headline_size: 56,
+   overlay_pains_title_size: 20,
+   overlay_pains_size: 16,
+   overlay_solution_title_size: 20,
+   overlay_highlight_size: 19,
+   overlay_solution_size: 16,
 };
+
+const FontSizeInput = ({
+   value,
+   onChange,
+   error,
+}: {
+   value: number;
+   onChange: (value: number) => void;
+   error?: string;
+}) => (
+   <div className="w-28 shrink-0">
+      <Label>Size (px)</Label>
+      <Input
+         type="number"
+         min={12}
+         max={96}
+         value={value}
+         onChange={(e) => onChange(Number(e.target.value))}
+      />
+      <InputError message={error} />
+   </div>
+);
 
 const LandingOverlaySettings = ({ home }: Props) => {
    const { props } = usePage<SharedData>();
@@ -44,6 +72,12 @@ const LandingOverlaySettings = ({ home }: Props) => {
       overlay_solution_html: fields.overlay_solution_html ?? defaults.overlay_solution_html,
       overlay_cta_label: fields.overlay_cta_label ?? defaults.overlay_cta_label,
       overlay_cta_url: fields.overlay_cta_url ?? defaults.overlay_cta_url,
+      overlay_headline_size: Number(fields.overlay_headline_size ?? defaults.overlay_headline_size),
+      overlay_pains_title_size: Number(fields.overlay_pains_title_size ?? defaults.overlay_pains_title_size),
+      overlay_pains_size: Number(fields.overlay_pains_size ?? defaults.overlay_pains_size),
+      overlay_solution_title_size: Number(fields.overlay_solution_title_size ?? defaults.overlay_solution_title_size),
+      overlay_highlight_size: Number(fields.overlay_highlight_size ?? defaults.overlay_highlight_size),
+      overlay_solution_size: Number(fields.overlay_solution_size ?? defaults.overlay_solution_size),
    });
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -106,28 +140,51 @@ const LandingOverlaySettings = ({ home }: Props) => {
             </div>
 
             <div className="space-y-5 p-4">
-               <div>
-                  <Label>{settings.overlay_headline ?? 'Headline'}</Label>
-                  <Input
-                     value={data.overlay_headline}
-                     onChange={(e) => setData('overlay_headline', e.target.value)}
-                     placeholder="WE HEARD YOU!"
+               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                     <Label>{settings.overlay_headline ?? 'Headline'}</Label>
+                     <Input
+                        value={data.overlay_headline}
+                        onChange={(e) => setData('overlay_headline', e.target.value)}
+                        placeholder="WE HEARD YOU!"
+                     />
+                     <InputError message={errors.overlay_headline} />
+                  </div>
+                  <FontSizeInput
+                     value={data.overlay_headline_size}
+                     onChange={(value) => setData('overlay_headline_size', value)}
+                     error={errors.overlay_headline_size}
                   />
-                  <InputError message={errors.overlay_headline} />
                </div>
 
-               <div>
-                  <Label>{settings.overlay_pains_title ?? 'Pain points title'}</Label>
-                  <Input
-                     value={data.overlay_pains_title}
-                     onChange={(e) => setData('overlay_pains_title', e.target.value)}
-                     placeholder="USER PAINS:"
+               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                     <Label>{settings.overlay_pains_title ?? 'Pain points title'}</Label>
+                     <Input
+                        value={data.overlay_pains_title}
+                        onChange={(e) => setData('overlay_pains_title', e.target.value)}
+                        placeholder="USER PAINS:"
+                     />
+                     <InputError message={errors.overlay_pains_title} />
+                  </div>
+                  <FontSizeInput
+                     value={data.overlay_pains_title_size}
+                     onChange={(value) => setData('overlay_pains_title_size', value)}
+                     error={errors.overlay_pains_title_size}
                   />
-                  <InputError message={errors.overlay_pains_title} />
                </div>
 
                <div className="space-y-3">
-                  <Label>{settings.overlay_pains ?? 'Pain points'}</Label>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                     <div className="flex-1">
+                        <Label>{settings.overlay_pains ?? 'Pain points'}</Label>
+                     </div>
+                     <FontSizeInput
+                        value={data.overlay_pains_size}
+                        onChange={(value) => setData('overlay_pains_size', value)}
+                        error={errors.overlay_pains_size}
+                     />
+                  </div>
                   {data.overlay_pains.map((pain, index) => (
                      <div key={index} className="flex items-start gap-2">
                         <Input value={pain} onChange={(e) => updatePain(index, e.target.value)} placeholder="Add a pain point" />
@@ -145,43 +202,64 @@ const LandingOverlaySettings = ({ home }: Props) => {
                   )}
                </div>
 
-               <div>
-                  <Label>{settings.overlay_solution_title ?? 'Solution title'}</Label>
-                  <Input
-                     value={data.overlay_solution_title}
-                     onChange={(e) => setData('overlay_solution_title', e.target.value)}
-                     placeholder="OUR SOLUTION:"
+               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                     <Label>{settings.overlay_solution_title ?? 'Solution title'}</Label>
+                     <Input
+                        value={data.overlay_solution_title}
+                        onChange={(e) => setData('overlay_solution_title', e.target.value)}
+                        placeholder="OUR SOLUTION:"
+                     />
+                     <InputError message={errors.overlay_solution_title} />
+                  </div>
+                  <FontSizeInput
+                     value={data.overlay_solution_title_size}
+                     onChange={(value) => setData('overlay_solution_title_size', value)}
+                     error={errors.overlay_solution_title_size}
                   />
-                  <InputError message={errors.overlay_solution_title} />
                </div>
 
-               <div>
-                  <Label>{settings.overlay_highlight ?? 'Highlight line'}</Label>
-                  <Input
-                     value={data.overlay_highlight}
-                     onChange={(e) => setData('overlay_highlight', e.target.value)}
-                     placeholder="INTRODUCING SMARTSOURCING USA ACADEMY"
+               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                     <Label>{settings.overlay_highlight ?? 'Highlight line'}</Label>
+                     <Input
+                        value={data.overlay_highlight}
+                        onChange={(e) => setData('overlay_highlight', e.target.value)}
+                        placeholder="INTRODUCING SMARTSOURCING USA ACADEMY"
+                     />
+                     <p className="text-muted-foreground mt-1 text-xs">
+                        {settings.overlay_highlight_hint ?? 'Shown on a solid light rectangle, like INTRODUCING SMARTSOURCING USA ACADEMY.'}
+                     </p>
+                     <InputError message={errors.overlay_highlight} />
+                  </div>
+                  <FontSizeInput
+                     value={data.overlay_highlight_size}
+                     onChange={(value) => setData('overlay_highlight_size', value)}
+                     error={errors.overlay_highlight_size}
                   />
-                  <p className="text-muted-foreground mt-1 text-xs">
-                     {settings.overlay_highlight_hint ?? 'Shown on a solid light rectangle, like INTRODUCING SMARTSOURCING USA ACADEMY.'}
-                  </p>
-                  <InputError message={errors.overlay_highlight} />
                </div>
 
-               <div>
-                  <Label>{settings.overlay_solution ?? 'Solution message'}</Label>
-                  <Editor
-                     ssr={true}
-                     output="html"
-                     placeholder={{
-                        paragraph: 'Describe the solution visitors should see.',
-                     }}
-                     contentMinHeight={180}
-                     contentMaxHeight={420}
-                     initialContent={data.overlay_solution_html}
-                     onContentChange={(value) => setData('overlay_solution_html', value as string)}
+               <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                  <div className="flex-1">
+                     <Label>{settings.overlay_solution ?? 'Solution message'}</Label>
+                     <Editor
+                        ssr={true}
+                        output="html"
+                        placeholder={{
+                           paragraph: 'Describe the solution visitors should see.',
+                        }}
+                        contentMinHeight={180}
+                        contentMaxHeight={420}
+                        initialContent={data.overlay_solution_html}
+                        onContentChange={(value) => setData('overlay_solution_html', value as string)}
+                     />
+                     <InputError message={errors.overlay_solution_html} />
+                  </div>
+                  <FontSizeInput
+                     value={data.overlay_solution_size}
+                     onChange={(value) => setData('overlay_solution_size', value)}
+                     error={errors.overlay_solution_size}
                   />
-                  <InputError message={errors.overlay_solution_html} />
                </div>
 
                <div className="grid gap-4 md:grid-cols-2">

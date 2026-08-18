@@ -21,7 +21,24 @@ class LandingOverlay
             'overlay_solution_html' => '<p>Describe what you are offering and why it is different. Visitors can close this overlay and continue to the site.</p>',
             'overlay_cta_label' => 'APPLY TO JOIN',
             'overlay_cta_url' => '/register',
+            'overlay_headline_size' => 56,
+            'overlay_pains_title_size' => 20,
+            'overlay_pains_size' => 16,
+            'overlay_solution_title_size' => 20,
+            'overlay_highlight_size' => 19,
+            'overlay_solution_size' => 16,
         ];
+    }
+
+    public static function clampSize(mixed $value, int $default): int
+    {
+        $size = (int) $value;
+
+        if ($size < 12 || $size > 96) {
+            return $default;
+        }
+
+        return $size;
     }
 
     /**
@@ -51,6 +68,12 @@ class LandingOverlay
             'overlay_solution_html' => self::sanitizeHtml((string) ($fields['overlay_solution_html'] ?? $defaults['overlay_solution_html'])),
             'overlay_cta_label' => (string) ($fields['overlay_cta_label'] ?? $defaults['overlay_cta_label']),
             'overlay_cta_url' => (string) ($fields['overlay_cta_url'] ?? $defaults['overlay_cta_url']),
+            'overlay_headline_size' => self::clampSize($fields['overlay_headline_size'] ?? $defaults['overlay_headline_size'], $defaults['overlay_headline_size']),
+            'overlay_pains_title_size' => self::clampSize($fields['overlay_pains_title_size'] ?? $defaults['overlay_pains_title_size'], $defaults['overlay_pains_title_size']),
+            'overlay_pains_size' => self::clampSize($fields['overlay_pains_size'] ?? $defaults['overlay_pains_size'], $defaults['overlay_pains_size']),
+            'overlay_solution_title_size' => self::clampSize($fields['overlay_solution_title_size'] ?? $defaults['overlay_solution_title_size'], $defaults['overlay_solution_title_size']),
+            'overlay_highlight_size' => self::clampSize($fields['overlay_highlight_size'] ?? $defaults['overlay_highlight_size'], $defaults['overlay_highlight_size']),
+            'overlay_solution_size' => self::clampSize($fields['overlay_solution_size'] ?? $defaults['overlay_solution_size'], $defaults['overlay_solution_size']),
         ];
 
         $overlay['overlay_version'] = self::version($overlay);
@@ -109,6 +132,14 @@ class LandingOverlay
             'solution_html' => $overlay['overlay_solution_html'],
             'cta_label' => $overlay['overlay_cta_label'],
             'cta_url' => $overlay['overlay_cta_url'],
+            'sizes' => [
+                'headline' => $overlay['overlay_headline_size'],
+                'pains_title' => $overlay['overlay_pains_title_size'],
+                'pains' => $overlay['overlay_pains_size'],
+                'solution_title' => $overlay['overlay_solution_title_size'],
+                'highlight' => $overlay['overlay_highlight_size'],
+                'solution' => $overlay['overlay_solution_size'],
+            ],
         ];
     }
 

@@ -29,6 +29,12 @@ class UpdateLandingOverlayRequest extends FormRequest
             'overlay_solution_html' => 'nullable|string|max:20000',
             'overlay_cta_label' => 'nullable|string|max:80',
             'overlay_cta_url' => 'nullable|string|max:500',
+            'overlay_headline_size' => 'required|integer|min:12|max:96',
+            'overlay_pains_title_size' => 'required|integer|min:12|max:96',
+            'overlay_pains_size' => 'required|integer|min:12|max:96',
+            'overlay_solution_title_size' => 'required|integer|min:12|max:96',
+            'overlay_highlight_size' => 'required|integer|min:12|max:96',
+            'overlay_solution_size' => 'required|integer|min:12|max:96',
         ];
     }
 

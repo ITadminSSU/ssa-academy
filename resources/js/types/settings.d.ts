@@ -132,6 +132,12 @@ interface PageFields {
    overlay_solution_html?: string;
    overlay_cta_label?: string;
    overlay_cta_url?: string;
+   overlay_headline_size?: number;
+   overlay_pains_title_size?: number;
+   overlay_pains_size?: number;
+   overlay_solution_title_size?: number;
+   overlay_highlight_size?: number;
+   overlay_solution_size?: number;
 }
 
 interface LandingOverlayPublic {
@@ -144,6 +150,14 @@ interface LandingOverlayPublic {
    solution_html: string;
    cta_label: string;
    cta_url: string;
+   sizes?: {
+      headline: number;
+      pains_title: number;
+      pains: number;
+      solution_title: number;
+      highlight: number;
+      solution: number;
+   };
 }
 
 interface ZoomConfigFields {
