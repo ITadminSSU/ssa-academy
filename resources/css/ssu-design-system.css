@@ -260,7 +260,7 @@
 
    .ssu-landing-overlay__panel {
       @apply relative z-10 mx-auto w-full overflow-hidden rounded-2xl border px-5 py-8 text-center text-white shadow-2xl sm:px-12 sm:py-12;
-      background: #0b3d73;
+      background: #002157;
       border-color: rgb(170 210 255 / 28%);
       box-shadow:
          0 0 0 1px rgb(255 255 255 / 8%) inset,
@@ -271,8 +271,10 @@
       pointer-events: none;
       position: absolute;
       inset: 0;
-      color: rgb(210 232 255 / 55%);
-      opacity: 0.55;
+      color: #6ea8e8;
+      opacity: 0.72;
+      mask-image: linear-gradient(to top left, rgb(0 0 0 / 100%) 8%, rgb(0 0 0 / 78%) 42%, rgb(0 0 0 / 22%) 72%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to top left, rgb(0 0 0 / 100%) 8%, rgb(0 0 0 / 78%) 42%, rgb(0 0 0 / 22%) 72%, transparent 100%);
    }
 
    .ssu-landing-overlay__sheet-svg {
@@ -290,7 +292,7 @@
       position: absolute;
       inset: -1.5rem -1rem;
       border-radius: 1rem;
-      background: linear-gradient(180deg, rgb(11 61 115 / 35%) 0%, rgb(11 24 48 / 62%) 100%);
+      background: linear-gradient(180deg, rgb(0 33 87 / 28%) 0%, rgb(0 20 55 / 42%) 100%);
       z-index: -1;
    }
 

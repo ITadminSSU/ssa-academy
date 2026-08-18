@@ -62,59 +62,149 @@ const PainBarricadeIcon = ({ className, id }: { className?: string; id: string }
    </svg>
 );
 
-/** Original CAD building sheet for the overlay panel (not a third-party asset). */
-const OverlayBlueprintSheet = () => (
-   <svg className="ssu-landing-overlay__sheet-svg" viewBox="0 0 1200 780" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      <g stroke="currentColor" strokeWidth="1.15" strokeLinecap="square" strokeLinejoin="miter">
-         {[80, 160, 240, 320, 400, 480, 560, 640, 720].map((y) => (
-            <path key={`h-${y}`} d={`M20 ${y} H1180`} strokeDasharray="3 11" opacity="0.16" />
-         ))}
-         {[80, 200, 320, 440, 560, 680, 800, 920, 1040, 1160].map((x) => (
-            <path key={`v-${x}`} d={`M${x} 20 V760`} strokeDasharray="2 12" opacity="0.12" />
-         ))}
+type IsoPt = { x: number; y: number };
+type IsoFn = (x: number, y: number, z: number) => IsoPt;
 
-         <path d="M40 740 L260 40" strokeDasharray="5 7" opacity="0.28" />
-         <path d="M140 740 L420 28" strokeDasharray="4 8" opacity="0.22" />
-         <path d="M1080 740 L820 36" strokeDasharray="5 7" opacity="0.24" />
-         <path d="M1160 740 L980 80" strokeDasharray="3 9" opacity="0.18" />
+const isoAt = (ox: number, oy: number, scale = 17): IsoFn => (x, y, z) => ({
+   x: ox + (x - y) * scale,
+   y: oy + (x + y) * (scale * 0.5) - z * (scale * 0.88),
+});
 
-         <path d="M70 720 V180 H210 V720 Z" opacity="0.7" />
-         {Array.from({ length: 18 }, (_, i) => 210 + i * 28).map((y) => (
-            <path key={`a-f-${y}`} d={`M70 ${y} H210`} opacity="0.28" />
-         ))}
-         {[95, 125, 155, 185].map((x) => (
-            <path key={`a-c-${x}`} d={`M${x} 190 V710`} opacity="0.22" />
-         ))}
-         <path d="M140 180 V110" opacity="0.5" />
-         <path d="M132 110 H148" opacity="0.4" />
+const p = (pt: IsoPt) => `${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`;
 
-         <path d="M210 320 H310 V430 H210" opacity="0.65" />
-         <path d="M230 340 H290 V410 H230" opacity="0.35" />
-
-         <path d="M250 720 L430 90 H780 L960 720 Z" opacity="0.85" />
-         {Array.from({ length: 16 }, (_, i) => 140 + i * 34).map((y) => (
-            <path key={`b-f-${y}`} d={`M${250 + (y - 90) * 0.28} ${y} L${960 - (y - 90) * 0.28} ${y}`} opacity="0.26" />
-         ))}
-         {[320, 400, 480, 560, 640, 720, 800, 880].map((x) => (
-            <path key={`b-c-${x}`} d={`M${x} 110 V700`} opacity="0.2" />
-         ))}
-         <path d="M470 90 V48 H730 V90" opacity="0.7" />
-         <path d="M500 48 V22" opacity="0.45" />
-         <path d="M700 48 V28" opacity="0.4" />
-
-         <path d="M960 720 V260 H1130 V720 Z" opacity="0.7" />
-         {Array.from({ length: 14 }, (_, i) => 290 + i * 30).map((y) => (
-            <path key={`c-f-${y}`} d={`M960 ${y} H1130`} opacity="0.26" />
-         ))}
-         {[990, 1025, 1060, 1095].map((x) => (
-            <path key={`c-c-${x}`} d={`M${x} 270 V710`} opacity="0.22" />
-         ))}
-
-         <path d="M24 720 H1176" opacity="0.7" />
-         <path d="M40 738 H1160" strokeDasharray="5 6" opacity="0.28" />
-      </g>
-   </svg>
+const Crosshair = ({ pt, size = 5, opacity = 0.55 }: { pt: IsoPt; size?: number; opacity?: number }) => (
+   <g opacity={opacity}>
+      <path d={`M${(pt.x - size).toFixed(1)} ${pt.y.toFixed(1)} H${(pt.x + size).toFixed(1)}`} />
+      <path d={`M${pt.x.toFixed(1)} ${(pt.y - size).toFixed(1)} V${(pt.y + size).toFixed(1)}`} />
+   </g>
 );
+
+const IsoBox = ({
+   iso,
+   x,
+   y,
+   w,
+   d,
+   h,
+   floors = 0,
+   columns = 0,
+   opacity = 0.9,
+}: {
+   iso: IsoFn;
+   x: number;
+   y: number;
+   w: number;
+   d: number;
+   h: number;
+   floors?: number;
+   columns?: number;
+   opacity?: number;
+}) => {
+   const sw = iso(x, y, 0);
+   const se = iso(x + w, y, 0);
+   const ne = iso(x + w, y + d, 0);
+   const nw = iso(x, y + d, 0);
+   const tw = iso(x, y, h);
+   const te = iso(x + w, y, h);
+   const tn = iso(x + w, y + d, h);
+   const tf = iso(x, y + d, h);
+   const floorCount = floors || Math.max(2, Math.round(h));
+   const colCount = columns || Math.max(2, Math.round(Math.max(w, d)));
+
+   return (
+      <g opacity={opacity}>
+         <path d={`M${p(se)} L${p(ne)} L${p(tn)} L${p(te)} Z`} />
+         <path d={`M${p(nw)} L${p(ne)} L${p(tn)} L${p(tf)} Z`} />
+         <path d={`M${p(tw)} L${p(te)} L${p(tn)} L${p(tf)} Z`} />
+         <path d={`M${p(sw)} L${p(se)}`} opacity="0.35" />
+         <path d={`M${p(sw)} L${p(nw)}`} opacity="0.28" />
+         <path d={`M${p(sw)} L${p(tw)}`} opacity="0.28" />
+
+         {Array.from({ length: floorCount - 1 }, (_, i) => {
+            const z = ((i + 1) / floorCount) * h;
+            return (
+               <g key={`fl-${x}-${y}-${i}`} opacity="0.28">
+                  <path d={`M${p(iso(x + w, y, z))} L${p(iso(x + w, y + d, z))}`} />
+                  <path d={`M${p(iso(x, y + d, z))} L${p(iso(x + w, y + d, z))}`} />
+               </g>
+            );
+         })}
+
+         {Array.from({ length: colCount - 1 }, (_, i) => {
+            const gx = x + ((i + 1) / colCount) * w;
+            const gy = y + ((i + 1) / colCount) * d;
+            return (
+               <g key={`col-${x}-${y}-${i}`} opacity="0.22">
+                  <path d={`M${p(iso(x + w, gy, 0))} L${p(iso(x + w, gy, h))}`} />
+                  <path d={`M${p(iso(gx, y + d, 0))} L${p(iso(gx, y + d, h))}`} />
+               </g>
+            );
+         })}
+
+         <Crosshair pt={te} />
+         <Crosshair pt={tn} />
+         <Crosshair pt={tf} />
+         <Crosshair pt={tw} opacity={0.35} size={4} />
+         <Crosshair pt={ne} opacity={0.4} size={4} />
+      </g>
+   );
+};
+
+/** Original isometric CAD sheet for the overlay panel (not a third-party asset). */
+const OverlayBlueprintSheet = () => {
+   const iso = isoAt(930, 690, 18);
+
+   return (
+      <svg
+         className="ssu-landing-overlay__sheet-svg"
+         viewBox="0 0 1200 780"
+         fill="none"
+         xmlns="http://www.w3.org/2000/svg"
+         preserveAspectRatio="xMaxYMax slice"
+         aria-hidden
+      >
+         <g stroke="currentColor" strokeWidth="0.95" strokeLinecap="square" strokeLinejoin="miter">
+            {Array.from({ length: 18 }, (_, i) => i - 4).map((n) => (
+               <path
+                  key={`g-r-${n}`}
+                  d={`M${p(iso(n, -8, 0))} L${p(iso(n, 28, 0))}`}
+                  opacity={n > 2 ? 0.12 : 0.05}
+               />
+            ))}
+            {Array.from({ length: 22 }, (_, i) => i - 6).map((n) => (
+               <path
+                  key={`g-l-${n}`}
+                  d={`M${p(iso(-6, n, 0))} L${p(iso(26, n, 0))}`}
+                  opacity={n > 0 ? 0.1 : 0.045}
+               />
+            ))}
+
+            <path d={`M${p(iso(8, 4, 22))} L${p(iso(-18, -22, 38))}`} strokeDasharray="6 8" opacity="0.22" />
+            <path d={`M${p(iso(18, 8, 12))} L${p(iso(-8, -28, 30))}`} strokeDasharray="5 9" opacity="0.16" />
+            <path d={`M${p(iso(4, 14, 8))} L${p(iso(-24, -6, 26))}`} strokeDasharray="4 10" opacity="0.14" />
+            <path d={`M${p(iso(22, 2, 0))} L${p(iso(38, -16, 0))}`} strokeDasharray="7 7" opacity="0.14" />
+            <path d={`M${p(iso(20, 16, 0))} L${p(iso(36, 32, 0))}`} strokeDasharray="6 8" opacity="0.12" />
+
+            <IsoBox iso={iso} x={-2} y={-3} w={26} d={18} h={2.2} floors={2} columns={10} opacity={0.45} />
+            <IsoBox iso={iso} x={1} y={1} w={8} d={7} h={22} floors={14} columns={5} opacity={0.95} />
+            <IsoBox iso={iso} x={10} y={0} w={12} d={8} h={11} floors={8} columns={7} opacity={0.88} />
+            <IsoBox iso={iso} x={3} y={9} w={9} d={7} h={7} floors={5} columns={5} opacity={0.8} />
+            <IsoBox iso={iso} x={16} y={9} w={6} d={6} h={16} floors={10} columns={4} opacity={0.9} />
+            <IsoBox iso={iso} x={22} y={2} w={5} d={5} h={6} floors={4} columns={3} opacity={0.7} />
+
+            <path d={`M${p(iso(1, 1, 22))} L${p(iso(1, 1, 26))}`} opacity="0.5" />
+            <path d={`M${p(iso(9, 1, 22))} L${p(iso(9, 1, 25))}`} opacity="0.4" />
+            <path d={`M${p(iso(16, 9, 16))} L${p(iso(16, 9, 19))}`} opacity="0.4" />
+            <Crosshair pt={iso(1, 1, 26)} size={6} />
+            <Crosshair pt={iso(9, 1, 25)} size={5} opacity={0.4} />
+            <Crosshair pt={iso(16, 9, 19)} size={5} opacity={0.4} />
+
+            <path d={`M${p(iso(-4, 16, 0))} L${p(iso(28, 16, 0))}`} opacity="0.2" />
+            <path d={`M${p(iso(24, -4, 0))} L${p(iso(24, 20, 0))}`} opacity="0.18" />
+         </g>
+      </svg>
+   );
+};
 
 const LandingOverlay = ({ overlay, force = false }: Props) => {
    const [open, setOpen] = useState(force);
