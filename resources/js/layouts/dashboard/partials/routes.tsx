@@ -336,72 +336,84 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   slug: routeLastSegment(route('settings.system')),
                   path: route('settings.system'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Platform Tools',
                   slug: routeLastSegment(route('settings.platform-tools')),
                   path: route('settings.platform-tools'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Our Team',
                   slug: routeLastSegment(route('settings.team-members.index')),
                   path: route('settings.team-members.index'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Pages',
                   slug: routeLastSegment(route('settings.pages')),
                   path: route('settings.pages'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Storage',
                   slug: routeLastSegment(route('settings.storage')),
                   path: route('settings.storage'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Bunny Stream',
                   slug: routeLastSegment(route('settings.bunny-stream')),
                   path: route('settings.bunny-stream'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Payment',
                   slug: routeLastSegment(route('settings.payment')),
                   path: route('settings.payment'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'SMTP',
                   slug: routeLastSegment(route('settings.smtp')),
                   path: route('settings.smtp'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Auth',
                   slug: routeLastSegment(route('settings.auth0')),
                   path: route('settings.auth0'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                // {
                //    name: 'Live Class',
                //    slug: routeLastSegment(route('settings.live-class')),
                //    path: route('settings.live-class'),
                //    access: ['admin', 'collaborative', 'administrative'],
+               //    requiresPlatformSettings: true,
                // },
                {
                   name: 'Translation',
                   slug: routeLastSegment(route('language.index')),
                   path: route('language.index'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
                {
                   name: 'Professional Types',
                   slug: routeLastSegment(route('professional-types.index')),
                   path: route('professional-types.index'),
                   access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
                },
             ],
          },
@@ -425,7 +437,7 @@ function cloneDashboardRoutes(template: DashboardRoute[]): DashboardRoute[] {
    }));
 }
 
-export function getDashboardRoutes(dashboardUrl: string, features?: PlatformFeatures): DashboardRoute[] {
+export function getDashboardRoutes(dashboardUrl: string, features?: PlatformFeatures, canManagePlatformSettings = true): DashboardRoute[] {
    const routes = cloneDashboardRoutes(buildDashboardRouteTemplate());
    const dashboardSlug = routeLastSegment(dashboardUrl);
 
@@ -470,6 +482,19 @@ export function getDashboardRoutes(dashboardUrl: string, features?: PlatformFeat
 
                return child;
             }),
+         };
+      });
+   }
+
+   if (!canManagePlatformSettings) {
+      routes[0].pages = routes[0].pages.map((page) => {
+         if (page.slug !== 'settings') {
+            return page;
+         }
+
+         return {
+            ...page,
+            children: page.children.filter((child) => !child.requiresPlatformSettings),
          };
       });
    }

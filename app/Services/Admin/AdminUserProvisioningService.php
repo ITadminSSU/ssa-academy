@@ -18,7 +18,7 @@ class AdminUserProvisioningService
     ) {}
 
     /**
-     * @param  array{name: string, email: string, password: string, account_type: 'admin'|'employee'|'trainer', designation?: string|null}  $data
+     * @param  array{name: string, email: string, password: string, account_type: 'admin'|'operations'|'employee'|'trainer', designation?: string|null}  $data
      */
     public function provision(array $data, Request $request): User
     {
@@ -29,7 +29,7 @@ class AdminUserProvisioningService
                 ->value('id');
 
             $role = match ($data['account_type']) {
-                'admin' => 'admin',
+                'admin', 'operations' => 'admin',
                 'trainer' => 'instructor',
                 default => 'student',
             };
@@ -39,6 +39,7 @@ class AdminUserProvisioningService
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'role' => $role,
+                'can_manage_platform_settings' => $data['account_type'] === 'admin',
                 'user_type' => LearnerUserType::EMPLOYEE,
                 'status' => 1,
                 'email_verified_at' => now(),
@@ -59,7 +60,7 @@ class AdminUserProvisioningService
                 $user->update(['instructor_id' => $instructor->id]);
             }
 
-            if ($data['account_type'] !== 'admin') {
+            if (! in_array($data['account_type'], ['admin', 'operations'], true)) {
                 $this->legalAgreement->recordAcceptance($user->fresh(), $request, sendEmail: false);
             }
 

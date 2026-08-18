@@ -102,6 +102,7 @@ class HandleInertiaRequests extends Middleware
                 'legalAgreementUrl' => route('legal.agreement.show'),
                 'twoFactorEnabled' => $user ? $this->twoFactor->isEnabled($user) : false,
                 'canManageTwoFactor' => $user ? $this->twoFactor->canUse($user) : false,
+                'canManagePlatformSettings' => $user ? $user->canManagePlatformSettings() : false,
             ],
             'system' => $system,
             'branding' => Branding::payload(),

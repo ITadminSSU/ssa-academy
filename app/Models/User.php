@@ -16,6 +16,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Enums\LearnerUserType;
+use App\Support\MasterAdmin;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -31,6 +32,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'email',
         'password',
         'role',
+        'can_manage_platform_settings',
         'user_type',
         'status',
         'photo',
@@ -86,6 +88,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'worked_as_construction_va' => 'boolean',
         'referrer_is_employee' => 'boolean',
         'status' => 'integer',
+        'can_manage_platform_settings' => 'boolean',
         'email_verification_expires_at' => 'datetime',
         'email_verification_attempts' => 'integer',
         'user_type' => LearnerUserType::class,
@@ -182,5 +185,18 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function isAccountActive(): bool
     {
         return (int) $this->status === 1;
+    }
+
+    public function canManagePlatformSettings(): bool
+    {
+        if ($this->role !== 'admin') {
+            return false;
+        }
+
+        if (MasterAdmin::isProtected($this)) {
+            return true;
+        }
+
+        return (bool) $this->getAttribute('can_manage_platform_settings');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\LearnerUserType;
+use App\Models\Instructor;
 use App\Models\User;
 use App\Services\Auth\SingleSessionService;
 use App\Support\MasterAdmin;
@@ -92,16 +93,29 @@ class UserService
                 $payload['password'] = Hash::make($data['password']);
             }
 
-            if ($user->role === 'student') {
-                $payload['user_type'] = $data['user_type'];
+            if (canManagePlatformSettings() && array_key_exists('account_type', $data)) {
+                $payload = array_merge($payload, $this->accountTypePayload($user, $data));
+            } else {
+                if ($user->role === 'student') {
+                    $payload['user_type'] = $data['user_type'];
+                }
+
+                if (
+                    $user->role === 'admin'
+                    && array_key_exists('can_manage_platform_settings', $data)
+                    && canManagePlatformSettings()
+                ) {
+                    $payload['can_manage_platform_settings'] = (bool) $data['can_manage_platform_settings'];
+                }
             }
 
             $wasActive = $user->isAccountActive();
 
             $user->update($payload);
+            $user = $user->fresh('instructor');
 
             if ($wasActive && (int) $payload['status'] === 0) {
-                app(SingleSessionService::class)->revokeAll($user->fresh());
+                app(SingleSessionService::class)->revokeAll($user);
             }
 
             if ($user->role === 'instructor' && $user->instructor && array_key_exists('designation', $data)) {
@@ -227,5 +241,76 @@ class UserService
         }
 
         return $user->user_type === LearnerUserType::EMPLOYEE ? 'Internal employee' : 'External learner';
+    }
+
+    /**
+     * @param  array{account_type: string, designation?: string|null}  $data
+     * @return array<string, mixed>
+     */
+    private function accountTypePayload(User $user, array $data): array
+    {
+        $type = $data['account_type'];
+
+        $payload = match ($type) {
+            'admin' => [
+                'role' => 'admin',
+                'can_manage_platform_settings' => true,
+            ],
+            'operations' => [
+                'role' => 'admin',
+                'can_manage_platform_settings' => false,
+            ],
+            'employee' => [
+                'role' => 'student',
+                'user_type' => LearnerUserType::EMPLOYEE,
+                'can_manage_platform_settings' => false,
+                'instructor_id' => null,
+            ],
+            'external' => [
+                'role' => 'student',
+                'user_type' => LearnerUserType::EXTERNAL,
+                'can_manage_platform_settings' => false,
+                'instructor_id' => null,
+            ],
+            'trainer' => [
+                'role' => 'instructor',
+                'can_manage_platform_settings' => false,
+                'instructor_id' => $this->ensureInstructorProfile($user, $data['designation'] ?? null)->id,
+            ],
+            default => [],
+        };
+
+        if (in_array($type, ['admin', 'operations'], true)) {
+            $payload['instructor_id'] = null;
+        }
+
+        return $payload;
+    }
+
+    private function ensureInstructorProfile(User $user, ?string $designation): Instructor
+    {
+        $instructor = Instructor::query()->where('user_id', $user->id)->first();
+        $title = is_string($designation) && trim($designation) !== ''
+            ? trim($designation)
+            : ($user->instructor?->designation ?: 'Trainer');
+
+        if ($instructor) {
+            $instructor->update([
+                'status' => 'approved',
+                'designation' => $title,
+            ]);
+
+            return $instructor;
+        }
+
+        return Instructor::create([
+            'user_id' => $user->id,
+            'skills' => ['Training', 'Course delivery'],
+            'biography' => $user->name.' is a SMARTSOURCING USA ACADEMY trainer delivering courses and supporting learners.',
+            'resume' => '',
+            'designation' => $title,
+            'status' => 'approved',
+            'payout_methods' => [],
+        ]);
     }
 }

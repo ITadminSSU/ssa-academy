@@ -10,7 +10,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
-type AccountType = 'admin' | 'employee' | 'trainer';
+type AccountType = 'admin' | 'operations' | 'employee' | 'trainer';
 
 const ACCOUNT_TYPE_OPTIONS: Array<{
    value: AccountType;
@@ -18,13 +18,23 @@ const ACCOUNT_TYPE_OPTIONS: Array<{
    descriptionKey: keyof LanguageTranslations['dashboard'];
    fallbackLabel: string;
    fallbackDescription: string;
+   requiresPlatformSettings?: boolean;
 }> = [
    {
       value: 'admin',
       labelKey: 'account_type_admin',
       descriptionKey: 'account_type_admin_description',
       fallbackLabel: 'Admin',
-      fallbackDescription: 'Full platform access',
+      fallbackDescription: 'Full platform access including Settings',
+      requiresPlatformSettings: true,
+   },
+   {
+      value: 'operations',
+      labelKey: 'account_type_operations',
+      descriptionKey: 'account_type_operations_description',
+      fallbackLabel: 'Operations Admin',
+      fallbackDescription: 'Dashboard access without platform Settings',
+      requiresPlatformSettings: true,
    },
    {
       value: 'employee',
@@ -43,9 +53,11 @@ const ACCOUNT_TYPE_OPTIONS: Array<{
 ];
 
 const CreateForm = () => {
-   const { translate } = usePage<SharedData>().props;
+   const { translate, auth } = usePage<SharedData>().props;
    const { dashboard, input, button } = translate;
    const [open, setOpen] = useState(false);
+   const canCreateAdmins = Boolean(auth.canManagePlatformSettings);
+   const accountTypeOptions = ACCOUNT_TYPE_OPTIONS.filter((option) => canCreateAdmins || !option.requiresPlatformSettings);
 
    const { data, setData, post, processing, errors, reset } = useForm({
       name: '',
@@ -91,7 +103,7 @@ const CreateForm = () => {
                      className="mt-2 grid gap-3"
                      onValueChange={(value: AccountType) => setData('account_type', value)}
                   >
-                     {ACCOUNT_TYPE_OPTIONS.map((option) => (
+                     {accountTypeOptions.map((option) => (
                         <div key={option.value} className="flex items-start gap-3">
                            <RadioGroupItem id={`account-${option.value}`} value={option.value} className="mt-1" />
                            <div className="space-y-0.5">

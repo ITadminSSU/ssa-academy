@@ -47,7 +47,7 @@ function findActiveNavPath(currentUrl: string, candidatePaths: string[]): string
 export function TrainerNavMain() {
    const page = usePage<SharedData>();
    const { auth, system, features } = page.props;
-   const routes = getDashboardRoutes(auth.dashboardUrl ?? route('dashboard'), features);
+   const routes = getDashboardRoutes(auth.dashboardUrl ?? route('dashboard'), features, Boolean(auth.canManagePlatformSettings));
    const pages = routes[0]?.pages ?? [];
 
    const canAccess = (access: string[]) =>

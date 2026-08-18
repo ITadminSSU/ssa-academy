@@ -271,6 +271,23 @@ interface DashboardLang {
    login_history: string;
    user_preferences: string;
    update_user: string;
+   create_account: string;
+   account_type: string;
+   account_type_admin: string;
+   account_type_operations: string;
+   account_type_employee: string;
+   account_type_trainer: string;
+   account_type_external: string;
+   account_type_admin_description: string;
+   account_type_operations_description: string;
+   account_type_employee_description: string;
+   account_type_trainer_description: string;
+   account_type_external_description: string;
+   account_type_edit_help: string;
+   admin_access_level: string;
+   admin_access_full: string;
+   admin_access_operations: string;
+   operations_admin_badge: string;
    select_approval_status: string;
    select_user_type: string;
 

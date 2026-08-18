@@ -116,9 +116,10 @@ class UsersController extends Controller
     {
         $user = $this->adminUserProvisioning->provision($request->validated(), $request);
 
-        $label = match ($user->role) {
-            'admin' => 'Admin',
-            'instructor' => 'Trainer',
+        $label = match (true) {
+            $user->role === 'admin' && ! $user->canManagePlatformSettings() => 'Operations admin',
+            $user->role === 'admin' => 'Admin',
+            $user->role === 'instructor' => 'Trainer',
             default => 'Internal employee',
         };
 
@@ -134,9 +135,10 @@ class UsersController extends Controller
 
         $updated = User::findOrFail($user);
 
-        $label = match ($updated->role) {
-            'admin' => 'Admin',
-            'instructor' => 'Trainer',
+        $label = match (true) {
+            $updated->role === 'admin' && ! $updated->canManagePlatformSettings() => 'Operations admin',
+            $updated->role === 'admin' => 'Admin',
+            $updated->role === 'instructor' => 'Trainer',
             default => 'User',
         };
 

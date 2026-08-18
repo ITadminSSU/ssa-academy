@@ -91,6 +91,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ip.detector' => \App\Http\Middleware\IpDetectorMiddleware::class,
             'verifiedAccess' => \App\Http\Middleware\VerifiedAccess::class,
             'role' => \App\Http\Middleware\CheckRole::class,
+            'platformSettings' => \App\Http\Middleware\EnsurePlatformSettingsAccess::class,
             'learnerDashboard' => \App\Http\Middleware\EnsureLearnerDashboard::class,
             'legalAgreement' => \App\Http\Middleware\EnsureLegalAgreementAccepted::class,
             'twoFactor' => \App\Http\Middleware\EnsureTwoFactorVerified::class,

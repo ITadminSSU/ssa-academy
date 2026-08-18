@@ -9,8 +9,12 @@ import { ArrowUpDown, Download, ExternalLink, Eye, Pencil, Trash2 } from 'lucide
 import { Link } from '@inertiajs/react';
 import EditForm from './edit-form';
 
-const roleLabel = (role: string) => {
-   switch (role) {
+const roleLabel = (user: User, dashboard?: LanguageTranslations['dashboard']) => {
+   if (user.role === 'admin' && user.can_manage_platform_settings === false) {
+      return dashboard?.operations_admin_badge?.trim() || 'Operations admin';
+   }
+
+   switch (user.role) {
       case 'admin':
          return 'Admin';
       case 'instructor':
@@ -18,7 +22,7 @@ const roleLabel = (role: string) => {
       case 'student':
          return 'Student';
       default:
-         return role;
+         return user.role;
    }
 };
 
@@ -94,7 +98,7 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
          header: table.role,
          cell: ({ row }) => (
             <Badge variant="secondary" className={roleBadgeClass(row.original.role)}>
-               {roleLabel(row.original.role)}
+               {roleLabel(row.original, dashboard)}
             </Badge>
          ),
       },

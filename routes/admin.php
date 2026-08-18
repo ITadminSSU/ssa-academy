@@ -81,10 +81,13 @@ Route::prefix('dashboard/admin')->group(function () {
     });
 
     // professional types
-    Route::resource('professional-types', ProfessionalTypeController::class)->except(['create', 'show', 'edit']);
+    Route::middleware('platformSettings')->group(function () {
+        Route::resource('professional-types', ProfessionalTypeController::class)->except(['create', 'show', 'edit']);
+    });
 
     // settings
-    Route::controller(SettingController::class)->prefix('settings')->group(function () {
+    Route::middleware('platformSettings')->group(function () {
+        Route::controller(SettingController::class)->prefix('settings')->group(function () {
         Route::get('auth0', 'auth0')->name('settings.auth0');
         Route::post('auth0/{id}', 'auth0_update')->name('settings.auth0.update');
 
@@ -131,12 +134,13 @@ Route::prefix('dashboard/admin')->group(function () {
         Route::put('footer-items/{item}', 'footer_items_update')->name('settings.footer.items.update');
         Route::delete('footer-items/{item}', 'footer_items_destroy')->name('settings.footer.items.destroy');
         Route::post('footer-items/reorder', 'footer_items_reorder')->name('settings.footer.items.reorder');
-    });
+        });
 
-    // customize home page sections
-    Route::controller(HomeController::class)->prefix('page/section')->group(function () {
-        Route::post('sort', 'sort_section')->name('page.section.sort');
-        Route::post('update/{id}', 'update_section')->name('page.section.update');
+        // customize home page sections
+        Route::controller(HomeController::class)->prefix('page/section')->group(function () {
+            Route::post('sort', 'sort_section')->name('page.section.sort');
+            Route::post('update/{id}', 'update_section')->name('page.section.update');
+        });
     });
 });
 

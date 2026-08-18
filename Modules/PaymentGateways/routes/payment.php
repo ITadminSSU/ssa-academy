@@ -16,7 +16,7 @@ use Modules\PaymentGateways\Http\Controllers\Payment\RazorpayController;
 
 Route::middleware(['auth', 'role:admin'])->prefix('dashboard')->group(function () {
     // payment gateway settings
-    Route::controller(PaymentController::class)->prefix('settings/payment')->group(function () {
+    Route::middleware('platformSettings')->controller(PaymentController::class)->prefix('settings/payment')->group(function () {
         Route::get('/', 'payment')->name('settings.payment');
         Route::post('/{id}', 'payment_update')->name('settings.payment.update');
     });

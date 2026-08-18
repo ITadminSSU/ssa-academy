@@ -3,6 +3,7 @@ interface PageChild {
     slug: string;
     path: string;
     access: string[];
+    requiresPlatformSettings?: boolean;
 }
 
 interface RoutePage {

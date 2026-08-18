@@ -7,6 +7,7 @@ interface Auth {
    legalAgreementUrl?: string;
    twoFactorEnabled?: boolean;
    canManageTwoFactor?: boolean;
+   canManagePlatformSettings?: boolean;
 }
 
 interface BreadcrumbItem {
@@ -21,6 +22,7 @@ interface User extends TableCommon {
    status: number | null;
    social_links: { host: string; profile_link: string }[] | null;
    role: string;
+   can_manage_platform_settings?: boolean;
    user_type: 'employee' | 'external';
    about: string | null;
    photo: string | null;

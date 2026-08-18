@@ -7,7 +7,14 @@ use Illuminate\Support\Facades\DB;
 
 function isAdmin(): bool
 {
-    return Auth::user()->role === UserType::ADMIN->value ? true : false;
+    return Auth::user()?->role === UserType::ADMIN->value;
+}
+
+function canManagePlatformSettings(): bool
+{
+    $user = Auth::user();
+
+    return $user instanceof \App\Models\User && $user->canManagePlatformSettings();
 }
 
 function setTempStore(array $data): TempStore
