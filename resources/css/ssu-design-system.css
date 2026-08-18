@@ -249,32 +249,33 @@
    }
 
    .ssu-landing-overlay__panel {
-      @apply relative z-10 mx-auto w-full max-w-3xl space-y-6 rounded-2xl border border-white/10 bg-[color:var(--primary)]/80 px-5 py-8 text-center text-white shadow-2xl sm:px-10 sm:py-12;
+      @apply relative z-10 mx-auto w-full max-w-4xl space-y-6 rounded-2xl border border-white/10 bg-[color:var(--primary)]/80 px-5 py-8 text-center text-white shadow-2xl sm:px-10 sm:py-12;
    }
 
    .ssu-landing-overlay__headline {
-      @apply font-display text-3xl font-bold tracking-[0.08em] text-[color:var(--brand-red)] uppercase sm:text-5xl;
-      text-shadow: 0 0 24px color-mix(in srgb, var(--brand-red) 55%, transparent);
+      @apply font-display text-4xl font-bold tracking-[0.08em] uppercase sm:text-[3.5rem];
+      color: #d4523a;
+      text-shadow: 0 0 18px rgb(212 82 58 / 70%), 0 0 42px rgb(212 82 58 / 45%);
    }
 
    .ssu-landing-overlay__section-title {
-      @apply font-display text-sm font-semibold tracking-[0.18em] text-white uppercase;
+      @apply font-display text-lg font-semibold tracking-[0.18em] text-white uppercase sm:text-xl;
    }
 
    .ssu-landing-overlay__pains {
-      @apply mx-auto max-w-xl space-y-3 text-left;
+      @apply mx-auto max-w-2xl space-y-3 text-left;
    }
 
    .ssu-landing-overlay__pains li {
-      @apply flex items-start gap-3 text-base text-white/90;
+      @apply flex items-start gap-3 text-lg text-white/90;
    }
 
    .ssu-landing-overlay__pain-icon {
-      @apply mt-0.5 h-5 w-5 shrink-0 text-[color:var(--brand-red)];
+      @apply mt-0.5 h-6 w-6 shrink-0 text-[color:var(--brand-red)];
    }
 
    .ssu-landing-overlay__solution {
-      @apply mx-auto max-w-2xl text-left text-white/85;
+      @apply mx-auto max-w-2xl text-left text-lg text-white/85;
    }
 
    .ssu-landing-overlay__solution p,
@@ -291,7 +292,7 @@
    }
 
    .ssu-landing-overlay__cta-button {
-      @apply font-display inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[color:var(--brand-red)] bg-black/50 px-8 py-3 text-sm font-semibold tracking-[0.12em] text-white uppercase transition hover:bg-[color:var(--brand-red)];
+      @apply font-display inline-flex min-h-12 items-center justify-center rounded-md border-2 border-[color:var(--brand-red)] bg-black/50 px-8 py-3 text-base font-semibold tracking-[0.12em] text-white uppercase transition hover:bg-[color:var(--brand-red)];
       box-shadow: 0 0 24px color-mix(in srgb, var(--brand-red) 45%, transparent);
    }
 
