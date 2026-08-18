@@ -55,6 +55,12 @@ class UserService
             $cvMedia = $user->getFirstMedia('cv_resume');
             $user->cv_resume_url = $cvMedia ? media_public_url($cvMedia) : null;
             $user->cv_resume_name = $cvMedia ? $cvMedia->name : null;
+            $user->has_cv = (bool) $cvMedia;
+
+            $idMedia = $user->getFirstMedia('id_document');
+            $user->id_document_url = $idMedia ? media_public_url($idMedia) : null;
+            $user->id_document_name = $idMedia ? $idMedia->name : null;
+            $user->has_id_document = (bool) $idMedia;
 
             return $user;
         };
@@ -198,6 +204,7 @@ class UserService
                 'Professional Type',
                 'Registered At',
                 'CV On File',
+                'ID On File',
             ]);
 
             foreach ($users as $user) {
@@ -215,6 +222,7 @@ class UserService
                     $professionalType,
                     $user->created_at?->format('Y-m-d H:i:s') ?? '',
                     $user->getFirstMedia('cv_resume') ? 'Yes' : 'No',
+                    $user->getFirstMedia('id_document') ? 'Yes' : 'No',
                 ]);
             }
 

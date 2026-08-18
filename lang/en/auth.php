@@ -47,7 +47,7 @@ return [
     'register_description' => 'External learners can register here. After you create an account, we email a 6-digit code — enter it on the next screen before the student agreement and dashboard.',
     'have_account' => 'Already have an account?',
     'register_learner_type_note' => 'Company email addresses are recognized automatically for internal access. Other accounts are registered as public learners. Admins can update learner type if needed.',
-    'register_required_fields_note' => 'All fields are required. You must upload a CV/resume and agree to the Terms & Conditions and NDA before creating an account.',
+    'register_required_fields_note' => 'All fields are required. You must upload a CV/resume, a government-issued ID, and agree to the Terms & Conditions and NDA before creating an account.',
 
     // Forgot Password
     'forgot_description' => 'Enter your email to receive a password reset link',

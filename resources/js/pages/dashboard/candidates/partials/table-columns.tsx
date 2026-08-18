@@ -97,6 +97,18 @@ const TableColumns = (translate: LanguageTranslations): ColumnDef<User>[] => {
             ),
       },
       {
+         accessorKey: 'has_id_document',
+         header: dashboard.id_document ?? 'ID',
+         cell: ({ row }) =>
+            row.original.has_id_document ? (
+               <a href={route('users.id.view', { id: row.original.id })} target="_blank" rel="noreferrer" className="text-primary text-sm hover:underline">
+                  {dashboard.view_id ?? 'View ID'}
+               </a>
+            ) : (
+               <span className="text-muted-foreground text-sm">—</span>
+            ),
+      },
+      {
          accessorKey: 'paid_course_count',
          header: dashboard.paid_courses ?? 'Paid Courses',
          cell: ({ row }) => <span className="text-sm">{row.original.paid_course_count ?? 0}</span>,

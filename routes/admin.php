@@ -40,6 +40,8 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::get('users/export/csv', [UsersController::class, 'export'])->name('users.export');
     Route::get('users/{id}/cv/download', [UsersController::class, 'downloadCv'])->name('users.cv.download');
     Route::get('users/{id}/cv/view', [UsersController::class, 'viewCv'])->name('users.cv.view');
+    Route::get('users/{id}/id/download', [UsersController::class, 'downloadId'])->name('users.id.download');
+    Route::get('users/{id}/id/view', [UsersController::class, 'viewId'])->name('users.id.view');
 
     // payment refund tracking
     Route::get('payment-refunds', [PaymentRefundController::class, 'index'])->name('payment-refunds.index');

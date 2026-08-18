@@ -251,6 +251,21 @@ const CandidateShow = (props: Props) => {
                      )}
                   </div>
                   <div>
+                     <p className="text-muted-foreground text-sm">{dashboard.id_document ?? 'Government ID'}</p>
+                     {candidate.has_id_document ? (
+                        <div className="flex gap-3">
+                           <a href={route('users.id.view', { id: candidate.id })} target="_blank" rel="noreferrer" className="text-primary text-sm hover:underline">
+                              {dashboard.view_id ?? 'View ID'}
+                           </a>
+                           <a href={route('users.id.download', { id: candidate.id })} className="text-primary text-sm hover:underline">
+                              {dashboard.download_id ?? 'Download'}
+                           </a>
+                        </div>
+                     ) : (
+                        <p className="text-sm">—</p>
+                     )}
+                  </div>
+                  <div>
                      <p className="text-muted-foreground text-sm">Referred by</p>
                      <p className="font-medium">{candidate.referred_by?.trim() || '—'}</p>
                      {candidate.referred_by?.trim() ? (

@@ -61,6 +61,11 @@ class CandidatePipelineService
             $user->cv_resume_name = $cvMedia ? $cvMedia->file_name : null;
             $user->has_cv = (bool) $cvMedia;
 
+            $idMedia = $user->getFirstMedia('id_document');
+            $user->id_document_url = $idMedia ? media_public_url($idMedia) : null;
+            $user->id_document_name = $idMedia ? $idMedia->file_name : null;
+            $user->has_id_document = (bool) $idMedia;
+
             return $user;
         });
 
@@ -78,6 +83,11 @@ class CandidatePipelineService
         $user->cv_resume_url = $cvMedia ? media_public_url($cvMedia) : null;
         $user->cv_resume_name = $cvMedia ? $cvMedia->file_name : null;
         $user->has_cv = (bool) $cvMedia;
+
+        $idMedia = $user->getFirstMedia('id_document');
+        $user->id_document_url = $idMedia ? media_public_url($idMedia) : null;
+        $user->id_document_name = $idMedia ? $idMedia->file_name : null;
+        $user->has_id_document = (bool) $idMedia;
 
         return [
             'candidate' => $user,

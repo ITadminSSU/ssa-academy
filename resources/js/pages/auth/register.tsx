@@ -69,6 +69,7 @@ export default function Register({
       construction_experience: '',
       worked_as_construction_va: '' as '' | '1' | '0',
       cv_resume: null as File | null,
+      id_document: null as File | null,
       referred_by: '',
       referrer_is_employee: '' as '' | '1' | '0',
       ...emptyLegalAcknowledgements(),
@@ -123,6 +124,7 @@ export default function Register({
       Boolean(data.construction_experience) &&
       data.worked_as_construction_va !== '' &&
       Boolean(data.cv_resume) &&
+      Boolean(data.id_document) &&
       allLegalAcknowledgementsAccepted(legalValues) &&
       (!recaptcha.status || Boolean(data.recaptcha));
 
@@ -135,7 +137,7 @@ export default function Register({
             ...form,
             worked_as_construction_va: form.worked_as_construction_va === '1',
          }),
-         onSuccess: () => reset('password', 'password_confirmation', 'cv_resume'),
+         onSuccess: () => reset('password', 'password_confirmation', 'cv_resume', 'id_document'),
          onError: () => {
             if (recaptchaRef.current) {
                recaptchaRef.current.reset();
@@ -400,6 +402,29 @@ export default function Register({
                      </div>
 
                      <div className="order-10 grid gap-2 lg:col-start-3 lg:row-start-3">
+                        <Label htmlFor="id_document">
+                           Government-issued ID <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                           id="id_document"
+                           type="file"
+                           accept=".jpg,.jpeg,.png,.webp,.pdf"
+                           required
+                           onChange={(e) => setData('id_document', e.target.files?.[0] || null)}
+                           disabled={processing}
+                        />
+                        <p className="text-muted-foreground text-xs">
+                           Upload a clear photo or scan of your passport, driver’s license, or national ID. JPG, PNG, WEBP, or PDF (Max 10MB).
+                        </p>
+                        {data.id_document && (
+                           <p className="text-muted-foreground text-xs">
+                              Selected file: <span className="text-foreground font-medium">{data.id_document.name}</span>
+                           </p>
+                        )}
+                        <InputError message={errors.id_document} />
+                     </div>
+
+                     <div className="order-11 grid gap-2 lg:col-start-3 lg:row-start-4">
                         <Label htmlFor="referred_by">Who referred you?</Label>
                         <Input
                            id="referred_by"

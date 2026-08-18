@@ -77,6 +77,7 @@ class RegisteredUserController extends Controller
             'construction_experience' => ['required', 'string', Rule::in($experienceOptions)],
             'worked_as_construction_va' => 'required|boolean',
             'cv_resume' => 'required|file|mimes:pdf,doc,docx|max:10240',
+            'id_document' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'referred_by' => 'nullable|string|max:255',
             'referrer_is_employee' => 'nullable|in:0,1',
             'accept_terms' => 'accepted',
@@ -107,6 +108,9 @@ class RegisteredUserController extends Controller
             'cv_resume.required' => 'Please upload your CV or resume.',
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
             'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
+            'id_document.required' => 'Please upload a government-issued ID for verification.',
+            'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
+            'id_document.max' => 'ID must not be larger than 10MB.',
             'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
             'accept_legal_age.accepted' => 'You must confirm that you are of legal age and capable of entering into these Terms.',
             'accept_single_account.accepted' => 'You must confirm that you understand the one-account / no-sharing rule.',
@@ -149,6 +153,10 @@ class RegisteredUserController extends Controller
         $user->addMediaFromRequest('cv_resume')
             ->withCustomProperties(['name' => 'cv_resume'])
             ->toMediaCollection('cv_resume');
+
+        $user->addMediaFromRequest('id_document')
+            ->withCustomProperties(['name' => 'id_document'])
+            ->toMediaCollection('id_document');
 
         // When SignWell is enabled, e-sign replaces immediate checkbox acceptance.
         if (! $this->signWell->isEnabled()) {

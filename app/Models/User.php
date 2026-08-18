@@ -175,6 +175,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         $this->addMediaCollection('cv_resume')
             ->singleFile()
             ->acceptsMimeTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+
+        $this->addMediaCollection('id_document')
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
     }
 
     public function sendEmailVerificationNotification(): void

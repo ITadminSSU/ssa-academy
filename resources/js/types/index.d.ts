@@ -43,6 +43,9 @@ interface User extends TableCommon {
    cv_resume_url?: string | null;
    cv_resume_name?: string | null;
    has_cv?: boolean;
+   id_document_url?: string | null;
+   id_document_name?: string | null;
+   has_id_document?: boolean;
    candidate_status?: 'new' | 'in_review' | 'shortlisted' | 'hired' | 'rejected' | null;
    candidate_notes?: string | null;
    candidate_status_updated_at?: string | null;

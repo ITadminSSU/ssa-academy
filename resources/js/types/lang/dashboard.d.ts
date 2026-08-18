@@ -288,6 +288,10 @@ interface DashboardLang {
    admin_access_full: string;
    admin_access_operations: string;
    operations_admin_badge: string;
+   id_document: string;
+   no_id_uploaded: string;
+   view_id: string;
+   download_id: string;
    select_approval_status: string;
    select_user_type: string;
 

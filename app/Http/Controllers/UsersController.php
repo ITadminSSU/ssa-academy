@@ -61,7 +61,7 @@ class UsersController extends Controller
      */
     public function viewCv(string $id)
     {
-        return $this->serveCv($id, download: false);
+        return $this->serveUserMedia($id, 'cv_resume', 'CV/Resume', download: false);
     }
 
     /**
@@ -69,24 +69,40 @@ class UsersController extends Controller
      */
     public function downloadCv(string $id)
     {
-        return $this->serveCv($id, download: true);
+        return $this->serveUserMedia($id, 'cv_resume', 'CV/Resume', download: true);
     }
 
-    private function serveCv(string $id, bool $download)
+    /**
+     * View user's government ID (inline viewing)
+     */
+    public function viewId(string $id)
+    {
+        return $this->serveUserMedia($id, 'id_document', 'ID document', download: false);
+    }
+
+    /**
+     * Download user's government ID
+     */
+    public function downloadId(string $id)
+    {
+        return $this->serveUserMedia($id, 'id_document', 'ID document', download: true);
+    }
+
+    private function serveUserMedia(string $id, string $collection, string $label, bool $download)
     {
         $user = User::findOrFail($id);
-        $cvMedia = $user->getFirstMedia('cv_resume');
+        $media = $user->getFirstMedia($collection);
 
-        if (! $cvMedia) {
-            abort(404, 'CV/Resume not found');
+        if (! $media) {
+            abort(404, $label.' not found');
         }
 
-        $fileName = $cvMedia->file_name;
-        $mimeType = $cvMedia->mime_type ?: 'application/octet-stream';
+        $fileName = $media->file_name;
+        $mimeType = $media->mime_type ?: 'application/octet-stream';
         $disposition = ($download ? 'attachment' : 'inline').'; filename="'.$fileName.'"';
 
-        if ($cvMedia->disk !== 's3') {
-            $localPath = $cvMedia->getPath();
+        if ($media->disk !== 's3') {
+            $localPath = $media->getPath();
             if (is_string($localPath) && $localPath !== '' && file_exists($localPath)) {
                 return $download
                     ? response()->download($localPath, $fileName, [
@@ -100,10 +116,10 @@ class UsersController extends Controller
             }
         }
 
-        $fileUrl = media_public_url($cvMedia);
+        $fileUrl = media_public_url($media);
 
         if ($fileUrl === '') {
-            abort(404, 'CV/Resume file not found');
+            abort(404, $label.' file not found');
         }
 
         return redirect()->away($fileUrl);

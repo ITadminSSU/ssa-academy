@@ -220,6 +220,48 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
          },
       },
       {
+         id: 'id_document',
+         header: text(dashboard.id_document, 'Government ID'),
+         cell: ({ row }) => {
+            if (row.original.role !== 'student') {
+               return <span className="text-muted-foreground text-sm">—</span>;
+            }
+
+            const user = row.original;
+
+            if (!user.has_id_document && !user.id_document_url) {
+               return <span className="text-muted-foreground text-sm">{text(dashboard.no_id_uploaded, 'No ID uploaded')}</span>;
+            }
+
+            return (
+               <div className="flex items-center gap-2">
+                  <Button
+                     size="sm"
+                     variant="outline"
+                     onClick={() => {
+                        window.open(route('users.id.view', user.id), '_blank');
+                     }}
+                     className="h-7"
+                  >
+                     <Eye className="mr-1 h-3 w-3" />
+                     View
+                  </Button>
+                  <Button
+                     size="sm"
+                     variant="outline"
+                     onClick={() => {
+                        window.location.href = route('users.id.download', user.id);
+                     }}
+                     className="h-7"
+                  >
+                     <Download className="mr-1 h-3 w-3" />
+                     Download
+                  </Button>
+               </div>
+            );
+         },
+      },
+      {
          id: 'actions',
          header: () => <div className="text-end">{table.action}</div>,
          cell: ({ row }) => {
