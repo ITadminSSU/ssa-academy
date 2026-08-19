@@ -211,14 +211,11 @@ class StripeController extends Controller
         }
 
         $balance = $this->launchOffer->balanceAmount($course);
-        $trialEnd = $this->launchOffer->subscriptionTrialEndsAt($course);
+        $trialEnd = $this->launchOffer->stripeTrialEndForBalanceCheckout($course);
         $coupon = $request->coupon
             ? CourseCoupon::query()->where('code', $request->coupon)->isValid((string) $course->id)->first()
             : null;
         $pricing = $this->payment->calculateCustomPrice($balance, $coupon);
-        if ($trialEnd->lessThanOrEqualTo(now()->addHour())) {
-            $trialEnd = now()->addMonth();
-        }
 
         $this->stripeCustomer->configureStripe();
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);

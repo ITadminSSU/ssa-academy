@@ -476,8 +476,9 @@ const Pricing = () => {
                                                 />
                                                 <p className="text-muted-foreground mt-1 text-xs">
                                                    Applies only to pre-registration students who pay the launch balance. They get full
-                                                   access and stay free until this fixed date, then monthly billing starts. Does not
-                                                   apply to full-upfront enrollments after pre-reg ends. Time is {dateTimezoneLabel}.
+                                                   access and stay free until this fixed date, then monthly billing starts. Must be at
+                                                   least 2 days after balance checkout (Stripe requirement). Does not apply to
+                                                   full-upfront enrollments after pre-reg ends. Time is {dateTimezoneLabel}.
                                                 </p>
                                                 <InputError message={errors.launch_subscription_trial_ends_at} />
                                              </div>
