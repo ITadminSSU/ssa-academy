@@ -122,6 +122,7 @@ class CourseCouponController extends Controller
       $request->validate([
          'csv_content' => 'required|string',
          'import_mode' => 'required|in:simple,csv',
+         'on_duplicate' => 'required|in:skip,update',
          'course_id' => 'nullable|exists:courses,id',
          'discount_type' => ['nullable', 'required_if:import_mode,simple', 'in:percentage,fixed'],
          'discount' => ['nullable', 'required_if:import_mode,simple', 'numeric', 'min:0'],
@@ -232,21 +233,49 @@ class CourseCouponController extends Controller
          return back()->withErrors(['csv_content' => $msg]);
       }
 
-      // Filter out existing codes
-      $existing = CourseCoupon::whereIn('code', $allCodes)->pluck('code')->toArray();
-      $records = array_filter($records, fn($r) => !in_array($r['code'], $existing));
+      $existingCoupons = CourseCoupon::whereIn('code', $allCodes)->get()->keyBy('code');
+      $existingCodes = $existingCoupons->keys()->toArray();
 
-      if (empty($records)) {
-         return back()->withErrors(['csv_content' => 'All coupon codes already exist.']);
+      $newRecords = array_filter($records, fn($r) => !in_array($r['code'], $existingCodes));
+      $duplicateRecords = array_filter($records, fn($r) => in_array($r['code'], $existingCodes));
+
+      $imported = 0;
+      $updated = 0;
+      $skipped = 0;
+
+      if (!empty($newRecords)) {
+         CourseCoupon::insert(array_values($newRecords));
+         $imported = count($newRecords);
       }
 
-      CourseCoupon::insert(array_values($records));
+      if (!empty($duplicateRecords)) {
+         if ($request->on_duplicate === 'update') {
+            foreach ($duplicateRecords as $record) {
+               $existingCoupons[$record['code']]->update([
+                  'course_id' => $record['course_id'],
+                  'discount_type' => $record['discount_type'],
+                  'discount' => $record['discount'],
+                  'valid_from' => $record['valid_from'],
+                  'valid_to' => $record['valid_to'],
+                  'is_active' => $record['is_active'],
+               ]);
+            }
+            $updated = count($duplicateRecords);
+         } else {
+            $skipped = count($duplicateRecords);
+         }
+      }
 
-      $imported = count($records);
-      $skipped = count($existing);
-      $message = "{$imported} coupon(s) imported successfully.";
-      if ($skipped > 0) $message .= " {$skipped} duplicate(s) skipped.";
-      if (!empty($errors)) $message .= " " . count($errors) . " row(s) had errors and were skipped.";
+      if ($imported === 0 && $updated === 0) {
+         return back()->withErrors(['csv_content' => 'All coupon codes already exist and were skipped.']);
+      }
+
+      $parts = [];
+      if ($imported > 0) $parts[] = "{$imported} created";
+      if ($updated > 0) $parts[] = "{$updated} updated";
+      if ($skipped > 0) $parts[] = "{$skipped} skipped";
+      $message = implode(', ', $parts) . '.';
+      if (!empty($errors)) $message .= " " . count($errors) . " row(s) had errors.";
 
       return redirect()
          ->route('course-coupons.index')

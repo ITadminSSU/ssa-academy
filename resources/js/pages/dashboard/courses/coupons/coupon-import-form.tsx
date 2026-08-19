@@ -24,6 +24,7 @@ const CouponImportForm = ({ handler, courses }: Props) => {
    const { data, setData, post, reset, processing, errors } = useForm({
       csv_content: '',
       import_mode: 'simple' as 'simple' | 'csv',
+      on_duplicate: 'skip' as 'skip' | 'update',
       course_id: '' as string | number,
       discount_type: 'percentage',
       discount: 0,
@@ -130,6 +131,32 @@ EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true`;
                            Download Template
                         </Button>
                      )}
+                  </div>
+
+                  {/* Duplicate handling */}
+                  <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">
+                     <Label className="text-sm font-medium whitespace-nowrap">If code already exists:</Label>
+                     <div className="flex gap-2">
+                        <Button
+                           type="button"
+                           size="sm"
+                           variant={data.on_duplicate === 'skip' ? 'default' : 'outline'}
+                           onClick={() => setData('on_duplicate', 'skip')}
+                        >
+                           Skip
+                        </Button>
+                        <Button
+                           type="button"
+                           size="sm"
+                           variant={data.on_duplicate === 'update' ? 'default' : 'outline'}
+                           onClick={() => setData('on_duplicate', 'update')}
+                        >
+                           Update
+                        </Button>
+                     </div>
+                     <span className="text-xs text-muted-foreground">
+                        {data.on_duplicate === 'update' ? 'Existing coupons will be updated with new values (usage count preserved)' : 'Existing codes will be ignored'}
+                     </span>
                   </div>
 
                   {importMode === 'csv' ? (
