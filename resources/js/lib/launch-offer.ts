@@ -36,6 +36,8 @@ export const getLaunchOfferView = (
    serverPayload?: Record<string, unknown> | null,
    enrollment?: { access_status?: string; balance_paid_at?: string | null } | null,
 ): LaunchOfferView => {
+   const isPreRegisterModel = course.billing_model === 'pre_register_subscription';
+
    if (serverPayload && typeof serverPayload.enabled === 'boolean') {
       return {
          enabled: Boolean(serverPayload.enabled),
@@ -54,7 +56,7 @@ export const getLaunchOfferView = (
       };
    }
 
-   if (!course.launch_offer_enabled) {
+   if (!course.launch_offer_enabled && !isPreRegisterModel) {
       return {
          enabled: false,
          phase: 'none',
