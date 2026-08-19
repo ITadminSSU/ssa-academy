@@ -6,16 +6,13 @@ use App\Mail\LaunchOfferStudentMail;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
-use App\Services\SettingsService;
-use App\Support\MailConfigurator;
+use App\Support\TransactionalMailSender;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class LaunchOfferMailService
 {
     public function __construct(
-        private SettingsService $settings,
+        private TransactionalMailSender $mailSender,
     ) {}
     public function sendDepositConfirmation(CourseEnrollment $enrollment, bool $force = false): bool
     {
@@ -228,44 +225,12 @@ class LaunchOfferMailService
 
     private function send(User $user, LaunchOfferStudentMail $mailable): bool
     {
-        if (! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
-            Log::warning('Launch offer student email skipped: invalid recipient', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-            ]);
-
-            return false;
-        }
-
-        if (! MailConfigurator::applyFromSetting($this->settings->getSetting(['type' => 'smtp']))) {
-            Log::warning('Launch offer student email skipped: SMTP not configured', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'subject' => $mailable->emailSubject,
-            ]);
-
-            return false;
-        }
-
-        try {
-            $pending = Mail::to($user->email);
-            $bcc = $this->adminBccAddresses();
-            if ($bcc !== []) {
-                $pending->bcc($bcc);
-            }
-            $pending->send($mailable);
-
-            return true;
-        } catch (\Throwable $exception) {
-            Log::warning('Launch offer student email failed', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'subject' => $mailable->emailSubject,
-                'error' => $exception->getMessage(),
-            ]);
-
-            return false;
-        }
+        return $this->mailSender->send(
+            $user,
+            $mailable,
+            'Launch offer student email',
+            $this->adminBccAddresses(),
+        );
     }
 
     /**
