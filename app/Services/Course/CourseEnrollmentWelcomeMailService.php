@@ -6,17 +6,23 @@ use App\Enums\EnrollmentAccessStatus;
 use App\Mail\CourseEnrollmentWelcomeMail;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
+use App\Services\SettingsService;
+use App\Support\MailConfigurator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class CourseEnrollmentWelcomeMailService
 {
-    public function sendForEnrollment(CourseEnrollment $enrollment): bool
+    public function __construct(
+        private SettingsService $settings,
+    ) {}
+
+    public function sendForEnrollment(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course.instructor.user']);
 
-        if ($enrollment->welcome_email_sent_at || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->welcome_email_sent_at) || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -97,6 +103,21 @@ class CourseEnrollmentWelcomeMailService
     private function send(User $user, CourseEnrollmentWelcomeMail $mailable): bool
     {
         if (! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            Log::warning('Course enrollment welcome email skipped: invalid recipient', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
+            return false;
+        }
+
+        if (! MailConfigurator::applyFromSetting($this->settings->getSetting(['type' => 'smtp']))) {
+            Log::warning('Course enrollment welcome email skipped: SMTP not configured', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'subject' => $mailable->emailSubject,
+            ]);
+
             return false;
         }
 

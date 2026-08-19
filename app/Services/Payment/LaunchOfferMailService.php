@@ -6,17 +6,22 @@ use App\Mail\LaunchOfferStudentMail;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
+use App\Services\SettingsService;
+use App\Support\MailConfigurator;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class LaunchOfferMailService
 {
-    public function sendDepositConfirmation(CourseEnrollment $enrollment): bool
+    public function __construct(
+        private SettingsService $settings,
+    ) {}
+    public function sendDepositConfirmation(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course']);
 
-        if ($enrollment->deposit_confirmation_sent_at || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->deposit_confirmation_sent_at) || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -52,11 +57,11 @@ class LaunchOfferMailService
         return $sent;
     }
 
-    public function sendBalanceDueNotice(CourseEnrollment $enrollment): bool
+    public function sendBalanceDueNotice(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course']);
 
-        if ($enrollment->balance_due_notice_sent_at || ! $enrollment->isReservedSeat() || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->balance_due_notice_sent_at) || ! $enrollment->isReservedSeat() || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -87,11 +92,11 @@ class LaunchOfferMailService
         return $sent;
     }
 
-    public function sendBalanceMidReminder(CourseEnrollment $enrollment): bool
+    public function sendBalanceMidReminder(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course']);
 
-        if ($enrollment->balance_mid_reminder_sent_at || ! $enrollment->isReservedSeat() || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->balance_mid_reminder_sent_at) || ! $enrollment->isReservedSeat() || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -122,11 +127,11 @@ class LaunchOfferMailService
         return $sent;
     }
 
-    public function sendBalanceFinalReminder(CourseEnrollment $enrollment): bool
+    public function sendBalanceFinalReminder(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course']);
 
-        if ($enrollment->balance_final_reminder_sent_at || ! $enrollment->isReservedSeat() || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->balance_final_reminder_sent_at) || ! $enrollment->isReservedSeat() || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -157,11 +162,11 @@ class LaunchOfferMailService
         return $sent;
     }
 
-    public function sendBalancePaidConfirmation(CourseEnrollment $enrollment): bool
+    public function sendBalancePaidConfirmation(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course']);
 
-        if ($enrollment->balance_paid_confirmation_sent_at || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->balance_paid_confirmation_sent_at) || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -188,11 +193,11 @@ class LaunchOfferMailService
         return $sent;
     }
 
-    public function sendForfeitNotice(CourseEnrollment $enrollment): bool
+    public function sendForfeitNotice(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course']);
 
-        if ($enrollment->forfeit_notice_sent_at || ! $enrollment->user || ! $enrollment->course) {
+        if ((! $force && $enrollment->forfeit_notice_sent_at) || ! $enrollment->user || ! $enrollment->course) {
             return false;
         }
 
@@ -224,6 +229,21 @@ class LaunchOfferMailService
     private function send(User $user, LaunchOfferStudentMail $mailable): bool
     {
         if (! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            Log::warning('Launch offer student email skipped: invalid recipient', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
+            return false;
+        }
+
+        if (! MailConfigurator::applyFromSetting($this->settings->getSetting(['type' => 'smtp']))) {
+            Log::warning('Launch offer student email skipped: SMTP not configured', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'subject' => $mailable->emailSubject,
+            ]);
+
             return false;
         }
 
