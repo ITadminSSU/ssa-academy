@@ -123,17 +123,6 @@
    </div>
 
    <script src="{{ asset('script/payment.js') }}"></script>
-   <script>
-      // Function to apply coupon code when clicking on available coupons
-      function applyCouponCode(code) {
-         const couponInput = document.getElementById('coupon');
-         if (couponInput) {
-            couponInput.value = code;
-            // Optionally auto-submit the form
-            couponInput.closest('form').submit();
-         }
-      }
-   </script>
 </body>
 
 </html>

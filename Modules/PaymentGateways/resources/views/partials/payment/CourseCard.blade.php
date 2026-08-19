@@ -145,7 +145,7 @@
                      type="text"
                      name="coupon"
                      class="border-border bg-background focus:border-primary focus:ring-primary/40 h-10 w-full rounded-md border px-4 py-3 text-base focus:outline-none focus:ring-2"
-                     placeholder="Enter coupon code"
+                     placeholder="Enter coupon code if you have one"
                      value="{{ old('coupon') }}"
                   >
                </div>
@@ -157,49 +157,6 @@
                   Apply
                </button>
             </form>
-
-            {{-- Display Available Coupons --}}
-            @if (isset($itemCoupons) && !empty($itemCoupons) && count($itemCoupons) > 0)
-               <div class="mt-4 space-y-2">
-                  <p class="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-                     Available Coupons for this {{ ucfirst($item_type) }}
-                  </p>
-                  <div class="space-y-2">
-                     @foreach ($itemCoupons as $availableCoupon)
-                        <div
-                           class="border-border bg-muted/30 hover:bg-muted/50 flex items-center justify-between rounded-lg border px-4 py-3 transition"
-                        >
-                           <div class="flex-1">
-                              <div class="flex items-center gap-2">
-                                 <span class="bg-primary/10 text-primary rounded px-2 py-1 text-sm font-bold uppercase">
-                                    {{ $availableCoupon->code }}
-                                 </span>
-                                 <span class="text-xs font-semibold text-emerald-600">
-                                    @if ($availableCoupon->discount_type === 'percentage')
-                                       {{ $availableCoupon->discount }}% OFF
-                                    @else
-                                       {{ $currency }} {{ number_format($availableCoupon->discount, 2) }} OFF
-                                    @endif
-                                 </span>
-                              </div>
-                              @if ($availableCoupon->valid_to)
-                                 <p class="text-muted-foreground mt-1 text-xs">
-                                    Valid until {{ \Carbon\Carbon::parse($availableCoupon->valid_to)->format('M d, Y') }}
-                                 </p>
-                              @endif
-                           </div>
-                           <button
-                              type="button"
-                              onclick="applyCouponCode('{{ $availableCoupon->code }}')"
-                              class="bg-primary text-primary-foreground hover:bg-primary/90 ml-3 rounded-md px-4 py-2 text-xs font-semibold uppercase transition"
-                           >
-                              Apply
-                           </button>
-                        </div>
-                     @endforeach
-                  </div>
-               </div>
-            @endif
          @endif
       </div>
       @endif

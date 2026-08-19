@@ -89,7 +89,6 @@ class PaymentController extends Controller
 
         $currency = app('system_settings')->fields['selling_currency'] ?? 'USD';
         $checkoutItem = $this->payment->getCheckoutItem($item_type, $id, $request->coupon);
-        $itemCoupons = $this->payment->validateExamCoupons($item_type, $id);
 
         if ($checkoutMode === 'deposit' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['deposit_amount'];
@@ -102,7 +101,6 @@ class PaymentController extends Controller
                 'finalPrice' => $amount,
                 'coupon' => null,
             ];
-            $itemCoupons = collect();
         } elseif ($checkoutMode === 'balance' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['balance_amount'];
             $coupon = $request->coupon
@@ -113,7 +111,6 @@ class PaymentController extends Controller
                 ...$this->payment->calculateCustomPrice($amount, $coupon),
                 'coupon' => $coupon,
             ];
-            $itemCoupons = $this->payment->validateExamCoupons($item_type, $id);
         } elseif ($checkoutMode === 'full_launch' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['full_upfront_price'];
             $coupon = $request->coupon
@@ -124,7 +121,6 @@ class PaymentController extends Controller
                 ...$this->payment->calculateCustomPrice($amount, $coupon),
                 'coupon' => $coupon,
             ];
-            $itemCoupons = $this->payment->validateExamCoupons($item_type, $id);
         } elseif ($checkoutMode === 'upfront_subscription' && isset($course)) {
             $amount = (float) ($course->price ?? 0);
             $checkoutItem = [
@@ -136,7 +132,6 @@ class PaymentController extends Controller
                 'finalPrice' => $amount,
                 'coupon' => null,
             ];
-            $itemCoupons = collect();
         }
 
         return view('paymentgateways::payment', [
@@ -146,7 +141,6 @@ class PaymentController extends Controller
             'item_type' => $item_type,
             'payments' => $payments,
             'currency' => $currency,
-            'itemCoupons' => $itemCoupons,
             'launchOffer' => $launchOfferPayload,
             'checkoutMode' => $checkoutMode,
             ...$checkoutItem,
