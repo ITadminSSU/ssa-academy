@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CourseCouponRequest;
 use App\Models\Course\CourseCoupon;
 use App\Services\Course\CourseCouponService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class CourseCouponController extends Controller
@@ -164,14 +165,19 @@ class CourseCouponController extends Controller
                continue;
             }
 
+            $validFrom = null;
+            $validTo = null;
+            try { $validFrom = !empty($data['valid_from']) ? Carbon::parse($data['valid_from'])->format('Y-m-d H:i:s') : null; } catch (\Exception $e) {}
+            try { $validTo = !empty($data['valid_to']) ? Carbon::parse($data['valid_to'])->format('Y-m-d H:i:s') : null; } catch (\Exception $e) {}
+
             $allCodes[] = $code;
             $records[] = [
                'code' => $code,
                'course_id' => $courseId,
                'discount_type' => $data['discount_type'],
                'discount' => floatval($data['discount']),
-               'valid_from' => !empty($data['valid_from']) ? $data['valid_from'] : null,
-               'valid_to' => !empty($data['valid_to']) ? $data['valid_to'] : null,
+               'valid_from' => $validFrom,
+               'valid_to' => $validTo,
                'is_active' => isset($data['is_active']) ? filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN) : true,
                'created_by' => $userId,
                'created_at' => $now,
