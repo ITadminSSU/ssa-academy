@@ -43,7 +43,11 @@ class PaymentService
             $item = $this->courseService->getCheckoutCourse($item_id);
 
             if ($coupon_code) {
-                $coupon = $this->courseCoupon->getCourseValidCoupon($item_id, $coupon_code);
+                $coupon = $this->courseCoupon->getCourseValidCoupon(
+                    $item_id,
+                    $coupon_code,
+                    Auth::id(),
+                );
             }
         } else {
             $item = $this->examService->getCheckoutExam($item_id);
@@ -229,6 +233,7 @@ class PaymentService
         string $transactionId,
         float $amount,
         PaymentBillingType $billingType,
+        ?string $couponCode = null,
     ): PaymentHistory {
         if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
             return $existing;
@@ -255,17 +260,23 @@ class PaymentService
             $historyData['admin_revenue'] = $amount;
         }
 
-        return PaymentHistory::create([
+        $history = PaymentHistory::create([
             'user_id' => $user->id,
             'amount' => $amount,
             'tax' => 0,
             'payment_type' => $paymentMethod,
-            'coupon' => null,
+            'coupon' => $couponCode,
             'transaction_id' => $transactionId,
             'invoice' => random_int(10000000, 99999999),
             'refund_status' => PaymentRefundStatus::PAID->value,
             ...$historyData,
         ]);
+
+        if ($couponCode) {
+            CourseCoupon::where('code', $couponCode)->increment('used_count');
+        }
+
+        return $history;
     }
 
     public function calculateItemPrice(Exam|Course $item, ExamCoupon|CourseCoupon|null $coupon): array

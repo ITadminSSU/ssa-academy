@@ -135,8 +135,9 @@ class LaunchOfferEnrollmentService
         string $paymentMethod,
         string $transactionId,
         float $amount,
+        ?string $couponCode = null,
     ): CourseEnrollment {
-        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount) {
+        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode) {
             $enrollment = CourseEnrollment::query()
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
@@ -159,6 +160,7 @@ class LaunchOfferEnrollmentService
                 transactionId: $transactionId,
                 amount: $amount > 0 ? $amount : $balance,
                 billingType: PaymentBillingType::BALANCE,
+                couponCode: $couponCode,
             );
 
             $enrollment->update([

@@ -55,7 +55,7 @@ class CourseCoupon extends Model
      * Query scope to filter only valid coupons
      * This is used in queries: CourseCoupon::isValid()->get()
      */
-    public function scopeIsValid($query, $courseId = null)
+    public function scopeIsValid($query, $courseId = null, int|string|null $userId = null)
     {
         $now = now();
 
@@ -81,7 +81,25 @@ class CourseCoupon extends Model
             });
         }
 
+        if ($userId !== null) {
+            $query->whereNotExists(function ($q) use ($userId) {
+                $q->selectRaw('1')
+                    ->from('payment_histories')
+                    ->whereColumn('payment_histories.coupon', 'course_coupons.code')
+                    ->where('payment_histories.user_id', $userId)
+                    ->whereNotNull('payment_histories.coupon');
+            });
+        }
+
         return $query;
+    }
+
+    public function isRedeemedByUser(int|string $userId): bool
+    {
+        return PaymentHistory::query()
+            ->where('user_id', $userId)
+            ->where('coupon', $this->code)
+            ->exists();
     }
 
     /**
@@ -105,6 +123,25 @@ class CourseCoupon extends Model
         }
 
         if ($this->usage_limit && $this->used_count >= $this->usage_limit) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function isValidForUser(int|string|null $userId, ?string $courseId = null): bool
+    {
+        if (! $this->isValid()) {
+            return false;
+        }
+
+        if ($courseId !== null && $courseId !== '') {
+            if ($this->course_id && (string) $this->course_id !== (string) $courseId) {
+                return false;
+            }
+        }
+
+        if ($userId !== null && $this->isRedeemedByUser($userId)) {
             return false;
         }
 

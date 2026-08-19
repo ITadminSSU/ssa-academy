@@ -292,29 +292,17 @@ class CourseCouponController extends Controller
          'course_id' => 'nullable|exists:courses,id',
       ]);
 
-      $query = CourseCoupon::where('code', $request->code);
-
-      if ($request->has('course_id')) {
-         $query->where(function ($q) use ($request) {
-            $q->where('exam_id', $request->exam_id)
-               ->orWhereNull('exam_id');
-         });
-      }
-
-      $coupon = $query->first();
+      $coupon = $this->courseCoupon->getCourseValidCoupon(
+         (string) ($request->course_id ?? ''),
+         $request->code,
+         $request->user()?->id,
+      );
 
       if (!$coupon) {
          return response()->json([
             'valid' => false,
-            'message' => 'Invalid coupon code.',
+            'message' => 'Invalid coupon code, or you have already used this coupon.',
          ], 404);
-      }
-
-      if (!$coupon->isValid()) {
-         return response()->json([
-            'valid' => false,
-            'message' => 'Coupon is not valid or has expired.',
-         ], 400);
       }
 
       return response()->json([

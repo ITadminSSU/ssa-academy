@@ -5,7 +5,7 @@ namespace Modules\PaymentGateways\Http\Controllers\Payment;
 use App\Enums\CourseBillingModel;
 use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
-use App\Models\Course\CourseCoupon;
+use App\Services\Course\CourseCouponService;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
@@ -32,6 +32,7 @@ class StripeController extends Controller
         private SubscriptionService $subscriptionService,
         private LaunchOfferService $launchOffer,
         private LaunchOfferEnrollmentService $launchOfferEnrollment,
+        private CourseCouponService $courseCoupon,
     ) {
         $this->stripe = $this->settingsService->getSetting(['type' => 'payment', 'sub_type' => 'stripe']);
         $this->stripeSecret = $this->stripe->fields['test_mode']
@@ -213,7 +214,7 @@ class StripeController extends Controller
         $balance = $this->launchOffer->balanceAmount($course);
         $trialEnd = $this->launchOffer->stripeTrialEndForBalanceCheckout($course);
         $coupon = $request->coupon
-            ? CourseCoupon::query()->where('code', $request->coupon)->isValid((string) $course->id)->first()
+            ? $this->courseCoupon->getCourseValidCoupon((string) $course->id, $request->coupon, $user->id)
             : null;
         $pricing = $this->payment->calculateCustomPrice($balance, $coupon);
 
@@ -289,7 +290,7 @@ class StripeController extends Controller
 
         $upfront = $this->launchOffer->fullUpfrontPrice($course);
         $coupon = $request->coupon
-            ? CourseCoupon::query()->where('code', $request->coupon)->isValid((string) $course->id)->first()
+            ? $this->courseCoupon->getCourseValidCoupon((string) $course->id, $request->coupon, $user->id)
             : null;
         $pricing = $this->payment->calculateCustomPrice($upfront, $coupon);
 
@@ -545,6 +546,7 @@ class StripeController extends Controller
                     'stripe',
                     (string) ($order->payment_intent ?: $order->subscription ?: $order->id),
                     ($order->amount_total ?? 0) / 100,
+                    $coupon_code,
                 );
 
                 if ($order->mode === 'subscription' && ! empty($order->subscription)) {

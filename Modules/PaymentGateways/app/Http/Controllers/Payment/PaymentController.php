@@ -4,8 +4,8 @@ namespace Modules\PaymentGateways\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
-use App\Models\Course\CourseCoupon;
 use App\Models\Course\CourseEnrollment;
+use App\Services\Course\CourseCouponService;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
@@ -24,6 +24,7 @@ class PaymentController extends Controller
         private ExternalCheckoutService $externalCheckout,
         private LaunchOfferService $launchOffer,
         private LaunchOfferEnrollmentService $launchOfferEnrollment,
+        private CourseCouponService $courseCoupon,
     ) {}
 
     public function index(Request $request, string $from, string $item_type, string $id)
@@ -104,7 +105,7 @@ class PaymentController extends Controller
         } elseif ($checkoutMode === 'balance' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['balance_amount'];
             $coupon = $request->coupon
-                ? CourseCoupon::query()->where('code', $request->coupon)->isValid($id)->first()
+                ? $this->courseCoupon->getCourseValidCoupon($id, $request->coupon, $user->id)
                 : null;
             $checkoutItem = [
                 ...$checkoutItem,
@@ -114,7 +115,7 @@ class PaymentController extends Controller
         } elseif ($checkoutMode === 'full_launch' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['full_upfront_price'];
             $coupon = $request->coupon
-                ? CourseCoupon::query()->where('code', $request->coupon)->isValid($id)->first()
+                ? $this->courseCoupon->getCourseValidCoupon($id, $request->coupon, $user->id)
                 : null;
             $checkoutItem = [
                 ...$checkoutItem,

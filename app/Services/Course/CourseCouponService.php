@@ -24,10 +24,12 @@ class CourseCouponService
          ->get();
    }
 
-   public function getCourseValidCoupon(string $courseId, string $code): ?CourseCoupon
+   public function getCourseValidCoupon(string $courseId, string $code, int|string|null $userId = null): ?CourseCoupon
    {
+      $code = strtoupper(trim($code));
+
       return CourseCoupon::where('code', $code)
-         ->isValid($courseId)
+         ->isValid($courseId ?: null, $userId)
          ->first();
    }
 

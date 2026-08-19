@@ -210,7 +210,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                            placeholder="Unlimited"
                         />
                         <p className="text-muted-foreground mt-1 text-xs">
-                           Leave blank for unlimited. Use 1 for a single-use referral code (one checkout total).
+                           Leave blank for unlimited total redemptions. Each student can use a code only once. Set 1 for a single checkout across all students.
                         </p>
                         <InputError message={errors.usage_limit} />
                      </div>

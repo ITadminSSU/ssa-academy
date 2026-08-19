@@ -148,7 +148,8 @@ class SubscriptionService
         $billingType = ($invoice->billing_reason ?? '') === 'subscription_create'
             ? PaymentBillingType::SUBSCRIPTION
             : PaymentBillingType::SUBSCRIPTION_RENEWAL;
-        $couponCode = $billingType === PaymentBillingType::SUBSCRIPTION
+        $launchOfferMode = $stripeSubscription->metadata['launch_offer_mode'] ?? null;
+        $couponCode = $billingType === PaymentBillingType::SUBSCRIPTION && $launchOfferMode !== 'balance'
             ? ($stripeSubscription->metadata['coupon_code'] ?? null)
             : null;
 
