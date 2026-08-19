@@ -157,10 +157,10 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                               {symbol}
                               {formatOfferAmount(launchOffer.listPrice)}
                            </span>
-                           {launchOffer.offerPrice > 0 && launchOffer.offerPrice !== launchOffer.listPrice ? (
+                           {launchOffer.depositAmount > 0 ? (
                               <span className="text-muted-foreground ml-2 text-xs font-medium normal-case">
-                                 launch total {symbol}
-                                 {formatOfferAmount(launchOffer.offerPrice)}
+                                 pre reg for {symbol}
+                                 {formatOfferAmount(launchOffer.depositAmount)}
                               </span>
                            ) : null}
                         </>
@@ -221,8 +221,8 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
 
                {isLaunchPreRegister ? (
                   <p className="text-muted-foreground text-xs leading-snug normal-case">
-                     Early bird · {symbol}
-                     {formatOfferAmount(launchOffer.depositAmount)} now · {symbol}
+                     Reserve seat now {symbol}
+                     {formatOfferAmount(launchOffer.depositAmount)} · {symbol}
                      {formatOfferAmount(launchOffer.balanceAmount)} at launch · then {symbol}
                      {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
                   </p>

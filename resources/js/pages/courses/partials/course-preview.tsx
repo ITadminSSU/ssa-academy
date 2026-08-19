@@ -64,11 +64,11 @@ const CoursePreview = () => {
                   <>
                      <span className="font-semibold">
                         {currency?.symbol}
-                        {offer.offerPrice}
-                     </span>
-                     <span className="text-muted-foreground ml-2 text-base font-medium line-through">
-                        {currency?.symbol}
                         {offer.listPrice}
+                     </span>
+                     <span className="text-muted-foreground ml-2 text-base font-medium">
+                        pre reg for {currency?.symbol}
+                        {offer.depositAmount}
                      </span>
                   </>
                ) : offer.enabled && offer.phase === 'full_price' ? (
@@ -124,8 +124,8 @@ const CoursePreview = () => {
 
             {offer.enabled && offer.phase === 'pre_register' ? (
                <p className="text-muted-foreground text-sm">
-                  Early bird: pre-register for {currency?.symbol}
-                  {offer.depositAmount} now (seat reserved). Pay remaining {currency?.symbol}
+                  Reserve seat now {currency?.symbol}
+                  {offer.depositAmount}. Pay remaining {currency?.symbol}
                   {offer.balanceAmount} on launch for full access. Then {currency?.symbol}
                   {offer.subscriptionPrice}/mo after the free month. Deposit is non-refundable.
                </p>
