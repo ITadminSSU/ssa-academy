@@ -373,6 +373,11 @@ class StripeController extends Controller
                 ->with('error', 'This course is missing an upfront enrollment price.');
         }
 
+        $coupon = $request->coupon
+            ? $this->courseCoupon->getCourseValidCoupon((string) $course->id, $request->coupon, $user->id)
+            : null;
+        $pricing = $this->payment->calculateCustomPrice($upfront, $coupon);
+
         $this->stripeCustomer->configureStripe();
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
         Stripe::setApiKey($this->stripeSecret);
@@ -387,7 +392,7 @@ class StripeController extends Controller
                         'product_data' => [
                             'name' => 'Course enrollment — '.$course->title,
                         ],
-                        'unit_amount' => (int) round($upfront * 100),
+                        'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
                 ],
@@ -405,6 +410,7 @@ class StripeController extends Controller
                 'item_id' => (string) $course->id,
                 'billing_model' => CourseBillingModel::UPFRONT_SUBSCRIPTION->value,
                 'launch_offer_mode' => 'upfront_subscription',
+                'coupon_code' => $coupon?->code,
             ],
             'subscription_data' => [
                 // First monthly charge ~30 days after enrollment.
@@ -413,6 +419,7 @@ class StripeController extends Controller
                     'user_id' => (string) $user->id,
                     'course_id' => (string) $course->id,
                     'launch_offer_mode' => 'upfront_subscription',
+                    'coupon_code' => $coupon?->code,
                 ],
             ],
         ]);
@@ -426,8 +433,8 @@ class StripeController extends Controller
                 'billing_model' => CourseBillingModel::UPFRONT_SUBSCRIPTION->value,
                 'launch_offer_mode' => 'upfront_subscription',
                 'stripe_id' => $response->id,
-                'tax_amount' => 0,
-                'coupon_code' => null,
+                'tax_amount' => $pricing['taxAmount'],
+                'coupon_code' => $coupon?->code,
             ],
         ]);
 

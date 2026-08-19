@@ -1,7 +1,13 @@
 @php
    $isFree = ($item->pricing_type ?? null) === 'free';
    $hasDiscount = !empty($item->discount);
-   $allowsCoupons = in_array(($checkoutMode ?? null), [null, 'balance', 'full_launch'], true);
+   $allowsCoupons = in_array(($checkoutMode ?? null), [
+      null,
+      'balance',
+      'full_launch',
+      'upfront_subscription',
+      'legacy_one_time',
+   ], true);
 
    // Prefer same-origin cover URL for courses (fresh R2 signature via redirect).
    // Direct private R2 URLs often fail in this Blade checkout page.

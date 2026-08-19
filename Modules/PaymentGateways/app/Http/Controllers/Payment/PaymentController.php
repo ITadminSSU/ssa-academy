@@ -124,14 +124,13 @@ class PaymentController extends Controller
             ];
         } elseif ($checkoutMode === 'upfront_subscription' && isset($course)) {
             $amount = (float) ($course->price ?? 0);
+            $coupon = $request->coupon
+                ? $this->courseCoupon->getCourseValidCoupon($id, $request->coupon, $user->id)
+                : null;
             $checkoutItem = [
                 ...$checkoutItem,
-                'subtotal' => $amount,
-                'taxAmount' => 0,
-                'couponDiscount' => 0,
-                'discountedPrice' => $amount,
-                'finalPrice' => $amount,
-                'coupon' => null,
+                ...$this->payment->calculateCustomPrice($amount, $coupon),
+                'coupon' => $coupon,
             ];
         }
 
