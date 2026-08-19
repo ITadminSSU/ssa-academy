@@ -28,7 +28,7 @@ class LaunchOfferService
         $raw = $course->launch_offer_starts_at
             ?? config('payment.launch_offer.window_start');
 
-        return Carbon::parse($raw)->startOfDay();
+        return Carbon::parse($raw);
     }
 
     public function windowEnd(Course $course): Carbon
@@ -36,7 +36,7 @@ class LaunchOfferService
         $raw = $course->launch_offer_ends_at
             ?? config('payment.launch_offer.window_end');
 
-        return Carbon::parse($raw)->endOfDay();
+        return Carbon::parse($raw);
     }
 
     public function isInPreRegisterWindow(Course $course, ?Carbon $at = null): bool
