@@ -14,6 +14,8 @@ export interface LaunchOfferView {
    canFullEnroll: boolean;
    reservedSeat: boolean;
    depositNonRefundable: boolean;
+   balanceDueAt?: string | null;
+   balanceDeadlineAt?: string | null;
 }
 
 const toNumber = (value: unknown, fallback = 0): number => {
@@ -51,6 +53,19 @@ const resolveLaunchOfferPhase = (startsAt: unknown, endsAt: unknown): LaunchOffe
    return 'scheduled';
 };
 
+const isBalancePaymentOpen = (dueAt: unknown, deadlineAt: unknown): boolean => {
+   const due = parseDate(dueAt)?.getTime();
+   const deadline = parseDate(deadlineAt)?.getTime();
+
+   if (due === undefined || deadline === undefined) {
+      return false;
+   }
+
+   const now = Date.now();
+
+   return now >= due && now <= deadline;
+};
+
 const enrollmentHasFullAccess = (
    enrollment?: { access_status?: string; balance_paid_at?: string | null } | null,
 ): boolean => {
@@ -67,7 +82,12 @@ const enrollmentHasFullAccess = (
 export const getLaunchOfferView = (
    course: Course,
    serverPayload?: Record<string, unknown> | null,
-   enrollment?: { access_status?: string; balance_paid_at?: string | null } | null,
+   enrollment?: {
+      access_status?: string;
+      balance_paid_at?: string | null;
+      balance_due_at?: string | null;
+      balance_deadline_at?: string | null;
+   } | null,
 ): LaunchOfferView => {
    const isPreRegisterModel = course.billing_model === 'pre_register_subscription';
    const enabled =
@@ -104,6 +124,21 @@ export const getLaunchOfferView = (
 
    const hasFullAccess = enrollmentHasFullAccess(enrollment);
 
+   const balanceDueAt =
+      (enrollment?.balance_due_at as string | undefined) ??
+      (serverPayload?.balance_due_at as string | undefined) ??
+      (course.launch_at as string | undefined) ??
+      null;
+   const balanceDeadlineAt =
+      (enrollment?.balance_deadline_at as string | undefined) ??
+      (serverPayload?.balance_deadline_at as string | undefined) ??
+      null;
+
+   const canPayBalance =
+      serverPayload && typeof serverPayload.can_pay_balance === 'boolean'
+         ? Boolean(serverPayload.can_pay_balance)
+         : reservedSeat && isBalancePaymentOpen(balanceDueAt, balanceDeadlineAt);
+
    const listPrice =
       serverPayload && serverPayload.list_price !== undefined
          ? toNumber(serverPayload.list_price, 75)
@@ -139,13 +174,32 @@ export const getLaunchOfferView = (
       fullUpfrontPrice,
       subscriptionPrice,
       canPreRegister: phase === 'pre_register' && !reservedSeat && !hasFullAccess,
-      canPayBalance:
-         serverPayload && typeof serverPayload.can_pay_balance === 'boolean'
-            ? Boolean(serverPayload.can_pay_balance)
-            : Boolean(reservedSeat),
+      canPayBalance,
       canFullEnroll: phase === 'full_price' && !reservedSeat && !hasFullAccess,
       reservedSeat,
       depositNonRefundable: Boolean(serverPayload?.deposit_non_refundable ?? true),
+      balanceDueAt,
+      balanceDeadlineAt,
    };
+};
+
+export const formatLaunchOfferDateTime = (value?: string | null): string | null => {
+   if (!value) {
+      return null;
+   }
+
+   const date = new Date(value);
+
+   if (Number.isNaN(date.getTime())) {
+      return null;
+   }
+
+   return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+   });
 };
 

@@ -2,7 +2,7 @@ import SsuCheckoutButton from '@/components/ssu-checkout-button';
 import { Button } from '@/components/ui/button';
 import { canEnrollCourseWithoutPayment, requiresCoursePayment } from '@/lib/learner-access';
 import { canPreviewCourseBeforeLaunch, formatCourseLaunchDateTime, isCourseComingSoon } from '@/lib/course-launch';
-import { getLaunchOfferView } from '@/lib/launch-offer';
+import { getLaunchOfferView, formatLaunchOfferDateTime } from '@/lib/launch-offer';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -138,12 +138,16 @@ const StaffPreviewButton = () => {
 const ReservedSeatPanel = () => {
    const { course, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
+   const balanceDueLabel =
+      formatLaunchOfferDateTime(offer.balanceDueAt) ??
+      formatLaunchOfferDateTime(course.launch_at) ??
+      'launch day';
 
    return (
       <div className="space-y-3">
          <p className="text-muted-foreground text-center text-sm">
-            Seat reserved. Full access unlocks after you pay the remaining ${offer.balanceAmount.toFixed(0)}. Your $
-            {offer.depositAmount.toFixed(0)} deposit is non-refundable.
+            Seat reserved. Full access unlocks after you pay the remaining ${offer.balanceAmount.toFixed(0)} on{' '}
+            {balanceDueLabel}. Your ${offer.depositAmount.toFixed(0)} deposit is non-refundable.
          </p>
          {offer.canPayBalance ? (
             <SsuCheckoutButton item="course" item_id={course.id}>
@@ -151,7 +155,7 @@ const ReservedSeatPanel = () => {
             </SsuCheckoutButton>
          ) : (
             <Button disabled size="lg" className="w-full">
-               Balance due on launch day
+               Balance opens {balanceDueLabel}
             </Button>
          )}
       </div>

@@ -117,10 +117,10 @@ class LaunchOfferService
     public function balanceDueAt(Course $course): Carbon
     {
         if ($course->launch_at) {
-            return $course->launch_at->copy()->startOfDay();
+            return $course->launch_at->copy();
         }
 
-        return $this->windowEnd($course)->copy()->addDay()->startOfDay();
+        return $this->windowEnd($course)->copy()->addDay();
     }
 
     public function balanceDeadlineAt(Course $course): Carbon
@@ -165,9 +165,12 @@ class LaunchOfferService
             && $enrollment->access_status?->value === 'reserved'
             && empty($enrollment->balance_paid_at);
 
+        $balanceDueAt = $this->balanceDueAt($course);
+        $balanceDeadlineAt = $this->balanceDeadlineAt($course);
+
         $balanceOpen = $reserved
-            && now()->greaterThanOrEqualTo($this->balanceDueAt($course))
-            && now()->lessThanOrEqualTo(($enrollment->balance_deadline_at ?? $this->balanceDeadlineAt($course)));
+            && now()->greaterThanOrEqualTo($balanceDueAt)
+            && now()->lessThanOrEqualTo($balanceDeadlineAt);
 
         return [
             'enabled' => true,
@@ -180,8 +183,8 @@ class LaunchOfferService
             'subscription_price' => $this->subscriptionPrice($course),
             'window_start' => $this->windowStart($course)->toIso8601String(),
             'window_end' => $this->windowEnd($course)->toIso8601String(),
-            'balance_due_at' => $this->balanceDueAt($course)->toIso8601String(),
-            'balance_deadline_at' => $this->balanceDeadlineAt($course)->toIso8601String(),
+            'balance_due_at' => $balanceDueAt->toIso8601String(),
+            'balance_deadline_at' => $balanceDeadlineAt->toIso8601String(),
             'subscription_trial_ends_at' => $this->subscriptionTrialEndsAt($course)->toIso8601String(),
             'deposit_non_refundable' => (bool) config('payment.launch_offer.deposit_non_refundable', true),
             'grace_days' => $this->balanceGraceDays($course),
