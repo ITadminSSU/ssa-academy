@@ -6,26 +6,27 @@ import { SharedData } from '@/types/global';
 interface Props {
    children?: ReactNode;
    isSubscription?: boolean;
+   enrollmentNote?: string;
 }
 
 /**
  * SSU-approved enrollment CTA shell for course detail sidebar.
  * Wraps the existing enrollment/play logic with design-system surfaces.
  */
-const SsuEnrollmentPanel = ({ children, isSubscription = false }: Props) => {
+const SsuEnrollmentPanel = ({ children, isSubscription = false, enrollmentNote }: Props) => {
    const { translate } = usePage<SharedData>().props;
    const { frontend } = translate;
+
+   const defaultNote = isSubscription
+      ? (frontend.subscription_enrollment_note ??
+        'Your payment method will be charged monthly until you cancel.')
+      : 'Start learning or continue your assigned path.';
 
    return (
       <div className="ssu-enrollment-panel space-y-4">
          <div>
             <p className="ssu-kicker mb-1">Enrollment</p>
-            <p className="text-muted-foreground text-sm">
-               {isSubscription
-                  ? (frontend.subscription_enrollment_note ??
-                    'Your payment method will be charged monthly until you cancel.')
-                  : 'Start learning or continue your assigned path.'}
-            </p>
+            <p className="text-muted-foreground text-sm">{enrollmentNote ?? defaultNote}</p>
          </div>
 
          <div className="flex flex-col gap-2.5">{children ?? <EnrollOrPlayerButton />}</div>

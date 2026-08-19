@@ -241,8 +241,8 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                ) : isLaunchFullPrice ? (
                   <p className="text-muted-foreground text-xs leading-snug normal-case">
                      Pay {symbol}
-                     {formatOfferAmount(launchOffer.fullUpfrontPrice)} now · then {symbol}
-                     {formatOfferAmount(launchOffer.subscriptionPrice)}/mo · no free trial
+                     {formatOfferAmount(launchOffer.fullUpfrontPrice)} for full access · then {symbol}
+                     {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
                   </p>
                ) : isSubscription ? (
                   <SubscriptionBillingNotice course={course} variant="compact" />

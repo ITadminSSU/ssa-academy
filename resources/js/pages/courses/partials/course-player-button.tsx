@@ -168,7 +168,7 @@ const EnrollmentButton = () => {
    if (offer.enabled && offer.canPreRegister) {
       launchCheckoutLabel = `Pre-register — $${offer.depositAmount.toFixed(0)}`;
    } else if (offer.enabled && offer.canFullEnroll) {
-      launchCheckoutLabel = `Enroll — $${offer.fullUpfrontPrice.toFixed(0)}`;
+      launchCheckoutLabel = 'Pay full upfront price';
    }
 
    const checkoutText = checkoutLabel(course, canResubscribe, launchCheckoutLabel);
@@ -234,7 +234,7 @@ const EnrollOrPlayerButton = () => {
       return <StaffPreviewButton />;
    }
 
-   if (comingSoon && offer.canPreRegister) {
+   if (comingSoon && (offer.canPreRegister || offer.canFullEnroll)) {
       return <EnrollmentButton />;
    }
 

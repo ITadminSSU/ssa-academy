@@ -131,10 +131,9 @@ const CoursePreview = () => {
                </p>
             ) : offer.enabled && offer.phase === 'full_price' ? (
                <p className="text-muted-foreground text-sm">
-                  Pay {currency?.symbol}
-                  {offer.fullUpfrontPrice} now for full access. Then {currency?.symbol}
-                  {offer.subscriptionPrice}/mo on your next billing date. No free trial. Cancel anytime from My
-                  Subscriptions.
+                  Pay the full price of {currency?.symbol}
+                  {offer.fullUpfrontPrice} to get full access to this course, then a monthly payment of {currency?.symbol}
+                  {offer.subscriptionPrice} for your subscription. Cancel anytime from My Subscriptions.
                </p>
             ) : isUpfrontSubscription ? (
                <p className="text-muted-foreground text-sm">
@@ -144,11 +143,20 @@ const CoursePreview = () => {
                </p>
             ) : null}
 
-            {isSubscription && !(offer.enabled && offer.phase === 'pre_register') ? (
+            {isSubscription && !(offer.enabled && (offer.phase === 'pre_register' || offer.phase === 'full_price')) ? (
                <SubscriptionBillingNotice course={course} variant="detail" />
             ) : null}
 
-            <SsuEnrollmentPanel isSubscription={isSubscription}>
+            <SsuEnrollmentPanel
+               isSubscription={isSubscription && offer.phase !== 'full_price'}
+               enrollmentNote={
+                  offer.enabled && offer.phase === 'full_price'
+                     ? `Pay the full upfront price for immediate access, then ${currency?.symbol ?? '$'}${offer.subscriptionPrice}/mo for your subscription.`
+                     : offer.enabled && offer.phase === 'pre_register'
+                       ? 'Reserve your seat with a deposit. Course access unlocks after you pay the launch balance.'
+                       : undefined
+               }
+            >
                <EnrollOrPlayerButton />
             </SsuEnrollmentPanel>
 
