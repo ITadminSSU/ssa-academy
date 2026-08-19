@@ -75,6 +75,7 @@ Route::prefix('dashboard/trainer')->group(function () {
 
    // Course coupons (admin + trainer). Trainers manage coupons for their own courses.
    Route::resource('courses/course/coupons', CourseCouponController::class)->only(['index', 'store', 'update', 'destroy'])->names('course-coupons');
+   Route::post('courses/course/coupons/import', [CourseCouponController::class, 'import'])->name('course-coupons.import');
 
    // Courses
    Route::resource('courses', CourseController::class)->except(['update']);

@@ -69,6 +69,71 @@ class CourseCouponController extends Controller
    }
 
    /**
+    * Bulk import coupon codes
+    */
+   public function import(Request $request)
+   {
+      $request->validate([
+         'codes' => 'required|string',
+         'course_id' => 'nullable|exists:courses,id',
+         'discount_type' => 'required|in:percentage,fixed',
+         'discount' => 'required|numeric|min:0',
+         'valid_from' => 'nullable|date',
+         'valid_to' => 'nullable|date|after:valid_from',
+         'is_active' => 'boolean',
+      ]);
+
+      $codes = array_filter(
+         array_map('trim', preg_split('/[\r\n,]+/', $request->codes)),
+         fn($code) => $code !== ''
+      );
+
+      $codes = array_unique($codes);
+
+      if (empty($codes)) {
+         return back()->withErrors(['codes' => 'No valid coupon codes provided.']);
+      }
+
+      $existing = CourseCoupon::whereIn('code', $codes)->pluck('code')->toArray();
+      $newCodes = array_diff($codes, $existing);
+
+      if (empty($newCodes)) {
+         return back()->withErrors(['codes' => 'All coupon codes already exist.']);
+      }
+
+      $now = now();
+      $records = [];
+
+      foreach ($newCodes as $code) {
+         $records[] = [
+            'code' => strtoupper($code),
+            'course_id' => $request->course_id ?: null,
+            'discount_type' => $request->discount_type,
+            'discount' => $request->discount,
+            'valid_from' => $request->valid_from,
+            'valid_to' => $request->valid_to,
+            'is_active' => $request->boolean('is_active', true),
+            'created_by' => $request->user()->id,
+            'created_at' => $now,
+            'updated_at' => $now,
+         ];
+      }
+
+      CourseCoupon::insert($records);
+
+      $imported = count($newCodes);
+      $skipped = count($existing);
+      $message = "{$imported} coupon(s) imported successfully.";
+      if ($skipped > 0) {
+         $message .= " {$skipped} duplicate(s) skipped.";
+      }
+
+      return redirect()
+         ->route('course-coupons.index')
+         ->with('success', $message);
+   }
+
+   /**
     * Verify a coupon code
     */
    public function verify(Request $request)

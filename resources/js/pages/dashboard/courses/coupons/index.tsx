@@ -7,9 +7,10 @@ import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { Head } from '@inertiajs/react';
 import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import * as React from 'react';
 import CouponForm from './coupon-form';
+import CouponImportForm from './coupon-import-form';
 import CouponTableColumns from './coupon-table-columns';
 
 interface Props {
@@ -40,16 +41,27 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
                   <h1 className="text-3xl font-bold text-foreground">Course Coupons</h1>
                   <p className="mt-1 text-sm text-muted-foreground">Manage discount coupons for your Courses</p>
                </div>
-               <CouponForm
-                  title="Create Coupon"
-                  courses={courses}
-                  handler={
-                     <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Coupon
-                     </Button>
-                  }
-               />
+               <div className="flex items-center gap-2">
+                  <CouponImportForm
+                     courses={courses}
+                     handler={
+                        <Button variant="outline">
+                           <Upload className="mr-2 h-4 w-4" />
+                           Import Coupons
+                        </Button>
+                     }
+                  />
+                  <CouponForm
+                     title="Create Coupon"
+                     courses={courses}
+                     handler={
+                        <Button>
+                           <Plus className="mr-2 h-4 w-4" />
+                           Add Coupon
+                        </Button>
+                     }
+                  />
+               </div>
             </div>
 
             <Card>
