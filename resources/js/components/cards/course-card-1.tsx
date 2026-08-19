@@ -155,12 +155,14 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                         <>
                            <span>
                               {symbol}
-                              {formatOfferAmount(launchOffer.offerPrice)}
-                           </span>
-                           <span className="text-muted-foreground ml-2 text-sm font-medium line-through normal-case">
-                              {symbol}
                               {formatOfferAmount(launchOffer.listPrice)}
                            </span>
+                           {launchOffer.offerPrice > 0 && launchOffer.offerPrice !== launchOffer.listPrice ? (
+                              <span className="text-muted-foreground ml-2 text-xs font-medium normal-case">
+                                 launch total {symbol}
+                                 {formatOfferAmount(launchOffer.offerPrice)}
+                              </span>
+                           ) : null}
                         </>
                      ) : isUpfrontSubscription ? (
                         <>
