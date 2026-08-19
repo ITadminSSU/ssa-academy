@@ -104,13 +104,12 @@ class CourseCouponController extends Controller
       $request->validate([
          'csv_content' => 'required|string',
          'import_mode' => 'required|in:simple,csv',
-         // Shared settings only required for simple mode
          'course_id' => 'nullable|exists:courses,id',
-         'discount_type' => 'required_if:import_mode,simple|in:percentage,fixed',
-         'discount' => 'required_if:import_mode,simple|numeric|min:0',
+         'discount_type' => ['nullable', 'required_if:import_mode,simple', 'in:percentage,fixed'],
+         'discount' => ['nullable', 'required_if:import_mode,simple', 'numeric', 'min:0'],
          'valid_from' => 'nullable|date',
-         'valid_to' => 'nullable|date|after:valid_from',
-         'is_active' => 'boolean',
+         'valid_to' => ['nullable', 'date', 'after:valid_from'],
+         'is_active' => 'nullable|boolean',
       ]);
 
       $content = $request->csv_content;

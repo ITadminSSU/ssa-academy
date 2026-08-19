@@ -74,9 +74,9 @@ Route::prefix('dashboard/trainer')->group(function () {
    Route::post('courses/category-child/sort', [CategoryChildController::class, 'sort'])->name('category-child.sort');
 
    // Course coupons (admin + trainer). Trainers manage coupons for their own courses.
-   Route::resource('courses/course/coupons', CourseCouponController::class)->only(['index', 'store', 'update', 'destroy'])->names('course-coupons');
    Route::post('courses/course/coupons/import', [CourseCouponController::class, 'import'])->name('course-coupons.import');
    Route::get('courses/course/coupons/{coupon}/usages', [CourseCouponController::class, 'usages'])->name('course-coupons.usages');
+   Route::resource('courses/course/coupons', CourseCouponController::class)->only(['index', 'store', 'update', 'destroy'])->names('course-coupons');
 
    // Courses
    Route::resource('courses', CourseController::class)->except(['update']);
