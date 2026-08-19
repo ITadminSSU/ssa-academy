@@ -33,6 +33,7 @@ class LaunchOfferMailService
             paragraphs: [
                 'Your deposit of '.$deposit.' for “'.$course->title.'” is confirmed. Your pre-registration seat is reserved.',
                 'The remaining balance of '.$balance.' is due on launch day. Pay by the deadline below to unlock full course access. Your deposit is non-refundable.',
+                'Watch for vouchers from our Facebook page or your referrer that you can use when paying your balance.',
             ],
             bullets: [
                 'Balance due: '.$due,
