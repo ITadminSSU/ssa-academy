@@ -329,6 +329,8 @@ class StripeController extends Controller
                 'coupon_code' => $coupon?->code,
             ],
             'subscription_data' => [
+                // First monthly charge ~30 days after upfront payment.
+                'trial_period_days' => 30,
                 'metadata' => [
                     'user_id' => (string) $user->id,
                     'course_id' => (string) $course->id,
@@ -575,7 +577,7 @@ class StripeController extends Controller
 
                 if ($course) {
                     $message = match ($offerMode) {
-                        'full_launch' => 'Enrollment complete. You have full access now. Your monthly subscription billing starts on your next billing date.',
+                        'full_launch' => 'Enrollment complete. You have full access now. Your first monthly subscription charge will be billed automatically in about 30 days.',
                         'upfront_subscription' => 'Enrollment complete. You have access now. Monthly subscription billing begins after the first free month.',
                         default => 'Subscription active. You now have access to this course.',
                     };

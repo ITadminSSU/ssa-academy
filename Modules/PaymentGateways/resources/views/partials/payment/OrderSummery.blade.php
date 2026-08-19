@@ -14,7 +14,7 @@
             </p>
          @elseif (($checkoutMode ?? null) === 'full_launch')
             <p class="text-muted-foreground text-xs">
-               {{ __('Pay this enrollment amount now for full access. Monthly subscription billing starts on your next billing date. No free trial.') }}
+               {{ __('Pay this enrollment amount now for full access. Your first monthly subscription charge is billed automatically about 30 days later.') }}
             </p>
          @elseif (($checkoutMode ?? null) === 'balance')
             <p class="text-muted-foreground text-xs">
