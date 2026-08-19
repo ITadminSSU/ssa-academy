@@ -70,6 +70,23 @@ class CourseCouponController extends Controller
    }
 
    /**
+    * Bulk delete coupons
+    */
+   public function bulkDestroy(Request $request)
+   {
+      $request->validate([
+         'ids' => 'required|array|min:1',
+         'ids.*' => 'exists:course_coupons,id',
+      ]);
+
+      $deleted = CourseCoupon::whereIn('id', $request->ids)->delete();
+
+      return redirect()
+         ->route('course-coupons.index')
+         ->with('success', "{$deleted} coupon(s) deleted successfully.");
+   }
+
+   /**
     * Get coupon usage details
     */
    public function usages(CourseCoupon $coupon)

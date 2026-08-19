@@ -1,13 +1,23 @@
 import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
 import TableHeader from '@/components/table/table-header';
+import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import DashboardLayout from '@/layouts/dashboard/layout';
-import { Head } from '@inertiajs/react';
-import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { Plus, Upload } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { RowSelectionState, SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
+import { Plus, Trash2, Upload } from 'lucide-react';
 import * as React from 'react';
 import CouponForm from './coupon-form';
 import CouponImportForm from './coupon-import-form';
@@ -20,16 +30,48 @@ interface Props {
 
 const CouponsIndex = ({ coupons, courses }: Props) => {
    const [sorting, setSorting] = React.useState<SortingState>([]);
+   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+   const [deleteTarget, setDeleteTarget] = React.useState<{ type: 'single' | 'bulk'; id?: number } | null>(null);
+
+   const handleDelete = (id: number) => {
+      setDeleteTarget({ type: 'single', id });
+   };
 
    const table = useReactTable({
       data: coupons.data,
-      columns: CouponTableColumns({ courses }),
+      columns: CouponTableColumns({ courses, onDelete: handleDelete }),
       onSortingChange: setSorting,
+      onRowSelectionChange: setRowSelection,
       getCoreRowModel: getCoreRowModel(),
       getSortedRowModel: getSortedRowModel(),
       getFilteredRowModel: getFilteredRowModel(),
-      state: { sorting },
+      state: { sorting, rowSelection },
    });
+
+   const selectedCount = Object.keys(rowSelection).length;
+
+   const confirmDelete = () => {
+      if (!deleteTarget) return;
+
+      if (deleteTarget.type === 'single' && deleteTarget.id) {
+         router.delete(route('course-coupons.destroy', deleteTarget.id), {
+            preserveScroll: true,
+            onSuccess: () => setDeleteTarget(null),
+         });
+      } else if (deleteTarget.type === 'bulk') {
+         const selectedIds = table
+            .getSelectedRowModel()
+            .rows.map((row) => row.original.id);
+
+         router.post(route('course-coupons.bulk-destroy'), { ids: selectedIds }, {
+            preserveScroll: true,
+            onSuccess: () => {
+               setRowSelection({});
+               setDeleteTarget(null);
+            },
+         });
+      }
+   };
 
    return (
       <>
@@ -65,13 +107,28 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
             </div>
 
             <Card>
-               <TableFilter
-                  data={coupons}
-                  title="Coupon List"
-                  globalSearch={true}
-                  tablePageSizes={[10, 15, 20, 25]}
-                  routeName="course-coupons.index"
-               />
+               <div className="flex items-center justify-between">
+                  <TableFilter
+                     data={coupons}
+                     title="Coupon List"
+                     globalSearch={true}
+                     tablePageSizes={[10, 15, 20, 25]}
+                     routeName="course-coupons.index"
+                  />
+                  {selectedCount > 0 && (
+                     <div className="flex items-center gap-2 pr-5">
+                        <span className="text-sm text-muted-foreground">{selectedCount} selected</span>
+                        <Button
+                           variant="destructive"
+                           size="sm"
+                           onClick={() => setDeleteTarget({ type: 'bulk' })}
+                        >
+                           <Trash2 className="mr-1 h-4 w-4" />
+                           Delete Selected
+                        </Button>
+                     </div>
+                  )}
+               </div>
 
                <Table className="border-border border-y">
                   <TableHeader table={table} />
@@ -98,6 +155,25 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
                <TableFooter className="p-5 sm:p-7" routeName="course-coupons.index" paginationInfo={coupons} />
             </Card>
          </div>
+
+         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+            <AlertDialogContent>
+               <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                     {deleteTarget?.type === 'bulk'
+                        ? `This will permanently delete ${selectedCount} selected coupon(s). This action cannot be undone.`
+                        : 'This will permanently delete this coupon. This action cannot be undone.'}
+                  </AlertDialogDescription>
+               </AlertDialogHeader>
+               <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                     Delete
+                  </AlertDialogAction>
+               </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
       </>
    );
 };

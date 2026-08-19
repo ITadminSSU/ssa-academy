@@ -1,16 +1,18 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, isFuture, isPast, parseISO } from 'date-fns';
-import { Copy, Eye, Pencil } from 'lucide-react';
+import { Copy, Eye, Pencil, Trash2 } from 'lucide-react';
 import CouponForm from './coupon-form';
 import CouponUsagesModal from './coupon-usages-modal';
 
 interface CouponTableColumnsProps {
    courses: Course[];
+   onDelete: (id: number) => void;
 }
 
-const CouponTableColumns = ({ courses }: CouponTableColumnsProps): ColumnDef<CourseCoupon>[] => {
+const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): ColumnDef<CourseCoupon>[] => {
    const getCouponStatus = (coupon: CourseCoupon) => {
       if (!coupon.is_active) return { label: 'Inactive', variant: 'secondary' as const };
       if (coupon.valid_to && isPast(parseISO(coupon.valid_to))) return { label: 'Expired', variant: 'destructive' as const };
@@ -26,10 +28,32 @@ const CouponTableColumns = ({ courses }: CouponTableColumnsProps): ColumnDef<Cou
 
    return [
       {
-         accessorKey: 'code',
-         header: () => <p className="pl-4">Coupon Code</p>,
+         id: 'select',
+         header: ({ table }) => (
+            <div className="pl-4">
+               <Checkbox
+                  checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+                  onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                  aria-label="Select all"
+               />
+            </div>
+         ),
          cell: ({ row }) => (
-            <div className="flex items-center gap-2 pl-4">
+            <div className="pl-4">
+               <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  aria-label="Select row"
+               />
+            </div>
+         ),
+         enableSorting: false,
+      },
+      {
+         accessorKey: 'code',
+         header: 'Coupon Code',
+         cell: ({ row }) => (
+            <div className="flex items-center gap-2">
                <code className="rounded bg-muted px-2 py-1 font-bold">{row.original.code}</code>
                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyCouponCode(row.original.code)}>
                   <Copy className="h-3 w-3" />
@@ -110,11 +134,20 @@ const CouponTableColumns = ({ courses }: CouponTableColumnsProps): ColumnDef<Cou
                      coupon={coupon}
                      courses={courses}
                      handler={
-                        <Button size="icon" variant="secondary" className="h-8 w-8">
-                           <Pencil />
+                        <Button size="icon" variant="secondary" className="h-8 w-8" title="Edit">
+                           <Pencil className="h-4 w-4" />
                         </Button>
                      }
                   />
+                  <Button
+                     size="icon"
+                     variant="ghost"
+                     className="h-8 w-8 text-destructive hover:text-destructive"
+                     title="Delete"
+                     onClick={() => onDelete(coupon.id)}
+                  >
+                     <Trash2 className="h-4 w-4" />
+                  </Button>
                </div>
             );
          },
