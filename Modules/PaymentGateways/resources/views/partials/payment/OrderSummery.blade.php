@@ -12,6 +12,14 @@
             <p class="text-muted-foreground text-xs">
                {{ __('Pay this enrollment amount now. Monthly subscription billing begins after the first free month.') }}
             </p>
+         @elseif (($checkoutMode ?? null) === 'full_launch')
+            <p class="text-muted-foreground text-xs">
+               {{ __('Pay this enrollment amount now for full access. Monthly subscription billing starts on your next billing date. No free trial.') }}
+            </p>
+         @elseif (($checkoutMode ?? null) === 'balance')
+            <p class="text-muted-foreground text-xs">
+               {{ __('Pay your launch balance now. Monthly subscription billing begins after your free period ends.') }}
+            </p>
          @endif
 
          @if (isset($coupon) && $coupon && $couponDiscount > 0)

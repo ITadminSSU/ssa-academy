@@ -129,6 +129,13 @@ const CoursePreview = () => {
                   {offer.balanceAmount} on launch for full access. Then {currency?.symbol}
                   {offer.subscriptionPrice}/mo after the free month. Deposit is non-refundable.
                </p>
+            ) : offer.enabled && offer.phase === 'full_price' ? (
+               <p className="text-muted-foreground text-sm">
+                  Pay {currency?.symbol}
+                  {offer.fullUpfrontPrice} now for full access. Then {currency?.symbol}
+                  {offer.subscriptionPrice}/mo on your next billing date. No free trial. Cancel anytime from My
+                  Subscriptions.
+               </p>
             ) : isUpfrontSubscription ? (
                <p className="text-muted-foreground text-sm">
                   Pay {currency?.symbol}

@@ -348,7 +348,9 @@ const Pricing = () => {
                               <p className="text-muted-foreground mt-1 text-xs">
                                  {isUpfrontSubscription
                                     ? 'After the first free month, students are billed this amount every month until they cancel (tax-inclusive).'
-                                    : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
+                                    : isPreRegisterSubscription
+                                      ? 'Pre-reg balance payers get a free period until the trial end date, then this amount monthly. Full-upfront enrollments after pre-reg are billed monthly with no free trial (tax-inclusive).'
+                                      : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
                               <InputError message={errors.subscription_price} />
                            </div>
@@ -459,6 +461,10 @@ const Pricing = () => {
                                                    value={String(data.launch_full_upfront_price)}
                                                    onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
                                                 />
+                                                <p className="text-muted-foreground mt-1 text-xs">
+                                                   Price for new enrollments after pre-reg ends. Full access immediately, then monthly
+                                                   billing with no free trial. Coupons allowed.
+                                                </p>
                                                 <InputError message={errors.launch_full_upfront_price} />
                                              </div>
                                              <div className="sm:col-span-2">
@@ -469,9 +475,9 @@ const Pricing = () => {
                                                    onChange={(e) => setData('launch_subscription_trial_ends_at', e.target.value)}
                                                 />
                                                 <p className="text-muted-foreground mt-1 text-xs">
-                                                   Students get no access from DP alone. After they pay the launch balance, they get
-                                                   full access and stay free until this fixed date, then monthly billing starts. Time
-                                                   is {dateTimezoneLabel}.
+                                                   Applies only to pre-registration students who pay the launch balance. They get full
+                                                   access and stay free until this fixed date, then monthly billing starts. Does not
+                                                   apply to full-upfront enrollments after pre-reg ends. Time is {dateTimezoneLabel}.
                                                 </p>
                                                 <InputError message={errors.launch_subscription_trial_ends_at} />
                                              </div>

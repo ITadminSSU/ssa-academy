@@ -37,6 +37,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const isUpfrontSubscription = isUpfrontSubscriptionCourse(course);
    const launchOffer = getLaunchOfferView(course);
    const isLaunchPreRegister = launchOffer.enabled && launchOffer.phase === 'pre_register';
+   const isLaunchFullPrice = launchOffer.enabled && launchOffer.phase === 'full_price';
    const symbol = currency?.symbol ?? '$';
 
    const handleWishlist = () => {
@@ -164,6 +165,17 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                               </span>
                            ) : null}
                         </>
+                     ) : isLaunchFullPrice ? (
+                        <>
+                           <span>
+                              {symbol}
+                              {formatOfferAmount(launchOffer.fullUpfrontPrice)}
+                           </span>
+                           <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
+                              +{symbol}
+                              {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
+                           </span>
+                        </>
                      ) : isUpfrontSubscription ? (
                         <>
                            <span>
@@ -225,6 +237,12 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      {formatOfferAmount(launchOffer.depositAmount)} · {symbol}
                      {formatOfferAmount(launchOffer.balanceAmount)} at launch · then {symbol}
                      {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
+                  </p>
+               ) : isLaunchFullPrice ? (
+                  <p className="text-muted-foreground text-xs leading-snug normal-case">
+                     Pay {symbol}
+                     {formatOfferAmount(launchOffer.fullUpfrontPrice)} now · then {symbol}
+                     {formatOfferAmount(launchOffer.subscriptionPrice)}/mo · no free trial
                   </p>
                ) : isSubscription ? (
                   <SubscriptionBillingNotice course={course} variant="compact" />
