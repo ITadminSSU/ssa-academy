@@ -97,64 +97,134 @@ class CourseCouponController extends Controller
    }
 
    /**
-    * Bulk import coupon codes
+    * Bulk import coupon codes (supports simple list or multi-column CSV)
     */
    public function import(Request $request)
    {
       $request->validate([
-         'codes' => 'required|string',
+         'csv_content' => 'required|string',
+         'import_mode' => 'required|in:simple,csv',
+         // Shared settings only required for simple mode
          'course_id' => 'nullable|exists:courses,id',
-         'discount_type' => 'required|in:percentage,fixed',
-         'discount' => 'required|numeric|min:0',
+         'discount_type' => 'required_if:import_mode,simple|in:percentage,fixed',
+         'discount' => 'required_if:import_mode,simple|numeric|min:0',
          'valid_from' => 'nullable|date',
          'valid_to' => 'nullable|date|after:valid_from',
          'is_active' => 'boolean',
       ]);
 
-      $codes = array_filter(
-         array_map('trim', preg_split('/[\r\n,]+/', $request->codes)),
-         fn($code) => $code !== ''
-      );
+      $content = $request->csv_content;
+      $lines = array_filter(array_map('trim', preg_split('/\r?\n/', $content)), fn($l) => $l !== '');
 
-      $codes = array_unique($codes);
-
-      if (empty($codes)) {
-         return back()->withErrors(['codes' => 'No valid coupon codes provided.']);
-      }
-
-      $existing = CourseCoupon::whereIn('code', $codes)->pluck('code')->toArray();
-      $newCodes = array_diff($codes, $existing);
-
-      if (empty($newCodes)) {
-         return back()->withErrors(['codes' => 'All coupon codes already exist.']);
+      if (empty($lines)) {
+         return back()->withErrors(['csv_content' => 'No data provided.']);
       }
 
       $now = now();
+      $userId = $request->user()->id;
       $records = [];
+      $allCodes = [];
+      $errors = [];
 
-      foreach ($newCodes as $code) {
-         $records[] = [
-            'code' => strtoupper($code),
-            'course_id' => $request->course_id ?: null,
-            'discount_type' => $request->discount_type,
-            'discount' => $request->discount,
-            'valid_from' => $request->valid_from,
-            'valid_to' => $request->valid_to,
-            'is_active' => $request->boolean('is_active', true),
-            'created_by' => $request->user()->id,
-            'created_at' => $now,
-            'updated_at' => $now,
-         ];
+      if ($request->import_mode === 'csv') {
+         $header = str_getcsv(array_shift($lines));
+         $header = array_map(fn($h) => strtolower(trim($h)), $header);
+
+         $requiredColumns = ['code', 'discount_type', 'discount'];
+         $missing = array_diff($requiredColumns, $header);
+         if (!empty($missing)) {
+            return back()->withErrors(['csv_content' => 'Missing required columns: ' . implode(', ', $missing)]);
+         }
+
+         $validCourseIds = \App\Models\Course\Course::pluck('id')->toArray();
+
+         foreach ($lines as $i => $line) {
+            $row = str_getcsv($line);
+            if (count($row) !== count($header)) {
+               $errors[] = "Row " . ($i + 2) . ": column count mismatch.";
+               continue;
+            }
+            $data = array_combine($header, $row);
+            $code = strtoupper(trim($data['code'] ?? ''));
+            if (!$code) {
+               $errors[] = "Row " . ($i + 2) . ": empty code.";
+               continue;
+            }
+            if (!in_array($data['discount_type'] ?? '', ['percentage', 'fixed'])) {
+               $errors[] = "Row " . ($i + 2) . ": invalid discount_type (must be percentage or fixed).";
+               continue;
+            }
+            if (!is_numeric($data['discount'] ?? '') || floatval($data['discount']) < 0) {
+               $errors[] = "Row " . ($i + 2) . ": invalid discount value.";
+               continue;
+            }
+
+            $courseId = !empty($data['course_id']) ? intval($data['course_id']) : null;
+            if ($courseId && !in_array($courseId, $validCourseIds)) {
+               $errors[] = "Row " . ($i + 2) . ": invalid course_id ({$courseId}).";
+               continue;
+            }
+
+            $allCodes[] = $code;
+            $records[] = [
+               'code' => $code,
+               'course_id' => $courseId,
+               'discount_type' => $data['discount_type'],
+               'discount' => floatval($data['discount']),
+               'valid_from' => !empty($data['valid_from']) ? $data['valid_from'] : null,
+               'valid_to' => !empty($data['valid_to']) ? $data['valid_to'] : null,
+               'is_active' => isset($data['is_active']) ? filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN) : true,
+               'created_by' => $userId,
+               'created_at' => $now,
+               'updated_at' => $now,
+            ];
+         }
+      } else {
+         // Simple mode: codes only, shared settings
+         $codes = array_filter(
+            array_map('trim', preg_split('/[\r\n,]+/', $content)),
+            fn($code) => $code !== ''
+         );
+         $codes = array_unique($codes);
+         $allCodes = array_map('strtoupper', $codes);
+
+         foreach ($allCodes as $code) {
+            $records[] = [
+               'code' => $code,
+               'course_id' => $request->course_id ?: null,
+               'discount_type' => $request->discount_type,
+               'discount' => $request->discount,
+               'valid_from' => $request->valid_from,
+               'valid_to' => $request->valid_to,
+               'is_active' => $request->boolean('is_active', true),
+               'created_by' => $userId,
+               'created_at' => $now,
+               'updated_at' => $now,
+            ];
+         }
       }
 
-      CourseCoupon::insert($records);
+      if (empty($records)) {
+         $msg = 'No valid coupon codes found.';
+         if (!empty($errors)) $msg .= ' Errors: ' . implode(' ', array_slice($errors, 0, 5));
+         return back()->withErrors(['csv_content' => $msg]);
+      }
 
-      $imported = count($newCodes);
+      // Filter out existing codes
+      $existing = CourseCoupon::whereIn('code', $allCodes)->pluck('code')->toArray();
+      $records = array_filter($records, fn($r) => !in_array($r['code'], $existing));
+
+      if (empty($records)) {
+         return back()->withErrors(['csv_content' => 'All coupon codes already exist.']);
+      }
+
+      CourseCoupon::insert(array_values($records));
+
+      $imported = count($records);
       $skipped = count($existing);
       $message = "{$imported} coupon(s) imported successfully.";
-      if ($skipped > 0) {
-         $message .= " {$skipped} duplicate(s) skipped.";
-      }
+      if ($skipped > 0) $message .= " {$skipped} duplicate(s) skipped.";
+      if (!empty($errors)) $message .= " " . count($errors) . " row(s) had errors and were skipped.";
 
       return redirect()
          ->route('course-coupons.index')

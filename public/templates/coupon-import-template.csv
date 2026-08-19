@@ -1,0 +1,7 @@
+code,discount_type,discount,course_id,valid_from,valid_to,is_active
+MARIA20,percentage,20,,2026-08-19,2026-12-31,true
+JOHN15,fixed,15,,2026-08-19,2026-12-31,true
+SARAH10,percentage,10,,2026-08-19,2026-12-31,true
+EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true
+SUMMER2026,percentage,25,3,2026-08-19,2026-09-30,true
+WELCOME5,fixed,5,,2026-01-01,2026-12-31,true
