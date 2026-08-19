@@ -34,7 +34,7 @@ class CourseCouponController extends Controller
     */
    public function store(CourseCouponRequest $request)
    {
-      $payload = $request->validated();
+      $payload = $this->normalizeCouponPayload($request->validated());
       $payload['course_id'] = $payload['course_id'] ?? null;
       $payload['created_by'] = $request->user()->id;
 
@@ -50,7 +50,7 @@ class CourseCouponController extends Controller
     */
    public function update(CourseCouponRequest $request, CourseCoupon $coupon)
    {
-      $coupon->update($request->validated());
+      $coupon->update($this->normalizeCouponPayload($request->validated()));
 
       return redirect()
          ->route('course-coupons.index')
@@ -321,5 +321,21 @@ class CourseCouponController extends Controller
          'valid' => true,
          'coupon' => $coupon,
       ]);
+   }
+
+   /**
+    * @param  array<string, mixed>  $payload
+    * @return array<string, mixed>
+    */
+   private function normalizeCouponPayload(array $payload): array
+   {
+      if (! empty($payload['usage_limit'])) {
+         $payload['usage_type'] = 'limited';
+      } else {
+         $payload['usage_type'] = 'unlimited';
+         $payload['usage_limit'] = null;
+      }
+
+      return $payload;
    }
 }

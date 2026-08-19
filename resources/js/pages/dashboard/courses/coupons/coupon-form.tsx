@@ -27,15 +27,24 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
       return datetime.replace(' ', 'T').substring(0, 16);
    };
 
-   const { data, setData, post, put, reset, processing, errors } = useForm({
+   const { data, setData, post, put, reset, processing, errors, transform } = useForm({
       code: coupon?.code || '',
       course_id: coupon?.course_id || '',
       discount_type: coupon?.discount_type || 'percentage',
       discount: coupon?.discount || 0,
       valid_from: formatDatetimeLocal(coupon?.valid_from),
       valid_to: formatDatetimeLocal(coupon?.valid_to),
+      usage_limit: coupon?.usage_limit ?? '',
       is_active: coupon?.is_active ?? true,
    });
+
+   transform((form) => ({
+      ...form,
+      usage_limit:
+         form.usage_limit === '' || form.usage_limit === null || form.usage_limit === undefined
+            ? null
+            : Number(form.usage_limit),
+   }));
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -73,6 +82,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
             discount: coupon.discount || 0,
             valid_from: formatDatetimeLocal(coupon.valid_from),
             valid_to: formatDatetimeLocal(coupon.valid_to),
+            usage_limit: coupon.usage_limit ?? '',
             is_active: coupon.is_active ?? true,
          });
       } else if (!open) {
@@ -185,19 +195,25 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                         <InputError message={errors.valid_to} />
                      </div>
 
-                     {/* <div>
-                        <Label htmlFor="usage_limit">Usage Limit</Label>
+                     <div>
+                        <Label htmlFor="usage_limit">Usage limit</Label>
                         <Input
                            id="usage_limit"
                            name="usage_limit"
                            type="number"
-                           value={data.usage_limit}
-                           onChange={(e) => onHandleChange(e, setData)}
+                           value={data.usage_limit === null || data.usage_limit === undefined ? '' : String(data.usage_limit)}
+                           onChange={(e) => {
+                              const value = e.target.value;
+                              setData('usage_limit', value === '' ? '' : Number(value));
+                           }}
                            min="1"
                            placeholder="Unlimited"
                         />
+                        <p className="text-muted-foreground mt-1 text-xs">
+                           Leave blank for unlimited. Use 1 for a single-use referral code (one checkout total).
+                        </p>
                         <InputError message={errors.usage_limit} />
-                     </div> */}
+                     </div>
 
                      <div className="flex items-center justify-between">
                         <Label htmlFor="is_active">Active</Label>
