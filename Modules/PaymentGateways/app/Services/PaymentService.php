@@ -216,6 +216,10 @@ class PaymentService
             'refund_status' => PaymentRefundStatus::PAID->value,
             ...$historyData,
         ]);
+
+        if ($couponCode) {
+            CourseCoupon::where('code', $couponCode)->increment('used_count');
+        }
     }
 
     public function recordLaunchOfferPayment(
@@ -294,6 +298,34 @@ class PaymentService
             'couponDiscount' => $couponDiscount,
             'discountedPrice' => $discountedPrice,
             'finalPrice' => $finalPrice
+        ];
+    }
+
+    public function calculateCustomPrice(float $subtotal, CourseCoupon|ExamCoupon|null $coupon, bool $applyTax = false): array
+    {
+        $subtotal = round($subtotal, 2);
+        $sellingTax = app('system_settings')->fields['selling_tax'];
+
+        $couponDiscount = 0;
+        if ($coupon) {
+            $couponDiscount = $coupon->discount_type === 'percentage'
+                ? round(($subtotal * $coupon->discount) / 100, 2)
+                : round($coupon->discount, 2);
+        }
+
+        $couponDiscount = min($couponDiscount, $subtotal);
+        $discountedPrice = round($subtotal - $couponDiscount, 2);
+        $taxAmount = $applyTax && config('payment.apply_selling_tax')
+            ? round(($discountedPrice * $sellingTax) / 100, 2)
+            : 0;
+        $finalPrice = round($discountedPrice + $taxAmount, 2);
+
+        return [
+            'subtotal' => $subtotal,
+            'taxAmount' => $taxAmount,
+            'couponDiscount' => $couponDiscount,
+            'discountedPrice' => $discountedPrice,
+            'finalPrice' => $finalPrice,
         ];
     }
 

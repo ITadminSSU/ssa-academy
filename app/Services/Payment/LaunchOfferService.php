@@ -20,7 +20,7 @@ class LaunchOfferService
             return false;
         }
 
-        return (bool) $course->launch_offer_enabled;
+        return $course->usesPreRegistrationSubscription() || (bool) $course->launch_offer_enabled;
     }
 
     public function windowStart(Course $course): Carbon

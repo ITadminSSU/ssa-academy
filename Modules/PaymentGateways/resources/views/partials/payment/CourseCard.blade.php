@@ -1,6 +1,7 @@
 @php
    $isFree = ($item->pricing_type ?? null) === 'free';
    $hasDiscount = !empty($item->discount);
+   $allowsCoupons = in_array(($checkoutMode ?? null), [null, 'balance', 'full_launch'], true);
 
    // Prefer same-origin cover URL for courses (fresh R2 signature via redirect).
    // Direct private R2 URLs often fail in this Blade checkout page.
@@ -111,6 +112,7 @@
    @endunless
 
    @unless ($isFree)
+      @if ($allowsCoupons)
       <div class="space-y-3">
          <p class="text-muted-foreground text-sm font-medium uppercase tracking-wide">
             Apply Coupon
@@ -200,5 +202,6 @@
             @endif
          @endif
       </div>
+      @endif
    @endunless
 </div>

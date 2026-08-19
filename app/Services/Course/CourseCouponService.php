@@ -26,16 +26,19 @@ class CourseCouponService
 
    public function getCourseValidCoupon(string $courseId, string $code): ?CourseCoupon
    {
-      return CourseCoupon::where('course_id', $courseId)
-         ->where('code', $code)
+      return CourseCoupon::where('code', $code)
+         ->isValid($courseId)
          ->first();
    }
 
    public function getCourseValidCoupons(string $courseId): Collection
    {
-      return CourseCoupon::where('course_id', $courseId)
-         ->where('is_active', true)
+      return CourseCoupon::query()
          ->isValid()
+         ->where(function ($query) use ($courseId) {
+            $query->whereNull('course_id')
+               ->orWhere('course_id', $courseId);
+         })
          ->get();
    }
 

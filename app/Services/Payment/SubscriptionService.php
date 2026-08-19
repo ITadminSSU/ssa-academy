@@ -148,6 +148,9 @@ class SubscriptionService
         $billingType = ($invoice->billing_reason ?? '') === 'subscription_create'
             ? PaymentBillingType::SUBSCRIPTION
             : PaymentBillingType::SUBSCRIPTION_RENEWAL;
+        $couponCode = $billingType === PaymentBillingType::SUBSCRIPTION
+            ? ($stripeSubscription->metadata['coupon_code'] ?? null)
+            : null;
 
         $this->paymentService->recordSubscriptionPayment(
             $subscription,
@@ -155,6 +158,7 @@ class SubscriptionService
             round(($invoice->amount_paid ?? 0) / 100, 2),
             $this->extractTaxAmount($invoice),
             $billingType,
+            $couponCode,
         );
     }
 

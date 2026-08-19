@@ -43,7 +43,7 @@ interface Course extends TableCommon {
    level: string;
    language?: string;
    pricing_type: string;
-   billing_model?: 'one_time' | 'subscription' | 'upfront_subscription';
+   billing_model?: 'one_time' | 'subscription' | 'upfront_subscription' | 'pre_register_subscription';
    subscription_price?: number | null;
    launch_offer_enabled?: boolean;
    launch_offer_starts_at?: string | null;

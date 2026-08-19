@@ -48,15 +48,11 @@ class UpdateCourseRequest extends FormRequest
         $isFree = $pricingType === CoursePricingType::FREE->value;
         $billingModel = (string) $this->input('billing_model', CourseBillingModel::ONE_TIME->value);
         $isUpfrontSubscription = ! $isFree && $billingModel === CourseBillingModel::UPFRONT_SUBSCRIPTION->value;
-        $launchOfferEnabled = ! $isFree
-            && ! $isUpfrontSubscription
-            && filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN);
-
-        // Launch offers always use monthly subscription after deposit/full pay.
-        if ($launchOfferEnabled) {
-            $billingModel = CourseBillingModel::SUBSCRIPTION->value;
-            $isUpfrontSubscription = false;
-        }
+        $isPreRegistrationSubscription = ! $isFree && $billingModel === CourseBillingModel::PRE_REGISTER_SUBSCRIPTION->value;
+        $launchOfferEnabled = ! $isFree && (
+            $isPreRegistrationSubscription
+            || (! $isUpfrontSubscription && filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN))
+        );
 
         $isMonthlyOnly = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
         $isOneTime = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME->value;
@@ -187,15 +183,17 @@ class UpdateCourseRequest extends FormRequest
         $oneTime = CourseBillingModel::ONE_TIME->value;
         $subscription = CourseBillingModel::SUBSCRIPTION->value;
         $upfrontSubscription = CourseBillingModel::UPFRONT_SUBSCRIPTION->value;
-        $billingModels = "$oneTime,$subscription,$upfrontSubscription";
+        $preRegisterSubscription = CourseBillingModel::PRE_REGISTER_SUBSCRIPTION->value;
+        $billingModels = "$oneTime,$subscription,$upfrontSubscription,$preRegisterSubscription";
         $pricingType = (string) $this->input('pricing_type');
         $billingModel = (string) $this->input('billing_model', $oneTime);
         $isPaid = $pricingType === $paid;
         $isOneTime = $isPaid && $billingModel === $oneTime;
         $isUpfrontSubscription = $isPaid && $billingModel === $upfrontSubscription;
-        $isSubscription = $isPaid && ($billingModel === $subscription || $isUpfrontSubscription);
-        $launchOfferEnabled = filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN)
-            && ! $isUpfrontSubscription;
+        $isPreRegistrationSubscription = $isPaid && $billingModel === $preRegisterSubscription;
+        $isSubscription = $isPaid && ($billingModel === $subscription || $isUpfrontSubscription || $isPreRegistrationSubscription);
+        $launchOfferEnabled = $isPreRegistrationSubscription
+            || (filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN) && ! $isUpfrontSubscription);
 
         return [
             'pricing_type' => "required|string|in:$free,$paid",

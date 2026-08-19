@@ -4,6 +4,7 @@ namespace Modules\PaymentGateways\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
+use App\Models\Course\CourseCoupon;
 use App\Models\Course\CourseEnrollment;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
@@ -104,28 +105,26 @@ class PaymentController extends Controller
             $itemCoupons = collect();
         } elseif ($checkoutMode === 'balance' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['balance_amount'];
+            $coupon = $request->coupon
+                ? CourseCoupon::query()->where('code', $request->coupon)->isValid($id)->first()
+                : null;
             $checkoutItem = [
                 ...$checkoutItem,
-                'subtotal' => $amount,
-                'taxAmount' => 0,
-                'couponDiscount' => 0,
-                'discountedPrice' => $amount,
-                'finalPrice' => $amount,
-                'coupon' => null,
+                ...$this->payment->calculateCustomPrice($amount, $coupon),
+                'coupon' => $coupon,
             ];
-            $itemCoupons = collect();
+            $itemCoupons = $this->payment->validateExamCoupons($item_type, $id);
         } elseif ($checkoutMode === 'full_launch' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['full_upfront_price'];
+            $coupon = $request->coupon
+                ? CourseCoupon::query()->where('code', $request->coupon)->isValid($id)->first()
+                : null;
             $checkoutItem = [
                 ...$checkoutItem,
-                'subtotal' => $amount,
-                'taxAmount' => 0,
-                'couponDiscount' => 0,
-                'discountedPrice' => $amount,
-                'finalPrice' => $amount,
-                'coupon' => null,
+                ...$this->payment->calculateCustomPrice($amount, $coupon),
+                'coupon' => $coupon,
             ];
-            $itemCoupons = collect();
+            $itemCoupons = $this->payment->validateExamCoupons($item_type, $id);
         } elseif ($checkoutMode === 'upfront_subscription' && isset($course)) {
             $amount = (float) ($course->price ?? 0);
             $checkoutItem = [

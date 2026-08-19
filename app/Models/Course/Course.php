@@ -355,6 +355,7 @@ class Course extends Model implements HasMedia
         return in_array($this->billing_model, [
             CourseBillingModel::SUBSCRIPTION,
             CourseBillingModel::UPFRONT_SUBSCRIPTION,
+            CourseBillingModel::PRE_REGISTER_SUBSCRIPTION,
         ], true);
     }
 
@@ -366,6 +367,12 @@ class Course extends Model implements HasMedia
     public function usesMonthlyOnlySubscription(): bool
     {
         return $this->billing_model === CourseBillingModel::SUBSCRIPTION;
+    }
+
+    public function usesPreRegistrationSubscription(): bool
+    {
+        return $this->billing_model === CourseBillingModel::PRE_REGISTER_SUBSCRIPTION
+            || ($this->billing_model === CourseBillingModel::SUBSCRIPTION && (bool) $this->launch_offer_enabled);
     }
 
     public function subscriptionCheckoutPrice(): ?float

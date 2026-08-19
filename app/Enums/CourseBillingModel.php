@@ -7,6 +7,7 @@ enum CourseBillingModel: string
     case ONE_TIME = 'one_time';
     case SUBSCRIPTION = 'subscription';
     case UPFRONT_SUBSCRIPTION = 'upfront_subscription';
+    case PRE_REGISTER_SUBSCRIPTION = 'pre_register_subscription';
 
     public function getLabel(): string
     {
@@ -14,6 +15,7 @@ enum CourseBillingModel: string
             self::ONE_TIME => 'One-time purchase',
             self::SUBSCRIPTION => 'Monthly subscription',
             self::UPFRONT_SUBSCRIPTION => 'Upfront + monthly subscription',
+            self::PRE_REGISTER_SUBSCRIPTION => 'Pre-registration + monthly subscription',
         };
     }
 }

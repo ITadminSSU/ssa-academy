@@ -5,6 +5,7 @@ namespace Modules\PaymentGateways\Http\Controllers\Payment;
 use App\Enums\CourseBillingModel;
 use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
+use App\Models\Course\CourseCoupon;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
@@ -211,6 +212,10 @@ class StripeController extends Controller
 
         $balance = $this->launchOffer->balanceAmount($course);
         $trialEnd = $this->launchOffer->subscriptionTrialEndsAt($course);
+        $coupon = $request->coupon
+            ? CourseCoupon::query()->where('code', $request->coupon)->isValid((string) $course->id)->first()
+            : null;
+        $pricing = $this->payment->calculateCustomPrice($balance, $coupon);
         if ($trialEnd->lessThanOrEqualTo(now()->addHour())) {
             $trialEnd = now()->addMonth();
         }
@@ -229,7 +234,7 @@ class StripeController extends Controller
                         'product_data' => [
                             'name' => 'Launch balance — '.$course->title,
                         ],
-                        'unit_amount' => (int) round($balance * 100),
+                        'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
                 ],
@@ -247,6 +252,7 @@ class StripeController extends Controller
                 'item_id' => (string) $course->id,
                 'billing_model' => CourseBillingModel::SUBSCRIPTION->value,
                 'launch_offer_mode' => 'balance',
+                'coupon_code' => $coupon?->code,
             ],
             'subscription_data' => [
                 'trial_end' => $trialEnd->timestamp,
@@ -254,6 +260,7 @@ class StripeController extends Controller
                     'user_id' => (string) $user->id,
                     'course_id' => (string) $course->id,
                     'launch_offer_mode' => 'balance',
+                    'coupon_code' => $coupon?->code,
                 ],
             ],
         ]);
@@ -267,8 +274,8 @@ class StripeController extends Controller
                 'billing_model' => CourseBillingModel::SUBSCRIPTION->value,
                 'launch_offer_mode' => 'balance',
                 'stripe_id' => $response->id,
-                'tax_amount' => 0,
-                'coupon_code' => null,
+                'tax_amount' => $pricing['taxAmount'],
+                'coupon_code' => $coupon?->code,
             ],
         ]);
 
@@ -284,6 +291,10 @@ class StripeController extends Controller
         }
 
         $upfront = $this->launchOffer->fullUpfrontPrice($course);
+        $coupon = $request->coupon
+            ? CourseCoupon::query()->where('code', $request->coupon)->isValid((string) $course->id)->first()
+            : null;
+        $pricing = $this->payment->calculateCustomPrice($upfront, $coupon);
 
         $this->stripeCustomer->configureStripe();
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
@@ -299,7 +310,7 @@ class StripeController extends Controller
                         'product_data' => [
                             'name' => 'Course enrollment — '.$course->title,
                         ],
-                        'unit_amount' => (int) round($upfront * 100),
+                        'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
                 ],
@@ -317,6 +328,7 @@ class StripeController extends Controller
                 'item_id' => (string) $course->id,
                 'billing_model' => CourseBillingModel::SUBSCRIPTION->value,
                 'launch_offer_mode' => 'full_launch',
+                'coupon_code' => $coupon?->code,
             ],
             'subscription_data' => [
                 // First monthly charge ~30 days after enrollment (tax-inclusive $6).
@@ -325,6 +337,7 @@ class StripeController extends Controller
                     'user_id' => (string) $user->id,
                     'course_id' => (string) $course->id,
                     'launch_offer_mode' => 'full_launch',
+                    'coupon_code' => $coupon?->code,
                 ],
             ],
         ]);
@@ -338,8 +351,8 @@ class StripeController extends Controller
                 'billing_model' => CourseBillingModel::SUBSCRIPTION->value,
                 'launch_offer_mode' => 'full_launch',
                 'stripe_id' => $response->id,
-                'tax_amount' => 0,
-                'coupon_code' => null,
+                'tax_amount' => $pricing['taxAmount'],
+                'coupon_code' => $coupon?->code,
             ],
         ]);
 
@@ -536,7 +549,7 @@ class StripeController extends Controller
                     $course,
                     'stripe',
                     (string) ($order->payment_intent ?: $order->subscription ?: $order->id),
-                    $this->launchOffer->balanceAmount($course),
+                    ($order->amount_total ?? 0) / 100,
                 );
 
                 if ($order->mode === 'subscription' && ! empty($order->subscription)) {
