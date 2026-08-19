@@ -2,8 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from '@tanstack/react-table';
 import { format, isFuture, isPast, parseISO } from 'date-fns';
-import { Copy, Pencil } from 'lucide-react';
+import { Copy, Eye, Pencil } from 'lucide-react';
 import CouponForm from './coupon-form';
+import CouponUsagesModal from './coupon-usages-modal';
 
 interface CouponTableColumnsProps {
    courses: Course[];
@@ -95,7 +96,15 @@ const CouponTableColumns = ({ courses }: CouponTableColumnsProps): ColumnDef<Cou
             const coupon = row.original;
 
             return (
-               <div className="flex items-center justify-end py-2 pr-4">
+               <div className="flex items-center justify-end gap-1 py-2 pr-4">
+                  <CouponUsagesModal
+                     coupon={coupon}
+                     handler={
+                        <Button size="icon" variant="ghost" className="h-8 w-8" title="View usages">
+                           <Eye className="h-4 w-4" />
+                        </Button>
+                     }
+                  />
                   <CouponForm
                      title="Edit Coupon"
                      coupon={coupon}

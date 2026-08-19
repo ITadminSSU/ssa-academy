@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCoupon extends Model
 {
@@ -42,6 +44,11 @@ class CourseCoupon extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function usages(): HasMany
+    {
+        return $this->hasMany(PaymentHistory::class, 'coupon', 'code');
     }
 
     /**

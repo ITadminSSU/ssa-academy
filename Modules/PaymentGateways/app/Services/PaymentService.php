@@ -166,6 +166,10 @@ class PaymentService
             'billing_type' => PaymentBillingType::ONE_TIME,
             ...$historyData,
         ]);
+
+        if ($couponCode) {
+            CourseCoupon::where('code', $couponCode)->increment('used_count');
+        }
     }
 
     public function recordSubscriptionPayment(
