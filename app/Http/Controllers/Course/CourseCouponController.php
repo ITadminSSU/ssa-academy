@@ -292,22 +292,22 @@ class CourseCouponController extends Controller
          'course_id' => 'nullable|exists:courses,id',
       ]);
 
-      $coupon = $this->courseCoupon->getCourseValidCoupon(
+      $resolved = $this->courseCoupon->resolveCouponForCheckout(
          (string) ($request->course_id ?? ''),
          $request->code,
          $request->user()?->id,
       );
 
-      if (!$coupon) {
+      if (! $resolved['coupon']) {
          return response()->json([
             'valid' => false,
-            'message' => 'Invalid coupon code, or you have already used this coupon.',
+            'message' => $resolved['error'] ?? 'Invalid coupon code.',
          ], 404);
       }
 
       return response()->json([
          'valid' => true,
-         'coupon' => $coupon,
+         'coupon' => $resolved['coupon'],
       ]);
    }
 

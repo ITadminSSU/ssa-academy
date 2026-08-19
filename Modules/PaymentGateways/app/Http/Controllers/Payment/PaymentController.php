@@ -89,7 +89,22 @@ class PaymentController extends Controller
         }
 
         $currency = app('system_settings')->fields['selling_currency'] ?? 'USD';
-        $checkoutItem = $this->payment->getCheckoutItem($item_type, $id, $request->coupon);
+        $submittedCouponCode = $request->filled('coupon') ? trim($request->coupon) : null;
+        $coupon = null;
+        $couponError = null;
+
+        if ($submittedCouponCode && $item_type === 'course') {
+            $resolved = $this->courseCoupon->resolveCouponForCheckout($id, $submittedCouponCode, $user->id);
+            $coupon = $resolved['coupon'];
+            $couponError = $resolved['error'];
+        }
+
+        $checkoutItem = $this->payment->getCheckoutItem($item_type, $id, $coupon?->code);
+
+        if ($submittedCouponCode && $checkoutMode === 'deposit') {
+            $coupon = null;
+            $couponError = 'Coupons cannot be applied to pre-registration deposits.';
+        }
 
         if ($checkoutMode === 'deposit' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['deposit_amount'];
@@ -104,9 +119,6 @@ class PaymentController extends Controller
             ];
         } elseif ($checkoutMode === 'balance' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['balance_amount'];
-            $coupon = $request->coupon
-                ? $this->courseCoupon->getCourseValidCoupon($id, $request->coupon, $user->id)
-                : null;
             $checkoutItem = [
                 ...$checkoutItem,
                 ...$this->payment->calculateCustomPrice($amount, $coupon),
@@ -114,9 +126,6 @@ class PaymentController extends Controller
             ];
         } elseif ($checkoutMode === 'full_launch' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['full_upfront_price'];
-            $coupon = $request->coupon
-                ? $this->courseCoupon->getCourseValidCoupon($id, $request->coupon, $user->id)
-                : null;
             $checkoutItem = [
                 ...$checkoutItem,
                 ...$this->payment->calculateCustomPrice($amount, $coupon),
@@ -124,12 +133,14 @@ class PaymentController extends Controller
             ];
         } elseif ($checkoutMode === 'upfront_subscription' && isset($course)) {
             $amount = (float) ($course->price ?? 0);
-            $coupon = $request->coupon
-                ? $this->courseCoupon->getCourseValidCoupon($id, $request->coupon, $user->id)
-                : null;
             $checkoutItem = [
                 ...$checkoutItem,
                 ...$this->payment->calculateCustomPrice($amount, $coupon),
+                'coupon' => $coupon,
+            ];
+        } elseif ($submittedCouponCode && $item_type === 'course' && $coupon) {
+            $checkoutItem = [
+                ...$checkoutItem,
                 'coupon' => $coupon,
             ];
         }
@@ -137,7 +148,8 @@ class PaymentController extends Controller
         return view('paymentgateways::payment', [
             'id' => $id,
             'from' => $from,
-            'coupon' => $request->coupon,
+            'couponInput' => $submittedCouponCode,
+            'couponError' => $couponError,
             'item_type' => $item_type,
             'payments' => $payments,
             'currency' => $currency,

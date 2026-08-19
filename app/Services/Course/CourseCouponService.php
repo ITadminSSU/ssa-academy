@@ -7,6 +7,7 @@ use App\Models\Course\CourseCoupon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCouponService
 {
@@ -26,11 +27,73 @@ class CourseCouponService
 
    public function getCourseValidCoupon(string $courseId, string $code, int|string|null $userId = null): ?CourseCoupon
    {
+      return $this->resolveCouponForCheckout($courseId, $code, $userId)['coupon'];
+   }
+
+   /**
+    * @return array{coupon: ?CourseCoupon, error: ?string}
+    */
+   public function resolveCouponForCheckout(string $courseId, string $code, int|string|null $userId = null): array
+   {
       $code = strtoupper(trim($code));
 
-      return CourseCoupon::where('code', $code)
-         ->isValid($courseId ?: null, $userId)
+      if ($code === '') {
+         return ['coupon' => null, 'error' => null];
+      }
+
+      $coupon = CourseCoupon::where('code', $code)->first();
+
+      if (! $coupon) {
+         return ['coupon' => null, 'error' => 'Invalid coupon code.'];
+      }
+
+      if ($userId !== null && $coupon->isRedeemedByUser($userId)) {
+         return [
+            'coupon' => null,
+            'error' => $this->alreadyUsedMessage($coupon, $userId, $courseId),
+         ];
+      }
+
+      if (! $coupon->isValid()) {
+         return ['coupon' => null, 'error' => 'This coupon is not valid or has expired.'];
+      }
+
+      if ($courseId !== '' && $coupon->course_id && (string) $coupon->course_id !== (string) $courseId) {
+         return ['coupon' => null, 'error' => 'This coupon is not valid for this course.'];
+      }
+
+      return ['coupon' => $coupon, 'error' => null];
+   }
+
+   protected function alreadyUsedMessage(CourseCoupon $coupon, int|string $userId, string $courseId): string
+   {
+      $priorCourse = $this->priorRedemptionCourseForUser($coupon, $userId);
+
+      if ($priorCourse && (string) $priorCourse->id !== (string) $courseId) {
+         return 'You already used this voucher on "'.$priorCourse->title.'". Each student can only use a code once.';
+      }
+
+      if ($priorCourse) {
+         return 'You have already used this voucher for this course.';
+      }
+
+      return 'You have already used this voucher.';
+   }
+
+   protected function priorRedemptionCourseForUser(CourseCoupon $coupon, int|string $userId): ?Course
+   {
+      $history = PaymentHistory::query()
+         ->where('user_id', $userId)
+         ->where('coupon', $coupon->code)
+         ->where('purchase_type', Course::class)
+         ->latest('id')
          ->first();
+
+      if (! $history?->purchase_id) {
+         return null;
+      }
+
+      return Course::query()->find($history->purchase_id);
    }
 
    public function getCourseValidCoupons(string $courseId): Collection

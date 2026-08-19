@@ -140,6 +140,12 @@
                </a>
             </div>
          @else
+            @if (! empty($couponError))
+               <div class="rounded-lg border border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {{ $couponError }}
+               </div>
+            @endif
+
             <form
                method="GET"
                action="{{ route('payments.index', ['from' => 'web', 'item' => $item_type, 'id' => $item->id]) }}"
@@ -150,9 +156,9 @@
                      id="coupon"
                      type="text"
                      name="coupon"
-                     class="border-border bg-background focus:border-primary focus:ring-primary/40 h-10 w-full rounded-md border px-4 py-3 text-base focus:outline-none focus:ring-2"
+                     class="@if (! empty($couponError)) border-amber-500 focus:border-amber-500 focus:ring-amber-500/40 @else border-border focus:border-primary focus:ring-primary/40 @endif bg-background h-10 w-full rounded-md border px-4 py-3 text-base focus:outline-none focus:ring-2"
                      placeholder="Enter coupon code if you have one"
-                     value="{{ old('coupon') }}"
+                     value="{{ $couponInput ?? old('coupon') }}"
                   >
                </div>
 
