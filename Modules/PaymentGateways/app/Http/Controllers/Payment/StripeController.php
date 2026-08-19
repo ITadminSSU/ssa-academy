@@ -5,7 +5,10 @@ namespace Modules\PaymentGateways\Http\Controllers\Payment;
 use App\Enums\CourseBillingModel;
 use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
+use App\Models\Course\CourseEnrollment;
 use App\Services\Course\CourseCouponService;
+use App\Services\Course\CourseEnrollmentWelcomeMailService;
+use App\Services\Course\CourseSectionService;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
@@ -578,6 +581,12 @@ class StripeController extends Controller
             ) {
                 $this->subscriptionService->activateFromCheckoutSession($order);
 
+                if ($course) {
+                    $this->sendWelcomeEmailForCourse($user, $course);
+                    app(CourseSectionService::class)
+                        ->initWatchHistory((string) $course->id, 'lesson', (string) $user->id);
+                }
+
                 if ($from == 'api') {
                     return redirect()->to(env('FRONTEND_URL').'/student');
                 }
@@ -617,6 +626,10 @@ class StripeController extends Controller
                 $coupon_code
             );
 
+            if ($course) {
+                $this->sendWelcomeEmailForCourse($user, $course);
+            }
+
             if ($from == 'api') {
                 return redirect()->to(env('FRONTEND_URL').'/student');
             }
@@ -655,5 +668,20 @@ class StripeController extends Controller
         return redirect()
             ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
             ->with('error', 'Your payment have failed, please try again later.');
+    }
+
+    protected function sendWelcomeEmailForCourse($user, Course $course): void
+    {
+        $enrollment = CourseEnrollment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->with(['user', 'course.instructor.user'])
+            ->first();
+
+        if (! $enrollment) {
+            return;
+        }
+
+        app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
     }
 }

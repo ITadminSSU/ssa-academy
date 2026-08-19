@@ -182,7 +182,7 @@ class SubscriptionService
                 'suspended_at' => $accessStatus === EnrollmentAccessStatus::SUSPENDED ? now() : null,
             ]);
 
-            $enrollment = $enrollment->fresh();
+            $enrollment = $enrollment->fresh(['user', 'course.instructor.user']);
             app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
 
             return $enrollment;
