@@ -178,19 +178,32 @@ class DashboardWelcomeOverlay
             parse_str($parts['query'], $query);
         }
 
+        $host = strtolower((string) $parts['host']);
+        $isBunny = str_contains($host, 'mediadelivery.net');
+        $isYouTube = str_contains($host, 'youtube.com') || str_contains($host, 'youtu.be');
+
         if ($mutedAutoplay) {
             $query['autoplay'] = 'true';
             $query['muted'] = 'true';
-            // YouTube
-            $query['mute'] = '1';
-            $query['playsinline'] = '1';
+
+            if ($isYouTube) {
+                $query['mute'] = '1';
+                $query['playsinline'] = '1';
+            }
         }
 
-        $query['preload'] = $query['preload'] ?? 'true';
-        $query['playerjs'] = 'true';
+        // Bunny Stream rejects YouTube-style playsinline=1 / mute=1.
+        if ($isBunny) {
+            unset($query['playsinline'], $query['mute']);
+            $query['preload'] = $query['preload'] ?? 'true';
+            $query['responsive'] = $query['responsive'] ?? 'true';
+            $query['playerjs'] = 'true';
+        } else {
+            $query['preload'] = $query['preload'] ?? 'true';
+            $query['playerjs'] = $query['playerjs'] ?? 'true';
+        }
 
         $scheme = $parts['scheme'] ?? 'https';
-        $host = $parts['host'];
         $port = isset($parts['port']) ? ':'.$parts['port'] : '';
         $path = $parts['path'] ?? '';
         $fragment = isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
