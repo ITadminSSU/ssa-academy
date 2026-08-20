@@ -3,12 +3,14 @@
 namespace App\Services\Course;
 
 use App\Enums\CourseStatusType;
+use App\Enums\EnrollmentAccessStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Notifications\CourseApprovalNotification;
 use App\Services\MediaService;
+use App\Services\Payment\LaunchOfferService;
 use App\Support\Database\SsuAcademyTableRegistry;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -72,10 +74,16 @@ class CourseService extends MediaService
                }
             }
 
+            $previousLaunchAt = $course->launch_at?->toIso8601String();
+
             $course->fill(collect($data)->except(['tab'])->all());
             $course->status = $status;
             $course->slug = Str::slug($data['title']);
             $course->save();
+
+            if ($previousLaunchAt !== $course->fresh()?->launch_at?->toIso8601String()) {
+               $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);
+            }
 
             $this->notifyLaunchWaitlistIfPublished($course, $wasComingSoon, $status);
             break;
@@ -101,6 +109,8 @@ class CourseService extends MediaService
                'launch_subscription_trial_ends_at' => $data['launch_subscription_trial_ends_at'] ?? null,
                'launch_full_upfront_price' => $data['launch_full_upfront_price'] ?? null,
             ])->save();
+
+            $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);
             break;
 
          case 'info':
@@ -139,6 +149,7 @@ class CourseService extends MediaService
 
          case 'status':
             $wasComingSoon = $course->isComingSoon();
+            $previousLaunchAt = $course->launch_at?->toIso8601String();
             $payload = collect($data)->only(['status', 'launch_at', 'feedback'])->all();
 
             if (($payload['status'] ?? null) === CourseStatusType::APPROVED->value && empty($payload['launch_at'])) {
@@ -146,6 +157,10 @@ class CourseService extends MediaService
             }
 
             $course->forceFill($payload)->save();
+
+            if ($previousLaunchAt !== $course->fresh()?->launch_at?->toIso8601String()) {
+               $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);
+            }
 
             $this->notifyLaunchWaitlistIfPublished(
                $course,
@@ -167,6 +182,28 @@ class CourseService extends MediaService
       }
 
       return $course->fresh() ?? $course;
+   }
+
+   /**
+    * Keep reserved-seat balance open/deadline dates aligned with Basic-tab launch_at
+    * (and current grace days) for every course.
+    */
+   private function syncReservedSeatBalanceDates(Course $course): void
+   {
+      $launchOffer = app(LaunchOfferService::class);
+
+      if (! $course->launch_at && ! $launchOffer->isConfigured($course)) {
+         return;
+      }
+
+      CourseEnrollment::query()
+         ->where('course_id', $course->id)
+         ->where('access_status', EnrollmentAccessStatus::RESERVED->value)
+         ->whereNull('balance_paid_at')
+         ->update([
+            'balance_due_at' => $launchOffer->balanceDueAt($course),
+            'balance_deadline_at' => $launchOffer->balanceDeadlineAt($course),
+         ]);
    }
 
    private function notifyLaunchWaitlistIfPublished(Course $course, bool $wasComingSoon, string $newStatus): void

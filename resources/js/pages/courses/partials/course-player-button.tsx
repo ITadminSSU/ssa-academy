@@ -139,8 +139,8 @@ const ReservedSeatPanel = () => {
    const { course, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
    const balanceDueLabel =
-      formatLaunchOfferDateTime(offer.balanceDueAt) ??
       formatLaunchOfferDateTime(course.launch_at) ??
+      formatLaunchOfferDateTime(offer.balanceDueAt) ??
       'launch day';
 
    return (
