@@ -113,8 +113,10 @@ class DashboardWelcomeOverlay
         $videoType = $overlay['video_type'];
         $videoUrl = $overlay['video_url'];
 
-        if ($videoType === self::VIDEO_EMBED && $videoUrl !== '') {
-            $videoUrl = self::resolvePlayableEmbedUrl($videoUrl, (bool) $overlay['autoplay_muted']);
+        if ($videoType !== self::VIDEO_NONE && $videoUrl !== '') {
+            $resolved = self::resolveWelcomeVideo($videoType, $videoUrl);
+            $videoType = $resolved['video_type'];
+            $videoUrl = $resolved['video_url'];
         }
 
         return [
@@ -131,25 +133,70 @@ class DashboardWelcomeOverlay
     }
 
     /**
-     * Fresh Bunny signed embed (when token auth is on) + muted autoplay query params.
+     * Resolve Bunny/YouTube embed for the welcome overlay.
+     *
+     * Prefer native MP4 (tap-to-unmute works). Fall back to an unmuted embed URL
+     * that the overlay only loads after the user taps.
+     *
+     * @return array{video_type: string, video_url: string}
      */
-    public static function resolvePlayableEmbedUrl(string $url, bool $mutedAutoplay = true): string
+    public static function resolveWelcomeVideo(string $videoType, string $videoUrl): array
     {
-        $url = trim($url);
-        $videoId = self::extractBunnyVideoId($url);
+        $videoType = trim($videoType) ?: self::VIDEO_NONE;
+        $videoUrl = trim($videoUrl);
+
+        if ($videoUrl === '' || $videoType === self::VIDEO_NONE) {
+            return ['video_type' => self::VIDEO_NONE, 'video_url' => ''];
+        }
+
+        if ($videoType === self::VIDEO_FILE) {
+            return [
+                'video_type' => self::VIDEO_FILE,
+                'video_url' => self::resolvePosterUrl($videoUrl),
+            ];
+        }
+
+        // Embed (or Bunny URL stored as embed)
+        $videoId = self::extractBunnyVideoId($videoUrl);
 
         if ($videoId !== null) {
             try {
                 $bunny = app(BunnyStreamService::class);
                 if ($bunny->isEnabled()) {
-                    $url = $bunny->signedEmbedUrl($videoId, now()->addHours(12));
+                    $mp4 = $bunny->directPlayMp4Url($videoId, '720p')
+                        ?? $bunny->directPlayMp4Url($videoId, '480p');
+
+                    if ($mp4) {
+                        return [
+                            'video_type' => self::VIDEO_FILE,
+                            'video_url' => $mp4,
+                        ];
+                    }
+
+                    return [
+                        'video_type' => self::VIDEO_EMBED,
+                        'video_url' => $bunny->signedEmbedUrl($videoId, now()->addHours(12)),
+                    ];
                 }
             } catch (\Throwable) {
-                // Fall through to the stored URL.
+                // Fall through.
             }
         }
 
-        return self::withMutedAutoplayEmbedParams($url, $mutedAutoplay);
+        return [
+            'video_type' => self::VIDEO_EMBED,
+            'video_url' => self::withMutedAutoplayEmbedParams($videoUrl, false),
+        ];
+    }
+
+    /**
+     * @deprecated Prefer resolveWelcomeVideo()
+     */
+    public static function resolvePlayableEmbedUrl(string $url, bool $mutedAutoplay = true): string
+    {
+        $resolved = self::resolveWelcomeVideo(self::VIDEO_EMBED, $url);
+
+        return $resolved['video_url'];
     }
 
     public static function extractBunnyVideoId(string $url): ?string
@@ -190,6 +237,9 @@ class DashboardWelcomeOverlay
                 $query['mute'] = '1';
                 $query['playsinline'] = '1';
             }
+        } else {
+            $query['autoplay'] = 'true';
+            $query['muted'] = 'false';
         }
 
         // Bunny Stream rejects YouTube-style playsinline=1 / mute=1.

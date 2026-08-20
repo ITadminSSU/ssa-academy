@@ -92,15 +92,10 @@ class DashboardWelcomeCampaign extends Model implements HasMedia
      */
     public function toPublicPayload(): array
     {
-        $videoType = $this->video_type ?? DashboardWelcomeOverlay::VIDEO_NONE;
-        $videoUrl = trim((string) $this->video_url);
-
-        if ($videoType === DashboardWelcomeOverlay::VIDEO_EMBED && $videoUrl !== '') {
-            // Always muted autoplay — browsers block unmuted autoplay; overlay shows Tap for sound.
-            $videoUrl = DashboardWelcomeOverlay::resolvePlayableEmbedUrl($videoUrl, true);
-        } elseif ($videoType === DashboardWelcomeOverlay::VIDEO_FILE && $videoUrl !== '') {
-            $videoUrl = DashboardWelcomeOverlay::resolvePosterUrl($videoUrl);
-        }
+        $resolved = DashboardWelcomeOverlay::resolveWelcomeVideo(
+            (string) ($this->video_type ?? DashboardWelcomeOverlay::VIDEO_NONE),
+            (string) ($this->video_url ?? ''),
+        );
 
         return [
             'campaign_id' => $this->id,
@@ -112,8 +107,8 @@ class DashboardWelcomeCampaign extends Model implements HasMedia
                 ? (string) $this->cta_url
                 : '/dashboard/browse/all',
             'poster_url' => DashboardWelcomeOverlay::resolvePosterUrl((string) ($this->poster_url ?? '')),
-            'video_type' => $videoType,
-            'video_url' => $videoUrl,
+            'video_type' => $resolved['video_type'],
+            'video_url' => $resolved['video_url'],
             'autoplay_muted' => (bool) $this->autoplay_muted,
             'show_frequency' => $this->show_frequency ?: self::FREQUENCY_UNTIL_DISMISSED,
         ];

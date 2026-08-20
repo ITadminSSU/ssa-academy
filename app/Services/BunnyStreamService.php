@@ -123,17 +123,36 @@ class BunnyStreamService
     public function signedEmbedUrl(string $videoId, ?\DateTimeInterface $expiresAt = null): string
     {
         $baseUrl = 'https://iframe.mediadelivery.net/embed/' . $this->libraryId() . '/' . $videoId;
-        $query = 'autoplay=true&muted=true&preload=true&responsive=true&playerjs=true';
+        // Do not start muted — welcome overlay starts the iframe only after a user tap.
+        $query = 'autoplay=true&muted=false&preload=true&responsive=true&playerjs=true';
 
         if ($this->tokenAuthKey() === '') {
             return $baseUrl . '?' . $query;
         }
 
-        $expiresAt ??= now()->addHour();
+        $expiresAt ??= now()->addHours(12);
         $expires = $expiresAt->getTimestamp();
         $token = $this->signToken($videoId, $expires);
 
         return $baseUrl . '?token=' . $token . '&expires=' . $expires . '&' . $query;
+    }
+
+    /**
+     * Direct MP4 for native <video> playback (reliable tap-to-unmute).
+     * Requires Stream CDN hostname (e.g. vz-xxxxx.b-cdn.net).
+     */
+    public function directPlayMp4Url(string $videoId, string $quality = '720p'): ?string
+    {
+        $host = preg_replace('#^https?://#i', '', $this->cdnHostname());
+        $host = rtrim((string) $host, '/');
+
+        if ($host === '' || $videoId === '') {
+            return null;
+        }
+
+        $quality = preg_replace('/[^0-9p]/', '', $quality) ?: '720p';
+
+        return 'https://'.$host.'/'.$videoId.'/play_'.$quality.'.mp4';
     }
 
     public function formatDuration(int $seconds): string

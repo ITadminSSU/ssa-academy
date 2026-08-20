@@ -213,12 +213,12 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * @return array{enabled: bool, library_id: string}
+     * @return array{enabled: bool, library_id: string, cdn_hostname: string}
      */
     private function bunnyStreamPayload(): array
     {
         if (!Schema::hasTable('settings')) {
-            return ['enabled' => false, 'library_id' => ''];
+            return ['enabled' => false, 'library_id' => '', 'cdn_hostname' => ''];
         }
 
         $bunnySetting = $this->settingsService->getSetting(['type' => 'bunny_stream']);
@@ -231,6 +231,7 @@ class HandleInertiaRequests extends Middleware
         return [
             'enabled' => $bunny->isEnabled(),
             'library_id' => $bunny->isEnabled() ? $bunny->libraryId() : '',
+            'cdn_hostname' => $bunny->isEnabled() ? $bunny->cdnHostname() : '',
         ];
     }
 }
