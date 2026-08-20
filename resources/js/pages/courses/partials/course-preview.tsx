@@ -141,7 +141,7 @@ const CoursePreview = () => {
                         href="https://www.facebook.com/share/g/14ttXqLttek/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary font-medium underline underline-offset-2 hover:opacity-90"
+                        className="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700"
                      >
                         official Facebook page
                      </a>{' '}
