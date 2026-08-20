@@ -129,7 +129,7 @@ const CoursePreview = () => {
                      {offer.depositAmount} today, then pay {currency?.symbol}
                      {offer.balanceAmount} at launch for full access. This includes your first month of the Project
                      Plans Subscription for FREE. After your free month, the subscription is {currency?.symbol}
-                     {offer.subscriptionPrice}/month. You can cancel anytime.
+                     {offer.subscriptionPrice}/month. Cancel project plans subscription anytime.
                   </p>
                   <p>
                      Please note: The {currency?.symbol}
