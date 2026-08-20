@@ -1,6 +1,7 @@
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import Switch from '@/components/switch';
+import BunnyVideoUploaderInput from '@/components/bunny-video-uploader-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -72,6 +73,10 @@ const CampaignForm = ({
    appTimezone?: string;
    onDone: () => void;
 }) => {
+   const { bunnyStream } = usePage<SharedData>().props;
+   const bunnyEnabled = Boolean(bunnyStream?.enabled && bunnyStream?.library_id);
+   const [bunnyUploadError, setBunnyUploadError] = useState('');
+
    const { data, setData, post, processing, errors, reset } = useForm({
       ...emptyForm,
       title: campaign?.title ?? emptyForm.title,
@@ -246,6 +251,9 @@ const CampaignForm = ({
                   if (value === 'none') {
                      setData('video_url', '');
                      setData('new_video', null);
+                     setData('clear_video', true);
+                  } else {
+                     setData('clear_video', false);
                   }
                }}
             >
@@ -254,47 +262,97 @@ const CampaignForm = ({
                </SelectTrigger>
                <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="file">Upload / direct file URL</SelectItem>
-                  <SelectItem value="embed">Embed URL (Bunny / YouTube)</SelectItem>
+                  <SelectItem value="file">{bunnyEnabled ? 'Upload to Bunny Stream' : 'Upload / direct file URL'}</SelectItem>
+                  <SelectItem value="embed">Paste embed URL (Bunny / YouTube)</SelectItem>
                </SelectContent>
             </Select>
             <InputError message={errors.video_type} />
 
-            {data.video_type !== 'none' && (
+            {data.video_type === 'embed' && (
                <>
                   <Input
                      value={data.video_url}
                      onChange={(e) => setData('video_url', e.target.value)}
-                     placeholder={data.video_type === 'file' ? 'Optional direct MP4/WebM URL' : 'https://player.mediadelivery.net/embed/...'}
+                     placeholder="https://player.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
+                  />
+                  <p className="text-muted-foreground text-xs">
+                     Prefer Bunny: upload below (or in Bunny dashboard), then the embed URL is saved automatically.
+                  </p>
+                  <InputError message={errors.video_url} />
+               </>
+            )}
+
+            {data.video_type === 'file' && bunnyEnabled && (
+               <>
+                  <BunnyVideoUploaderInput
+                     onFileUploaded={(fileData) => {
+                        const libraryId = bunnyStream?.library_id || '';
+                        const embedUrl = `https://player.mediadelivery.net/embed/${libraryId}/${fileData.bunny_video_id}`;
+                        setBunnyUploadError('');
+                        setData('video_type', 'embed');
+                        setData('video_url', embedUrl);
+                        setData('new_video', null);
+                        setData('clear_video', false);
+                     }}
+                     onError={(message) => {
+                        setBunnyUploadError(message);
+                     }}
+                  />
+                  {bunnyUploadError ? <InputError message={bunnyUploadError} /> : null}
+                  {data.video_url && (
+                     <p className="text-muted-foreground break-all text-xs">Saved embed: {data.video_url}</p>
+                  )}
+                  <Button
+                     type="button"
+                     variant="outline"
+                     size="sm"
+                     onClick={() => {
+                        setData('new_video', null);
+                        setData('clear_video', true);
+                        setData('video_url', '');
+                        setData('video_type', 'none');
+                     }}
+                  >
+                     Remove video
+                  </Button>
+               </>
+            )}
+
+            {data.video_type === 'file' && !bunnyEnabled && (
+               <>
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                     Bunny Stream is not enabled. Enable it under Settings → Bunny Stream, or paste a public embed URL
+                     instead. Direct file uploads use server storage and often return 403 on private disks.
+                  </p>
+                  <Input
+                     value={data.video_url}
+                     onChange={(e) => setData('video_url', e.target.value)}
+                     placeholder="Optional direct MP4/WebM URL"
                   />
                   <InputError message={errors.video_url} />
-                  {data.video_type === 'file' && (
-                     <>
-                        <Input
-                           type="file"
-                           accept="video/mp4,video/webm,video/quicktime"
-                           onChange={(e) => {
-                              setData('new_video', e.target.files?.[0] ?? null);
-                              setData('clear_video', false);
-                           }}
-                        />
-                        <InputError message={errors.new_video} />
-                        {(data.video_url || campaign?.video_url) && (
-                           <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                 setData('new_video', null);
-                                 setData('clear_video', true);
-                                 setData('video_url', '');
-                                 setData('video_type', 'none');
-                              }}
-                           >
-                              Remove video
-                           </Button>
-                        )}
-                     </>
+                  <Input
+                     type="file"
+                     accept="video/mp4,video/webm,video/quicktime"
+                     onChange={(e) => {
+                        setData('new_video', e.target.files?.[0] ?? null);
+                        setData('clear_video', false);
+                     }}
+                  />
+                  <InputError message={errors.new_video} />
+                  {(data.video_url || campaign?.video_url) && (
+                     <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                           setData('new_video', null);
+                           setData('clear_video', true);
+                           setData('video_url', '');
+                           setData('video_type', 'none');
+                        }}
+                     >
+                        Remove video
+                     </Button>
                   )}
                </>
             )}

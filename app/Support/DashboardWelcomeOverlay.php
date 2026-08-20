@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Services\BunnyStreamService;
+
 class DashboardWelcomeOverlay
 {
     public const VIDEO_NONE = 'none';
@@ -112,7 +114,7 @@ class DashboardWelcomeOverlay
         $videoUrl = $overlay['video_url'];
 
         if ($videoType === self::VIDEO_EMBED && $videoUrl !== '') {
-            $videoUrl = self::withMutedAutoplayEmbedParams($videoUrl, (bool) $overlay['autoplay_muted']);
+            $videoUrl = self::resolvePlayableEmbedUrl($videoUrl, (bool) $overlay['autoplay_muted']);
         }
 
         return [
@@ -126,6 +128,41 @@ class DashboardWelcomeOverlay
             'video_url' => $videoUrl,
             'autoplay_muted' => (bool) $overlay['autoplay_muted'],
         ];
+    }
+
+    /**
+     * Fresh Bunny signed embed (when token auth is on) + muted autoplay query params.
+     */
+    public static function resolvePlayableEmbedUrl(string $url, bool $mutedAutoplay = true): string
+    {
+        $url = trim($url);
+        $videoId = self::extractBunnyVideoId($url);
+
+        if ($videoId !== null) {
+            try {
+                $bunny = app(BunnyStreamService::class);
+                if ($bunny->isEnabled()) {
+                    $url = $bunny->signedEmbedUrl($videoId, now()->addHours(12));
+                }
+            } catch (\Throwable) {
+                // Fall through to the stored URL.
+            }
+        }
+
+        return self::withMutedAutoplayEmbedParams($url, $mutedAutoplay);
+    }
+
+    public static function extractBunnyVideoId(string $url): ?string
+    {
+        if (preg_match('#player\.mediadelivery\.net/embed/[^/]+/([a-f0-9\-]+)#i', $url, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('#iframe\.mediadelivery\.net/embed/[^/]+/([a-f0-9\-]+)#i', $url, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
     }
 
     public static function withMutedAutoplayEmbedParams(string $url, bool $mutedAutoplay = true): string

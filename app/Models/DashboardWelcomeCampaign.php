@@ -96,7 +96,7 @@ class DashboardWelcomeCampaign extends Model implements HasMedia
         $videoUrl = trim((string) $this->video_url);
 
         if ($videoType === DashboardWelcomeOverlay::VIDEO_EMBED && $videoUrl !== '') {
-            $videoUrl = DashboardWelcomeOverlay::withMutedAutoplayEmbedParams(
+            $videoUrl = DashboardWelcomeOverlay::resolvePlayableEmbedUrl(
                 $videoUrl,
                 (bool) $this->autoplay_muted,
             );

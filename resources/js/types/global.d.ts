@@ -59,7 +59,7 @@ export interface SharedData {
    learnerNav?: LearnerNav | null;
    branding: Branding;
    features: PlatformFeatures;
-   bunnyStream?: { enabled: boolean };
+   bunnyStream?: { enabled: boolean; library_id?: string };
    customize: boolean;
    navbar: Navbar;
    footer: Footer;
