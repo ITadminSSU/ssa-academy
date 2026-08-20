@@ -17,7 +17,13 @@ const activityIcons: Record<LearnerActivity['type'], ComponentType<{ className?:
 };
 
 const Home = () => {
-   const { courseEnrollments = [], examEnrollments = [], recentActivity = [], auth } = usePage<StudentDashboardProps>().props;
+   const {
+      courseEnrollments = [],
+      examEnrollments = [],
+      recentActivity = [],
+      isFirstDashboardVisit = false,
+      auth,
+   } = usePage<StudentDashboardProps>().props;
 
    // Enrolled courses that aren't finished yet (includes ones the learner enrolled in but hasn't opened yet).
    const activeEnrollments = courseEnrollments.filter((enrollment) => Number(enrollment.completion?.completion ?? 0) < 100);
@@ -65,7 +71,9 @@ const Home = () => {
    return (
       <div className="space-y-8">
          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Welcome back, {firstName}!</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+               {isFirstDashboardVisit ? `Welcome, ${firstName}!` : `Welcome back, ${firstName}!`}
+            </h1>
             <p className="text-muted-foreground mt-1 text-sm">Here's a quick look at where you left off and your recent progress.</p>
          </div>
 

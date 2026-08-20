@@ -65,6 +65,7 @@ export interface StudentDashboardProps extends SharedData {
    certificateTemplate?: CertificateTemplate | null;
    examCertificateTemplate?: CertificateTemplate | null;
    recentActivity?: LearnerActivity[];
+   isFirstDashboardVisit?: boolean;
    hasVerifiedEmail: boolean;
    subscriptions?: UserSubscriptionSummary[];
    canManageBilling?: boolean;

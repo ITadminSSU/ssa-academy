@@ -80,6 +80,7 @@ class StudentService extends MediaService
             $props['courseEnrollments'] = $enrollments;
             $props['examEnrollments'] = $this->examEnrollment->getEnrollments(['user_id' => $user->id]);
             $props['recentActivity'] = $this->getLearnerActivity($user);
+            $props['isFirstDashboardVisit'] = $this->markFirstDashboardVisit($user);
             break;
 
          case 'courses':
@@ -207,6 +208,20 @@ class StudentService extends MediaService
       }
 
       return $props;
+   }
+
+   /**
+    * First Home tab visit shows "Welcome"; later visits show "Welcome back".
+    */
+   private function markFirstDashboardVisit(User $user): bool
+   {
+      if ($user->dashboard_first_visited_at !== null) {
+         return false;
+      }
+
+      $user->forceFill(['dashboard_first_visited_at' => now()])->save();
+
+      return true;
    }
 
    private function hydrateCourseEnrollments($enrollments, User $user): void
