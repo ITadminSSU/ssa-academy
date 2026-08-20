@@ -138,7 +138,7 @@ const CoursePreview = () => {
                   <p>
                      Keep an eye out for discount vouchers on our{' '}
                      <a
-                        href="https://www.facebook.com/share/g/14ttXqLttek/"
+                        href="https://www.facebook.com/smartsourcingusa"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700"

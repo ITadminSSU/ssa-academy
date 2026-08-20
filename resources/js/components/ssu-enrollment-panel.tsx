@@ -26,7 +26,7 @@ const SsuEnrollmentPanel = ({ children, isSubscription = false, enrollmentNote }
       <div className="ssu-enrollment-panel space-y-4">
          <div>
             <p className="ssu-kicker mb-1">Enrollment</p>
-            <p className="text-muted-foreground text-sm">{enrollmentNote ?? defaultNote}</p>
+            <p className="text-muted-foreground text-left text-sm">{enrollmentNote ?? defaultNote}</p>
          </div>
 
          <div className="flex flex-col gap-2.5">{children ?? <EnrollOrPlayerButton />}</div>

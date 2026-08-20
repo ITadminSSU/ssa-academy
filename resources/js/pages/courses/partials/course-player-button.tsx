@@ -145,7 +145,7 @@ const ReservedSeatPanel = () => {
 
    return (
       <div className="space-y-3">
-         <p className="text-muted-foreground text-center text-sm">
+         <p className="text-muted-foreground text-left text-sm">
             Seat reserved. Full access unlocks after you pay the remaining ${offer.balanceAmount.toFixed(0)} on{' '}
             {balanceDueLabel}. Your ${offer.depositAmount.toFixed(0)} deposit is non-refundable.
          </p>
