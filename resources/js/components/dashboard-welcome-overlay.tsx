@@ -25,8 +25,9 @@ interface Props {
 
 const DashboardWelcomeOverlay = ({ overlay }: Props) => {
    const [open, setOpen] = useState(true);
-   const [muted, setMuted] = useState(overlay.autoplay_muted !== false);
-   const [showUnmutePrompt, setShowUnmutePrompt] = useState(overlay.autoplay_muted !== false);
+   // Browsers block unmuted autoplay — always start muted and require one tap for sound.
+   const [muted, setMuted] = useState(true);
+   const [showUnmutePrompt, setShowUnmutePrompt] = useState(true);
    const videoRef = useRef<HTMLVideoElement>(null);
    const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -54,13 +55,10 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
 
       const video = videoRef.current;
       video.muted = muted;
-
-      if (overlay.autoplay_muted !== false) {
-         void video.play().catch(() => {
-            // Autoplay may still be blocked; user can tap unmute/play.
-         });
-      }
-   }, [hasVideo, videoType, muted, overlay.autoplay_muted, videoUrl]);
+      void video.play().catch(() => {
+         // Autoplay may still be blocked; user can tap for sound.
+      });
+   }, [hasVideo, videoType, muted, videoUrl]);
 
    useEffect(() => {
       if (!hasVideo || videoType !== 'embed') {
@@ -88,6 +86,22 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
       );
    };
 
+   const unmuteEmbedPlayer = () => {
+      if (videoType !== 'embed' || !iframeRef.current || !window.playerjs?.Player) {
+         return false;
+      }
+
+      try {
+         const player = new window.playerjs.Player(iframeRef.current);
+         player.unmute?.();
+         player.setVolume?.(1);
+         player.play?.();
+         return true;
+      } catch {
+         return false;
+      }
+   };
+
    const unmute = async () => {
       setMuted(false);
       setShowUnmutePrompt(false);
@@ -103,14 +117,28 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
          return;
       }
 
+      if (videoType === 'embed') {
+         if (!unmuteEmbedPlayer()) {
+            window.setTimeout(() => unmuteEmbedPlayer(), 250);
+            window.setTimeout(() => unmuteEmbedPlayer(), 800);
+         }
+      }
+   };
+
+   const remute = () => {
+      setMuted(true);
+      setShowUnmutePrompt(true);
+
+      if (videoType === 'file' && videoRef.current) {
+         videoRef.current.muted = true;
+      }
+
       if (videoType === 'embed' && iframeRef.current && window.playerjs?.Player) {
          try {
             const player = new window.playerjs.Player(iframeRef.current);
-            player.unmute?.();
-            player.setVolume?.(1);
-            player.play?.();
+            player.mute?.();
          } catch {
-            // Player.js may not be ready; muted autoplay still works.
+            // Overlay will block iframe until they tap again.
          }
       }
    };
@@ -152,7 +180,7 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
                         poster={overlay.poster_url || undefined}
                         playsInline
                         muted={muted}
-                        autoPlay={overlay.autoplay_muted !== false}
+                        autoPlay
                         loop
                         controls={false}
                      />
@@ -161,45 +189,33 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
                         ref={iframeRef}
                         src={videoUrl}
                         title={overlay.headline || 'Welcome video'}
-                        className="h-full w-full border-0"
+                        className={`h-full w-full border-0 ${muted ? 'pointer-events-none' : ''}`}
                         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                         allowFullScreen
                      />
                   )}
 
-                  {showUnmutePrompt && (
+                  {showUnmutePrompt ? (
                      <button
                         type="button"
                         onClick={() => void unmute()}
-                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/35 transition hover:bg-black/45"
+                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/40 transition hover:bg-black/50"
                      >
-                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0a1d37] shadow-lg">
-                           <VolumeX className="h-7 w-7" />
+                        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-[#0a1d37] shadow-lg">
+                           <VolumeX className="h-8 w-8" />
                         </span>
-                        <span className="rounded-full bg-black/55 px-4 py-2 text-sm font-semibold tracking-wide text-white">
+                        <span className="rounded-full bg-black/60 px-5 py-2.5 text-base font-semibold tracking-wide text-white">
                            Tap for sound
                         </span>
                      </button>
-                  )}
-
-                  {!showUnmutePrompt && hasVideo && (
+                  ) : (
                      <button
                         type="button"
-                        onClick={() => {
-                           if (muted) {
-                              void unmute();
-                           } else {
-                              setMuted(true);
-                              setShowUnmutePrompt(true);
-                              if (videoRef.current) {
-                                 videoRef.current.muted = true;
-                              }
-                           }
-                        }}
+                        onClick={remute}
                         className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full bg-black/55 px-3 py-2 text-xs font-medium text-white backdrop-blur-sm"
                      >
-                        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                        {muted ? 'Unmute' : 'Mute'}
+                        <Volume2 className="h-4 w-4" />
+                        Mute
                      </button>
                   )}
                </div>
