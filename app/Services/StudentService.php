@@ -19,7 +19,6 @@ use App\Models\Course\CourseSection;
 use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
-use App\Models\Setting;
 use App\Services\MediaService;
 use App\Services\Course\CommunityDiscussionService;
 use App\Services\Course\CourseEnrollmentService;
@@ -28,7 +27,6 @@ use App\Services\Course\CoursePlayerService;
 use App\Services\Course\CourseWishlistService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionService;
-use App\Support\DashboardWelcomeOverlay;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\Certificate\Models\CertificateTemplate;
@@ -232,16 +230,18 @@ class StudentService extends MediaService
     */
    private function dashboardWelcomeOverlayPayload(User $user): ?array
    {
-      $setting = Setting::where('type', 'dashboard_welcome_overlay')->first();
-
-      return DashboardWelcomeOverlay::publicPayload(
-         $setting?->fields,
-         $user->dashboard_welcome_overlay_dismissed_version,
-      );
+      return app(\App\Services\DashboardWelcomeCampaignService::class)->payloadForUser($user);
    }
 
-   public function dismissDashboardWelcomeOverlay(User $user, string $version): void
+   public function dismissDashboardWelcomeOverlay(User $user, string $version, ?int $campaignId = null): void
    {
+      if ($campaignId) {
+         app(\App\Services\DashboardWelcomeCampaignService::class)->dismiss($user, $campaignId, $version);
+
+         return;
+      }
+
+      // Legacy fallback for older clients that only sent version.
       $version = trim($version);
 
       if ($version === '' || strlen($version) > 64) {

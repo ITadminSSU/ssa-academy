@@ -203,6 +203,11 @@ class DashboardWelcomeOverlay
             return true;
         }
 
-        return (bool) preg_match('#^https?://#i', $url);
+        if (preg_match('#^https?://#i', $url)) {
+            return true;
+        }
+
+        // Allow stored media/object paths (no scheme).
+        return ! str_contains($url, '://') && ! str_starts_with($url, '//');
     }
 }

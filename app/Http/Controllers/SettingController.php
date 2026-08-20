@@ -100,16 +100,18 @@ class SettingController extends Controller
     public function pages(Request $request)
     {
         $home = $this->settingsService->getSetting(['type' => 'home_page']);
-        $dashboardWelcomeOverlay = $this->settingsService->getOrCreateDashboardWelcomeOverlaySetting();
-        $overlayFields = is_array($dashboardWelcomeOverlay->fields) ? $dashboardWelcomeOverlay->fields : [];
-        $overlayFields['poster_url'] = \App\Support\DashboardWelcomeOverlay::resolvePosterUrl(
-            (string) ($overlayFields['poster_url'] ?? '')
-        );
-        $dashboardWelcomeOverlay->setAttribute('fields', $overlayFields);
+        $dashboardWelcomeCampaigns = app(\App\Services\DashboardWelcomeCampaignService::class)->listForAdmin();
         $pages = Page::with('sections')->get();
         $ssuLandingPage = Page::where('slug', 'ssu-home')->with('sections')->first();
+        $appTimezone = config('app.timezone');
 
-        return Inertia::render('dashboard/settings/pages/index', compact('home', 'dashboardWelcomeOverlay', 'pages', 'ssuLandingPage'));
+        return Inertia::render('dashboard/settings/pages/index', compact(
+            'home',
+            'dashboardWelcomeCampaigns',
+            'pages',
+            'ssuLandingPage',
+            'appTimezone',
+        ));
     }
 
     /**

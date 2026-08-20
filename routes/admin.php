@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstructorController;
+use App\Http\Controllers\DashboardWelcomeCampaignController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\Course\CourseEnrollmentController;
 use App\Http\Controllers\HomeController;
@@ -104,6 +105,9 @@ Route::prefix('dashboard/admin')->group(function () {
         Route::post('home-page/{id}', 'home_pages_update')->name('settings.home-page.update');
         Route::put('landing-overlay', 'landing_overlay_update')->name('settings.landing-overlay.update');
         Route::post('dashboard-welcome-overlay', 'dashboard_welcome_overlay_update')->name('settings.dashboard-welcome-overlay.update');
+        Route::post('dashboard-welcome-campaigns', [DashboardWelcomeCampaignController::class, 'store'])->name('settings.dashboard-welcome-campaigns.store');
+        Route::post('dashboard-welcome-campaigns/{campaign}', [DashboardWelcomeCampaignController::class, 'update'])->name('settings.dashboard-welcome-campaigns.update');
+        Route::delete('dashboard-welcome-campaigns/{campaign}', [DashboardWelcomeCampaignController::class, 'destroy'])->name('settings.dashboard-welcome-campaigns.destroy');
         Route::post('system-type', 'system_type_update')->name('settings.system-type.update');
 
         Route::get('custom-page/{id}', 'custom_pages_edit')->name('settings.custom-page.edit');

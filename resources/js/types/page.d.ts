@@ -67,6 +67,7 @@ export interface StudentDashboardProps extends SharedData {
    recentActivity?: LearnerActivity[];
    isFirstDashboardVisit?: boolean;
    dashboardWelcomeOverlay?: {
+      campaign_id?: number;
       version: string;
       headline: string;
       body: string;
@@ -76,6 +77,7 @@ export interface StudentDashboardProps extends SharedData {
       video_type?: 'none' | 'file' | 'embed';
       video_url?: string;
       autoplay_muted?: boolean;
+      show_frequency?: 'until_dismissed' | 'every_home_visit';
    } | null;
    hasVerifiedEmail: boolean;
    subscriptions?: UserSubscriptionSummary[];
@@ -170,17 +172,26 @@ export interface StudentExamProps extends SharedData {
 export interface PageSelectProps extends SharedData {
    pages: Page[];
    home: Settings<PageFields>;
-   dashboardWelcomeOverlay?: Settings<{
-      enabled?: boolean;
-      headline?: string;
-      body?: string;
-      cta_label?: string;
-      cta_url?: string;
-      poster_url?: string;
+   dashboardWelcomeCampaigns?: Array<{
+      id: number;
+      title: string;
+      enabled: boolean;
+      priority: number;
+      weight: number;
+      show_frequency: 'until_dismissed' | 'every_home_visit';
+      starts_at?: string | null;
+      ends_at?: string | null;
+      headline?: string | null;
+      body?: string | null;
+      cta_label?: string | null;
+      cta_url?: string | null;
+      poster_url?: string | null;
       video_type?: 'none' | 'file' | 'embed';
-      video_url?: string;
+      video_url?: string | null;
       autoplay_muted?: boolean;
+      is_live_now?: boolean;
    }>;
+   appTimezone?: string;
    ssuLandingPage?: Page | null;
 }
 

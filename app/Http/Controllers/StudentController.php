@@ -65,9 +65,14 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'version' => 'required|string|max:64',
+            'campaign_id' => 'nullable|integer|min:1',
         ]);
 
-        $this->studentService->dismissDashboardWelcomeOverlay($request->user(), $validated['version']);
+        $this->studentService->dismissDashboardWelcomeOverlay(
+            $request->user(),
+            $validated['version'],
+            isset($validated['campaign_id']) ? (int) $validated['campaign_id'] : null,
+        );
 
         return back();
     }

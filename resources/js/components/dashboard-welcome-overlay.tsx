@@ -6,6 +6,7 @@ import { Volume2, VolumeX, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export interface DashboardWelcomeOverlayContent {
+   campaign_id?: number;
    version: string;
    headline: string;
    body: string;
@@ -15,6 +16,7 @@ export interface DashboardWelcomeOverlayContent {
    video_type?: 'none' | 'file' | 'embed';
    video_url?: string;
    autoplay_muted?: boolean;
+   show_frequency?: 'until_dismissed' | 'every_home_visit';
 }
 
 interface Props {
@@ -74,9 +76,14 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
 
    const dismiss = () => {
       setOpen(false);
+
+      // every_home_visit: close for this page view only (backend ignores persist).
       router.post(
          route('student.dashboard-welcome-overlay.dismiss'),
-         { version: overlay.version },
+         {
+            version: overlay.version,
+            campaign_id: overlay.campaign_id ?? null,
+         },
          { preserveScroll: true, preserveState: true },
       );
    };

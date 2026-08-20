@@ -10,10 +10,10 @@ import * as React from 'react';
 import CustomPageCreateForm from './partials/custom-page-create-form';
 import CustomTableColumn from './partials/custom-pages-table-columns';
 import LandingOverlaySettings from './partials/landing-overlay-settings';
-import DashboardWelcomeOverlaySettings from './partials/dashboard-welcome-overlay-settings';
+import DashboardWelcomeCampaignsSettings from './partials/dashboard-welcome-campaigns-settings';
 import SsuLandingSettings from './partials/ssu-landing-settings';
 
-const Pages = ({ pages, ssuLandingPage, home, dashboardWelcomeOverlay, translate }: PageSelectProps) => {
+const Pages = ({ pages, ssuLandingPage, home, dashboardWelcomeCampaigns = [], appTimezone, translate }: PageSelectProps) => {
    const { settings } = translate;
 
    const customPages = React.useMemo(() => pages.filter((page) => page.type === 'inner_page'), [pages]);
@@ -38,7 +38,7 @@ const Pages = ({ pages, ssuLandingPage, home, dashboardWelcomeOverlay, translate
 
             <LandingOverlaySettings home={home} />
 
-            {dashboardWelcomeOverlay ? <DashboardWelcomeOverlaySettings overlay={dashboardWelcomeOverlay} /> : null}
+            <DashboardWelcomeCampaignsSettings campaigns={dashboardWelcomeCampaigns} appTimezone={appTimezone} />
 
             <SsuLandingSettings landingPage={ssuLandingPage} />
 

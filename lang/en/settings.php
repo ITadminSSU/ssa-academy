@@ -201,7 +201,7 @@ return [
   'landing_overlay' => 'Landing overlay',
   'landing_overlay_description' => 'Show a dismissible full-screen message on the public home page. Visitors who close it will not see it again until you change the content.',
   'dashboard_welcome_overlay' => 'Dashboard welcome overlay',
-  'dashboard_welcome_overlay_description' => 'Show a translucent welcome or announcement on the learner Home tab. Students who dismiss it will not see it again until you change the content.',
+  'dashboard_welcome_overlay_description' => 'Schedule welcome messages and ads on the learner Home tab. Use priority and weight for A/B tests. Students who dismiss a campaign will not see that version again unless content changes (unless set to every Home visit).',
   'preview_overlay' => 'Preview overlay',
   'overlay_headline' => 'Headline',
   'overlay_pains_title' => 'Pain points title',
