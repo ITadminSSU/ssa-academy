@@ -72,7 +72,8 @@ class TwoFactorChallengeController extends Controller
 
         RateLimiter::clear($key);
         $request->session()->put('auth.two_factor_confirmed', true);
-        $this->singleSession->claim($user);
+        $remember = $request->session()->pull('auth.remember', false);
+        $this->singleSession->claim($user, (bool) $remember);
 
         return redirect()->intended($this->authService->continueUrlAfterAuth($user));
     }

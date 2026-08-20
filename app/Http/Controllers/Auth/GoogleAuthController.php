@@ -68,7 +68,8 @@ class GoogleAuthController extends Controller
 
             request()->session()->regenerate();
             session()->forget('auth.two_factor_confirmed');
-            $this->singleSession->claim($registered);
+            session()->put('auth.remember', true);
+            $this->singleSession->claim($registered, true);
 
             if ($this->twoFactor->isEnabled($registered)) {
                 return redirect()->route('two-factor.challenge');

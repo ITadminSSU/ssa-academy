@@ -71,10 +71,13 @@ class AuthenticatedSessionController extends Controller
         $request->session()->forget('auth.two_factor_confirmed');
 
         $user = $request->user();
+        $remember = $request->boolean('remember');
+        $request->session()->put('auth.remember', $remember);
 
         if ($user) {
             // Claim this device immediately so any other open session is signed out.
-            $this->singleSession->claim($user);
+            // Pass $remember so the remember cookie is re-issued after token rotation.
+            $this->singleSession->claim($user, $remember);
         }
 
         if ($user && $this->twoFactor->isEnabled($user)) {

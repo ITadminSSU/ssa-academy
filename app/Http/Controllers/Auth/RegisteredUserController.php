@@ -178,7 +178,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        $this->singleSession->claim($user);
+        $request->session()->forget('auth.remember');
+        $this->singleSession->claim($user, false);
 
         $redirect = redirect()->route('verification.notice');
 

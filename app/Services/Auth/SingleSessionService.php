@@ -3,6 +3,7 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
@@ -18,7 +19,11 @@ class SingleSessionService
 
     public const ACTIVE_SESSION_CACHE_PREFIX = 'single_session.active.';
 
-    public function claim(User $user): void
+    /**
+     * @param  bool  $remember  When true, re-issue the remember cookie after rotating
+     *                          the token so "Remember me" still works on this device.
+     */
+    public function claim(User $user, bool $remember = false): void
     {
         if (! config('account.single_session.enabled', true)) {
             return;
@@ -31,7 +36,18 @@ class SingleSessionService
         }
 
         $this->invalidateOtherDatabaseSessions($user, $currentSessionId);
+
+        // Invalidate remember cookies on other devices, then re-queue for this
+        // device when Remember me was checked (Auth::attempt sets the cookie
+        // before this runs, so rotation alone would break it).
         $this->rotateRememberToken($user);
+
+        if ($remember) {
+            // Re-queues the recaller cookie with the new token. Note: SessionGuard
+            // regenerates the session id here, so claim the id after this call.
+            Auth::guard('web')->login($user, true);
+            $currentSessionId = Session::getId();
+        }
 
         Cache::put(
             $this->activeSessionKey($user->id),
