@@ -123,12 +123,31 @@ const CoursePreview = () => {
             </h2>
 
             {offer.enabled && offer.phase === 'pre_register' ? (
-               <p className="text-muted-foreground text-sm">
-                  Reserve seat now {currency?.symbol}
-                  {offer.depositAmount}. Pay remaining {currency?.symbol}
-                  {offer.balanceAmount} on launch for full access. Then {currency?.symbol}
-                  {offer.subscriptionPrice}/mo after the free month. Deposit is non-refundable.
-               </p>
+               <div className="text-muted-foreground space-y-3 text-sm leading-relaxed">
+                  <p>
+                     Reserve your seat for {currency?.symbol}
+                     {offer.depositAmount} today, then pay {currency?.symbol}
+                     {offer.balanceAmount} at launch for full access. This includes your first month of the Project
+                     Plans Subscription for FREE. After your free month, the subscription is {currency?.symbol}
+                     {offer.subscriptionPrice}/month. You can cancel anytime.
+                  </p>
+                  <p>
+                     Please note: The {currency?.symbol}
+                     {offer.depositAmount} deposit is non-refundable.
+                  </p>
+                  <p>
+                     Keep an eye out for discount vouchers on our{' '}
+                     <a
+                        href="https://www.facebook.com/share/g/14ttXqLttek/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary font-medium underline underline-offset-2 hover:opacity-90"
+                     >
+                        official Facebook page
+                     </a>{' '}
+                     or from your referrer for huge savings!
+                  </p>
+               </div>
             ) : offer.enabled && offer.phase === 'full_price' ? (
                <p className="text-muted-foreground text-sm">
                   Pay the full price of {currency?.symbol}
