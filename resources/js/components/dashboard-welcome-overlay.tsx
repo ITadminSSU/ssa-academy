@@ -23,6 +23,27 @@ interface Props {
    overlay: DashboardWelcomeOverlayContent;
 }
 
+/** Flip Bunny/YouTube-style mute query flags for embed playback after a user tap. */
+const withEmbedMuteState = (url: string, muted: boolean): string => {
+   try {
+      const parsed = new URL(url, window.location.origin);
+      if (muted) {
+         parsed.searchParams.set('muted', 'true');
+         parsed.searchParams.set('mute', '1');
+         parsed.searchParams.set('autoplay', 'true');
+      } else {
+         parsed.searchParams.set('muted', 'false');
+         parsed.searchParams.set('mute', '0');
+         parsed.searchParams.set('autoplay', 'true');
+      }
+      parsed.searchParams.set('preload', 'true');
+      parsed.searchParams.set('playerjs', 'true');
+      return parsed.toString();
+   } catch {
+      return url;
+   }
+};
+
 const DashboardWelcomeOverlay = ({ overlay }: Props) => {
    const [open, setOpen] = useState(true);
    // Browsers block unmuted autoplay — always start muted and require one tap for sound.
@@ -34,6 +55,17 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
    const videoType = overlay.video_type ?? 'none';
    const videoUrl = overlay.video_url?.trim() || '';
    const hasVideo = videoType !== 'none' && videoUrl !== '';
+   const [embedSrc, setEmbedSrc] = useState(() => (videoUrl ? withEmbedMuteState(videoUrl, true) : ''));
+
+   useEffect(() => {
+      if (!videoUrl) {
+         setEmbedSrc('');
+         return;
+      }
+      setEmbedSrc(withEmbedMuteState(videoUrl, true));
+      setMuted(true);
+      setShowUnmutePrompt(true);
+   }, [videoUrl]);
 
    useEffect(() => {
       if (!open) {
@@ -75,7 +107,6 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
    const dismiss = () => {
       setOpen(false);
 
-      // every_home_visit: close for this page view only (backend ignores persist).
       router.post(
          route('student.dashboard-welcome-overlay.dismiss'),
          {
@@ -86,42 +117,72 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
       );
    };
 
-   const unmuteEmbedPlayer = () => {
-      if (videoType !== 'embed' || !iframeRef.current || !window.playerjs?.Player) {
+   const unmuteViaPlayerJs = async () => {
+      await preloadPlayerJs().catch(() => undefined);
+
+      const iframe = iframeRef.current;
+      if (!iframe || !window.playerjs?.Player) {
          return false;
       }
 
-      try {
-         const player = new window.playerjs.Player(iframeRef.current);
-         player.unmute?.();
-         player.setVolume?.(1);
-         player.play?.();
-         return true;
-      } catch {
-         return false;
-      }
+      return await new Promise<boolean>((resolve) => {
+         try {
+            const player = new window.playerjs.Player(iframe);
+            let settled = false;
+
+            const finish = (ok: boolean) => {
+               if (settled) {
+                  return;
+               }
+               settled = true;
+               resolve(ok);
+            };
+
+            const applySound = () => {
+               try {
+                  player.unmute?.();
+                  player.setVolume?.(1);
+                  player.play?.();
+                  finish(true);
+               } catch {
+                  finish(false);
+               }
+            };
+
+            player.on('ready', applySound);
+            // Some embeds are already ready before we bind.
+            window.setTimeout(applySound, 150);
+            window.setTimeout(() => finish(false), 1500);
+         } catch {
+            resolve(false);
+         }
+      });
    };
 
    const unmute = async () => {
-      setMuted(false);
-      setShowUnmutePrompt(false);
-
       if (videoType === 'file' && videoRef.current) {
          videoRef.current.muted = false;
          videoRef.current.volume = 1;
+         setMuted(false);
+         setShowUnmutePrompt(false);
          try {
             await videoRef.current.play();
          } catch {
-            // Ignore — controls remain available.
+            // Ignore — prompt can stay if play fails.
          }
          return;
       }
 
-      if (videoType === 'embed') {
-         if (!unmuteEmbedPlayer()) {
-            window.setTimeout(() => unmuteEmbedPlayer(), 250);
-            window.setTimeout(() => unmuteEmbedPlayer(), 800);
-         }
+      if (videoType === 'embed' && videoUrl) {
+         // Reload embed unmuted inside the user-gesture click — most reliable for Bunny.
+         const unmutedUrl = withEmbedMuteState(videoUrl, false);
+         setEmbedSrc(unmutedUrl);
+         setMuted(false);
+         setShowUnmutePrompt(false);
+
+         window.setTimeout(() => {
+            void unmuteViaPlayerJs();
+         }, 400);
       }
    };
 
@@ -133,13 +194,8 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
          videoRef.current.muted = true;
       }
 
-      if (videoType === 'embed' && iframeRef.current && window.playerjs?.Player) {
-         try {
-            const player = new window.playerjs.Player(iframeRef.current);
-            player.mute?.();
-         } catch {
-            // Overlay will block iframe until they tap again.
-         }
+      if (videoType === 'embed' && videoUrl) {
+         setEmbedSrc(withEmbedMuteState(videoUrl, true));
       }
    };
 
@@ -186,10 +242,11 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
                      />
                   ) : (
                      <iframe
+                        key={embedSrc}
                         ref={iframeRef}
-                        src={videoUrl}
+                        src={embedSrc || videoUrl}
                         title={overlay.headline || 'Welcome video'}
-                        className={`h-full w-full border-0 ${muted ? 'pointer-events-none' : ''}`}
+                        className={`h-full w-full border-0 ${showUnmutePrompt ? 'pointer-events-none' : ''}`}
                         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                         allowFullScreen
                      />
