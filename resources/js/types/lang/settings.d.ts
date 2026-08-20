@@ -183,6 +183,8 @@ interface SettingsLang {
    custom_pages: string;
    landing_overlay: string;
    landing_overlay_description: string;
+   dashboard_welcome_overlay: string;
+   dashboard_welcome_overlay_description: string;
    preview_overlay: string;
    overlay_headline: string;
    overlay_pains_title: string;

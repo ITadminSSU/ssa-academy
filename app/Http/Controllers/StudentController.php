@@ -61,6 +61,17 @@ class StudentController extends Controller
         ]);
     }
 
+    public function dismiss_dashboard_welcome_overlay(Request $request)
+    {
+        $validated = $request->validate([
+            'version' => 'required|string|max:64',
+        ]);
+
+        $this->studentService->dismissDashboardWelcomeOverlay($request->user(), $validated['version']);
+
+        return back();
+    }
+
     public function browse_category(Request $request, string $category)
     {
         $user = Auth::user();

@@ -8,6 +8,7 @@ use App\Models\Navbar;
 use App\Models\NavbarItem;
 use App\Models\Page;
 use App\Models\Setting;
+use App\Support\DashboardWelcomeOverlay;
 use App\Support\LandingOverlay;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -152,6 +153,64 @@ class SettingsService extends MediaService
 
             $setting->update([
                 'fields' => array_merge($fields, $overlay),
+            ]);
+
+            return $setting->fresh();
+        }, 5);
+    }
+
+    public function getOrCreateDashboardWelcomeOverlaySetting(): Setting
+    {
+        $setting = Setting::where('type', 'dashboard_welcome_overlay')->first();
+
+        if ($setting) {
+            return $setting;
+        }
+
+        return Setting::create([
+            'type' => 'dashboard_welcome_overlay',
+            'sub_type' => 'default',
+            'title' => 'Dashboard welcome overlay',
+            'fields' => DashboardWelcomeOverlay::defaults(),
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function updateDashboardWelcomeOverlay(array $data): Setting
+    {
+        return DB::transaction(function () use ($data) {
+            $setting = $this->getOrCreateDashboardWelcomeOverlaySetting();
+            $fields = is_array($setting->fields) ? $setting->fields : [];
+            $overlay = DashboardWelcomeOverlay::fromFields(array_merge($fields, $data));
+
+            if (! empty($data['clear_poster'])) {
+                $prevMedia = $setting->getMedia('*', ['name' => 'dashboard_welcome_poster'])->first();
+                if ($prevMedia) {
+                    $prevMedia->delete();
+                }
+                $overlay['poster_url'] = '';
+            }
+
+            if (! empty($data['new_poster'])) {
+                $overlay['poster_url'] = $this->addNewDeletePrev($setting, $data['new_poster'], 'dashboard_welcome_poster');
+            }
+
+            unset($overlay['version'], $data['new_poster'], $data['clear_poster']);
+
+            $setting->update([
+                'fields' => [
+                    'enabled' => $overlay['enabled'],
+                    'headline' => $overlay['headline'],
+                    'body' => $overlay['body'],
+                    'cta_label' => $overlay['cta_label'],
+                    'cta_url' => $overlay['cta_url'],
+                    'poster_url' => $overlay['poster_url'],
+                    'video_type' => $overlay['video_type'],
+                    'video_url' => $overlay['video_url'],
+                    'autoplay_muted' => $overlay['autoplay_muted'],
+                ],
             ]);
 
             return $setting->fresh();

@@ -41,6 +41,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'social_links',
         'email_verified_at',
         'dashboard_first_visited_at',
+        'dashboard_welcome_overlay_dismissed_version',
         'instructor_id',
         'professional_type_id',
         'professional_type_other',

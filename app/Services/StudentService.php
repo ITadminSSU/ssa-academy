@@ -19,6 +19,7 @@ use App\Models\Course\CourseSection;
 use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
+use App\Models\Setting;
 use App\Services\MediaService;
 use App\Services\Course\CommunityDiscussionService;
 use App\Services\Course\CourseEnrollmentService;
@@ -27,6 +28,7 @@ use App\Services\Course\CoursePlayerService;
 use App\Services\Course\CourseWishlistService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionService;
+use App\Support\DashboardWelcomeOverlay;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Modules\Certificate\Models\CertificateTemplate;
@@ -81,6 +83,7 @@ class StudentService extends MediaService
             $props['examEnrollments'] = $this->examEnrollment->getEnrollments(['user_id' => $user->id]);
             $props['recentActivity'] = $this->getLearnerActivity($user);
             $props['isFirstDashboardVisit'] = $this->markFirstDashboardVisit($user);
+            $props['dashboardWelcomeOverlay'] = $this->dashboardWelcomeOverlayPayload($user);
             break;
 
          case 'courses':
@@ -222,6 +225,32 @@ class StudentService extends MediaService
       $user->forceFill(['dashboard_first_visited_at' => now()])->save();
 
       return true;
+   }
+
+   /**
+    * @return array<string, mixed>|null
+    */
+   private function dashboardWelcomeOverlayPayload(User $user): ?array
+   {
+      $setting = Setting::where('type', 'dashboard_welcome_overlay')->first();
+
+      return DashboardWelcomeOverlay::publicPayload(
+         $setting?->fields,
+         $user->dashboard_welcome_overlay_dismissed_version,
+      );
+   }
+
+   public function dismissDashboardWelcomeOverlay(User $user, string $version): void
+   {
+      $version = trim($version);
+
+      if ($version === '' || strlen($version) > 64) {
+         return;
+      }
+
+      $user->forceFill([
+         'dashboard_welcome_overlay_dismissed_version' => $version,
+      ])->save();
    }
 
    private function hydrateCourseEnrollments($enrollments, User $user): void

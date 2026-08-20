@@ -1,0 +1,250 @@
+import ButtonGradientPrimary from '@/components/button-gradient-primary';
+import { Button } from '@/components/ui/button';
+import { preloadPlayerJs } from '@/lib/bunny-player-js';
+import { Link, router } from '@inertiajs/react';
+import { Volume2, VolumeX, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+export interface DashboardWelcomeOverlayContent {
+   version: string;
+   headline: string;
+   body: string;
+   cta_label: string;
+   cta_url: string;
+   poster_url: string;
+   video_type?: 'none' | 'file' | 'embed';
+   video_url?: string;
+   autoplay_muted?: boolean;
+}
+
+interface Props {
+   overlay: DashboardWelcomeOverlayContent;
+}
+
+const DashboardWelcomeOverlay = ({ overlay }: Props) => {
+   const [open, setOpen] = useState(true);
+   const [muted, setMuted] = useState(overlay.autoplay_muted !== false);
+   const [showUnmutePrompt, setShowUnmutePrompt] = useState(overlay.autoplay_muted !== false);
+   const videoRef = useRef<HTMLVideoElement>(null);
+   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+   const videoType = overlay.video_type ?? 'none';
+   const videoUrl = overlay.video_url?.trim() || '';
+   const hasVideo = videoType !== 'none' && videoUrl !== '';
+
+   useEffect(() => {
+      if (!open) {
+         return;
+      }
+
+      const previous = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+         document.body.style.overflow = previous;
+      };
+   }, [open]);
+
+   useEffect(() => {
+      if (!hasVideo || videoType !== 'file' || !videoRef.current) {
+         return;
+      }
+
+      const video = videoRef.current;
+      video.muted = muted;
+
+      if (overlay.autoplay_muted !== false) {
+         void video.play().catch(() => {
+            // Autoplay may still be blocked; user can tap unmute/play.
+         });
+      }
+   }, [hasVideo, videoType, muted, overlay.autoplay_muted, videoUrl]);
+
+   useEffect(() => {
+      if (!hasVideo || videoType !== 'embed') {
+         return;
+      }
+
+      void preloadPlayerJs();
+   }, [hasVideo, videoType]);
+
+   if (!open) {
+      return null;
+   }
+
+   const dismiss = () => {
+      setOpen(false);
+      router.post(
+         route('student.dashboard-welcome-overlay.dismiss'),
+         { version: overlay.version },
+         { preserveScroll: true, preserveState: true },
+      );
+   };
+
+   const unmute = async () => {
+      setMuted(false);
+      setShowUnmutePrompt(false);
+
+      if (videoType === 'file' && videoRef.current) {
+         videoRef.current.muted = false;
+         videoRef.current.volume = 1;
+         try {
+            await videoRef.current.play();
+         } catch {
+            // Ignore — controls remain available.
+         }
+         return;
+      }
+
+      if (videoType === 'embed' && iframeRef.current && window.playerjs?.Player) {
+         try {
+            const player = new window.playerjs.Player(iframeRef.current);
+            player.unmute?.();
+            player.setVolume?.(1);
+            player.play?.();
+         } catch {
+            // Player.js may not be ready; muted autoplay still works.
+         }
+      }
+   };
+
+   const ctaIsExternal =
+      /^https?:/i.test(overlay.cta_url) || overlay.cta_url.startsWith('mailto:') || overlay.cta_url.startsWith('tel:');
+
+   return (
+      <div
+         className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="dashboard-welcome-overlay-title"
+      >
+         <button
+            type="button"
+            className="absolute inset-0 bg-[#021433]/72 backdrop-blur-[2px]"
+            aria-label="Close welcome message"
+            onClick={dismiss}
+         />
+
+         <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/15 bg-[#0a1d37] text-white shadow-2xl">
+            <button
+               type="button"
+               onClick={dismiss}
+               className="absolute top-3 right-3 z-30 rounded-full bg-black/35 p-2 text-white/90 transition hover:bg-black/50"
+               aria-label="Close"
+            >
+               <X className="h-4 w-4" />
+            </button>
+
+            {hasVideo ? (
+               <div className="relative aspect-video w-full overflow-hidden bg-black">
+                  {videoType === 'file' ? (
+                     <video
+                        ref={videoRef}
+                        className="h-full w-full object-cover"
+                        src={videoUrl}
+                        poster={overlay.poster_url || undefined}
+                        playsInline
+                        muted={muted}
+                        autoPlay={overlay.autoplay_muted !== false}
+                        loop
+                        controls={false}
+                     />
+                  ) : (
+                     <iframe
+                        ref={iframeRef}
+                        src={videoUrl}
+                        title={overlay.headline || 'Welcome video'}
+                        className="h-full w-full border-0"
+                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+                        allowFullScreen
+                     />
+                  )}
+
+                  {showUnmutePrompt && (
+                     <button
+                        type="button"
+                        onClick={() => void unmute()}
+                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/35 transition hover:bg-black/45"
+                     >
+                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0a1d37] shadow-lg">
+                           <VolumeX className="h-7 w-7" />
+                        </span>
+                        <span className="rounded-full bg-black/55 px-4 py-2 text-sm font-semibold tracking-wide text-white">
+                           Tap for sound
+                        </span>
+                     </button>
+                  )}
+
+                  {!showUnmutePrompt && hasVideo && (
+                     <button
+                        type="button"
+                        onClick={() => {
+                           if (muted) {
+                              void unmute();
+                           } else {
+                              setMuted(true);
+                              setShowUnmutePrompt(true);
+                              if (videoRef.current) {
+                                 videoRef.current.muted = true;
+                              }
+                           }
+                        }}
+                        className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full bg-black/55 px-3 py-2 text-xs font-medium text-white backdrop-blur-sm"
+                     >
+                        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        {muted ? 'Unmute' : 'Mute'}
+                     </button>
+                  )}
+               </div>
+            ) : overlay.poster_url ? (
+               <div className="aspect-video w-full overflow-hidden bg-black/40">
+                  <img src={overlay.poster_url} alt="" className="h-full w-full object-cover" />
+               </div>
+            ) : null}
+
+            <div className="space-y-4 p-6 sm:p-8">
+               {overlay.headline ? (
+                  <h2 id="dashboard-welcome-overlay-title" className="text-2xl font-bold tracking-tight sm:text-3xl">
+                     {overlay.headline}
+                  </h2>
+               ) : (
+                  <h2 id="dashboard-welcome-overlay-title" className="sr-only">
+                     Welcome
+                  </h2>
+               )}
+
+               {overlay.body ? <p className="text-sm leading-relaxed text-white/85 sm:text-base">{overlay.body}</p> : null}
+
+               <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
+                  {overlay.cta_label ? (
+                     ctaIsExternal ? (
+                        <ButtonGradientPrimary asChild shadow={false} className="h-11 min-w-[180px] px-6 text-base font-semibold">
+                           <a href={overlay.cta_url} target="_blank" rel="noopener noreferrer" onClick={dismiss}>
+                              {overlay.cta_label}
+                           </a>
+                        </ButtonGradientPrimary>
+                     ) : (
+                        <ButtonGradientPrimary asChild shadow={false} className="h-11 min-w-[180px] px-6 text-base font-semibold">
+                           <Link href={overlay.cta_url} onClick={dismiss}>
+                              {overlay.cta_label}
+                           </Link>
+                        </ButtonGradientPrimary>
+                     )
+                  ) : null}
+
+                  <Button
+                     type="button"
+                     variant="ghost"
+                     className="h-11 text-white/80 hover:bg-white/10 hover:text-white"
+                     onClick={dismiss}
+                  >
+                     Continue to dashboard
+                  </Button>
+               </div>
+            </div>
+         </div>
+      </div>
+   );
+};
+
+export default DashboardWelcomeOverlay;

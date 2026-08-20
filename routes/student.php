@@ -33,6 +33,9 @@ Route::get('dashboard/browse/{category}', [StudentController::class, 'browse_cat
 Route::get('student/courses/{id}/{tab}', [StudentController::class, 'show_course'])->name('student.course.show');
 Route::get('student/exams/{id}/{tab}', [StudentController::class, 'show_exam'])->name('student.exam.show');
 Route::post('student/profile', [StudentController::class, 'update_profile'])->name('student.profile.update');
+Route::post('student/dashboard-welcome-overlay/dismiss', [StudentController::class, 'dismiss_dashboard_welcome_overlay'])
+    ->middleware('auth')
+    ->name('student.dashboard-welcome-overlay.dismiss');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('subscriptions/portal', [SubscriptionController::class, 'portal'])->name('subscriptions.portal');

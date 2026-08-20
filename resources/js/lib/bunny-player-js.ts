@@ -3,6 +3,11 @@ export const PLAYER_JS_SRC = 'https://assets.mediadelivery.net/playerjs/playerjs
 export type PlayerJsInstance = {
    on: (event: string, callback: (...args: unknown[]) => void) => void;
    off: (event: string, callback?: (...args: unknown[]) => void) => void;
+   play?: () => void;
+   pause?: () => void;
+   unmute?: () => void;
+   mute?: () => void;
+   setVolume?: (volume: number) => void;
 };
 
 type PlayerJsConstructor = new (iframe: HTMLIFrameElement) => PlayerJsInstance;

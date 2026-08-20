@@ -1,4 +1,5 @@
 import ButtonGradientPrimary from '@/components/button-gradient-primary';
+import DashboardWelcomeOverlay from '@/components/dashboard-welcome-overlay';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { enrollmentBlocksPlayerAccess, enrollmentCourseDetailsUrl } from '@/lib/enrollment-access';
@@ -22,6 +23,7 @@ const Home = () => {
       examEnrollments = [],
       recentActivity = [],
       isFirstDashboardVisit = false,
+      dashboardWelcomeOverlay = null,
       auth,
    } = usePage<StudentDashboardProps>().props;
 
@@ -70,6 +72,8 @@ const Home = () => {
 
    return (
       <div className="space-y-8">
+         {dashboardWelcomeOverlay ? <DashboardWelcomeOverlay overlay={dashboardWelcomeOverlay} /> : null}
+
          <div>
             <h1 className="text-2xl font-bold tracking-tight">
                {isFirstDashboardVisit ? `Welcome, ${firstName}!` : `Welcome back, ${firstName}!`}
@@ -178,12 +182,19 @@ const Home = () => {
                         })}
                      </ul>
                   ) : (
-                     <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
-                        <GraduationCap className="text-muted-foreground h-10 w-10" />
-                        <p className="text-muted-foreground text-sm">
-                           No activity yet. Enroll in a course or exam to get started.
-                        </p>
-                        <ButtonGradientPrimary asChild shadow={false} className="h-9">
+                     <div className="flex flex-col items-center justify-center gap-4 px-6 py-14 text-center sm:py-16">
+                        <GraduationCap className="text-muted-foreground h-12 w-12 sm:h-14 sm:w-14" />
+                        <div className="space-y-1">
+                           <p className="text-foreground text-base font-medium sm:text-lg">Ready to start learning?</p>
+                           <p className="text-muted-foreground text-sm sm:text-base">
+                              No activity yet. Enroll in a course or exam to get started.
+                           </p>
+                        </div>
+                        <ButtonGradientPrimary
+                           asChild
+                           shadow={false}
+                           className="h-12 min-w-[220px] px-8 text-base font-semibold sm:h-14 sm:min-w-[260px] sm:px-10 sm:text-lg"
+                        >
                            <Link href={route('student.category.courses', { category: 'all' })}>Browse Courses</Link>
                         </ButtonGradientPrimary>
                      </div>

@@ -23,6 +23,7 @@ use App\Http\Requests\UpdateBunnyStreamRequest;
 use App\Http\Requests\UpdateStorageRequest;
 use App\Http\Requests\UpdateZoomConfigRequest;
 use App\Http\Requests\UpdateLandingOverlayRequest;
+use App\Http\Requests\UpdateDashboardWelcomeOverlayRequest;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -99,10 +100,16 @@ class SettingController extends Controller
     public function pages(Request $request)
     {
         $home = $this->settingsService->getSetting(['type' => 'home_page']);
+        $dashboardWelcomeOverlay = $this->settingsService->getOrCreateDashboardWelcomeOverlaySetting();
+        $overlayFields = is_array($dashboardWelcomeOverlay->fields) ? $dashboardWelcomeOverlay->fields : [];
+        $overlayFields['poster_url'] = \App\Support\DashboardWelcomeOverlay::resolvePosterUrl(
+            (string) ($overlayFields['poster_url'] ?? '')
+        );
+        $dashboardWelcomeOverlay->setAttribute('fields', $overlayFields);
         $pages = Page::with('sections')->get();
         $ssuLandingPage = Page::where('slug', 'ssu-home')->with('sections')->first();
 
-        return Inertia::render('dashboard/settings/pages/index', compact('home', 'pages', 'ssuLandingPage'));
+        return Inertia::render('dashboard/settings/pages/index', compact('home', 'dashboardWelcomeOverlay', 'pages', 'ssuLandingPage'));
     }
 
     /**
@@ -126,6 +133,13 @@ class SettingController extends Controller
         $this->settingsService->updateLandingOverlay($request->validated());
 
         return back()->with('success', 'Landing overlay updated successfully');
+    }
+
+    public function dashboard_welcome_overlay_update(UpdateDashboardWelcomeOverlayRequest $request)
+    {
+        $this->settingsService->updateDashboardWelcomeOverlay($request->validated());
+
+        return back()->with('success', 'Dashboard welcome overlay updated successfully');
     }
 
     public function system_type_update(Request $request)

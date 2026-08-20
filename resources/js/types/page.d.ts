@@ -66,6 +66,17 @@ export interface StudentDashboardProps extends SharedData {
    examCertificateTemplate?: CertificateTemplate | null;
    recentActivity?: LearnerActivity[];
    isFirstDashboardVisit?: boolean;
+   dashboardWelcomeOverlay?: {
+      version: string;
+      headline: string;
+      body: string;
+      cta_label: string;
+      cta_url: string;
+      poster_url: string;
+      video_type?: 'none' | 'file' | 'embed';
+      video_url?: string;
+      autoplay_muted?: boolean;
+   } | null;
    hasVerifiedEmail: boolean;
    subscriptions?: UserSubscriptionSummary[];
    canManageBilling?: boolean;
@@ -159,6 +170,17 @@ export interface StudentExamProps extends SharedData {
 export interface PageSelectProps extends SharedData {
    pages: Page[];
    home: Settings<PageFields>;
+   dashboardWelcomeOverlay?: Settings<{
+      enabled?: boolean;
+      headline?: string;
+      body?: string;
+      cta_label?: string;
+      cta_url?: string;
+      poster_url?: string;
+      video_type?: 'none' | 'file' | 'embed';
+      video_url?: string;
+      autoplay_muted?: boolean;
+   }>;
    ssuLandingPage?: Page | null;
 }
 
