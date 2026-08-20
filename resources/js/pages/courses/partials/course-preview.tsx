@@ -66,8 +66,8 @@ const CoursePreview = () => {
                         {currency?.symbol}
                         {offer.listPrice}
                      </span>
-                     <span className="text-muted-foreground ml-2 text-base font-medium">
-                        pre reg for {currency?.symbol}
+                     <span className="text-muted-foreground ml-2 text-base font-medium normal-case">
+                        Pre-register for {currency?.symbol}
                         {offer.depositAmount}
                      </span>
                   </>

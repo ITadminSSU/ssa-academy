@@ -160,7 +160,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                            </span>
                            {launchOffer.depositAmount > 0 ? (
                               <span className="text-muted-foreground ml-2 text-xs font-medium normal-case">
-                                 pre reg for {symbol}
+                                 Pre-register for {symbol}
                                  {formatOfferAmount(launchOffer.depositAmount)}
                               </span>
                            ) : null}
