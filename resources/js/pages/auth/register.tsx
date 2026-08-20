@@ -446,7 +446,7 @@ export default function Register({
                         <InputError message={errors.referred_by} />
 
                         <Label htmlFor="referrer_is_employee" className="mt-2">
-                           Is your referrer a Smart Sourcing employee?
+                           Is your referrer part of the SMARTSOURCING USA team?
                         </Label>
                         <Select
                            value={data.referrer_is_employee || undefined}
