@@ -132,7 +132,7 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
             onClick={dismiss}
          />
 
-         <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-white/15 bg-[#0a1d37] text-white shadow-2xl">
+         <div className="relative z-10 w-full max-w-5xl overflow-hidden rounded-2xl border border-white/15 bg-[#0a1d37] text-white shadow-2xl">
             <button
                type="button"
                onClick={dismiss}
@@ -143,7 +143,7 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
             </button>
 
             {hasVideo ? (
-               <div className="relative aspect-video w-full overflow-hidden bg-black">
+               <div className="relative aspect-video w-full overflow-hidden bg-black sm:min-h-[28rem]">
                   {videoType === 'file' ? (
                      <video
                         ref={videoRef}
@@ -204,7 +204,7 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
                   )}
                </div>
             ) : overlay.poster_url ? (
-               <div className="aspect-video w-full overflow-hidden bg-black/40">
+               <div className="aspect-video w-full overflow-hidden bg-black/40 sm:min-h-[28rem]">
                   <img src={overlay.poster_url} alt="" className="h-full w-full object-cover" />
                </div>
             ) : null}
