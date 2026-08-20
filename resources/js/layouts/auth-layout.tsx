@@ -28,9 +28,11 @@ const AuthLayout = ({ children, title, description }: Props) => {
                </div>
 
                <div className="ssu-auth-hero__footer relative z-10">
-                  <div className="max-w-md space-y-3">
-                     <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight">{branding.name}</h2>
-                     <p className="text-base leading-relaxed text-white/80">{branding.tagline || BRAND_TAGLINE}</p>
+                  <div className="max-w-full space-y-3">
+                     <h2 className="font-display whitespace-nowrap text-[clamp(1.05rem,2.1vw,1.75rem)] leading-none font-semibold tracking-tight">
+                        {branding.name}
+                     </h2>
+                     <p className="max-w-md text-base leading-relaxed text-white/80">{branding.tagline || BRAND_TAGLINE}</p>
                   </div>
 
                   <p className="mt-8 text-sm text-white/60">
