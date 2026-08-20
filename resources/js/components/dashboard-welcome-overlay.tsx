@@ -1,6 +1,6 @@
 import ButtonGradientPrimary from '@/components/button-gradient-primary';
 import { Button } from '@/components/ui/button';
-import { preloadPlayerJs } from '@/lib/bunny-player-js';
+import { preloadPlayerJs, type PlayerJsInstance } from '@/lib/bunny-player-js';
 import { Link, router } from '@inertiajs/react';
 import { Volume2, VolumeX, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -23,21 +23,21 @@ interface Props {
    overlay: DashboardWelcomeOverlayContent;
 }
 
-/** Flip Bunny/YouTube-style mute query flags for embed playback after a user tap. */
-const withEmbedMuteState = (url: string, muted: boolean): string => {
+/** Prefer iframe.mediadelivery.net — Bunny's Player.js docs use this host. */
+const toBunnyEmbedHost = (url: string): string =>
+   url.replace('://player.mediadelivery.net/', '://iframe.mediadelivery.net/');
+
+/** Start muted so autoplay is allowed; we unmute only after a real user tap. */
+const withMutedAutoplay = (url: string): string => {
    try {
-      const parsed = new URL(url, window.location.origin);
-      if (muted) {
-         parsed.searchParams.set('muted', 'true');
-         parsed.searchParams.set('mute', '1');
-         parsed.searchParams.set('autoplay', 'true');
-      } else {
-         parsed.searchParams.set('muted', 'false');
-         parsed.searchParams.set('mute', '0');
-         parsed.searchParams.set('autoplay', 'true');
-      }
+      const parsed = new URL(toBunnyEmbedHost(url), window.location.origin);
+      parsed.searchParams.set('autoplay', 'true');
+      parsed.searchParams.set('muted', 'true');
       parsed.searchParams.set('preload', 'true');
+      parsed.searchParams.set('responsive', 'true');
       parsed.searchParams.set('playerjs', 'true');
+      // Unique src helps Player.js when multiple embeds exist.
+      parsed.searchParams.set('ssu', String(Date.now()));
       return parsed.toString();
    } catch {
       return url;
@@ -46,25 +46,29 @@ const withEmbedMuteState = (url: string, muted: boolean): string => {
 
 const DashboardWelcomeOverlay = ({ overlay }: Props) => {
    const [open, setOpen] = useState(true);
-   // Browsers block unmuted autoplay — always start muted and require one tap for sound.
    const [muted, setMuted] = useState(true);
    const [showUnmutePrompt, setShowUnmutePrompt] = useState(true);
+   const [playerReady, setPlayerReady] = useState(false);
    const videoRef = useRef<HTMLVideoElement>(null);
    const iframeRef = useRef<HTMLIFrameElement>(null);
+   const playerRef = useRef<PlayerJsInstance | null>(null);
 
    const videoType = overlay.video_type ?? 'none';
    const videoUrl = overlay.video_url?.trim() || '';
    const hasVideo = videoType !== 'none' && videoUrl !== '';
-   const [embedSrc, setEmbedSrc] = useState(() => (videoUrl ? withEmbedMuteState(videoUrl, true) : ''));
+   const [embedSrc, setEmbedSrc] = useState(() => (videoUrl ? withMutedAutoplay(videoUrl) : ''));
 
    useEffect(() => {
       if (!videoUrl) {
          setEmbedSrc('');
          return;
       }
-      setEmbedSrc(withEmbedMuteState(videoUrl, true));
+
+      setEmbedSrc(withMutedAutoplay(videoUrl));
       setMuted(true);
       setShowUnmutePrompt(true);
+      setPlayerReady(false);
+      playerRef.current = null;
    }, [videoUrl]);
 
    useEffect(() => {
@@ -86,19 +90,54 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
       }
 
       const video = videoRef.current;
-      video.muted = muted;
-      void video.play().catch(() => {
-         // Autoplay may still be blocked; user can tap for sound.
-      });
-   }, [hasVideo, videoType, muted, videoUrl]);
+      video.muted = true;
+      void video.play().catch(() => undefined);
+   }, [hasVideo, videoType, videoUrl]);
 
    useEffect(() => {
-      if (!hasVideo || videoType !== 'embed') {
+      if (!hasVideo || videoType !== 'embed' || !embedSrc) {
          return;
       }
 
-      void preloadPlayerJs();
-   }, [hasVideo, videoType]);
+      let cancelled = false;
+
+      const bindPlayer = async () => {
+         try {
+            await preloadPlayerJs();
+         } catch {
+            return;
+         }
+
+         if (cancelled || !iframeRef.current || !window.playerjs?.Player) {
+            return;
+         }
+
+         const player = new window.playerjs.Player(iframeRef.current);
+         playerRef.current = player;
+
+         player.on('ready', () => {
+            if (cancelled) {
+               return;
+            }
+            setPlayerReady(true);
+            // Keep muted until the user taps — only ensure playback continues.
+            try {
+               player.mute?.();
+               player.play?.();
+            } catch {
+               // Ignore.
+            }
+         });
+      };
+
+      void bindPlayer();
+
+      return () => {
+         cancelled = true;
+         playerRef.current = null;
+         setPlayerReady(false);
+      };
+   }, [hasVideo, videoType, embedSrc]);
 
    if (!open) {
       return null;
@@ -117,72 +156,81 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
       );
    };
 
-   const unmuteViaPlayerJs = async () => {
-      await preloadPlayerJs().catch(() => undefined);
-
-      const iframe = iframeRef.current;
-      if (!iframe || !window.playerjs?.Player) {
-         return false;
-      }
-
-      return await new Promise<boolean>((resolve) => {
-         try {
-            const player = new window.playerjs.Player(iframe);
-            let settled = false;
-
-            const finish = (ok: boolean) => {
-               if (settled) {
-                  return;
-               }
-               settled = true;
-               resolve(ok);
-            };
-
-            const applySound = () => {
-               try {
-                  player.unmute?.();
-                  player.setVolume?.(1);
-                  player.play?.();
-                  finish(true);
-               } catch {
-                  finish(false);
-               }
-            };
-
-            player.on('ready', applySound);
-            // Some embeds are already ready before we bind.
-            window.setTimeout(applySound, 150);
-            window.setTimeout(() => finish(false), 1500);
-         } catch {
-            resolve(false);
-         }
-      });
-   };
-
-   const unmute = async () => {
+   /**
+    * Must stay synchronous inside the click handler.
+    * Reloading the iframe (React setState src) loses the user gesture and Chrome keeps it muted.
+    */
+   const unmute = () => {
       if (videoType === 'file' && videoRef.current) {
-         videoRef.current.muted = false;
-         videoRef.current.volume = 1;
+         const video = videoRef.current;
+         video.muted = false;
+         video.volume = 1;
+         void video.play().catch(() => undefined);
          setMuted(false);
          setShowUnmutePrompt(false);
-         try {
-            await videoRef.current.play();
-         } catch {
-            // Ignore — prompt can stay if play fails.
-         }
          return;
       }
 
-      if (videoType === 'embed' && videoUrl) {
-         // Reload embed unmuted inside the user-gesture click — most reliable for Bunny.
-         const unmutedUrl = withEmbedMuteState(videoUrl, false);
-         setEmbedSrc(unmutedUrl);
+      if (videoType !== 'embed') {
+         return;
+      }
+
+      const player = playerRef.current;
+
+      try {
+         player?.unmute?.();
+         player?.setVolume?.(1);
+         player?.play?.();
+      } catch {
+         // Fall through — UI still updates; user can retry.
+      }
+
+      // Confirm mute state when Player.js supports getMuted.
+      const maybeGetMuted = player as PlayerJsInstance & {
+         getMuted?: (cb: (isMuted: boolean) => void) => void;
+      };
+
+      if (typeof maybeGetMuted?.getMuted === 'function') {
+         maybeGetMuted.getMuted((isMuted) => {
+            if (!isMuted) {
+               setMuted(false);
+               setShowUnmutePrompt(false);
+               return;
+            }
+            // Still muted — keep prompt visible so they can tap again once ready.
+            setShowUnmutePrompt(true);
+            setMuted(true);
+         });
+      } else {
          setMuted(false);
          setShowUnmutePrompt(false);
+      }
 
+      // If player was not ready yet, keep trying briefly while gesture context may still apply.
+      if (!playerReady) {
          window.setTimeout(() => {
-            void unmuteViaPlayerJs();
-         }, 400);
+            try {
+               playerRef.current?.unmute?.();
+               playerRef.current?.setVolume?.(1);
+               playerRef.current?.play?.();
+            } catch {
+               // Ignore.
+            }
+         }, 200);
+         window.setTimeout(() => {
+            try {
+               playerRef.current?.unmute?.();
+               playerRef.current?.setVolume?.(1);
+               playerRef.current?.play?.();
+               setMuted(false);
+               setShowUnmutePrompt(false);
+            } catch {
+               // Ignore.
+            }
+         }, 600);
+      } else {
+         setMuted(false);
+         setShowUnmutePrompt(false);
       }
    };
 
@@ -192,10 +240,13 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
 
       if (videoType === 'file' && videoRef.current) {
          videoRef.current.muted = true;
+         return;
       }
 
-      if (videoType === 'embed' && videoUrl) {
-         setEmbedSrc(withEmbedMuteState(videoUrl, true));
+      try {
+         playerRef.current?.mute?.();
+      } catch {
+         // Ignore.
       }
    };
 
@@ -235,7 +286,7 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
                         src={videoUrl}
                         poster={overlay.poster_url || undefined}
                         playsInline
-                        muted={muted}
+                        muted
                         autoPlay
                         loop
                         controls={false}
@@ -255,14 +306,14 @@ const DashboardWelcomeOverlay = ({ overlay }: Props) => {
                   {showUnmutePrompt ? (
                      <button
                         type="button"
-                        onClick={() => void unmute()}
+                        onClick={unmute}
                         className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/40 transition hover:bg-black/50"
                      >
                         <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-[#0a1d37] shadow-lg">
                            <VolumeX className="h-8 w-8" />
                         </span>
                         <span className="rounded-full bg-black/60 px-5 py-2.5 text-base font-semibold tracking-wide text-white">
-                           Tap for sound
+                           {playerReady || videoType === 'file' ? 'Tap for sound' : 'Loading… tap for sound'}
                         </span>
                      </button>
                   ) : (

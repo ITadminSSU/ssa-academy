@@ -8,6 +8,7 @@ export type PlayerJsInstance = {
    unmute?: () => void;
    mute?: () => void;
    setVolume?: (volume: number) => void;
+   getMuted?: (callback: (muted: boolean) => void) => void;
 };
 
 type PlayerJsConstructor = new (iframe: HTMLIFrameElement) => PlayerJsInstance;

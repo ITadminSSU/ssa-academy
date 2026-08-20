@@ -122,8 +122,8 @@ class BunnyStreamService
 
     public function signedEmbedUrl(string $videoId, ?\DateTimeInterface $expiresAt = null): string
     {
-        $baseUrl = 'https://player.mediadelivery.net/embed/' . $this->libraryId() . '/' . $videoId;
-        $query = 'autoplay=false&preload=true&playerjs=true';
+        $baseUrl = 'https://iframe.mediadelivery.net/embed/' . $this->libraryId() . '/' . $videoId;
+        $query = 'autoplay=true&muted=true&preload=true&responsive=true&playerjs=true';
 
         if ($this->tokenAuthKey() === '') {
             return $baseUrl . '?' . $query;

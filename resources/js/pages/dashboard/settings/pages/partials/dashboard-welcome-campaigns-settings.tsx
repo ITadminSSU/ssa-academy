@@ -273,7 +273,7 @@ const CampaignForm = ({
                   <Input
                      value={data.video_url}
                      onChange={(e) => setData('video_url', e.target.value)}
-                     placeholder="https://player.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
+                     placeholder="https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID"
                   />
                   <p className="text-muted-foreground text-xs">
                      Prefer Bunny: upload below (or in Bunny dashboard), then the embed URL is saved automatically.
@@ -287,7 +287,7 @@ const CampaignForm = ({
                   <BunnyVideoUploaderInput
                      onFileUploaded={(fileData) => {
                         const libraryId = bunnyStream?.library_id || '';
-                        const embedUrl = `https://player.mediadelivery.net/embed/${libraryId}/${fileData.bunny_video_id}`;
+                        const embedUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${fileData.bunny_video_id}`;
                         setBunnyUploadError('');
                         setData('video_type', 'embed');
                         setData('video_url', embedUrl);
