@@ -115,7 +115,7 @@ class CourseEnrollmentService extends MediaService
          return $enrollment;
       }, 5);
 
-      app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user']) ?? $enrollment);
+      app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']) ?? $enrollment);
 
       return $enrollment;
    }

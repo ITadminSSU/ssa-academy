@@ -180,6 +180,8 @@ class LaunchOfferMailService
 
     public function sendBalancePaidConfirmation(CourseEnrollment $enrollment, bool $force = false): bool
     {
+        // Superseded by the full welcome email (payment breakdown + category copy).
+        // Kept for optional manual resend via ssu:resend-launch-offer-emails --type=balance-paid.
         $enrollment->loadMissing(['user', 'course']);
 
         if ((! $force && $enrollment->balance_paid_confirmation_sent_at) || ! $enrollment->user || ! $enrollment->course) {

@@ -12,15 +12,26 @@ class CourseEnrollmentWelcomeMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * @param  list<string>  $introParagraphs
+     * @param  list<string>  $paymentBullets
+     * @param  list<string>  $bodyParagraphs
+     * @param  list<array{label: string, url: string, description?: string|null}>  $ctas
+     */
     public function __construct(
         public string $emailSubject,
         public string $greeting,
         public string $courseTitle,
+        public array $introParagraphs,
+        public array $paymentBullets,
+        public array $bodyParagraphs,
         public ?string $instructorName,
         public ?string $instructorBio,
-        public string $facebookUrl,
-        public string $ctaUrl,
-        public string $ctaLabel = 'Open your course',
+        public array $ctas,
+        public ?string $closingNote = null,
+        public string $farewell = 'Best regards,',
+        public ?string $signatureName = null,
+        public string $paymentHeading = 'Payment Breakdown:',
     ) {}
 
     public function envelope(): Envelope
@@ -34,6 +45,10 @@ class CourseEnrollmentWelcomeMail extends Mailable
     {
         return new Content(
             html: 'mail.course-enrollment-welcome',
+            with: [
+                'signatureName' => $this->signatureName
+                    ?? (config('branding.name', config('app.name')).' Team'),
+            ],
         );
     }
 

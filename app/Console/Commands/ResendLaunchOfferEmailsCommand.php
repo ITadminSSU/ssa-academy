@@ -21,7 +21,7 @@ class ResendLaunchOfferEmailsCommand extends Command
         CourseEnrollmentWelcomeMailService $welcomeMail,
     ): int {
         $enrollment = CourseEnrollment::query()
-            ->with(['user', 'course.instructor.user'])
+            ->with(['user', 'course.instructor.user', 'course.course_category'])
             ->find($this->argument('enrollment'));
 
         if (! $enrollment) {

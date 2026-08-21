@@ -29,7 +29,7 @@ class ResendWelcomeEmailCommand extends Command
         }
 
         $query = CourseEnrollment::query()
-            ->with(['user', 'course.instructor.user'])
+            ->with(['user', 'course.instructor.user', 'course.course_category'])
             ->whereHas('user', fn ($q) => $q->where('email', $email));
 
         if ($courseId) {

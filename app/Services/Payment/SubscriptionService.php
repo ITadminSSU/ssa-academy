@@ -182,7 +182,7 @@ class SubscriptionService
                 'suspended_at' => $accessStatus === EnrollmentAccessStatus::SUSPENDED ? now() : null,
             ]);
 
-            $enrollment = $enrollment->fresh(['user', 'course.instructor.user']);
+            $enrollment = $enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']);
             app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
 
             return $enrollment;
@@ -211,7 +211,7 @@ class SubscriptionService
         }
 
         $enrollment = CourseEnrollment::query()
-            ->with(['user', 'course.instructor.user'])
+            ->with(['user', 'course.instructor.user', 'course.course_category'])
             ->where('subscription_id', $subscription->id)
             ->first();
 

@@ -173,8 +173,8 @@ class LaunchOfferEnrollmentService
             return $enrollment->fresh(['user', 'course']);
         });
 
-        $this->launchOfferMail->sendBalancePaidConfirmation($enrollment->fresh(['user', 'course']));
-        app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user']));
+        // Welcome email is the full enrollment confirmation (includes payment breakdown).
+        app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']));
 
         return $enrollment;
     }
