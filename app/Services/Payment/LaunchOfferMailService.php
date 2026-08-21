@@ -34,17 +34,17 @@ class LaunchOfferMailService
         $academyName = (string) config('branding.name', config('app.name'));
 
         $sent = $this->send($user, new LaunchOfferStudentMail(
-            emailSubject: 'Pre-registration confirmed — '.$course->title,
+            emailSubject: 'Seat reserved for '.$course->title.'.',
             greeting: 'Hi '.$this->firstName($user).',',
             paragraphs: [
-                'Thank you for your deposit of '.$deposit.' as pre-registration for “'.$course->title.'”. Please note that this deposit is non-refundable.',
+                'Thank you for your deposit of '.$deposit.' as pre-registration for “'.$course->title.'”. Your seat is now reserved. Please note that this deposit is non-refundable.',
             ],
             bullets: [
                 'Pre-registration ('.$preRegistrationDate.'): '.$deposit,
                 'Balance: '.$balance,
                 'Total Course Price: '.$total,
             ],
-            closingNote: 'Thank you for trusting '.$academyName.' with your learning journey. We look forward to supporting you throughout the course.',
+            closingNote: 'Thank you for trusting '.$academyName.' with your learning journey. We’re excited to have you with us and look forward to supporting you throughout your course.',
             bulletsHeading: 'Payment Breakdown:',
             ctas: [
                 [
@@ -55,7 +55,7 @@ class LaunchOfferMailService
                 [
                     'label' => 'Explore all courses',
                     'url' => url('/courses/all'),
-                    'description' => 'Browse the other courses offered by '.$academyName.'.',
+                    'description' => 'Explore the other courses available through '.$academyName.' and find the next course to support your career goals.',
                 ],
             ],
             farewell: 'Best regards,',
