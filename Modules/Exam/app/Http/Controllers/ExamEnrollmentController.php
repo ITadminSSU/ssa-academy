@@ -36,12 +36,20 @@ class ExamEnrollmentController extends Controller
                 ['user_id' => $user->id])
         );
 
-        $prices = CoursePricingType::cases();
+        $prices = array_map(
+            static fn (CoursePricingType $case): string => $case->value,
+            CoursePricingType::cases(),
+        );
         $users = $this->user->getUsers([]);
         $exams = $this->exam->getAllExams(['status' => 'published']);
         $enrollments = $this->examEnrollments->getEnrollments($data, true);
 
-        return Inertia::render('dashboard/enrollments/exams', compact('prices', 'users', 'exams', 'enrollments'));
+        return Inertia::render('dashboard/enrollments/exams', [
+            'prices' => $prices,
+            'users' => $users,
+            'exams' => $exams,
+            'enrollments' => $enrollments,
+        ]);
     }
 
     /**

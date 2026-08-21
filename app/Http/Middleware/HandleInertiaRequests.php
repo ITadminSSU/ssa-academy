@@ -161,7 +161,7 @@ class HandleInertiaRequests extends Middleware
 
         $items = $navbar->relationLoaded('navbarItems')
             ? $navbar->navbarItems
-            : collect($navbar->navbar_items ?? []);
+            : collect(is_array($navbar->navbar_items ?? null) ? $navbar->navbar_items : []);
 
         $filtered = collect($items)
             ->filter(function ($item) {

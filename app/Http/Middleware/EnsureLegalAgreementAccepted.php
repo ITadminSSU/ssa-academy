@@ -29,6 +29,10 @@ class EnsureLegalAgreementAccepted
             return $next($request);
         }
 
+        if ($request->header('X-Inertia')) {
+            return redirect()->route('legal.agreement.show');
+        }
+
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => 'You must complete the student agreement before continuing.',
