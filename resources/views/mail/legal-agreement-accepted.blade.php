@@ -11,8 +11,8 @@
                 <table width="680" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 8px; overflow: hidden;">
                     <tr>
                         <td style="background: #2d537c; color: #ffffff; padding: 24px 32px;">
-                            <h1 style="margin: 0; font-size: 22px;">Terms & Conditions Confirmation</h1>
-                            <p style="margin: 8px 0 0; opacity: 0.9;">{{ config('branding.name') }}</p>
+                            @include('mail.partials.brand-logo', ['mailLogoVariant' => 'light', 'mailLogoWidth' => 160])
+                            <h1 style="margin: 16px 0 0; font-size: 22px;">Terms & Conditions Confirmation</h1>
                         </td>
                     </tr>
                     <tr>

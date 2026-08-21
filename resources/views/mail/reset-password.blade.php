@@ -44,6 +44,10 @@
 </head>
 
 <body>
+   <div style="margin: 0 0 24px;">
+      @include('mail.partials.brand-logo')
+   </div>
+
    <h1 style="font-size: 1.5em; font-weight: 600; margin-bottom: 1em;">
       Hello, {{ $user->name }}!
    </h1>

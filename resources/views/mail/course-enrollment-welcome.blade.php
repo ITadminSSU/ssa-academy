@@ -10,8 +10,8 @@
 <body style="margin: 0; padding: 24px; font-family: Georgia, 'Times New Roman', serif; color: #1a1a1a; background: #f7f5f2; line-height: 1.55;">
    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e6e1da;">
       <tr>
-         <td style="padding: 28px 28px 8px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; color: #6b635a;">
-            {{ config('branding.short_name', config('app.name')) }}
+         <td style="padding: 28px 28px 16px;">
+            @include('mail.partials.brand-logo')
          </td>
       </tr>
       <tr>

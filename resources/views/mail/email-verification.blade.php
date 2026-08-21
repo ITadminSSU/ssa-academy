@@ -38,6 +38,10 @@
 </head>
 
 <body>
+   <div style="margin: 0 0 24px;">
+      @include('mail.partials.brand-logo')
+   </div>
+
    @php
       $expireMinutes = (int) ($expireMinutes ?? 15);
    @endphp
