@@ -24,27 +24,46 @@ class LaunchOfferMailService
 
         $course = $enrollment->course;
         $user = $enrollment->user;
-        $deposit = $this->money((float) ($enrollment->deposit_amount ?? 0));
-        $balance = $this->money((float) ($enrollment->balance_amount ?? 0));
-        $due = $this->date($enrollment->balance_due_at);
-        $deadline = $this->date($enrollment->balance_deadline_at);
+        $depositAmount = (float) ($enrollment->deposit_amount ?? 0);
+        $balanceAmount = (float) ($enrollment->balance_amount ?? 0);
+        $deposit = $this->money($depositAmount);
+        $balance = $this->money($balanceAmount);
+        $total = $this->money($depositAmount + $balanceAmount);
+        $preRegistrationDate = $this->date($enrollment->deposit_paid_at ?? now());
+        $launchDate = $this->date($enrollment->balance_due_at);
+        $academyName = (string) config('branding.name', config('app.name'));
 
         $sent = $this->send($user, new LaunchOfferStudentMail(
-            emailSubject: 'Seat reserved — '.$course->title,
+            emailSubject: 'Pre-registration confirmed — '.$course->title,
             greeting: 'Hi '.$this->firstName($user).',',
             paragraphs: [
-                'Your deposit of '.$deposit.' for “'.$course->title.'” is confirmed. Your pre-registration seat is reserved.',
-                'The remaining balance of '.$balance.' is due on launch day. Pay by the deadline below to unlock full course access. Your deposit is non-refundable.',
-                'Watch for vouchers from our Facebook page or your referrer that you can use when paying your balance.',
+                'Thank you for your deposit of '.$deposit.' as pre-registration for “'.$course->title.'”. Please note that this deposit is non-refundable.',
             ],
             bullets: [
-                'Balance due: '.$due,
-                'Pay by (grace deadline): '.$deadline,
-                'Remaining balance: '.$balance,
+                'Pre-registration ('.$preRegistrationDate.'): '.$deposit,
+                'Balance: '.$balance,
+                'Total Course Price: '.$total,
             ],
-            ctaLabel: 'View course',
-            ctaUrl: $this->courseUrl($course),
-            closingNote: 'We will email you again when the balance payment window opens.',
+            closingNote: 'Thank you for trusting '.$academyName.' with your learning journey. We look forward to supporting you throughout the course.',
+            bulletsHeading: 'Payment Breakdown:',
+            ctas: [
+                [
+                    'label' => 'Follow Our Facebook Page',
+                    'url' => $this->facebookPageUrl(),
+                    'description' => 'Connect with SMARTSOURCING USA and be updated with job opportunities, discount vouchers, and other important updates in the construction industry.',
+                ],
+                [
+                    'label' => 'Explore all courses',
+                    'url' => url('/courses/all'),
+                    'description' => 'Browse the other courses offered by '.$academyName.'.',
+                ],
+            ],
+            farewell: 'Best regards,',
+            signatureName: $academyName.' Team',
+            postParagraphs: [
+                'You may pay the remaining balance of '.$balance.' on launch day ('.$launchDate.') to unlock full access to the course.',
+                'Keep an eye out for discount vouchers on our official Facebook page or from your referrer for huge savings!',
+            ],
         ));
 
         if ($sent) {
@@ -253,6 +272,17 @@ class LaunchOfferMailService
             'slug' => $course->slug,
             'id' => $course->id,
         ]);
+    }
+
+    private function facebookPageUrl(): string
+    {
+        $url = trim((string) config('branding.facebook_page_url', ''));
+
+        if ($url !== '') {
+            return $url;
+        }
+
+        return 'https://www.facebook.com/smartsourcingusa';
     }
 
     private function firstName(User $user): string

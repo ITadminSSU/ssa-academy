@@ -59,6 +59,11 @@
       @if (! empty($bullets))
          <tr>
             <td style="padding: 4px 28px 18px;">
+               @if (! empty($bulletsHeading))
+                  <p style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #14110f;">
+                     {{ $bulletsHeading }}
+                  </p>
+               @endif
                <ul style="margin: 0; padding-left: 20px; font-size: 15px; color: #2c2824;">
                   @foreach ($bullets as $bullet)
                      <li style="margin-bottom: 8px;">{{ $bullet }}</li>
@@ -68,23 +73,40 @@
          </tr>
       @endif
 
-      @if ($ctaUrl && $ctaLabel)
+      @foreach ($postParagraphs ?? [] as $paragraph)
          <tr>
-            <td style="padding: 4px 28px 22px;">
-               <a
-                  href="{{ $ctaUrl }}"
-                  style="display: inline-block; padding: 12px 20px; background-color: #1f4d3a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px;"
-               >
-                  {{ $ctaLabel }}
-               </a>
+            <td style="padding: 0 28px 14px; font-size: 15px; color: #2c2824;">
+               {{ $paragraph }}
             </td>
          </tr>
-         <tr>
-            <td style="padding: 0 28px 18px; font-size: 13px; color: #6b635a; word-break: break-all;">
-               Or open: {{ $ctaUrl }}
-            </td>
-         </tr>
-      @endif
+      @endforeach
+
+      @foreach ($resolvedCtas as $cta)
+         @if (($cta['url'] ?? '') !== '' && ($cta['label'] ?? '') !== '')
+            <tr>
+               <td style="padding: 4px 28px 8px;">
+                  <a
+                     href="{{ $cta['url'] }}"
+                     style="display: inline-block; padding: 12px 20px; background-color: #1f4d3a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px;"
+                  >
+                     {{ $cta['label'] }}
+                  </a>
+               </td>
+            </tr>
+            @if (! empty($cta['description']))
+               <tr>
+                  <td style="padding: 0 28px 14px; font-size: 14px; color: #6b635a;">
+                     {{ $cta['description'] }}
+                  </td>
+               </tr>
+            @endif
+            <tr>
+               <td style="padding: 0 28px 18px; font-size: 13px; color: #6b635a; word-break: break-all;">
+                  Or open: {{ $cta['url'] }}
+               </td>
+            </tr>
+         @endif
+      @endforeach
 
       @if ($closingNote)
          <tr>
@@ -96,8 +118,8 @@
 
       <tr>
          <td style="padding: 8px 28px 28px; font-size: 14px; color: #2c2824;">
-            Thanks,<br>
-            {{ config('mail.from.name', config('app.name')) }} Team
+            {{ $farewell }}<br>
+            {{ $signatureName }}
          </td>
       </tr>
    </table>

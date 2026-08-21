@@ -13,6 +13,7 @@ return [
     'support_email' => env('BRAND_SUPPORT_EMAIL', 'support@smartsourcingusa.com'),
     'contact_email' => env('BRAND_CONTACT_EMAIL', 'info@smartsourcingusa.com'),
     'facebook_group_url' => env('BRAND_FACEBOOK_GROUP_URL', 'https://www.facebook.com/share/g/14ttXqLttek/'),
+    'facebook_page_url' => env('BRAND_FACEBOOK_PAGE_URL', 'https://www.facebook.com/smartsourcingusa'),
 
     'logos' => [
         'icon' => '/assets/branding/favicon-ssa.png',
