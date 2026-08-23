@@ -4,11 +4,25 @@
 
       <div class="space-y-2">
          <div class="flex justify-between">
-            <span>{{ __('Price') }}</span>
+            <span>
+               @if (($checkoutMode ?? null) === 'deposit')
+                  {{ __('Deposit due today') }}
+               @elseif (($checkoutMode ?? null) === 'balance')
+                  {{ __('Launch balance') }}
+               @elseif (($checkoutMode ?? null) === 'full_launch')
+                  {{ __('Enrollment price') }}
+               @else
+                  {{ __('Price') }}
+               @endif
+            </span>
             <span>{{ number_format($subtotal, 2) }} {{ $currency }}</span>
          </div>
 
-         @if (($checkoutMode ?? null) === 'upfront_subscription')
+         @if (($checkoutMode ?? null) === 'deposit')
+            <p class="text-muted-foreground text-xs">
+               {{ __('Pay this deposit now to reserve your seat. The remaining balance is due at launch. The deposit is non-refundable.') }}
+            </p>
+         @elseif (($checkoutMode ?? null) === 'upfront_subscription')
             <p class="text-muted-foreground text-xs">
                {{ __('Pay this enrollment amount now. Monthly subscription billing begins after the first free month.') }}
             </p>

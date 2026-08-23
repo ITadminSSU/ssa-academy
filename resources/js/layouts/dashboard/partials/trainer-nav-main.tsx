@@ -76,7 +76,7 @@ export function TrainerNavMain() {
                               'h-9 rounded-lg data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground',
                            )}
                         >
-                           <Link href={section.path} prefetch>
+                              <Link href={section.path}>
                               <section.Icon className="h-4 w-4" />
                               <span className="text-sm">{section.name}</span>
                            </Link>
@@ -106,7 +106,7 @@ export function TrainerNavMain() {
                                  'h-9 rounded-lg data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground',
                               )}
                            >
-                              <Link href={item.path} prefetch>
+                              <Link href={item.path}>
                                  <span className="text-sm">{item.name}</span>
                               </Link>
                            </SidebarMenuButton>

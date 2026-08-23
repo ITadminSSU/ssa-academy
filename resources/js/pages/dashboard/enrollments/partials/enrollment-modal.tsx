@@ -25,7 +25,7 @@ export interface EnrollmentProps extends SharedData {
 
 const EnrollmentModal = ({ type, title, handler }: Props) => {
    const [open, setOpen] = useState(false);
-   const { users, exams, courses, prices, translate } = usePage<EnrollmentProps>().props;
+   const { users = [], exams = [], courses = [], prices = [], translate } = usePage<EnrollmentProps>().props;
 
    const { input, button } = translate;
 
@@ -57,14 +57,14 @@ const EnrollmentModal = ({ type, title, handler }: Props) => {
       }
    };
 
-   const transformedUsers = users.map((user) => ({
+   const transformedUsers = (users ?? []).map((user) => ({
       label: user.name,
       value: user.id as string,
    }));
 
    const transformedExams =
       type === 'exam'
-         ? exams.map((exam) => ({
+         ? (exams ?? []).map((exam) => ({
               label: exam.title,
               value: exam.id as string,
            }))
@@ -72,7 +72,7 @@ const EnrollmentModal = ({ type, title, handler }: Props) => {
 
    const transformedCourses =
       type === 'course'
-         ? courses.map((course) => ({
+         ? (courses ?? []).map((course) => ({
               label: course.title,
               value: course.id as string,
            }))

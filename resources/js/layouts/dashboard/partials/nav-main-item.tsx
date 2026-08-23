@@ -68,7 +68,7 @@ const NavMainItem = (props: NavMainItemProps) => {
                         isActive={activeChildRoute(pageRoute.slug, slug)}
                         className="h-8 rounded-lg px-3 data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground"
                      >
-                        <Link href={path} prefetch>
+                        <Link href={path}>
                            <ChevronRight className="text-sidebar-foreground/50 h-3.5 w-3.5" />
                            <span className="text-sm font-normal capitalize">{name}</span>
                         </Link>
@@ -86,7 +86,7 @@ const NavMainItem = (props: NavMainItemProps) => {
             'h-9 rounded-lg data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground',
          )}
       >
-         <Link href={path} prefetch>
+         <Link href={path}>
             <Icon className="h-4 w-4" />
             <span className="text-sm">{name}</span>
          </Link>

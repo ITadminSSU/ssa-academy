@@ -20,6 +20,9 @@ use Modules\Language\Services\LanguageService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\App;
 use Inertia\Middleware;
+use Inertia\Support\Header;
+use Closure;
+use Symfony\Component\HttpFoundation\Response;
 use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
@@ -42,6 +45,29 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    /**
+     * Prevent CDNs/proxies from caching full HTML documents and replaying them
+     * to Inertia XHR visits (shows as a DOCTYPE string / "plain JSON" modal).
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $response = parent::handle($request, $next);
+
+        $response->headers->set('Cache-Control', 'private, no-cache, no-store, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        $vary = array_filter(array_map('trim', explode(',', (string) $response->headers->get('Vary', ''))));
+        foreach ([Header::INERTIA, 'Accept', 'Cookie'] as $token) {
+            if (! in_array($token, $vary, true)) {
+                $vary[] = $token;
+            }
+        }
+        $response->headers->set('Vary', implode(', ', $vary));
+
+        return $response;
+    }
 
     /**
      * Determines the current asset version.

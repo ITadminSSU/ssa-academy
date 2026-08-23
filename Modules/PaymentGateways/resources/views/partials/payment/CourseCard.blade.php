@@ -1,7 +1,29 @@
 @php
    $isFree = ($item->pricing_type ?? null) === 'free';
    $hasDiscount = !empty($item->discount);
-   $allowsCoupons = in_array(($checkoutMode ?? null), [
+   $resolvedCheckoutMode = $checkoutMode ?? null;
+   $isDepositCheckout = $resolvedCheckoutMode === 'deposit';
+   $isBalanceCheckout = $resolvedCheckoutMode === 'balance';
+   $isFullLaunchCheckout = $resolvedCheckoutMode === 'full_launch';
+   $isLaunchCheckout = $isDepositCheckout || $isBalanceCheckout || $isFullLaunchCheckout;
+   $offer = is_array($launchOffer ?? null) ? $launchOffer : [];
+   $listPrice = (float) ($offer['list_price'] ?? 0);
+   $offerPrice = (float) ($offer['offer_price'] ?? 0);
+   $depositAmount = (float) ($offer['deposit_amount'] ?? 0);
+   $balanceAmount = (float) ($offer['balance_amount'] ?? 0);
+   $fullUpfrontPrice = (float) ($offer['full_upfront_price'] ?? 0);
+   $courseDisplayPrice = $isFullLaunchCheckout
+      ? ($fullUpfrontPrice > 0 ? $fullUpfrontPrice : $listPrice)
+      : ($listPrice > 0 ? $listPrice : $offerPrice);
+   $showOfferTotal = ! $isFullLaunchCheckout
+      && $offerPrice > 0
+      && abs($offerPrice - $courseDisplayPrice) > 0.009;
+   $showListStrike = $isFullLaunchCheckout
+      && $listPrice > 0
+      && $fullUpfrontPrice > 0
+      && $listPrice > $fullUpfrontPrice + 0.009;
+   $formatMoney = fn ($amount) => $currency.' '.number_format((float) $amount, 2);
+   $allowsCoupons = in_array($resolvedCheckoutMode, [
       null,
       'balance',
       'full_launch',
@@ -74,28 +96,81 @@
 
    @unless ($isFree)
       <div class="border-border bg-muted/50 space-y-3 rounded-lg border border-dashed p-4">
-         <div class="flex items-center justify-between text-sm font-medium">
-            <span>Course Price</span>
-            <span class="text-base">
-               @if ($hasDiscount)
-                  <span class="text-muted-foreground line-through">
-                     {{ $currency }} {{ $item->price }}
-                  </span>
-               @else
-                  <span class="font-semibold">
-                     {{ $currency }} {{ $item->price }}
-                  </span>
-               @endif
-            </span>
-         </div>
-
-         @if ($hasDiscount)
+         @if ($isLaunchCheckout)
             <div class="flex items-center justify-between text-sm font-medium">
-               <span>Discounted Price</span>
-               <span class="text-primary text-base font-semibold">
-                  {{ $currency }} {{ $item->discount_price }}
+               <span>Course Price</span>
+               <span class="text-base space-x-2">
+                  @if ($showListStrike)
+                     <span class="text-muted-foreground line-through">{{ $formatMoney($listPrice) }}</span>
+                     <span class="font-semibold">{{ $formatMoney($courseDisplayPrice) }}</span>
+                  @elseif ($showOfferTotal)
+                     <span class="text-muted-foreground line-through">{{ $formatMoney($courseDisplayPrice) }}</span>
+                  @else
+                     <span class="font-semibold">{{ $formatMoney($courseDisplayPrice) }}</span>
+                  @endif
                </span>
             </div>
+
+            @if ($showOfferTotal)
+               <div class="flex items-center justify-between text-sm font-medium">
+                  <span>Pre-registration total</span>
+                  <span class="text-primary text-base font-semibold">{{ $formatMoney($offerPrice) }}</span>
+               </div>
+            @endif
+
+            @if ($isDepositCheckout)
+               <div class="flex items-center justify-between text-sm font-medium">
+                  <span>Deposit due today</span>
+                  <span class="text-base font-semibold">{{ $formatMoney($depositAmount) }}</span>
+               </div>
+               @if ($balanceAmount > 0)
+                  <div class="flex items-center justify-between text-sm font-medium">
+                     <span>Balance due at launch</span>
+                     <span class="text-base">{{ $formatMoney($balanceAmount) }}</span>
+                  </div>
+               @endif
+               <p class="text-muted-foreground text-xs leading-relaxed">
+                  You are paying the deposit now to reserve your seat. The remaining balance is due at launch.
+                  @if (! empty($offer['deposit_non_refundable']))
+                     The deposit is non-refundable.
+                  @endif
+               </p>
+            @elseif ($isBalanceCheckout)
+               @if ($depositAmount > 0)
+                  <div class="flex items-center justify-between text-sm font-medium">
+                     <span>Deposit already paid</span>
+                     <span class="text-base">{{ $formatMoney($depositAmount) }}</span>
+                  </div>
+               @endif
+               <div class="flex items-center justify-between text-sm font-medium">
+                  <span>Balance due today</span>
+                  <span class="text-base font-semibold">{{ $formatMoney($balanceAmount > 0 ? $balanceAmount : $subtotal) }}</span>
+               </div>
+            @endif
+         @else
+            <div class="flex items-center justify-between text-sm font-medium">
+               <span>Course Price</span>
+               <span class="text-base">
+                  @if ($hasDiscount)
+                     <span class="text-muted-foreground line-through">
+                        {{ $currency }} {{ $item->price }}
+                     </span>
+                  @else
+                     <span class="font-semibold">
+                        {{ $currency }} {{ $item->price }}
+                     </span>
+                  @endif
+               </span>
+            </div>
+
+            @if ($hasDiscount)
+               <div class="flex items-center justify-between text-sm font-medium">
+                  <span>Discounted Price</span>
+                  <span class="text-primary text-base font-semibold">
+                     {{ $currency }} {{ $item->discount_price }}
+                  </span>
+               </div>
+            @endif
          @endif
 
          @if ($coupon)
@@ -107,7 +182,7 @@
 
          <div class="flex items-center justify-between text-base font-semibold">
             <span>Total Payment</span>
-            <span>{{ $currency }} {{ $discountedPrice }}</span>
+            <span>{{ $isLaunchCheckout ? $formatMoney($discountedPrice) : $currency.' '.$discountedPrice }}</span>
          </div>
       </div>
    @else
