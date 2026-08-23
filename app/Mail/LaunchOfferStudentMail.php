@@ -16,7 +16,7 @@ class LaunchOfferStudentMail extends Mailable
      * @param  list<string>  $paragraphs
      * @param  list<string>  $bullets
      * @param  list<string>  $postParagraphs
-     * @param  list<array{label: string, url: string, description?: string|null}>  $ctas
+     * @param  list<array{label: string, url: string, description?: string|null, button_color?: string|null}>  $ctas
      */
     public function __construct(
         public string $emailSubject,
@@ -58,7 +58,7 @@ class LaunchOfferStudentMail extends Mailable
     }
 
     /**
-     * @return list<array{label: string, url: string, description: string|null}>
+     * @return list<array{label: string, url: string, description: string|null, button_color: string|null}>
      */
     public function resolvedCtas(): array
     {
@@ -68,6 +68,7 @@ class LaunchOfferStudentMail extends Mailable
                     'label' => (string) ($cta['label'] ?? ''),
                     'url' => (string) ($cta['url'] ?? ''),
                     'description' => isset($cta['description']) ? (string) $cta['description'] : null,
+                    'button_color' => isset($cta['button_color']) ? (string) $cta['button_color'] : null,
                 ],
                 $this->ctas,
             ));
@@ -78,6 +79,7 @@ class LaunchOfferStudentMail extends Mailable
                 'label' => $this->ctaLabel,
                 'url' => $this->ctaUrl,
                 'description' => null,
+                'button_color' => null,
             ]];
         }
 

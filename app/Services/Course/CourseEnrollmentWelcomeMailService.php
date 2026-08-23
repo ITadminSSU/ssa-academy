@@ -70,11 +70,13 @@ class CourseEnrollmentWelcomeMailService
                         'id' => $course->id,
                     ]),
                     'description' => 'Ready to start learning? Your course materials are waiting for you.',
+                    'button_color' => '#8C2A23',
                 ],
                 [
                     'label' => 'Follow Our Facebook Page',
                     'url' => $this->facebookPageUrl(),
                     'description' => 'Connect with SMARTSOURCING USA and be updated with job opportunities and other important updates in the construction industry.',
+                    'button_color' => '#1877F2',
                 ],
             ],
             closingNote: 'Thank you for trusting '.$academyName.' with your learning journey. We look forward to supporting you as you build your skills and prepare for new opportunities.',

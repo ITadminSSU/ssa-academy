@@ -85,12 +85,7 @@
          @if (($cta['url'] ?? '') !== '' && ($cta['label'] ?? '') !== '')
             <tr>
                <td style="padding: 4px 28px 8px;">
-                  <a
-                     href="{{ $cta['url'] }}"
-                     style="display: inline-block; padding: 12px 20px; background-color: #1f4d3a; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px;"
-                  >
-                     {{ $cta['label'] }}
-                  </a>
+                  @include('mail.partials.cta-button', ['cta' => $cta])
                </td>
             </tr>
             @if (! empty($cta['description']))

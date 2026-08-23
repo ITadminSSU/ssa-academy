@@ -51,11 +51,13 @@ class LaunchOfferMailService
                     'label' => 'Follow Our Facebook Page',
                     'url' => $this->facebookPageUrl(),
                     'description' => 'Connect with SMARTSOURCING USA and be updated with job opportunities, discount vouchers, and other important updates in the construction industry.',
+                    'button_color' => '#1877F2',
                 ],
                 [
                     'label' => 'Explore all courses',
                     'url' => url('/courses/all'),
                     'description' => 'Explore the other courses available through '.$academyName.' and find the next course to support your career goals.',
+                    'button_color' => '#8C2A23',
                 ],
             ],
             farewell: 'Best regards,',
