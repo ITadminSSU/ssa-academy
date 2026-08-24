@@ -24,11 +24,11 @@
             </p>
          @elseif (($checkoutMode ?? null) === 'upfront_subscription')
             <p class="text-muted-foreground text-xs">
-               {{ __('Pay this enrollment amount now for full access. Your first monthly subscription charge is billed automatically about 30 days later.') }}
+               {{ __('Pay this enrollment amount plus the first month of Project Plans today for full access. Monthly billing continues after that. This path does not include a free month.') }}
             </p>
          @elseif (($checkoutMode ?? null) === 'full_launch')
             <p class="text-muted-foreground text-xs">
-               {{ __('Pay this enrollment amount now for full access. Your first monthly subscription charge is billed automatically about 30 days later. This path does not include a free month.') }}
+               {{ __('Pay this enrollment amount plus the first month of Project Plans today for full access. Monthly billing continues after that. This path does not include a free month.') }}
             </p>
          @elseif (($checkoutMode ?? null) === 'balance')
             <p class="text-muted-foreground text-xs">

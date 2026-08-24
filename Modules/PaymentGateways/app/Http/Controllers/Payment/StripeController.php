@@ -350,8 +350,8 @@ class StripeController extends Controller
     }
 
     /**
-     * Charge enrollment now, then start monthly billing next month without a Stripe trial
-     * so Checkout does not show "free".
+     * Charge course enrollment + first monthly subscription now (no free trial).
+     * Pre-reg balance checkout stays separate and keeps the free-month trial.
      */
     protected function startPaidEnrollmentThenMonthlyCheckout(
         Request $request,
@@ -369,6 +369,7 @@ class StripeController extends Controller
 
         $coupon = $this->resolveSubmittedCoupon($course, $request->coupon, $user->id);
         $pricing = $this->payment->calculateCustomPrice($upfront, $coupon);
+        $subscriptionPrice = $this->launchOffer->subscriptionPrice($course);
 
         $this->stripeCustomer->configureStripe();
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
@@ -379,11 +380,12 @@ class StripeController extends Controller
             $coupon,
             $pricing,
         );
-        $productData['description'] = $productData['description']
-            ?? 'Enrollment only. Monthly Project Plans start in 30 days and are not a free month.';
+        if (empty($productData['description'])) {
+            $productData['description'] = 'Course access now. First month of Project Plans is included in this payment (not a free month).';
+        }
 
-        $paymentIntentData = [
-            'setup_future_usage' => 'off_session',
+        $subscriptionData = [
+            // No trial — first month is charged with enrollment today.
             'metadata' => [
                 'user_id' => (string) $user->id,
                 'course_id' => (string) $course->id,
@@ -393,18 +395,12 @@ class StripeController extends Controller
         ];
         $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);
         if ($voucherDescription) {
-            $paymentIntentData['description'] = $voucherDescription;
+            $subscriptionData['description'] = $voucherDescription;
         }
 
         $response = Session::create([
-            'mode' => 'payment',
+            'mode' => 'subscription',
             'customer' => $customerId,
-            'customer_update' => [
-                'name' => 'auto',
-                'address' => 'auto',
-            ],
-            // Do not set payment_method_collection here — Stripe only allows it with recurring prices.
-            // setup_future_usage on payment_intent_data still saves the card for the delayed monthly sub.
             'line_items' => [
                 [
                     'price_data' => [
@@ -412,6 +408,10 @@ class StripeController extends Controller
                         'product_data' => $productData,
                         'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
+                    'quantity' => 1,
+                ],
+                [
+                    'price' => $course->stripe_price_id,
                     'quantity' => 1,
                 ],
             ],
@@ -426,13 +426,13 @@ class StripeController extends Controller
                 'billing_model' => $billingModel,
                 'launch_offer_mode' => $offerMode,
                 'coupon_code' => $coupon?->code,
-                'delayed_monthly_subscription' => '1',
+                'charged_amount' => (string) ($pricing['finalPrice'] ?? 0),
+                'subscription_price' => (string) $subscriptionPrice,
             ],
-            'payment_intent_data' => $paymentIntentData,
-            'billing_address_collection' => 'auto',
+            'subscription_data' => $subscriptionData,
             'custom_text' => [
                 'submit' => [
-                    'message' => 'Monthly Project Plans start in 30 days. This is not a free month.',
+                    'message' => 'You pay the course price plus the first month of Project Plans today. This is not a free month. Monthly billing continues after that.',
                 ],
             ],
         ]);
@@ -448,6 +448,7 @@ class StripeController extends Controller
                 'stripe_id' => $response->id,
                 'tax_amount' => $pricing['taxAmount'],
                 'coupon_code' => $coupon?->code,
+                'charged_amount' => (float) ($pricing['finalPrice'] ?? 0),
             ],
         ]);
 
@@ -595,17 +596,17 @@ class StripeController extends Controller
 
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('success', 'Balance paid. Full course access is unlocked. Your subscription is free for one month, then the first monthly charge is billed the following month.');
+                    ->with('success', 'Balance paid. Full course access is unlocked. Your subscription is free for one month, then monthly billing starts.');
             }
 
             if (in_array($offerMode, ['full_launch', 'upfront_subscription'], true) && $course) {
-                if ($order->payment_status !== 'paid') {
+                if ($order->mode === 'subscription' && ! empty($order->subscription)) {
+                    $this->subscriptionService->activateFromCheckoutSession($order);
+                } else {
                     return redirect()
                         ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
                         ->with('error', 'Payment was not completed. Please try again.');
                 }
-
-                $this->subscriptionService->startDelayedMonthlyFromPaidCheckout($order);
 
                 $this->sendWelcomeEmailForCourse($user, $course);
                 app(CourseSectionService::class)
@@ -617,7 +618,7 @@ class StripeController extends Controller
 
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('success', 'Enrollment complete. You have full access now. Your first monthly subscription charge will be billed automatically in about 30 days.');
+                    ->with('success', 'Enrollment complete. You paid the course price and the first month of Project Plans today. Monthly billing continues from next month.');
             }
 
             if (
@@ -639,8 +640,7 @@ class StripeController extends Controller
 
                 if ($course) {
                     $message = match ($offerMode) {
-                        'full_launch' => 'Enrollment complete. You have full access now. Your first monthly subscription charge will be billed automatically in about 30 days.',
-                        'upfront_subscription' => 'Enrollment complete. You have access now. Your first monthly subscription charge will be billed automatically in about 30 days.',
+                        'full_launch', 'upfront_subscription' => 'Enrollment complete. You paid the course price and the first month of Project Plans today. Monthly billing continues from next month.',
                         default => 'Subscription active. You now have access to this course.',
                     };
 

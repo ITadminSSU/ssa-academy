@@ -237,7 +237,7 @@ class LaunchOfferMailService
             bullets: [],
             ctaLabel: 'Browse courses',
             ctaUrl: url('/'),
-            closingNote: 'If you still want to enroll, you may purchase at the full upfront course price. That path includes access now and the first monthly subscription charge about 30 days later, without a free month.',
+            closingNote: 'If you still want to enroll, you may purchase at the full upfront course price. That path charges the course price plus the first month of Project Plans today (no free month), then monthly billing continues.',
         ));
 
         if ($sent) {

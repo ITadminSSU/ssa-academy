@@ -347,9 +347,9 @@ const Pricing = () => {
                               />
                               <p className="text-muted-foreground mt-1 text-xs">
                                  {isUpfrontSubscription
-                                    ? 'Students pay the upfront amount now. The first monthly charge is billed about 30 days later, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
+                                    ? 'Students pay the upfront amount plus this first monthly charge today, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
                                     : isPreRegisterSubscription
-                                      ? 'Only students who pay the launch balance on time get one free subscription month, then the first monthly charge the following month. Full-upfront enrollments after pre-reg are billed after 30 days with no free-month offer (tax-inclusive).'
+                                      ? 'Only students who pay the launch balance on time get one free subscription month, then this amount monthly. Full-upfront enrollments after pre-reg pay the course price plus this first month today (no free month).'
                                       : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
                               <InputError message={errors.subscription_price} />
@@ -470,8 +470,8 @@ const Pricing = () => {
                                                 />
                                                 <p className="text-muted-foreground mt-1 text-xs">
                                                    Price for new enrollments after pre-reg ends, and for students who miss the
-                                                   balance grace deadline. Full access immediately. First monthly charge about 30
-                                                   days later — not offered as a free month. Coupons allowed.
+                                                   balance grace deadline. Charged today with the first month of Project Plans
+                                                   (no free month). Monthly billing continues after that. Coupons allowed.
                                                 </p>
                                                 <InputError message={errors.launch_full_upfront_price} />
                                              </div>

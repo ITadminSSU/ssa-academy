@@ -114,13 +114,14 @@ class LaunchOfferService
         return Carbon::parse($raw)->endOfDay();
     }
 
-    /** Full-upfront / no pre-reg: first monthly charge after this many days. Not a free-month gift. */
-    public const FULL_UPFRONT_SUBSCRIPTION_DELAY_DAYS = 30;
+    /**
+     * Full-upfront / no pre-reg: charge enrollment + first month now (no free month).
+     * Pre-reg balance checkout keeps a separate free-month trial.
+     */
+    public const FULL_UPFRONT_CHARGE_FIRST_MONTH = true;
 
-    /** Pre-reg on-time balance: one free month, then first charge the following month. */
+    /** Pre-reg on-time balance: one free month, then first recurring charge. */
     public const PRE_REGISTER_FREE_MONTH_DAYS = 30;
-
-    public const PRE_REGISTER_FIRST_CHARGE_DAYS = 30;
 
     /**
      * Pre-reg students who pay the launch balance on time get a tagged free month
@@ -129,11 +130,6 @@ class LaunchOfferService
     public function stripeTrialEndForBalanceCheckout(Course $course): Carbon
     {
         return now()->addDays(self::PRE_REGISTER_FREE_MONTH_DAYS);
-    }
-
-    public function stripeBillingCycleAnchorForFullUpfront(): Carbon
-    {
-        return now()->addDays(self::FULL_UPFRONT_SUBSCRIPTION_DELAY_DAYS);
     }
 
     public function balanceDueAt(Course $course): Carbon
