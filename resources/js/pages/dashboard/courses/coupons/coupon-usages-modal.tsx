@@ -32,10 +32,19 @@ const CouponUsagesModal = ({ coupon, handler }: Props) => {
          headers: { Accept: 'application/json' },
          credentials: 'same-origin',
       })
-         .then((res) => res.json())
+         .then(async (res) => {
+            if (!res.ok) {
+               throw new Error('Could not load coupon usage.');
+            }
+
+            return res.json();
+         })
          .then((data) => {
             setUsages(data.usages ?? []);
             setUsedCount(Number(data.total ?? data.usages?.length ?? 0));
+         })
+         .catch(() => {
+            setUsages([]);
          })
          .finally(() => setLoading(false));
    }, [open, coupon.id]);

@@ -51,12 +51,18 @@ class CourseCoupon extends Model
         return $this->hasMany(PaymentHistory::class, 'coupon', 'code');
     }
 
+    /**
+     * Payments that redeemed this coupon (code on the payment row or in meta).
+     */
     public function usageRecords()
     {
+        $code = strtolower((string) $this->code);
+
         return PaymentHistory::query()
-            ->whereRaw('LOWER(coupon) = ?', [strtolower((string) $this->code)])
-            ->whereNotNull('coupon')
-            ->where('coupon', '!=', '');
+            ->where(function ($query) use ($code) {
+                $query->whereRaw('LOWER(coupon) = ?', [$code])
+                    ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(meta, "$.coupon_code"))) = ?', [$code]);
+            });
     }
 
     /**

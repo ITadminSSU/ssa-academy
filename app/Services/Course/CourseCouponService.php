@@ -117,7 +117,15 @@ class CourseCouponService
       $search = $data['coupon_search'] ?? $data['search'] ?? null;
 
       $coupons = CourseCoupon::with('course:id,title')
-         ->withCount('usages')
+         ->select('course_coupons.*')
+         ->selectSub(function ($query) {
+            $query->from('payment_histories')
+               ->selectRaw('count(*)')
+               ->where(function ($inner) {
+                  $inner->whereRaw('LOWER(payment_histories.coupon) = LOWER(course_coupons.code)')
+                     ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(payment_histories.meta, "$.coupon_code"))) = LOWER(course_coupons.code)');
+               });
+         }, 'usages_count')
          ->when(!isAdmin(), function ($query) use ($user) {
             $query->where(function ($scoped) use ($user) {
                $scoped->where(function ($global) use ($user) {

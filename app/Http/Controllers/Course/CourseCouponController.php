@@ -6,10 +6,12 @@ use Inertia\Inertia;
 use Inertia\Response;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CourseCouponRequest;
+use App\Models\Course\Course;
 use App\Models\Course\CourseCoupon;
 use App\Services\Course\CourseCouponService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCouponController extends Controller
 {
@@ -91,25 +93,36 @@ class CourseCouponController extends Controller
     */
    public function usages(CourseCoupon $coupon)
    {
-      $usages = $coupon->usageRecords()
-         ->with(['user:id,name,email', 'purchase'])
+      $payments = $coupon->usageRecords()
+         ->with(['user:id,name,email'])
          ->latest('id')
-         ->get()
-         ->map(function ($usage) {
-            $usage->user?->setAppends([]);
+         ->get();
 
-            return [
-               'id' => $usage->id,
-               'user_name' => $usage->user?->name ?? 'Deleted User',
-               'user_email' => $usage->user?->email ?? '-',
-               'course_title' => $usage->purchase?->title ?? '-',
-               'amount' => $usage->amount,
-               'date' => $usage->created_at->format('M d, Y H:i'),
-            ];
-         });
+      $courseIds = $payments
+         ->where('purchase_type', Course::class)
+         ->pluck('purchase_id')
+         ->unique()
+         ->filter();
+
+      $titles = $courseIds->isEmpty()
+         ? collect()
+         : Course::query()->whereIn('id', $courseIds)->pluck('title', 'id');
+
+      $usages = $payments->map(function (PaymentHistory $usage) use ($titles) {
+         $usage->user?->setAppends([]);
+
+         return [
+            'id' => $usage->id,
+            'user_name' => $usage->user?->name ?? 'Deleted User',
+            'user_email' => $usage->user?->email ?? '-',
+            'course_title' => $titles[$usage->purchase_id] ?? '-',
+            'amount' => $usage->amount,
+            'date' => $usage->created_at->format('M d, Y H:i'),
+         ];
+      });
 
       return response()->json([
-         'usages' => $usages,
+         'usages' => $usages->values(),
          'total' => $usages->count(),
       ]);
    }

@@ -350,13 +350,13 @@ class PaymentService
 
     public function applyCouponToPayment(PaymentHistory $payment, ?string $couponCode, ?float $discount = null): void
     {
-        $couponCode = trim((string) $couponCode);
+        $couponCode = strtoupper(trim((string) $couponCode));
 
         if ($couponCode === '' && ($discount === null || $discount <= 0)) {
             return;
         }
 
-        if ($couponCode !== '' && trim((string) $payment->coupon) === '') {
+        if ($couponCode !== '' && strtoupper(trim((string) $payment->coupon)) !== $couponCode) {
             $payment->forceFill(['coupon' => $couponCode])->save();
         }
 
