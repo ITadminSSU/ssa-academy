@@ -5,6 +5,7 @@ namespace App\Services\Payment;
 use App\Enums\EnrollmentAccessStatus;
 use App\Enums\PaymentBillingType;
 use App\Enums\SubscriptionStatus;
+use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Subscription;
 use App\Models\User;
@@ -13,6 +14,10 @@ use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\PaymentGateways\Services\PaymentService;
+use Stripe\Checkout\Session as StripeCheckoutSession;
+use Stripe\Customer as StripeCustomer;
+use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
 use Stripe\Subscription as StripeSubscription;
 
 class SubscriptionService
@@ -72,6 +77,122 @@ class SubscriptionService
             'user_id' => (int) ($session->metadata['user_id'] ?? $session->client_reference_id),
             'course_id' => (int) ($session->metadata['item_id'] ?? $stripeSubscription->metadata['course_id'] ?? 0),
         ]);
+    }
+
+    /**
+     * Full-upfront checkout collects enrollment now, then starts monthly billing next
+     * month without a Stripe trial so Checkout does not say "free".
+     */
+    public function startDelayedMonthlyFromPaidCheckout(object $session): Subscription
+    {
+        $this->stripeCustomer->configureStripe();
+
+        $session = StripeCheckoutSession::retrieve($session->id, [
+            'expand' => ['payment_intent'],
+        ]);
+
+        if (($session->payment_status ?? '') !== 'paid') {
+            throw new \RuntimeException('Checkout session is not paid.');
+        }
+
+        $userId = (int) ($session->metadata['user_id'] ?? $session->client_reference_id ?? 0);
+        $courseId = (int) ($session->metadata['item_id'] ?? $session->metadata['course_id'] ?? 0);
+
+        $existing = Subscription::query()
+            ->where('user_id', $userId)
+            ->where('course_id', $courseId)
+            ->whereNotNull('stripe_subscription_id')
+            ->whereIn('status', [SubscriptionStatus::ACTIVE, SubscriptionStatus::TRIALING])
+            ->first();
+
+        if ($existing) {
+            $this->recordPaidCheckoutEnrollment($session, $existing, $userId, $courseId);
+
+            return $existing;
+        }
+
+        $paymentIntent = $session->payment_intent;
+        if (is_string($paymentIntent) && $paymentIntent !== '') {
+            $paymentIntent = PaymentIntent::retrieve($paymentIntent);
+        }
+
+        $paymentMethodId = is_object($paymentIntent) ? (string) ($paymentIntent->payment_method ?? '') : '';
+        $customerId = (string) ($session->customer ?? '');
+        $course = Course::query()->find($courseId);
+
+        if ($paymentMethodId === '' || $customerId === '' || ! $course || empty($course->stripe_price_id)) {
+            throw new \RuntimeException('Paid checkout is missing a saved card or Stripe price for monthly billing.');
+        }
+
+        $this->attachPaymentMethodToCustomer($paymentMethodId, $customerId);
+
+        $anchor = now()->addDays(LaunchOfferService::FULL_UPFRONT_SUBSCRIPTION_DELAY_DAYS);
+        $offerMode = (string) ($session->metadata['launch_offer_mode'] ?? 'full_launch');
+
+        $stripeSubscription = StripeSubscription::create([
+            'customer' => $customerId,
+            'items' => [['price' => $course->stripe_price_id]],
+            'billing_cycle_anchor' => $anchor->timestamp,
+            'proration_behavior' => 'none',
+            'default_payment_method' => $paymentMethodId,
+            'metadata' => [
+                'user_id' => (string) $userId,
+                'course_id' => (string) $courseId,
+                'launch_offer_mode' => $offerMode,
+                'checkout_session_id' => (string) $session->id,
+                'coupon_code' => (string) ($session->metadata['coupon_code'] ?? ''),
+            ],
+        ], [
+            'idempotency_key' => 'delayed-monthly-'.$session->id,
+        ]);
+
+        $subscription = $this->syncFromStripeSubscription($stripeSubscription, [
+            'user_id' => $userId,
+            'course_id' => $courseId,
+        ]);
+
+        $this->recordPaidCheckoutEnrollment($session, $subscription, $userId, $courseId);
+
+        return $subscription;
+    }
+
+    protected function attachPaymentMethodToCustomer(string $paymentMethodId, string $customerId): void
+    {
+        $paymentMethod = PaymentMethod::retrieve($paymentMethodId);
+
+        if ((string) ($paymentMethod->customer ?? '') !== $customerId) {
+            try {
+                $paymentMethod->attach(['customer' => $customerId]);
+            } catch (\Throwable) {
+                // Already attached to this customer.
+            }
+        }
+
+        StripeCustomer::update($customerId, [
+            'invoice_settings' => [
+                'default_payment_method' => $paymentMethodId,
+            ],
+        ]);
+    }
+
+    protected function recordPaidCheckoutEnrollment(object $session, Subscription $subscription, int $userId, int $courseId): void
+    {
+        $paymentIntentId = is_object($session->payment_intent ?? null)
+            ? (string) $session->payment_intent->id
+            : (string) ($session->payment_intent ?? $session->id);
+        $amount = ($session->amount_total ?? 0) / 100;
+        $couponCode = $session->metadata['coupon_code'] ?? null;
+
+        $this->paymentService->coursesBuy(
+            'stripe',
+            'course',
+            (string) $courseId,
+            $paymentIntentId,
+            0,
+            $amount,
+            $couponCode ? (string) $couponCode : null,
+            (string) $userId,
+        );
     }
 
     public function syncFromStripeSubscription(object $stripeSubscription, ?array $context = null): Subscription

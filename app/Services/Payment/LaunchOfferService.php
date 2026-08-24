@@ -120,20 +120,20 @@ class LaunchOfferService
     /** Pre-reg on-time balance: one free month, then first charge the following month. */
     public const PRE_REGISTER_FREE_MONTH_DAYS = 30;
 
-    public const PRE_REGISTER_FIRST_CHARGE_DAYS = 60;
+    public const PRE_REGISTER_FIRST_CHARGE_DAYS = 30;
 
     /**
-     * On-time balance payers get one free subscription month, then the first charge
-     * the following month (~60 days from checkout). Stripe needs trial_end ~48h+ ahead.
+     * Pre-reg students who pay the launch balance on time get a tagged free month
+     * (Stripe trial). Full-upfront students do not get a trial.
      */
     public function stripeTrialEndForBalanceCheckout(Course $course): Carbon
     {
-        return now()->addDays(self::PRE_REGISTER_FIRST_CHARGE_DAYS);
+        return now()->addDays(self::PRE_REGISTER_FREE_MONTH_DAYS);
     }
 
-    public function stripeTrialPeriodDaysForFullUpfront(): int
+    public function stripeBillingCycleAnchorForFullUpfront(): Carbon
     {
-        return self::FULL_UPFRONT_SUBSCRIPTION_DELAY_DAYS;
+        return now()->addDays(self::FULL_UPFRONT_SUBSCRIPTION_DELAY_DAYS);
     }
 
     public function balanceDueAt(Course $course): Carbon

@@ -57,11 +57,26 @@ class StripeWebhookService
 
     protected function handleCheckoutSessionCompleted(object $session): void
     {
-        if (($session->mode ?? null) !== 'subscription' || empty($session->subscription)) {
+        $this->stripeCustomer->configureStripe();
+
+        $offerMode = (string) data_get($session, 'metadata.launch_offer_mode');
+
+        if (
+            in_array($offerMode, ['full_launch', 'upfront_subscription'], true)
+            || (string) data_get($session, 'metadata.delayed_monthly_subscription') === '1'
+        ) {
+            if (($session->payment_status ?? '') !== 'paid') {
+                return;
+            }
+
+            $this->subscriptions->startDelayedMonthlyFromPaidCheckout($session);
+
             return;
         }
 
-        $this->stripeCustomer->configureStripe();
+        if (($session->mode ?? null) !== 'subscription' || empty($session->subscription)) {
+            return;
+        }
 
         $this->recordLaunchBalanceFromSession($session);
 
