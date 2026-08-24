@@ -240,9 +240,7 @@ class StripeController extends Controller
 
         $balance = $this->launchOffer->balanceAmount($course);
         $trialEnd = $this->launchOffer->stripeTrialEndForBalanceCheckout($course);
-        $coupon = $request->coupon
-            ? $this->courseCoupon->getCourseValidCoupon((string) $course->id, $request->coupon, $user->id)
-            : null;
+        $coupon = $this->resolveSubmittedCoupon($course, $request->coupon, $user->id);
         $pricing = $this->payment->calculateCustomPrice($balance, $coupon);
 
         $this->stripeCustomer->configureStripe();
@@ -294,6 +292,8 @@ class StripeController extends Controller
                 'billing_model' => CourseBillingModel::SUBSCRIPTION->value,
                 'launch_offer_mode' => 'balance',
                 'coupon_code' => $coupon?->code,
+                'coupon_discount' => (string) ($pricing['couponDiscount'] ?? 0),
+                'charged_amount' => (string) ($pricing['finalPrice'] ?? 0),
             ],
             'subscription_data' => $subscriptionData,
         ]);
@@ -326,9 +326,7 @@ class StripeController extends Controller
         }
 
         $upfront = $this->launchOffer->fullUpfrontPrice($course);
-        $coupon = $request->coupon
-            ? $this->courseCoupon->getCourseValidCoupon((string) $course->id, $request->coupon, $user->id)
-            : null;
+        $coupon = $this->resolveSubmittedCoupon($course, $request->coupon, $user->id);
         $pricing = $this->payment->calculateCustomPrice($upfront, $coupon);
 
         $this->stripeCustomer->configureStripe();
@@ -418,9 +416,7 @@ class StripeController extends Controller
                 ->with('error', 'This course is missing an upfront enrollment price.');
         }
 
-        $coupon = $request->coupon
-            ? $this->courseCoupon->getCourseValidCoupon((string) $course->id, $request->coupon, $user->id)
-            : null;
+        $coupon = $this->resolveSubmittedCoupon($course, $request->coupon, $user->id);
         $pricing = $this->payment->calculateCustomPrice($upfront, $coupon);
 
         $this->stripeCustomer->configureStripe();
@@ -724,6 +720,18 @@ class StripeController extends Controller
         return redirect()
             ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
             ->with('error', 'Your payment have failed, please try again later.');
+    }
+
+    protected function resolveSubmittedCoupon(Course $course, mixed $code, int|string|null $userId): mixed
+    {
+        $code = trim((string) $code);
+
+        if ($code === '') {
+            return null;
+        }
+
+        return $this->courseCoupon->getCourseValidCoupon((string) $course->id, $code, $userId)
+            ?: $this->courseCoupon->getCourseValidCoupon((string) $course->id, $code, null);
     }
 
     /**

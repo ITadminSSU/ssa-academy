@@ -175,6 +175,8 @@ class SubscriptionService
             ->first();
 
         if ($enrollment) {
+            $deferWelcome = $this->shouldDeferWelcomeForLaunchBalance($enrollment);
+
             $enrollment->update([
                 'enrollment_type' => 'subscription',
                 'access_status' => $accessStatus,
@@ -183,7 +185,10 @@ class SubscriptionService
             ]);
 
             $enrollment = $enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']);
-            app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
+
+            if (! $deferWelcome) {
+                app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
+            }
 
             return $enrollment;
         }
@@ -215,9 +220,15 @@ class SubscriptionService
             ->where('subscription_id', $subscription->id)
             ->first();
 
-        if ($enrollment) {
+        if ($enrollment && ! $this->shouldDeferWelcomeForLaunchBalance($enrollment)) {
             app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
         }
+    }
+
+    protected function shouldDeferWelcomeForLaunchBalance(CourseEnrollment $enrollment): bool
+    {
+        return $enrollment->isReservedSeat()
+            || (filled($enrollment->deposit_paid_at) && empty($enrollment->balance_paid_at));
     }
 
     protected function buildSubscriptionAttributes(object $stripeSubscription, SubscriptionStatus $status): array

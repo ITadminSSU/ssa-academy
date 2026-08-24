@@ -2,9 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use Illuminate\Console\Command;
+use Modules\PaymentGateways\Models\PaymentHistory;
+use Modules\PaymentGateways\Services\PaymentService;
 
 class ResendWelcomeEmailCommand extends Command
 {
@@ -12,11 +15,12 @@ class ResendWelcomeEmailCommand extends Command
                             {--email= : Student email address}
                             {--course= : Course title (partial match)}
                             {--course-id= : Course ID}
+                            {--coupon= : Attach this voucher code to the balance payment before sending}
                             {--force : Send even if welcome_email_sent_at is already set}';
 
     protected $description = 'Resend the course enrollment welcome email by student email (no enrollment ID needed)';
 
-    public function handle(CourseEnrollmentWelcomeMailService $welcomeMail): int
+    public function handle(CourseEnrollmentWelcomeMailService $welcomeMail, PaymentService $paymentService): int
     {
         $email = trim((string) $this->option('email'));
         $courseTitle = trim((string) $this->option('course'));
@@ -62,7 +66,28 @@ class ResendWelcomeEmailCommand extends Command
         }
 
         $enrollment = $enrollments->first();
-        $force = (bool) $this->option('force');
+        $couponCode = strtoupper(trim((string) $this->option('coupon')));
+        $force = (bool) $this->option('force') || $couponCode !== '';
+
+        if ($couponCode !== '') {
+            $payment = $enrollment->balance_payment_history_id
+                ? PaymentHistory::query()->find($enrollment->balance_payment_history_id)
+                : PaymentHistory::query()
+                    ->where('user_id', $enrollment->user_id)
+                    ->where('purchase_type', Course::class)
+                    ->where('purchase_id', $enrollment->course_id)
+                    ->orderByDesc('id')
+                    ->first();
+
+            if (! $payment) {
+                $this->error('No payment was found to attach voucher '.$couponCode.' to.');
+
+                return self::FAILURE;
+            }
+
+            $paymentService->applyCouponToPayment($payment, $couponCode);
+            $this->info('Attached voucher '.$couponCode.' to payment #'.$payment->id.'.');
+        }
 
         $this->line('Enrollment ID: '.$enrollment->id);
         $this->line('Course: '.($enrollment->course?->title ?? 'unknown'));

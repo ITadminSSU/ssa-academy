@@ -141,29 +141,42 @@ class LaunchOfferEnrollmentService
         ?string $couponCode = null,
         ?float $couponDiscount = null,
     ): CourseEnrollment {
-        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode, $couponDiscount) {
+        $couponNewlyApplied = false;
+
+        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode, $couponDiscount, &$couponNewlyApplied) {
             $enrollment = CourseEnrollment::query()
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
                 ->firstOrFail();
 
-            if (! $enrollment->isReservedSeat()) {
-                throw new \RuntimeException('No reserved seat found for balance payment.');
+            $canRecordBalance = $enrollment->isReservedSeat()
+                || (filled($enrollment->deposit_paid_at) && empty($enrollment->balance_paid_at));
+
+            $history = PaymentHistory::where('transaction_id', $transactionId)->first();
+
+            if (! $history && $enrollment->balance_payment_history_id) {
+                $history = PaymentHistory::query()->find($enrollment->balance_payment_history_id);
             }
 
-            if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
-                $this->paymentService->applyCouponToPayment($existing, $couponCode, $couponDiscount);
+            if ($history) {
+                $hadCoupon = trim((string) $history->coupon) !== '';
+                $this->paymentService->applyCouponToPayment($history, $couponCode, $couponDiscount);
+                $couponNewlyApplied = ! $hadCoupon && trim((string) $history->fresh()->coupon) !== '';
 
-                if ($enrollment->isReservedSeat()) {
+                if ($canRecordBalance || empty($enrollment->balance_paid_at)) {
                     $enrollment->update([
                         'balance_paid_at' => now(),
-                        'balance_payment_history_id' => $existing->id,
+                        'balance_payment_history_id' => $history->id,
                         'access_status' => EnrollmentAccessStatus::ACTIVE,
                         'enrollment_type' => 'paid',
                     ]);
                 }
 
                 return $enrollment->fresh(['user', 'course']);
+            }
+
+            if (! $canRecordBalance) {
+                throw new \RuntimeException('No reserved seat found for balance payment.');
             }
 
             $balance = (float) ($enrollment->balance_amount ?? $this->launchOffer->balanceAmount($course));
@@ -179,6 +192,8 @@ class LaunchOfferEnrollmentService
                 couponDiscount: $couponDiscount,
             );
 
+            $couponNewlyApplied = trim((string) ($couponCode ?: $history->coupon)) !== '';
+
             $enrollment->update([
                 'balance_paid_at' => now(),
                 'balance_payment_history_id' => $history->id,
@@ -189,8 +204,13 @@ class LaunchOfferEnrollmentService
             return $enrollment->fresh(['user', 'course']);
         });
 
+        $fresh = $enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']);
+        $force = $couponNewlyApplied && filled($fresh?->welcome_email_sent_at);
+
         // Welcome email is the full enrollment confirmation (includes payment breakdown).
-        app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']));
+        if ($fresh) {
+            app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($fresh, $force);
+        }
 
         return $enrollment;
     }
