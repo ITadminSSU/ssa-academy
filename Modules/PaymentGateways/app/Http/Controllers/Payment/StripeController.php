@@ -380,9 +380,7 @@ class StripeController extends Controller
             $coupon,
             $pricing,
         );
-        if (empty($productData['description'])) {
-            $productData['description'] = 'Course access now. First month of Project Plans is included in this payment (not a free month).';
-        }
+        // Keep enrollment line clean — voucher note only when a coupon is applied.
 
         $subscriptionData = [
             // No trial — first month is charged with enrollment today.
@@ -411,7 +409,17 @@ class StripeController extends Controller
                     'quantity' => 1,
                 ],
                 [
-                    'price' => $course->stripe_price_id,
+                    'price_data' => [
+                        'currency' => strtolower($this->stripe->fields['currency']),
+                        'product_data' => [
+                            'name' => 'Project Plans Subscription — '.$course->title,
+                            'description' => 'Project Plan subscription payment',
+                        ],
+                        'unit_amount' => (int) round($subscriptionPrice * 100),
+                        'recurring' => [
+                            'interval' => 'month',
+                        ],
+                    ],
                     'quantity' => 1,
                 ],
             ],
@@ -430,11 +438,6 @@ class StripeController extends Controller
                 'subscription_price' => (string) $subscriptionPrice,
             ],
             'subscription_data' => $subscriptionData,
-            'custom_text' => [
-                'submit' => [
-                    'message' => 'You pay the course price plus the first month of Project Plans today. This is not a free month. Monthly billing continues after that.',
-                ],
-            ],
         ]);
 
         setTempStore([
