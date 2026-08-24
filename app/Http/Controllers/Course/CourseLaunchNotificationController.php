@@ -25,4 +25,52 @@ class CourseLaunchNotificationController extends Controller
 
         return back()->with('success', __('frontend.notify_subscribed'));
     }
+
+    /**
+     * Trainer/admin: open the course if still Coming Soon, then email the waitlist.
+     */
+    public function send(Course $course): RedirectResponse
+    {
+        $this->authorizeCourseNotify($course);
+
+        $result = $this->launchNotifications->openAndNotify($course);
+
+        if ($result['pending_before'] === 0) {
+            return back()->with(
+                'success',
+                $result['opened']
+                    ? 'Course is open now. There was no one on the notify list.'
+                    : 'There was no one waiting on the notify list.',
+            );
+        }
+
+        if ($result['sent'] === 0) {
+            return back()->with(
+                'error',
+                'Could not send launch emails. Check SMTP settings and the application log.',
+            );
+        }
+
+        $openedNote = $result['opened'] ? 'Course is open now. ' : '';
+
+        return back()->with(
+            'success',
+            $openedNote.'Sent '.$result['sent'].' launch notification email(s).',
+        );
+    }
+
+    private function authorizeCourseNotify(Course $course): void
+    {
+        if (isAdmin()) {
+            return;
+        }
+
+        $user = Auth::user();
+
+        if ($user && (int) $user->instructor_id === (int) $course->instructor_id) {
+            return;
+        }
+
+        abort(403);
+    }
 }

@@ -97,10 +97,53 @@ class CourseLaunchNotificationService
                 $sent++;
             } catch (\Throwable $exception) {
                 report($exception);
+                \Illuminate\Support\Facades\Log::error('Course launch notification email failed', [
+                    'course_id' => $course->id,
+                    'email' => $subscription->email,
+                    'message' => $exception->getMessage(),
+                ]);
             }
         }
 
         return $sent;
+    }
+
+    public function resetNotifiedForCourse(Course|int $course): int
+    {
+        $courseId = $course instanceof Course ? $course->id : $course;
+
+        return CourseLaunchNotification::query()
+            ->where('course_id', $courseId)
+            ->whereNotNull('notified_at')
+            ->update(['notified_at' => null]);
+    }
+
+    /**
+     * Open the course (if still Coming Soon) and email the waitlist.
+     *
+     * @return array{opened: bool, sent: int, pending_before: int}
+     */
+    public function openAndNotify(Course $course): array
+    {
+        $pendingBefore = $this->pendingCountForCourse($course);
+        $opened = false;
+
+        if ($course->isComingSoon()) {
+            $course->update([
+                'status' => \App\Enums\CourseStatusType::APPROVED->value,
+                'launch_at' => null,
+            ]);
+            $opened = true;
+            $course = $course->fresh() ?? $course;
+        }
+
+        $sent = $this->notifyWaitlist($course);
+
+        return [
+            'opened' => $opened,
+            'sent' => $sent,
+            'pending_before' => $pendingBefore,
+        ];
     }
 
     private function applyMailConfig(): void

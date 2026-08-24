@@ -14,7 +14,7 @@ import { courseAudienceFieldLabel, courseAudienceOptionLabel } from '@/lib/cours
 import { minDateTimeLocalValue, toDateTimeLocalValue } from '@/lib/course-launch';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { onHandleChange } from '@/lib/inertia';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { ReactNode, useEffect, useMemo } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
@@ -294,9 +294,20 @@ const Basic = () => {
                         )}
                      </p>
                      <p className="text-muted-foreground mt-2 text-xs">
-                        Emails are sent when you click Publish Now / Open course now, or automatically when the launch
-                        date passes (requires the server scheduler).
+                        Emails are sent when you click <strong>Notify waitlist now</strong> / Open course now, or
+                        automatically when the launch date passes (requires the Forge scheduler).
                      </p>
+                     {Number(launchNotificationCount) > 0 ? (
+                        <Button
+                           type="button"
+                           className="mt-3"
+                           onClick={() =>
+                              router.post(route('course.launch-notifications.send', { course: course.id }))
+                           }
+                        >
+                           Notify waitlist now
+                        </Button>
+                     ) : null}
                   </div>
                )}
 

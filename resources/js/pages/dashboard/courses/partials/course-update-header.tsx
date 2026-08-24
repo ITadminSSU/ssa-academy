@@ -149,12 +149,12 @@ const CourseUpdateHeader = () => {
                {isCourseComingSoon(course) ? (
                   <Button
                      onClick={() =>
-                        router.put(route('course.status', { id: course.id }), {
-                           status: 'approved',
-                        })
+                        router.post(route('course.launch-notifications.send', { course: course.id }))
                      }
                   >
-                     {button.publish_now ?? 'Open course now'}
+                     {launchNotificationCount > 0
+                        ? 'Open & notify waitlist'
+                        : (button.publish_now ?? 'Open course now')}
                   </Button>
                ) : null}
                {isCourseComingSoon(course) ? renderLaunchDateEditor() : null}

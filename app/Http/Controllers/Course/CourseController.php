@@ -367,10 +367,31 @@ class CourseController extends Controller
     public function status(UpdateCourseStatusRequest $request, $id)
     {
         $validated = $request->validated();
+        $course = Course::findOrFail($id);
+        $wasComingSoon = $course->isComingSoon();
+        $pendingBefore = $this->launchNotifications->pendingCountForCourse($course);
 
         // Trainers and admins can publish/approve a course directly. There is no
         // separate admin-approval step and no pre-publish content requirement.
         $this->courseService->updateCourse($id, [...$validated, 'tab' => 'status']);
+
+        $fresh = Course::findOrFail($id);
+        $pendingAfter = $this->launchNotifications->pendingCountForCourse($fresh);
+        $sent = max(0, $pendingBefore - $pendingAfter);
+
+        if ($wasComingSoon && ! $fresh->isComingSoon() && $sent > 0) {
+            return back()->with(
+                'success',
+                "Course is open now. Sent {$sent} launch notification email(s).",
+            );
+        }
+
+        if ($wasComingSoon && ! $fresh->isComingSoon() && $pendingBefore > 0 && $sent === 0) {
+            return back()->with(
+                'error',
+                'Course is open, but launch emails did not send. Check SMTP settings and try “Notify waitlist now”.',
+            );
+        }
 
         return back()->with('success', 'Course status changed successfully');
     }

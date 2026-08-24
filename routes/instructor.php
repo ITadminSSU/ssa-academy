@@ -9,6 +9,7 @@ use App\Http\Controllers\Course\CourseStripeSyncController;
 use App\Http\Controllers\Course\CourseCategoryController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\Course\CourseCouponController;
+use App\Http\Controllers\Course\CourseLaunchNotificationController;
 use App\Http\Controllers\Course\CourseEnrollmentController;
 use App\Http\Controllers\Course\CourseStudentProgressController;
 use App\Http\Controllers\Course\TopPerformerController;
@@ -84,6 +85,9 @@ Route::prefix('dashboard/trainer')->group(function () {
    Route::post('courses/{id}', [CourseController::class, 'update'])->name('courses.update');
    Route::post('courses/{id}/stripe/sync', CourseStripeSyncController::class)->name('courses.stripe.sync');
    Route::put('course/status/{id}', [CourseController::class, 'status'])->name('course.status')->middleware('smtpConfig', 'checkSmtp');
+   Route::post('courses/{course}/launch-notifications/send', [CourseLaunchNotificationController::class, 'send'])
+      ->name('course.launch-notifications.send')
+      ->middleware('smtpConfig', 'checkSmtp');
 
    Route::resource('course/faqs', CourseFaqController::class)->only(['store', 'update', 'destroy']);
    Route::resource('course/outcomes', CourseOutcomeController::class)->only(['store', 'update', 'destroy']);

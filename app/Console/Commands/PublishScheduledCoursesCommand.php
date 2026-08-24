@@ -53,11 +53,12 @@ class PublishScheduledCoursesCommand extends Command
             $opened++;
         }
 
-        if ($published > 0 || $opened > 0) {
+        if ($published > 0 || $opened > 0 || $this->output->isVerbose()) {
             $message = "Published {$published} upcoming course(s), opened {$opened} scheduled approved course(s), sent {$notified} launch notification(s).";
             $this->info($message);
             Log::info($message);
         } else {
+            $this->line('No courses due for launch right now.');
             Log::debug('courses:publish-scheduled ran — no courses due for launch.');
         }
 
