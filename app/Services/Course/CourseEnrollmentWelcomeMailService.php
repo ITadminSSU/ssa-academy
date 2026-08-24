@@ -49,9 +49,17 @@ class CourseEnrollmentWelcomeMailService
 
         if ($breakdown['coupon_code'] !== '') {
             $voucherLabel = 'Voucher '.$breakdown['coupon_code'];
-            $intro .= $breakdown['discount_amount'] > 0
-                ? ' '.$voucherLabel.' was applied (−'.$this->money($breakdown['discount_amount']).').'
-                : ' '.$voucherLabel.' was applied.';
+            $percentLabel = PaymentVoucherCopy::percentLabel($breakdown['discount_percent']);
+
+            if ($breakdown['discount_amount'] > 0 && $percentLabel !== '') {
+                $intro .= ' '.$voucherLabel.' was applied (−'.$this->money($breakdown['discount_amount']).', '.$percentLabel.' off).';
+            } elseif ($breakdown['discount_amount'] > 0) {
+                $intro .= ' '.$voucherLabel.' was applied (−'.$this->money($breakdown['discount_amount']).').';
+            } elseif ($percentLabel !== '') {
+                $intro .= ' '.$voucherLabel.' was applied ('.$percentLabel.' off).';
+            } else {
+                $intro .= ' '.$voucherLabel.' was applied.';
+            }
         } else {
             $intro .= ' This completes your course payment.';
         }
@@ -120,7 +128,7 @@ class CourseEnrollmentWelcomeMailService
     }
 
     /**
-     * @return array{this_payment_amount: float, discount_amount: float, coupon_code: string, bullets: list<string>}
+     * @return array{this_payment_amount: float, discount_amount: float, discount_percent: float, coupon_code: string, bullets: list<string>}
      */
     private function paymentBreakdown(CourseEnrollment $enrollment): array
     {
@@ -137,6 +145,7 @@ class CourseEnrollmentWelcomeMailService
         $expectedSubtotal = $this->expectedSubtotalBeforeDiscount($enrollment, $thisPayment);
         $voucher = $this->resolveVoucher($enrollment, $thisPayment, $expectedSubtotal, $thisPaymentAmount);
         $discountAmount = $voucher['amount'];
+        $discountPercent = $voucher['percent'];
         $couponCode = $voucher['code'];
 
         if ($discountAmount > 0) {
@@ -166,9 +175,7 @@ class CourseEnrollmentWelcomeMailService
                 $bullets[] = $priceLabel.': '.$this->money($expectedSubtotal);
             }
 
-            $bullets[] = $discountAmount > 0
-                ? PaymentVoucherCopy::breakdownLine($couponCode, $discountAmount)
-                : 'Voucher '.$couponCode.' applied';
+            $bullets[] = PaymentVoucherCopy::breakdownLine($couponCode, $discountAmount, $discountPercent);
         }
 
         $bullets[] = 'This Payment ('.$this->date($thisPaymentDate).'): '.$this->money($thisPaymentAmount);
@@ -177,6 +184,7 @@ class CourseEnrollmentWelcomeMailService
         return [
             'this_payment_amount' => $thisPaymentAmount,
             'discount_amount' => $discountAmount,
+            'discount_percent' => $discountPercent,
             'coupon_code' => $couponCode,
             'bullets' => $bullets,
         ];
@@ -229,7 +237,7 @@ class CourseEnrollmentWelcomeMailService
     }
 
     /**
-     * @return array{code: string, amount: float}
+     * @return array{code: string, amount: float, percent: float}
      */
     private function resolveVoucher(
         CourseEnrollment $enrollment,
@@ -239,6 +247,7 @@ class CourseEnrollmentWelcomeMailService
     ): array {
         $couponCode = '';
         $discountAmount = 0.0;
+        $discountPercent = 0.0;
 
         foreach ($this->relatedPayments($enrollment, $thisPayment) as $payment) {
             $couponCode = PaymentVoucherCopy::normalizeCode($payment->coupon)
@@ -254,15 +263,24 @@ class CourseEnrollmentWelcomeMailService
             }
         }
 
-        if ($couponCode !== '' && $discountAmount <= 0 && $expectedSubtotal > 0) {
-            $coupon = CourseCoupon::query()
-                ->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])
-                ->first();
+        $coupon = $couponCode !== ''
+            ? CourseCoupon::query()->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])->first()
+            : null;
 
-            if ($coupon) {
-                $pricing = $this->paymentService->calculateCustomPrice($expectedSubtotal, $coupon);
-                $discountAmount = max(0, (float) ($pricing['couponDiscount'] ?? 0));
-            }
+        if ($coupon && $this->couponIsPercentage($coupon)) {
+            $discountPercent = (float) $coupon->discount;
+        }
+
+        $discountBase = $expectedSubtotal;
+        if ($discountBase <= 0) {
+            $discountBase = (float) ($enrollment->balance_amount ?? 0);
+        }
+        if ($discountBase <= 0) {
+            $discountBase = $paidAmount;
+        }
+
+        if ($coupon && $discountAmount <= 0) {
+            $discountAmount = $this->couponDiscountForSubtotal($coupon, $discountBase);
         }
 
         if ($discountAmount <= 0 && $expectedSubtotal > 0 && $paidAmount > 0 && $expectedSubtotal > $paidAmount + 0.009) {
@@ -272,7 +290,36 @@ class CourseEnrollmentWelcomeMailService
         return [
             'code' => $couponCode,
             'amount' => $discountAmount,
+            'percent' => $discountPercent,
         ];
+    }
+
+    private function couponIsPercentage(CourseCoupon $coupon): bool
+    {
+        return in_array(strtolower((string) $coupon->discount_type), ['percentage', 'percent', 'pct'], true);
+    }
+
+    private function couponDiscountForSubtotal(CourseCoupon $coupon, float $subtotal): float
+    {
+        $value = (float) $coupon->discount;
+
+        if ($value <= 0) {
+            return 0.0;
+        }
+
+        if ($this->couponIsPercentage($coupon)) {
+            if ($subtotal <= 0) {
+                return 0.0;
+            }
+
+            return min($subtotal, round(($subtotal * $value) / 100, 2));
+        }
+
+        if ($subtotal > 0) {
+            return min($subtotal, round($value, 2));
+        }
+
+        return round($value, 2);
     }
 
     /**

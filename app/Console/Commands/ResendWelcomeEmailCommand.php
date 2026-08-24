@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Course\Course;
+use App\Models\Course\CourseCoupon;
 use App\Models\Course\CourseEnrollment;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use Illuminate\Console\Command;
@@ -85,8 +86,29 @@ class ResendWelcomeEmailCommand extends Command
                 return self::FAILURE;
             }
 
-            $paymentService->applyCouponToPayment($payment, $couponCode);
-            $this->info('Attached voucher '.$couponCode.' to payment #'.$payment->id.'.');
+            $coupon = CourseCoupon::query()
+                ->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])
+                ->first();
+
+            $discount = null;
+            if ($coupon) {
+                $base = (float) ($enrollment->balance_amount ?? $payment->amount ?? 0);
+                $value = (float) $coupon->discount;
+                $type = strtolower((string) $coupon->discount_type);
+
+                $discount = in_array($type, ['percentage', 'percent', 'pct'], true)
+                    ? ($base > 0 ? min($base, round(($base * $value) / 100, 2)) : 0.0)
+                    : ($base > 0 ? min($base, round($value, 2)) : round($value, 2));
+            }
+
+            $paymentService->applyCouponToPayment($payment, $couponCode, $discount);
+
+            $this->info('Attached voucher '.$couponCode.' to payment #'.$payment->id
+                .($discount !== null && $discount > 0 ? ' (−$'.number_format($discount, 2).')' : '').'.');
+
+            if (! $coupon) {
+                $this->warn('No matching coupon was found for '.$couponCode.'. The email may show the code without a dollar amount.');
+            }
         }
 
         $this->line('Enrollment ID: '.$enrollment->id);

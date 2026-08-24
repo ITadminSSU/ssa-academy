@@ -14,15 +14,36 @@ class PaymentVoucherCopy
         return '$'.number_format($amount, 2);
     }
 
-    public static function breakdownLine(?string $code, float $discount): string
+    public static function breakdownLine(?string $code, float $discount, ?float $percent = null): string
     {
         $code = self::normalizeCode($code);
+        $label = $code !== '' ? 'Voucher '.$code : 'Voucher';
+        $percentLabel = self::percentLabel($percent);
 
-        if ($code !== '') {
-            return 'Voucher '.$code.': -'.self::money($discount);
+        if ($discount > 0 && $percentLabel !== '') {
+            return $label.': -'.self::money($discount).' ('.$percentLabel.')';
         }
 
-        return 'Voucher: -'.self::money($discount);
+        if ($discount > 0) {
+            return $label.': -'.self::money($discount);
+        }
+
+        if ($percentLabel !== '') {
+            return $label.': '.$percentLabel.' off';
+        }
+
+        return $label.' applied';
+    }
+
+    public static function percentLabel(?float $percent): string
+    {
+        if ($percent === null || $percent <= 0) {
+            return '';
+        }
+
+        $formatted = rtrim(rtrim(number_format($percent, 2, '.', ''), '0'), '.');
+
+        return $formatted.'%';
     }
 
     public static function stripeLineName(string $baseName, ?string $code, float $discount = 0): string
