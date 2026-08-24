@@ -97,11 +97,15 @@ class CourseCoupon extends Model
 
         if ($userId !== null) {
             $query->whereNotExists(function ($q) use ($userId) {
+                $couponsTable = $q->getConnection()->getTablePrefix().'course_coupons';
+
                 $q->selectRaw('1')
                     ->from('payment_histories')
-                    ->whereColumn('payment_histories.coupon', 'course_coupons.code')
-                    ->where('payment_histories.user_id', $userId)
-                    ->whereNotNull('payment_histories.coupon');
+                    ->where('user_id', $userId)
+                    ->where(function ($inner) use ($couponsTable) {
+                        $inner->whereRaw('LOWER(coupon) = LOWER(`'.$couponsTable.'`.`code`)')
+                            ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(meta, "$.coupon_code"))) = LOWER(`'.$couponsTable.'`.`code`)');
+                    });
             });
         }
 
