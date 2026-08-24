@@ -334,8 +334,8 @@ class StripeController extends Controller
         Stripe::setApiKey($this->stripeSecret);
 
         $subscriptionData = [
-            // First monthly invoice ~30 days later. Not marketed as a free month.
-            'trial_period_days' => 30,
+            // First monthly invoice ~30 days later. Not a pre-reg free month.
+            'trial_period_days' => $this->launchOffer->stripeTrialPeriodDaysForFullUpfront(),
             'metadata' => [
                 'user_id' => (string) $user->id,
                 'course_id' => (string) $course->id,
@@ -424,8 +424,8 @@ class StripeController extends Controller
         Stripe::setApiKey($this->stripeSecret);
 
         $subscriptionData = [
-            // First monthly invoice ~30 days later. Not marketed as a free month.
-            'trial_period_days' => 30,
+            // First monthly invoice ~30 days later. Not a pre-reg free month.
+            'trial_period_days' => $this->launchOffer->stripeTrialPeriodDaysForFullUpfront(),
             'metadata' => [
                 'user_id' => (string) $user->id,
                 'course_id' => (string) $course->id,
@@ -631,7 +631,7 @@ class StripeController extends Controller
 
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('success', 'Balance paid. Full course access is unlocked. Your subscription is free for 30 days from this payment, then monthly billing starts.');
+                    ->with('success', 'Balance paid. Full course access is unlocked. Your subscription is free for one month, then the first monthly charge is billed the following month.');
             }
 
             if (

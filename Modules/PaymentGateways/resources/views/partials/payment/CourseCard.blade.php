@@ -128,7 +128,7 @@
                   </div>
                @endif
                <p class="text-muted-foreground text-xs leading-relaxed">
-                  You are paying the deposit now to reserve your seat. Pay the remaining balance on launch day or within the grace period to unlock the course and receive 30 days of free subscription from that payment.
+                  You are paying the deposit now to reserve your seat. Pay the remaining balance on launch day or within the grace period to unlock the course and receive one free subscription month, then the first monthly charge the following month.
                   @if (! empty($offer['deposit_non_refundable']))
                      The deposit is non-refundable. If you miss the grace deadline, the free month is cancelled and later enrollment is at the full upfront price.
                   @endif
@@ -145,7 +145,7 @@
                   <span class="text-base font-semibold">{{ $formatMoney($balanceAmount > 0 ? $balanceAmount : $subtotal) }}</span>
                </div>
                <p class="text-muted-foreground text-xs leading-relaxed">
-                  Paying this balance unlocks the course and starts 30 days of free subscription from today. Monthly billing begins after those 30 days.
+                  Paying this balance unlocks the course and starts one free subscription month. The first monthly charge is billed the following month.
                </p>
             @endif
          @else

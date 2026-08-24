@@ -64,7 +64,7 @@ class LaunchOfferMailService
             farewell: 'Best regards,',
             signatureName: $academyName.' Team',
             postParagraphs: [
-                'Pay the remaining balance of '.$balance.' on launch day ('.$launchDate.') or by the grace deadline ('.$deadline.') to unlock the course. Paying on time also starts 30 days of free subscription from the day you pay. If you miss the deadline, the seat and free month are cancelled, the deposit is kept, and you may still enroll later at the full upfront price without the free month.',
+                'Pay the remaining balance of '.$balance.' on launch day ('.$launchDate.') or by the grace deadline ('.$deadline.') to unlock the course. Paying on time also includes one free subscription month, then the first monthly charge the following month. If you miss the deadline, the seat and free month are cancelled, the deposit is kept, and you may still enroll later at the full upfront price without the free month.',
                 'Keep an eye out for discount vouchers on our official Facebook page or from your referrer for huge savings!',
             ],
         ));
@@ -93,7 +93,7 @@ class LaunchOfferMailService
             emailSubject: 'Pay your balance — '.$course->title,
             greeting: 'Hi '.$this->firstName($user).',',
             paragraphs: [
-                'Launch day is here for “'.$course->title.'”. Pay your remaining balance of '.$balance.' by '.$deadline.' to unlock full course access and receive 30 days of free subscription from the day you pay.',
+                'Launch day is here for “'.$course->title.'”. Pay your remaining balance of '.$balance.' by '.$deadline.' to unlock full course access and receive one free subscription month, then the first monthly charge the following month.',
                 'If the balance is not paid by '.$deadline.', your reserved seat and the free month will be canceled and your deposit will be kept. You may still enroll later at the full upfront price without the free month.',
             ],
             bullets: [
@@ -129,7 +129,7 @@ class LaunchOfferMailService
             greeting: 'Hi '.$this->firstName($user).',',
             paragraphs: [
                 'This is a mid-grace reminder for “'.$course->title.'”. Your remaining balance of '.$balance.' is still unpaid.',
-                'Please pay by '.$deadline.' to keep your seat, unlock the course, and receive 30 days of free subscription from the day you pay. After that date, the reservation and free month are canceled and the deposit is non-refundable.',
+                'Please pay by '.$deadline.' to keep your seat, unlock the course, and receive one free subscription month, then the first monthly charge the following month. After that date, the reservation and free month are canceled and the deposit is non-refundable.',
             ],
             bullets: [
                 'Amount due: '.$balance,
@@ -200,7 +200,7 @@ class LaunchOfferMailService
             greeting: 'Hi '.$this->firstName($user).',',
             paragraphs: [
                 'We received your balance payment of '.$balance.' for “'.$course->title.'”.',
-                'You are fully enrolled and can start the course now. Your subscription is free for 30 days from this payment, then monthly billing begins.',
+                'You are fully enrolled and can start the course now. Your subscription is free for one month from this payment, then the first monthly charge is billed the following month.',
             ],
             bullets: [],
             ctaLabel: 'Open course',
@@ -231,7 +231,7 @@ class LaunchOfferMailService
             emailSubject: 'Seat canceled — '.$course->title,
             greeting: 'Hi '.$this->firstName($user).',',
             paragraphs: [
-                'Your reserved seat for “'.$course->title.'” was canceled because the remaining balance was not paid by '.$deadline.'. The 30-day free subscription offer no longer applies.',
+                'Your reserved seat for “'.$course->title.'” was canceled because the remaining balance was not paid by '.$deadline.'. The free subscription month offer no longer applies.',
                 'Per the launch offer terms, your deposit of '.$deposit.' is non-refundable and has been retained.',
             ],
             bullets: [],

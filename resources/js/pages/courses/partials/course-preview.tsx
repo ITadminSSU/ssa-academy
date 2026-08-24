@@ -127,8 +127,9 @@ const CoursePreview = () => {
                   <p>
                      Reserve your seat for {currency?.symbol}
                      {offer.depositAmount} today, then pay {currency?.symbol}
-                     {offer.balanceAmount} on launch day (or within the 5-day grace period) for full access and 30 days of
-                     Project Plans Subscription for FREE, starting from the day you pay the balance. After those 30 days,
+                     {offer.balanceAmount} on launch day (or within the 5-day grace period) for full access and one month of
+                     Project Plans Subscription for FREE, starting from the day you pay the balance. The first monthly
+                     charge is billed the following month. After that,
                      the subscription is {currency?.symbol}
                      {offer.subscriptionPrice}/month. If you miss the grace deadline, the free month is cancelled and you
                      can only enroll later at the full upfront price. Cancel project plans subscription anytime.
@@ -176,7 +177,7 @@ const CoursePreview = () => {
                   offer.enabled && offer.phase === 'full_price'
                      ? `Pay the full upfront price for immediate access. Your first ${currency?.symbol ?? '$'}${offer.subscriptionPrice}/mo charge is billed about 30 days later (not a free month).`
                      : offer.enabled && offer.phase === 'pre_register'
-                       ? 'Reserve your seat with a deposit. Pay the launch balance on launch day or within 5 grace days to unlock access and get 30 days of free subscription from that payment.'
+                       ? 'Reserve your seat with a deposit. Pay the launch balance on launch day or within 5 grace days to unlock access and get one free subscription month, then the first monthly charge the following month.'
                        : undefined
                }
             >

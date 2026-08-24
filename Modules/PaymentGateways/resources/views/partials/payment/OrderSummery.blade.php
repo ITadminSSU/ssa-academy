@@ -20,7 +20,7 @@
 
          @if (($checkoutMode ?? null) === 'deposit')
             <p class="text-muted-foreground text-xs">
-               {{ __('Pay this deposit now to reserve your seat. Pay the remaining balance on launch day or within the 5-day grace period to unlock the course and get 30 days of free subscription from that payment. The deposit is non-refundable.') }}
+               {{ __('Pay this deposit now to reserve your seat. Pay the remaining balance on launch day or within the 5-day grace period to unlock the course and get one free subscription month, then the first monthly charge the following month. The deposit is non-refundable.') }}
             </p>
          @elseif (($checkoutMode ?? null) === 'upfront_subscription')
             <p class="text-muted-foreground text-xs">
@@ -32,7 +32,7 @@
             </p>
          @elseif (($checkoutMode ?? null) === 'balance')
             <p class="text-muted-foreground text-xs">
-               {{ __('Pay your launch balance now to unlock the course. Your subscription is free for 30 days from this payment, then monthly billing starts.') }}
+               {{ __('Pay your launch balance now to unlock the course. Your subscription is free for one month, then the first monthly charge is billed the following month.') }}
             </p>
          @endif
 

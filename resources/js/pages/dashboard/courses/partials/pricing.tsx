@@ -349,7 +349,7 @@ const Pricing = () => {
                                  {isUpfrontSubscription
                                     ? 'Students pay the upfront amount now. The first monthly charge is billed about 30 days later, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
                                     : isPreRegisterSubscription
-                                      ? 'Only students who pay the launch balance on time get 30 days of free subscription from that payment, then this amount monthly. Full-upfront enrollments after pre-reg are billed monthly with no free-month offer (tax-inclusive).'
+                                      ? 'Only students who pay the launch balance on time get one free subscription month, then the first monthly charge the following month. Full-upfront enrollments after pre-reg are billed after 30 days with no free-month offer (tax-inclusive).'
                                       : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
                               <InputError message={errors.subscription_price} />
@@ -367,9 +367,10 @@ const Pricing = () => {
                                              <p className="text-muted-foreground mt-1 text-xs">
                                                 Students can pay a DP during the pre-registration window to reserve a seat only.
                                                 They get no access until they pay the balance on launch day (or within the grace
-                                                days). Paying the balance on time unlocks the course and 30 days of free
-                                                subscription from that payment date. Missing the grace deadline forfeits the seat
-                                                and the free month; they may still buy later at the full upfront price.
+                                                days). Paying the balance on time unlocks the course and one free subscription
+                                                month, then the first monthly charge the following month. Missing the grace
+                                                deadline forfeits the seat and the free month; they may still buy later at the
+                                                full upfront price.
                                              </p>
                                           </div>
                                           <InputError message={errors.launch_offer_enabled} />
@@ -454,7 +455,7 @@ const Pricing = () => {
                                                 />
                                                 <InputError message={errors.launch_balance_grace_days} />
                                                 <p className="text-muted-foreground mt-1 text-xs">
-                                                   Days after launch to pay the balance and keep the 30-day free subscription.
+                                                   Days after launch to pay the balance and keep the free subscription month.
                                                    After this, the seat and free month are cancelled.
                                                 </p>
                                              </div>
@@ -476,8 +477,8 @@ const Pricing = () => {
                                              </div>
                                              <div className="sm:col-span-2">
                                                 <p className="text-muted-foreground text-xs">
-                                                   Free subscription month: always 30 days from the date the launch balance is
-                                                   paid (not a fixed calendar date). Only on-time balance payments qualify.
+                                                   Free subscription month: one month free from the date the launch balance is
+                                                   paid, then the first monthly charge the following month. Only on-time balance payments qualify.
                                                 </p>
                                              </div>
                                           </div>
@@ -563,7 +564,7 @@ const Pricing = () => {
                                              />
                                              <InputError message={errors.launch_balance_grace_days} />
                                              <p className="text-muted-foreground mt-1 text-xs">
-                                                Days after launch to pay the balance and keep the 30-day free subscription.
+                                                Days after launch to pay the balance and keep the free subscription month.
                                                 After this, the seat and free month are cancelled.
                                              </p>
                                           </div>
@@ -580,8 +581,8 @@ const Pricing = () => {
                                           </div>
                                           <div className="sm:col-span-2">
                                              <p className="text-muted-foreground text-xs">
-                                                Free subscription month: always 30 days from the date the launch balance is paid.
-                                                Only on-time balance payments qualify. Deposit is non-refundable if the balance is
+                                                Free subscription month: one month free from the date the launch balance is paid,
+                                                then the first monthly charge the following month. Only on-time balance payments qualify. Deposit is non-refundable if the balance is
                                                 not paid within the grace days.
                                              </p>
                                           </div>
