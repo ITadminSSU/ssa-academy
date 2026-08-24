@@ -109,7 +109,7 @@
                </span>
             </div>
 
-            @if ($showOfferTotal)
+            @if ($showOfferTotal && $isDepositCheckout)
                <div class="flex items-center justify-between text-sm font-medium">
                   <span>Pre-registration total</span>
                   <span class="text-primary text-base font-semibold">{{ $formatMoney($offerPrice) }}</span>
