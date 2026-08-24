@@ -48,7 +48,11 @@ class SignWellController extends Controller
         try {
             $url = $this->signWell->startSigning($user->fresh());
 
-            return Inertia::location($url);
+            return Inertia::render('legal/signwell-embed', [
+                'signingUrl' => $url,
+                'completeUrl' => route('signwell.complete', ['document_status' => 'completed'], true),
+                'cancelUrl' => route('legal.agreement.show'),
+            ]);
         } catch (\Throwable $e) {
             Log::warning('SignWell start failed', [
                 'user_id' => $user->id,
@@ -80,14 +84,40 @@ class SignWellController extends Controller
                 ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
         }
 
-        $redirectSaysCompleted = strtolower((string) $request->query('document_status', '')) === 'completed';
+        $completedHints = [
+            strtolower((string) $request->query('document_status', '')),
+            strtolower((string) $request->query('status', '')),
+            strtolower((string) $request->query('event', '')),
+        ];
+        $redirectSaysCompleted = count(array_intersect($completedHints, [
+            'completed',
+            'complete',
+            'signed',
+            'signing_complete',
+        ])) > 0;
 
         try {
-            $synced = $this->signWell->syncCompletionFromSignWell(
-                $user,
-                $request->ip(),
-                trustRedirectCompleted: $redirectSaysCompleted,
-            );
+            $synced = false;
+
+            for ($attempt = 0; $attempt < 3; $attempt++) {
+                $synced = $this->signWell->syncCompletionFromSignWell($user->fresh(), $request->ip());
+
+                if ($synced) {
+                    break;
+                }
+
+                if ($attempt < 2) {
+                    usleep(400000);
+                }
+            }
+
+            if (! $synced && $redirectSaysCompleted) {
+                $synced = $this->signWell->syncCompletionFromSignWell(
+                    $user->fresh(),
+                    $request->ip(),
+                    trustRedirectCompleted: true,
+                );
+            }
         } catch (\Throwable $e) {
             Log::error('SignWell complete sync failed', [
                 'user_id' => $user->id,

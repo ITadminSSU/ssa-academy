@@ -50,7 +50,6 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
       e.preventDefault();
 
       if (useSignWell) {
-         // Full browser navigation — Inertia XHR cannot follow SignWell's external URL.
          setStartingSignWell(true);
          window.location.assign(route('signwell.start'));
          return;
@@ -83,8 +82,8 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
                <div className="bg-muted/40 space-y-3 rounded-lg border p-4 text-sm">
                   <p className="font-medium">Electronic signature required</p>
                   <p className="text-muted-foreground">
-                     After registration you must sign the Student Agreement in SignWell before you can open the student
-                     dashboard or enroll in courses.
+                     After registration you must sign the Student Agreement before you can open the student dashboard
+                     or enroll in courses. You will sign on this site and then continue to your dashboard.
                   </p>
                   {signwellStatus === 'pending' ? (
                      <p className="text-muted-foreground text-xs">

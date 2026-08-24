@@ -77,13 +77,7 @@ class GoogleAuthController extends Controller
 
             if ($this->legalAgreement->requiresAcceptance($registered)) {
                 if (app(\App\Services\SignWellService::class)->isEnabled()) {
-                    try {
-                        $url = app(\App\Services\SignWellService::class)->startSigning($registered);
-
-                        return \Inertia\Inertia::location($url);
-                    } catch (\Throwable) {
-                        return redirect()->route('legal.agreement.show');
-                    }
+                    return redirect()->route('signwell.start');
                 }
 
                 return redirect()->route('legal.agreement.show');

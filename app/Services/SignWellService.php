@@ -52,7 +52,7 @@ class SignWellService
             'embedded_signing' => true,
             // Required for SignWell to email the completed PDF after embedded signing.
             'embedded_signing_notifications' => (bool) config('signwell.completion_emails', true),
-            'redirect_url' => route('signwell.complete', absolute: true),
+            'redirect_url' => route('signwell.complete', ['document_status' => 'completed'], true),
             'recipients' => $recipients,
             'metadata' => [
                 'user_id' => (string) $user->id,
