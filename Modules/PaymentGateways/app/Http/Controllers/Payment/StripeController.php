@@ -403,7 +403,8 @@ class StripeController extends Controller
                 'name' => 'auto',
                 'address' => 'auto',
             ],
-            'payment_method_collection' => 'always',
+            // Do not set payment_method_collection here — Stripe only allows it with recurring prices.
+            // setup_future_usage on payment_intent_data still saves the card for the delayed monthly sub.
             'line_items' => [
                 [
                     'price_data' => [
