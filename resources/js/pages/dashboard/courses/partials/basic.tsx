@@ -281,7 +281,10 @@ const Basic = () => {
                   <InputError message={errors.launch_at} />
                </div>
 
-               {(data.status === 'upcoming' || course.status === 'upcoming') && (
+               {(data.status === 'upcoming' ||
+                  course.status === 'upcoming' ||
+                  Boolean(data.launch_at) ||
+                  Boolean(course.launch_at)) && (
                   <div className="md:col-span-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
                      <p className="font-medium">{dashboard.launch_notify_list ?? 'Launch notify list'}</p>
                      <p className="text-muted-foreground mt-1 text-sm">
@@ -289,6 +292,10 @@ const Basic = () => {
                            '{count}',
                            String(launchNotificationCount),
                         )}
+                     </p>
+                     <p className="text-muted-foreground mt-2 text-xs">
+                        Emails are sent when you click Publish Now / Open course now, or automatically when the launch
+                        date passes (requires the server scheduler).
                      </p>
                   </div>
                )}

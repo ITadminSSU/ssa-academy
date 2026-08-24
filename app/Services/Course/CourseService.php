@@ -208,11 +208,21 @@ class CourseService extends MediaService
 
    private function notifyLaunchWaitlistIfPublished(Course $course, bool $wasComingSoon, string $newStatus): void
    {
-      if (!$wasComingSoon || $newStatus !== CourseStatusType::APPROVED->value) {
+      $fresh = $course->fresh();
+
+      // Only email waitlist when the course actually leaves Coming Soon
+      // (approved + launch date cleared or already past). Do not email while
+      // status is approved but launch_at is still in the future.
+      if (
+         ! $fresh
+         || ! $wasComingSoon
+         || $newStatus !== CourseStatusType::APPROVED->value
+         || $fresh->isComingSoon()
+      ) {
          return;
       }
 
-      app(CourseLaunchNotificationService::class)->notifyWaitlist($course->fresh());
+      app(CourseLaunchNotificationService::class)->notifyWaitlist($fresh);
    }
 
    function getCourses(array $data, ?User $user = null, bool $paginate = false): LengthAwarePaginator|Collection

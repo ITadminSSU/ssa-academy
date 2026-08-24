@@ -138,6 +138,25 @@ const CourseUpdateHeader = () => {
                      {(frontend.launches_on ?? 'Launches on {date}').replace('{date}', launchLabel)}
                   </span>
                ) : null}
+               {isCourseComingSoon(course) && launchNotificationCount > 0 ? (
+                  <span className="text-muted-foreground text-sm">
+                     {(frontend.launch_notify_count ?? '{count} waiting to be notified').replace(
+                        '{count}',
+                        String(launchNotificationCount),
+                     )}
+                  </span>
+               ) : null}
+               {isCourseComingSoon(course) ? (
+                  <Button
+                     onClick={() =>
+                        router.put(route('course.status', { id: course.id }), {
+                           status: 'approved',
+                        })
+                     }
+                  >
+                     {button.publish_now ?? 'Open course now'}
+                  </Button>
+               ) : null}
                {isCourseComingSoon(course) ? renderLaunchDateEditor() : null}
                <Button
                   variant="outline"
