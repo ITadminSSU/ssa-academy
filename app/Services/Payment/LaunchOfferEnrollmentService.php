@@ -46,7 +46,10 @@ class LaunchOfferEnrollmentService
                 return 'balance';
             }
 
-            return null;
+            $deadline = $enrollment->balance_deadline_at;
+            if ($deadline && now()->lessThanOrEqualTo($deadline)) {
+                return null;
+            }
         }
 
         if ($this->launchOffer->allowsDepositCheckout($course)) {

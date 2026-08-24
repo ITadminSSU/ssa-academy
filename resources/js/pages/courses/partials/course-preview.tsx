@@ -127,9 +127,11 @@ const CoursePreview = () => {
                   <p>
                      Reserve your seat for {currency?.symbol}
                      {offer.depositAmount} today, then pay {currency?.symbol}
-                     {offer.balanceAmount} at launch for full access. This includes your first month of the Project
-                     Plans Subscription for FREE. After your free month, the subscription is {currency?.symbol}
-                     {offer.subscriptionPrice}/month. Cancel project plans subscription anytime.
+                     {offer.balanceAmount} on launch day (or within the 5-day grace period) for full access and 30 days of
+                     Project Plans Subscription for FREE, starting from the day you pay the balance. After those 30 days,
+                     the subscription is {currency?.symbol}
+                     {offer.subscriptionPrice}/month. If you miss the grace deadline, the free month is cancelled and you
+                     can only enroll later at the full upfront price. Cancel project plans subscription anytime.
                   </p>
                   <p>
                      Please note: The {currency?.symbol}
@@ -151,14 +153,16 @@ const CoursePreview = () => {
             ) : offer.enabled && offer.phase === 'full_price' ? (
                <p className="text-muted-foreground text-sm">
                   Pay the full price of {currency?.symbol}
-                  {offer.fullUpfrontPrice} to get full access to this course, then a monthly payment of {currency?.symbol}
-                  {offer.subscriptionPrice} for your subscription. Cancel anytime from My Subscriptions.
+                  {offer.fullUpfrontPrice} to get full access to this course now. Your first monthly subscription
+                  charge of {currency?.symbol}
+                  {offer.subscriptionPrice} is billed about 30 days later (this is not a free month). Cancel anytime
+                  from My Subscriptions.
                </p>
             ) : isUpfrontSubscription ? (
                <p className="text-muted-foreground text-sm">
                   Pay {currency?.symbol}
-                  {course.price} now for full access. Then {currency?.symbol}
-                  {course.subscription_price}/mo after the first free month. Cancel anytime from My Subscriptions.
+                  {course.price} now for full access. Your first monthly charge of {currency?.symbol}
+                  {course.subscription_price} is billed about 30 days later. Cancel anytime from My Subscriptions.
                </p>
             ) : null}
 
@@ -170,9 +174,9 @@ const CoursePreview = () => {
                isSubscription={isSubscription && offer.phase !== 'full_price'}
                enrollmentNote={
                   offer.enabled && offer.phase === 'full_price'
-                     ? `Pay the full upfront price for immediate access, then ${currency?.symbol ?? '$'}${offer.subscriptionPrice}/mo for your subscription.`
+                     ? `Pay the full upfront price for immediate access. Your first ${currency?.symbol ?? '$'}${offer.subscriptionPrice}/mo charge is billed about 30 days later (not a free month).`
                      : offer.enabled && offer.phase === 'pre_register'
-                       ? 'Reserve your seat with a deposit. Course access unlocks after you pay the launch balance.'
+                       ? 'Reserve your seat with a deposit. Pay the launch balance on launch day or within 5 grace days to unlock access and get 30 days of free subscription from that payment.'
                        : undefined
                }
             >

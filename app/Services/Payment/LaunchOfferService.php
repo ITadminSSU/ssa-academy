@@ -115,14 +115,12 @@ class LaunchOfferService
     }
 
     /**
-     * Stripe rejects trial_end values less than ~48 hours in the future.
+     * On-time balance payers get 30 days of free subscription from checkout/payment.
+     * Stripe requires trial_end at least ~48 hours in the future.
      */
     public function stripeTrialEndForBalanceCheckout(Course $course): Carbon
     {
-        $configured = $this->subscriptionTrialEndsAt($course);
-        $minimum = now()->addDays(2);
-
-        return $configured->greaterThan($minimum) ? $configured : $minimum;
+        return now()->addDays(30);
     }
 
     public function balanceDueAt(Course $course): Carbon

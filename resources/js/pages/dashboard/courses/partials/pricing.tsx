@@ -347,9 +347,9 @@ const Pricing = () => {
                               />
                               <p className="text-muted-foreground mt-1 text-xs">
                                  {isUpfrontSubscription
-                                    ? 'After the first free month, students are billed this amount every month until they cancel (tax-inclusive).'
+                                    ? 'Students pay the upfront amount now. The first monthly charge is billed about 30 days later, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
                                     : isPreRegisterSubscription
-                                      ? 'Pre-reg balance payers get a free period until the trial end date, then this amount monthly. Full-upfront enrollments after pre-reg are billed monthly with no free trial (tax-inclusive).'
+                                      ? 'Only students who pay the launch balance on time get 30 days of free subscription from that payment, then this amount monthly. Full-upfront enrollments after pre-reg are billed monthly with no free-month offer (tax-inclusive).'
                                       : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
                               <InputError message={errors.subscription_price} />
@@ -366,8 +366,10 @@ const Pricing = () => {
                                              <Label className="text-base">Pre-registration setup</Label>
                                              <p className="text-muted-foreground mt-1 text-xs">
                                                 Students can pay a DP during the pre-registration window to reserve a seat only.
-                                                They get no access until launch day, must pay the balance to unlock the course,
-                                                then start a one-month free subscription before monthly billing begins.
+                                                They get no access until they pay the balance on launch day (or within the grace
+                                                days). Paying the balance on time unlocks the course and 30 days of free
+                                                subscription from that payment date. Missing the grace deadline forfeits the seat
+                                                and the free month; they may still buy later at the full upfront price.
                                              </p>
                                           </div>
                                           <InputError message={errors.launch_offer_enabled} />
@@ -451,6 +453,10 @@ const Pricing = () => {
                                                    onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
                                                 />
                                                 <InputError message={errors.launch_balance_grace_days} />
+                                                <p className="text-muted-foreground mt-1 text-xs">
+                                                   Days after launch to pay the balance and keep the 30-day free subscription.
+                                                   After this, the seat and free month are cancelled.
+                                                </p>
                                              </div>
                                              <div>
                                                 <Label>Full upfront (after launch)</Label>
@@ -462,25 +468,17 @@ const Pricing = () => {
                                                    onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
                                                 />
                                                 <p className="text-muted-foreground mt-1 text-xs">
-                                                   Price for new enrollments after pre-reg ends. Full access immediately, then monthly
-                                                   billing with no free trial. Coupons allowed.
+                                                   Price for new enrollments after pre-reg ends, and for students who miss the
+                                                   balance grace deadline. Full access immediately. First monthly charge about 30
+                                                   days later — not offered as a free month. Coupons allowed.
                                                 </p>
                                                 <InputError message={errors.launch_full_upfront_price} />
                                              </div>
                                              <div className="sm:col-span-2">
-                                                <Label>First subscription charge / trial end ({dateTimezoneLabel})</Label>
-                                                <Input
-                                                   type="datetime-local"
-                                                   value={data.launch_subscription_trial_ends_at}
-                                                   onChange={(e) => setData('launch_subscription_trial_ends_at', e.target.value)}
-                                                />
-                                                <p className="text-muted-foreground mt-1 text-xs">
-                                                   Applies only to pre-registration students who pay the launch balance. They get full
-                                                   access and stay free until this fixed date, then monthly billing starts. Must be at
-                                                   least 2 days after balance checkout (Stripe requirement). Does not apply to
-                                                   full-upfront enrollments after pre-reg ends. Time is {dateTimezoneLabel}.
+                                                <p className="text-muted-foreground text-xs">
+                                                   Free subscription month: always 30 days from the date the launch balance is
+                                                   paid (not a fixed calendar date). Only on-time balance payments qualify.
                                                 </p>
-                                                <InputError message={errors.launch_subscription_trial_ends_at} />
                                              </div>
                                           </div>
                                        </>
@@ -564,6 +562,10 @@ const Pricing = () => {
                                                 onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
                                              />
                                              <InputError message={errors.launch_balance_grace_days} />
+                                             <p className="text-muted-foreground mt-1 text-xs">
+                                                Days after launch to pay the balance and keep the 30-day free subscription.
+                                                After this, the seat and free month are cancelled.
+                                             </p>
                                           </div>
                                           <div>
                                              <Label>Full upfront (from Sept 15+)</Label>
@@ -577,18 +579,11 @@ const Pricing = () => {
                                              <InputError message={errors.launch_full_upfront_price} />
                                           </div>
                                           <div className="sm:col-span-2">
-                                             <Label>First subscription charge / trial end ({dateTimezoneLabel})</Label>
-                                             <Input
-                                                type="datetime-local"
-                                                value={data.launch_subscription_trial_ends_at}
-                                                onChange={(e) => setData('launch_subscription_trial_ends_at', e.target.value)}
-                                             />
-                                             <p className="text-muted-foreground mt-1 text-xs">
-                                                Pre-registrants: free until this date (e.g. Oct 15), then monthly price applies.
-                                                Deposit is non-refundable if balance is not paid within grace days. Time is{' '}
-                                                {dateTimezoneLabel}.
+                                             <p className="text-muted-foreground text-xs">
+                                                Free subscription month: always 30 days from the date the launch balance is paid.
+                                                Only on-time balance payments qualify. Deposit is non-refundable if the balance is
+                                                not paid within the grace days.
                                              </p>
-                                             <InputError message={errors.launch_subscription_trial_ends_at} />
                                           </div>
                                        </div>
                                     ) : (

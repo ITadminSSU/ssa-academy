@@ -332,7 +332,7 @@ class StripeController extends Controller
                 'coupon_code' => $coupon?->code,
             ],
             'subscription_data' => [
-                // First monthly charge ~30 days after upfront payment.
+                // First monthly invoice ~30 days later. Not marketed as a free month.
                 'trial_period_days' => 30,
                 'metadata' => [
                     'user_id' => (string) $user->id,
@@ -416,7 +416,7 @@ class StripeController extends Controller
                 'coupon_code' => $coupon?->code,
             ],
             'subscription_data' => [
-                // First monthly charge ~30 days after enrollment.
+                // First monthly invoice ~30 days later. Not marketed as a free month.
                 'trial_period_days' => 30,
                 'metadata' => [
                     'user_id' => (string) $user->id,
@@ -571,7 +571,7 @@ class StripeController extends Controller
 
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('success', 'Balance paid. Full course access is unlocked. Your $6/mo subscription starts after the free period.');
+                    ->with('success', 'Balance paid. Full course access is unlocked. Your subscription is free for 30 days from this payment, then monthly billing starts.');
             }
 
             if (
@@ -594,7 +594,7 @@ class StripeController extends Controller
                 if ($course) {
                     $message = match ($offerMode) {
                         'full_launch' => 'Enrollment complete. You have full access now. Your first monthly subscription charge will be billed automatically in about 30 days.',
-                        'upfront_subscription' => 'Enrollment complete. You have access now. Monthly subscription billing begins after the first free month.',
+                        'upfront_subscription' => 'Enrollment complete. You have access now. Your first monthly subscription charge will be billed automatically in about 30 days.',
                         default => 'Subscription active. You now have access to this course.',
                     };
 

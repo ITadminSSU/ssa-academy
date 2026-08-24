@@ -220,7 +220,7 @@ class UpdateCourseRequest extends FormRequest
             'launch_deposit_amount' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
             'launch_balance_amount' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
             'launch_balance_grace_days' => 'nullable|integer|min:1|max:30',
-            'launch_subscription_trial_ends_at' => 'nullable|date|required_if:launch_offer_enabled,true',
+            'launch_subscription_trial_ends_at' => 'nullable|date',
             'launch_full_upfront_price' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
         ];
     }
