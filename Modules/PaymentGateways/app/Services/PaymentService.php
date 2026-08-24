@@ -241,9 +241,10 @@ class PaymentService
         float $amount,
         PaymentBillingType $billingType,
         ?string $couponCode = null,
+        ?float $couponDiscount = null,
     ): PaymentHistory {
         if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
-            $this->applyCouponToPayment($existing, $couponCode);
+            $this->applyCouponToPayment($existing, $couponCode, $couponDiscount);
 
             return $existing;
         }
@@ -281,7 +282,7 @@ class PaymentService
             ...$historyData,
         ]);
 
-        $this->applyCouponToPayment($history, $couponCode);
+        $this->applyCouponToPayment($history, $couponCode, $couponDiscount);
 
         return $history;
     }
@@ -347,25 +348,38 @@ class PaymentService
         ];
     }
 
-    public function applyCouponToPayment(PaymentHistory $payment, ?string $couponCode): void
+    public function applyCouponToPayment(PaymentHistory $payment, ?string $couponCode, ?float $discount = null): void
     {
         $couponCode = trim((string) $couponCode);
 
-        if ($couponCode === '') {
+        if ($couponCode === '' && ($discount === null || $discount <= 0)) {
             return;
         }
 
-        if (trim((string) $payment->coupon) === '') {
+        if ($couponCode !== '' && trim((string) $payment->coupon) === '') {
             $payment->forceFill(['coupon' => $couponCode])->save();
         }
 
         $meta = is_array($payment->meta) ? $payment->meta : [];
-        if (($meta['coupon_code'] ?? '') === '') {
+        $dirty = false;
+
+        if ($couponCode !== '' && ($meta['coupon_code'] ?? '') === '') {
             $meta['coupon_code'] = $couponCode;
+            $dirty = true;
+        }
+
+        if ($discount !== null && $discount > 0 && (float) ($meta['coupon_discount'] ?? 0) <= 0) {
+            $meta['coupon_discount'] = round($discount, 2);
+            $dirty = true;
+        }
+
+        if ($dirty) {
             $payment->forceFill(['meta' => $meta])->save();
         }
 
-        $this->syncCouponUsedCount($couponCode);
+        if ($couponCode !== '') {
+            $this->syncCouponUsedCount($couponCode);
+        }
     }
 
     public function syncCouponUsedCount(string $code): void

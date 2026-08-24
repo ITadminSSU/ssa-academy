@@ -139,8 +139,9 @@ class LaunchOfferEnrollmentService
         string $transactionId,
         float $amount,
         ?string $couponCode = null,
+        ?float $couponDiscount = null,
     ): CourseEnrollment {
-        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode) {
+        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode, $couponDiscount) {
             $enrollment = CourseEnrollment::query()
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
@@ -151,7 +152,7 @@ class LaunchOfferEnrollmentService
             }
 
             if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
-                $this->paymentService->applyCouponToPayment($existing, $couponCode);
+                $this->paymentService->applyCouponToPayment($existing, $couponCode, $couponDiscount);
 
                 if ($enrollment->isReservedSeat()) {
                     $enrollment->update([
@@ -175,6 +176,7 @@ class LaunchOfferEnrollmentService
                 amount: $amount > 0 ? $amount : $balance,
                 billingType: PaymentBillingType::BALANCE,
                 couponCode: $couponCode,
+                couponDiscount: $couponDiscount,
             );
 
             $enrollment->update([

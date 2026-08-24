@@ -309,6 +309,8 @@ class StripeController extends Controller
                 'stripe_id' => $response->id,
                 'tax_amount' => $pricing['taxAmount'],
                 'coupon_code' => $coupon?->code,
+                'coupon_discount' => (float) ($pricing['couponDiscount'] ?? 0),
+                'charged_amount' => (float) ($pricing['finalPrice'] ?? 0),
             ],
         ]);
 
@@ -580,6 +582,8 @@ class StripeController extends Controller
                 ?? data_get($order, 'metadata.coupon_code')
                 ?? data_get($order, 'subscription_details.metadata.coupon_code')
                 ?? null;
+            $coupon_discount = (float) ($temp->properties['coupon_discount'] ?? 0);
+            $charged_amount = (float) ($temp->properties['charged_amount'] ?? 0);
             $course = $item_type === 'course' ? Course::find($item_id) : null;
 
             if ($offerMode === 'deposit' && $course) {
@@ -608,8 +612,9 @@ class StripeController extends Controller
                     $course,
                     'stripe',
                     (string) ($order->payment_intent ?: $order->subscription ?: $order->id),
-                    ($order->amount_total ?? 0) / 100,
+                    $charged_amount > 0 ? $charged_amount : (($order->amount_total ?? 0) / 100),
                     $coupon_code,
+                    $coupon_discount,
                 );
 
                 if ($order->mode === 'subscription' && ! empty($order->subscription)) {

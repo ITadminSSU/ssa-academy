@@ -238,19 +238,23 @@ class CourseEnrollmentWelcomeMailService
         float $paidAmount,
     ): array {
         $couponCode = '';
+        $discountAmount = 0.0;
 
         foreach ($this->relatedPayments($enrollment, $thisPayment) as $payment) {
             $couponCode = PaymentVoucherCopy::normalizeCode($payment->coupon)
                 ?: PaymentVoucherCopy::normalizeCode(data_get($payment->meta, 'coupon_code'));
+
+            $metaDiscount = (float) data_get($payment->meta, 'coupon_discount', 0);
+            if ($metaDiscount > $discountAmount) {
+                $discountAmount = $metaDiscount;
+            }
 
             if ($couponCode !== '') {
                 break;
             }
         }
 
-        $discountAmount = 0.0;
-
-        if ($couponCode !== '' && $expectedSubtotal > 0) {
+        if ($couponCode !== '' && $discountAmount <= 0 && $expectedSubtotal > 0) {
             $coupon = CourseCoupon::query()
                 ->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])
                 ->first();
