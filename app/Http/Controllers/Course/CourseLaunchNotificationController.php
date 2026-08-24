@@ -45,17 +45,24 @@ class CourseLaunchNotificationController extends Controller
         }
 
         if ($result['sent'] === 0) {
+            $detail = $result['last_error']
+                ? ' Details: '.$result['last_error']
+                : ' Check SMTP / Resend settings and the application log.';
+
             return back()->with(
                 'error',
-                'Could not send launch emails. Check SMTP settings and the application log.',
+                'Could not send launch emails.'.$detail,
             );
         }
 
         $openedNote = $result['opened'] ? 'Course is open now. ' : '';
+        $failNote = $result['failed'] > 0
+            ? ' '.$result['failed'].' failed'.($result['last_error'] ? ' ('.$result['last_error'].')' : '').'.'
+            : '';
 
         return back()->with(
             'success',
-            $openedNote.'Sent '.$result['sent'].' launch notification email(s).',
+            $openedNote.'Sent '.$result['sent'].' launch notification email(s).'.$failNote,
         );
     }
 

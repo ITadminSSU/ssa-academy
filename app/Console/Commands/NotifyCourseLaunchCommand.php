@@ -49,12 +49,13 @@ class NotifyCourseLaunchCommand extends Command
             return self::SUCCESS;
         }
 
-        $sent = $launchNotifications->notifyWaitlist($course->fresh() ?? $course);
+        $result = $launchNotifications->notifyWaitlist($course->fresh() ?? $course);
+        $sent = $result['sent'];
 
         $this->info("Sent {$sent} launch notification email(s).");
 
-        if ($sent < $pending) {
-            $this->warn('Some emails failed. Check storage/logs/laravel.log and SMTP settings.');
+        if ($result['failed'] > 0) {
+            $this->warn('Some emails failed: '.($result['last_error'] ?? 'see laravel.log'));
         }
 
         return self::SUCCESS;

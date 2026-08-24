@@ -37,7 +37,7 @@ class PublishScheduledCoursesCommand extends Command
                 'launch_at' => null,
             ]);
 
-            $notified += $launchNotifications->notifyWaitlist($course->fresh());
+            $notified += $launchNotifications->notifyWaitlist($course->fresh())['sent'];
             $published++;
         }
 
@@ -49,7 +49,7 @@ class PublishScheduledCoursesCommand extends Command
 
         foreach ($dueApproved as $course) {
             $course->update(['launch_at' => null]);
-            $notified += $launchNotifications->notifyWaitlist($course->fresh());
+            $notified += $launchNotifications->notifyWaitlist($course->fresh())['sent'];
             $opened++;
         }
 
