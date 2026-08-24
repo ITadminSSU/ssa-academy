@@ -597,9 +597,17 @@ class StripeController extends Controller
                     ($order->amount_total ?? 0) / 100,
                 );
 
+                $depositPaid = ($order->amount_total ?? 0) / 100;
+                $depositAmount = $depositPaid > 0
+                    ? $depositPaid
+                    : $this->launchOffer->depositAmount($course);
+
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
-                    ->with('success', 'Seat reserved. Pay the remaining balance on launch day to unlock the full course. Your $20 deposit is non-refundable.');
+                    ->with(
+                        'success',
+                        'Seat reserved. Pay the remaining balance on launch day to unlock the full course. Your '.PaymentVoucherCopy::money($depositAmount).' deposit is non-refundable.'
+                    );
             }
 
             if ($offerMode === 'balance' && $course) {
