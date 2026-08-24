@@ -8,6 +8,21 @@ use Illuminate\Support\Facades\Storage;
 
 class S3CompatibleStorage
 {
+    /**
+     * AWS SDK rejects an empty region and the Cloudflare placeholder "auto".
+     * us-east-1 is valid for AWS S3 and for R2's S3-compatible API.
+     */
+    public static function normalizeRegion(?string $region): string
+    {
+        $region = strtolower(trim((string) $region));
+
+        if ($region === '' || $region === 'auto') {
+            return 'us-east-1';
+        }
+
+        return $region;
+    }
+
     public static function isR2Endpoint(?string $endpoint): bool
     {
         if (!$endpoint) {
@@ -27,7 +42,7 @@ class S3CompatibleStorage
                 'key' => config('filesystems.disks.s3.key'),
                 'secret' => config('filesystems.disks.s3.secret'),
             ],
-            'region' => config('filesystems.disks.s3.region') ?: 'auto',
+            'region' => static::normalizeRegion(config('filesystems.disks.s3.region')),
             'version' => 'latest',
         ];
 
@@ -61,7 +76,7 @@ class S3CompatibleStorage
             return "{$base}/{$key}";
         }
 
-        $region = config('filesystems.disks.s3.region');
+        $region = static::normalizeRegion(config('filesystems.disks.s3.region'));
 
         return "https://{$bucket}.s3.{$region}.amazonaws.com/{$key}";
     }
@@ -70,7 +85,11 @@ class S3CompatibleStorage
     {
         $expiresAt ??= now()->addHours(12);
 
-        return Storage::disk('s3')->temporaryUrl($key, $expiresAt);
+        try {
+            return Storage::disk('s3')->temporaryUrl($key, $expiresAt);
+        } catch (\Throwable) {
+            return static::objectFileUrl($key);
+        }
     }
 
     /**

@@ -21,6 +21,7 @@ interface Props {
 const CouponUsagesModal = ({ coupon, handler }: Props) => {
    const [open, setOpen] = useState(false);
    const [usages, setUsages] = useState<Usage[]>([]);
+   const [usedCount, setUsedCount] = useState(coupon.used_count);
    const [loading, setLoading] = useState(false);
 
    useEffect(() => {
@@ -29,10 +30,12 @@ const CouponUsagesModal = ({ coupon, handler }: Props) => {
       setLoading(true);
       fetch(route('course-coupons.usages', coupon.id), {
          headers: { Accept: 'application/json' },
+         credentials: 'same-origin',
       })
          .then((res) => res.json())
          .then((data) => {
-            setUsages(data.usages);
+            setUsages(data.usages ?? []);
+            setUsedCount(Number(data.total ?? data.usages?.length ?? 0));
          })
          .finally(() => setLoading(false));
    }, [open, coupon.id]);
@@ -46,7 +49,7 @@ const CouponUsagesModal = ({ coupon, handler }: Props) => {
                <DialogTitle className="flex items-center gap-3">
                   <span>Coupon Usage:</span>
                   <code className="rounded bg-muted px-2 py-1 text-base">{coupon.code}</code>
-                  <Badge variant="outline">{coupon.used_count} used</Badge>
+                  <Badge variant="outline">{usedCount} used</Badge>
                </DialogTitle>
             </DialogHeader>
 

@@ -51,6 +51,14 @@ class CourseCoupon extends Model
         return $this->hasMany(PaymentHistory::class, 'coupon', 'code');
     }
 
+    public function usageRecords()
+    {
+        return PaymentHistory::query()
+            ->whereRaw('LOWER(coupon) = ?', [strtolower((string) $this->code)])
+            ->whereNotNull('coupon')
+            ->where('coupon', '!=', '');
+    }
+
     /**
      * Query scope to filter only valid coupons
      * This is used in queries: CourseCoupon::isValid()->get()
@@ -98,7 +106,7 @@ class CourseCoupon extends Model
     {
         return PaymentHistory::query()
             ->where('user_id', $userId)
-            ->where('coupon', $this->code)
+            ->whereRaw('LOWER(coupon) = ?', [strtolower((string) $this->code)])
             ->exists();
     }
 

@@ -29,13 +29,28 @@ function setStorageConfig(array $storage): void
    $driver = $storage['storage_driver'] ?? 'local';
 
    if ($driver === 's3') {
+      $key = trim((string) ($storage['aws_access_key_id'] ?? ''));
+      $secret = trim((string) ($storage['aws_secret_access_key'] ?? ''));
+      $bucket = trim((string) ($storage['aws_bucket'] ?? ''));
+      $region = \App\Support\S3CompatibleStorage::normalizeRegion($storage['aws_default_region'] ?? null);
+
+      // Incomplete S3 settings must not take over the default disk — that 500s
+      // any page that builds a file URL (including Online Payments).
+      if ($key === '' || $secret === '' || $bucket === '') {
+         config(['media-library.disk_name' => 'public']);
+         config(['filesystems.default' => 'local']);
+         config(['filesystems.disks.s3.region' => $region]);
+
+         return;
+      }
+
       config(['media-library.disk_name' => 's3']);
       config([
          'filesystems.default' => 's3',
-         'filesystems.disks.s3.key' => $storage['aws_access_key_id'] ?? null,
-         'filesystems.disks.s3.secret' => $storage['aws_secret_access_key'] ?? null,
-         'filesystems.disks.s3.region' => $storage['aws_default_region'] ?? 'auto',
-         'filesystems.disks.s3.bucket' => $storage['aws_bucket'] ?? null,
+         'filesystems.disks.s3.key' => $key,
+         'filesystems.disks.s3.secret' => $secret,
+         'filesystems.disks.s3.region' => $region,
+         'filesystems.disks.s3.bucket' => $bucket,
          'filesystems.disks.s3.endpoint' => $storage['aws_endpoint'] ?? null,
          'filesystems.disks.s3.use_path_style_endpoint' => filter_var(
             $storage['aws_use_path_style_endpoint'] ?? false,
@@ -48,6 +63,11 @@ function setStorageConfig(array $storage): void
 
    config(['media-library.disk_name' => 'public']);
    config(['filesystems.default' => 'local']);
+   config([
+      'filesystems.disks.s3.region' => \App\Support\S3CompatibleStorage::normalizeRegion(
+         config('filesystems.disks.s3.region')
+      ),
+   ]);
 }
 
 function setSmtpConfig(array $config)
@@ -204,13 +224,21 @@ function media_public_url(\Spatie\MediaLibrary\MediaCollections\Models\Media $me
       try {
          return $media->getTemporaryUrl(now()->addHours(12));
       } catch (\Throwable) {
-         $raw = $media->getUrl();
+         $key = ltrim((string) ($media->id ? $media->id.'/'.$media->file_name : $media->file_name), '/');
 
-         return \App\Support\S3CompatibleStorage::attributeGet($raw) ?? $raw;
+         try {
+            return \App\Support\S3CompatibleStorage::objectFileUrl($key);
+         } catch (\Throwable) {
+            return '';
+         }
       }
    }
 
-   return public_asset_url($media->getUrl()) ?? $media->getUrl();
+   try {
+      return public_asset_url($media->getUrl()) ?? $media->getUrl();
+   } catch (\Throwable) {
+      return '';
+   }
 }
 
 /**

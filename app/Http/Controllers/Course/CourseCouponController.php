@@ -91,18 +91,18 @@ class CourseCouponController extends Controller
     */
    public function usages(CourseCoupon $coupon)
    {
-      $usages = $coupon->usages()
-         ->with('user:id,name,email')
-         ->select('id', 'user_id', 'coupon', 'amount', 'purchase_type', 'purchase_id', 'created_at')
-         ->with('purchasable')
-         ->latest()
+      $usages = $coupon->usageRecords()
+         ->with(['user:id,name,email', 'purchase'])
+         ->latest('id')
          ->get()
          ->map(function ($usage) {
+            $usage->user?->setAppends([]);
+
             return [
                'id' => $usage->id,
                'user_name' => $usage->user?->name ?? 'Deleted User',
                'user_email' => $usage->user?->email ?? '-',
-               'course_title' => $usage->purchasable?->title ?? '-',
+               'course_title' => $usage->purchase?->title ?? '-',
                'amount' => $usage->amount,
                'date' => $usage->created_at->format('M d, Y H:i'),
             ];

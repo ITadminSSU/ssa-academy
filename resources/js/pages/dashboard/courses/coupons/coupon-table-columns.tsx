@@ -85,13 +85,14 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
          header: 'Usage',
          cell: ({ row }) => {
             const limit = row.original.usage_limit;
+            const used = row.original.used_count ?? 0;
 
             return limit != null && limit > 0 ? (
                <span>
-                  {row.original.used_count} / {limit}
+                  {used} / {limit}
                </span>
             ) : (
-               <span>Unlimited</span>
+               <span>{used} used</span>
             );
          },
       },

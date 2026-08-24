@@ -15,6 +15,7 @@ use App\Services\Payment\LaunchOfferService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionService;
 use App\Services\SettingsService;
+use App\Support\PaymentVoucherCopy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\PaymentGateways\Services\PaymentService;
@@ -112,15 +113,25 @@ class StripeController extends Controller
             $request->coupon
         );
 
+        $itemName = ucfirst($request->item_type).' Purchase';
+        if ($request->item_type === 'course') {
+            $namedCourse = Course::find($request->item_id);
+            if ($namedCourse) {
+                $itemName = $namedCourse->title;
+            }
+        }
+
         Stripe::setApiKey($this->stripeSecret);
-        $response = Session::create([
+        $sessionPayload = [
             'line_items' => [
                 [
                     'price_data' => [
                         'currency' => strtolower($this->stripe->fields['currency']),
-                        'product_data' => [
-                            'name' => ucfirst($request->item_type).' Purchase',
-                        ],
+                        'product_data' => $this->stripeProductDataForVoucher(
+                            $itemName,
+                            $checkoutItem['coupon'] ?? null,
+                            $checkoutItem,
+                        ),
                         'unit_amount' => (int) round($checkoutItem['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
@@ -137,7 +148,20 @@ class StripeController extends Controller
                 'billing_model' => CourseBillingModel::ONE_TIME->value,
                 'launch_offer_mode' => 'legacy_one_time',
             ],
-        ]);
+        ];
+
+        if ($checkoutItem['coupon']?->code) {
+            $sessionPayload['metadata']['coupon_code'] = $checkoutItem['coupon']->code;
+        }
+
+        $voucherDescription = $this->stripeVoucherDescription($checkoutItem['coupon'] ?? null, $checkoutItem);
+        if ($voucherDescription) {
+            $sessionPayload['payment_intent_data'] = [
+                'description' => $voucherDescription,
+            ];
+        }
+
+        $response = Session::create($sessionPayload);
 
         setTempStore([
             'user_id' => $user->id,
@@ -225,6 +249,20 @@ class StripeController extends Controller
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
         Stripe::setApiKey($this->stripeSecret);
 
+        $subscriptionData = [
+            'trial_end' => $trialEnd->timestamp,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'course_id' => (string) $course->id,
+                'launch_offer_mode' => 'balance',
+                'coupon_code' => $coupon?->code,
+            ],
+        ];
+        $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);
+        if ($voucherDescription) {
+            $subscriptionData['description'] = $voucherDescription;
+        }
+
         $response = Session::create([
             'mode' => 'subscription',
             'customer' => $customerId,
@@ -232,9 +270,11 @@ class StripeController extends Controller
                 [
                     'price_data' => [
                         'currency' => strtolower($this->stripe->fields['currency']),
-                        'product_data' => [
-                            'name' => 'Launch balance — '.$course->title,
-                        ],
+                        'product_data' => $this->stripeProductDataForVoucher(
+                            'Launch balance — '.$course->title,
+                            $coupon,
+                            $pricing,
+                        ),
                         'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
@@ -255,15 +295,7 @@ class StripeController extends Controller
                 'launch_offer_mode' => 'balance',
                 'coupon_code' => $coupon?->code,
             ],
-            'subscription_data' => [
-                'trial_end' => $trialEnd->timestamp,
-                'metadata' => [
-                    'user_id' => (string) $user->id,
-                    'course_id' => (string) $course->id,
-                    'launch_offer_mode' => 'balance',
-                    'coupon_code' => $coupon?->code,
-                ],
-            ],
+            'subscription_data' => $subscriptionData,
         ]);
 
         setTempStore([
@@ -301,6 +333,21 @@ class StripeController extends Controller
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
         Stripe::setApiKey($this->stripeSecret);
 
+        $subscriptionData = [
+            // First monthly invoice ~30 days later. Not marketed as a free month.
+            'trial_period_days' => 30,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'course_id' => (string) $course->id,
+                'launch_offer_mode' => 'full_launch',
+                'coupon_code' => $coupon?->code,
+            ],
+        ];
+        $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);
+        if ($voucherDescription) {
+            $subscriptionData['description'] = $voucherDescription;
+        }
+
         $response = Session::create([
             'mode' => 'subscription',
             'customer' => $customerId,
@@ -308,9 +355,11 @@ class StripeController extends Controller
                 [
                     'price_data' => [
                         'currency' => strtolower($this->stripe->fields['currency']),
-                        'product_data' => [
-                            'name' => 'Course enrollment — '.$course->title,
-                        ],
+                        'product_data' => $this->stripeProductDataForVoucher(
+                            'Course enrollment — '.$course->title,
+                            $coupon,
+                            $pricing,
+                        ),
                         'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
@@ -331,16 +380,7 @@ class StripeController extends Controller
                 'launch_offer_mode' => 'full_launch',
                 'coupon_code' => $coupon?->code,
             ],
-            'subscription_data' => [
-                // First monthly invoice ~30 days later. Not marketed as a free month.
-                'trial_period_days' => 30,
-                'metadata' => [
-                    'user_id' => (string) $user->id,
-                    'course_id' => (string) $course->id,
-                    'launch_offer_mode' => 'full_launch',
-                    'coupon_code' => $coupon?->code,
-                ],
-            ],
+            'subscription_data' => $subscriptionData,
         ]);
 
         setTempStore([
@@ -385,6 +425,21 @@ class StripeController extends Controller
         $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
         Stripe::setApiKey($this->stripeSecret);
 
+        $subscriptionData = [
+            // First monthly invoice ~30 days later. Not marketed as a free month.
+            'trial_period_days' => 30,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'course_id' => (string) $course->id,
+                'launch_offer_mode' => 'upfront_subscription',
+                'coupon_code' => $coupon?->code,
+            ],
+        ];
+        $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);
+        if ($voucherDescription) {
+            $subscriptionData['description'] = $voucherDescription;
+        }
+
         $response = Session::create([
             'mode' => 'subscription',
             'customer' => $customerId,
@@ -392,9 +447,11 @@ class StripeController extends Controller
                 [
                     'price_data' => [
                         'currency' => strtolower($this->stripe->fields['currency']),
-                        'product_data' => [
-                            'name' => 'Course enrollment — '.$course->title,
-                        ],
+                        'product_data' => $this->stripeProductDataForVoucher(
+                            'Course enrollment — '.$course->title,
+                            $coupon,
+                            $pricing,
+                        ),
                         'unit_amount' => (int) round($pricing['finalPrice'] * 100),
                     ],
                     'quantity' => 1,
@@ -415,16 +472,7 @@ class StripeController extends Controller
                 'launch_offer_mode' => 'upfront_subscription',
                 'coupon_code' => $coupon?->code,
             ],
-            'subscription_data' => [
-                // First monthly invoice ~30 days later. Not marketed as a free month.
-                'trial_period_days' => 30,
-                'metadata' => [
-                    'user_id' => (string) $user->id,
-                    'course_id' => (string) $course->id,
-                    'launch_offer_mode' => 'upfront_subscription',
-                    'coupon_code' => $coupon?->code,
-                ],
-            ],
+            'subscription_data' => $subscriptionData,
         ]);
 
         setTempStore([
@@ -517,7 +565,6 @@ class StripeController extends Controller
         $item_id = $temp->properties['item_id'];
         $stripe_id = $temp->properties['stripe_id'];
         $tax_amount = $temp->properties['tax_amount'];
-        $coupon_code = $temp->properties['coupon_code'];
         $billing_model = $temp->properties['billing_model'] ?? CourseBillingModel::ONE_TIME->value;
         $offerMode = $temp->properties['launch_offer_mode'] ?? 'legacy_one_time';
 
@@ -529,6 +576,10 @@ class StripeController extends Controller
         try {
             Stripe::setApiKey($this->stripeSecret);
             $order = Session::retrieve($stripe_id);
+            $coupon_code = $temp->properties['coupon_code']
+                ?? data_get($order, 'metadata.coupon_code')
+                ?? data_get($order, 'subscription_details.metadata.coupon_code')
+                ?? null;
             $course = $item_type === 'course' ? Course::find($item_id) : null;
 
             if ($offerMode === 'deposit' && $course) {
@@ -668,6 +719,39 @@ class StripeController extends Controller
         return redirect()
             ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
             ->with('error', 'Your payment have failed, please try again later.');
+    }
+
+    /**
+     * @param  object{code?: string}|null  $coupon
+     * @param  array{couponDiscount?: float|int|string, subtotal?: float|int|string}  $pricing
+     * @return array{name: string, description?: string}
+     */
+    protected function stripeProductDataForVoucher(string $baseName, ?object $coupon, array $pricing): array
+    {
+        $discount = (float) ($pricing['couponDiscount'] ?? 0);
+        $data = [
+            'name' => PaymentVoucherCopy::stripeLineName($baseName, $coupon?->code, $discount),
+        ];
+
+        $description = $this->stripeVoucherDescription($coupon, $pricing);
+        if ($description) {
+            $data['description'] = $description;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param  object{code?: string}|null  $coupon
+     * @param  array{couponDiscount?: float|int|string, subtotal?: float|int|string}  $pricing
+     */
+    protected function stripeVoucherDescription(?object $coupon, array $pricing): ?string
+    {
+        return PaymentVoucherCopy::stripeLineDescription(
+            $coupon?->code,
+            (float) ($pricing['couponDiscount'] ?? 0),
+            (float) ($pricing['subtotal'] ?? 0),
+        );
     }
 
     protected function sendWelcomeEmailForCourse($user, Course $course): void

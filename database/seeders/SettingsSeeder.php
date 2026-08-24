@@ -173,7 +173,7 @@ class SettingsSeeder extends Seeder
                     'storage_driver' => 'local',
                     'aws_access_key_id' => '',
                     'aws_secret_access_key' => '',
-                    'aws_default_region' => 'auto',
+                    'aws_default_region' => 'us-east-1',
                     'aws_bucket' => '',
                     'aws_endpoint' => '',
                     'aws_use_path_style_endpoint' => true,

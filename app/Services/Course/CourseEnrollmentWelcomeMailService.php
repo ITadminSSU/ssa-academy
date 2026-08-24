@@ -11,6 +11,7 @@ use App\Models\Course\CourseEnrollment;
 use App\Models\User;
 use App\Services\Payment\LaunchOfferService;
 use App\Support\CourseWelcomeEmailCopy;
+use App\Support\PaymentVoucherCopy;
 use App\Support\TransactionalMailSender;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
@@ -44,13 +45,25 @@ class CourseEnrollmentWelcomeMailService
         $academyName = (string) config('branding.name', config('app.name'));
         $breakdown = $this->paymentBreakdown($enrollment);
         $variant = CourseWelcomeEmailCopy::resolveVariant($course);
+        $intro = 'Thank you for your payment of '.$this->money($breakdown['this_payment_amount']).' for “'.$course->title.'”.';
+
+        if ($breakdown['discount_amount'] > 0) {
+            $voucherLabel = $breakdown['coupon_code'] !== ''
+                ? 'Voucher '.$breakdown['coupon_code']
+                : 'A voucher';
+            $intro .= ' '.$voucherLabel.' was applied (−'.$this->money($breakdown['discount_amount']).').';
+        } else {
+            $intro .= ' This completes your course payment.';
+        }
+
+        $intro .= ' You have successfully enrolled and we’re excited to have you join '.$academyName.'.';
 
         $sent = $this->send($user, new CourseEnrollmentWelcomeMail(
             emailSubject: 'Welcome to '.$course->title.'!',
             greeting: 'Hi '.$this->firstName($user).',',
             courseTitle: (string) $course->title,
             introParagraphs: [
-                'Thank you for your payment of '.$this->money($breakdown['this_payment_amount']).' as full payment for “'.$course->title.'”. You have successfully enrolled and we’re excited to have you join '.$academyName.'.',
+                $intro,
             ],
             paymentBullets: $breakdown['bullets'],
             bodyParagraphs: CourseWelcomeEmailCopy::bodyParagraphs($variant),
@@ -107,11 +120,10 @@ class CourseEnrollmentWelcomeMailService
     }
 
     /**
-     * @return array{this_payment_amount: float, bullets: list<string>}
+     * @return array{this_payment_amount: float, discount_amount: float, coupon_code: string, bullets: list<string>}
      */
     private function paymentBreakdown(CourseEnrollment $enrollment): array
     {
-        $course = $enrollment->course;
         $depositAmount = (float) ($enrollment->deposit_amount ?? 0);
         $depositDate = $enrollment->deposit_paid_at;
 
@@ -123,12 +135,19 @@ class CourseEnrollmentWelcomeMailService
             ?? now();
 
         $expectedSubtotal = $this->expectedSubtotalBeforeDiscount($enrollment, $thisPayment);
+        $voucher = $this->resolveVoucher($thisPayment, $expectedSubtotal, $thisPaymentAmount);
+        $discountAmount = $voucher['amount'];
+        $couponCode = $voucher['code'];
 
-        if ($thisPaymentAmount <= 0 && $expectedSubtotal > 0) {
+        if ($discountAmount > 0) {
+            $afterDiscount = round(max(0, $expectedSubtotal - $discountAmount), 2);
+            if ($thisPaymentAmount <= 0 || abs($thisPaymentAmount - $expectedSubtotal) < 0.009) {
+                $thisPaymentAmount = $afterDiscount;
+            }
+        } elseif ($thisPaymentAmount <= 0 && $expectedSubtotal > 0) {
             $thisPaymentAmount = $expectedSubtotal;
         }
 
-        $discountAmount = $this->resolveDiscountAmount($thisPayment, $expectedSubtotal, $thisPaymentAmount);
         $totalAmount = $depositAmount + $expectedSubtotal;
 
         if ($totalAmount <= 0) {
@@ -141,16 +160,19 @@ class CourseEnrollmentWelcomeMailService
             $bullets[] = 'Pre-registration ('.$this->date($depositDate).'): '.$this->money($depositAmount);
         }
 
-        $bullets[] = 'This Payment ('.$this->date($thisPaymentDate).'): '.$this->money($thisPaymentAmount);
-
-        if ($discountAmount > 0) {
-            $bullets[] = 'Discount (Voucher): '.$this->money($discountAmount);
+        if ($discountAmount > 0 && $expectedSubtotal > 0) {
+            $priceLabel = $depositAmount > 0 ? 'Balance' : 'Course Price';
+            $bullets[] = $priceLabel.': '.$this->money($expectedSubtotal);
+            $bullets[] = PaymentVoucherCopy::breakdownLine($couponCode, $discountAmount);
         }
 
+        $bullets[] = 'This Payment ('.$this->date($thisPaymentDate).'): '.$this->money($thisPaymentAmount);
         $bullets[] = 'Total Course Price: '.$this->money($totalAmount);
 
         return [
             'this_payment_amount' => $thisPaymentAmount,
+            'discount_amount' => $discountAmount,
+            'coupon_code' => $couponCode,
             'bullets' => $bullets,
         ];
     }
@@ -201,24 +223,33 @@ class CourseEnrollmentWelcomeMailService
         return max(0, $price);
     }
 
-    private function resolveDiscountAmount(?PaymentHistory $thisPayment, float $expectedSubtotal, float $paidAmount): float
+    /**
+     * @return array{code: string, amount: float}
+     */
+    private function resolveVoucher(?PaymentHistory $thisPayment, float $expectedSubtotal, float $paidAmount): array
     {
-        $couponCode = trim((string) ($thisPayment?->coupon ?? ''));
+        $couponCode = PaymentVoucherCopy::normalizeCode($thisPayment?->coupon);
+        $discountAmount = 0.0;
 
         if ($couponCode !== '' && $expectedSubtotal > 0) {
-            $coupon = CourseCoupon::query()->where('code', $couponCode)->first();
+            $coupon = CourseCoupon::query()
+                ->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])
+                ->first();
+
             if ($coupon) {
                 $pricing = $this->paymentService->calculateCustomPrice($expectedSubtotal, $coupon);
-
-                return max(0, (float) ($pricing['couponDiscount'] ?? 0));
+                $discountAmount = max(0, (float) ($pricing['couponDiscount'] ?? 0));
             }
         }
 
-        if ($expectedSubtotal > 0 && $paidAmount > 0 && $expectedSubtotal > $paidAmount) {
-            return max(0, round($expectedSubtotal - $paidAmount, 2));
+        if ($discountAmount <= 0 && $expectedSubtotal > 0 && $paidAmount > 0 && $expectedSubtotal > $paidAmount) {
+            $discountAmount = max(0, round($expectedSubtotal - $paidAmount, 2));
         }
 
-        return 0.0;
+        return [
+            'code' => $couponCode,
+            'amount' => $discountAmount,
+        ];
     }
 
     private function shortBio(?string $biography): string

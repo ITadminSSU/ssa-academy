@@ -33,17 +33,6 @@ class AppConfig
         $bunnyStream = $bunnyStreamSetting?->fields ?? ['enabled' => false];
         setBunnyStreamConfig($bunnyStream);
 
-        if (config('filesystems.default') === 's3') {
-            if (
-                empty(config('filesystems.disks.s3.key')) ||
-                empty(config('filesystems.disks.s3.secret')) ||
-                empty(config('filesystems.disks.s3.region')) ||
-                empty(config('filesystems.disks.s3.bucket'))
-            ) {
-                return back()->with('error', 'S3 storage configuration is incomplete. File will not upload to the S3 right now.');
-            }
-        }
-
         return $next($request);
     }
 }

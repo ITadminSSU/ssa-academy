@@ -93,7 +93,9 @@ class PaymentService
         $instructor = null;
         $historyData = [];
 
-        if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
+        if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
+            $this->applyCouponToPayment($existing, $couponCode);
+
             return;
         }
 
@@ -171,8 +173,13 @@ class PaymentService
             ...$historyData,
         ]);
 
-        if ($couponCode) {
-            CourseCoupon::where('code', $couponCode)->increment('used_count');
+        $history = PaymentHistory::query()
+            ->where('transaction_id', $transactionId)
+            ->latest('id')
+            ->first();
+
+        if ($history) {
+            $this->applyCouponToPayment($history, $couponCode);
         }
     }
 
@@ -184,7 +191,9 @@ class PaymentService
         PaymentBillingType $billingType,
         ?string $couponCode = null,
     ): void {
-        if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
+        if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
+            $this->applyCouponToPayment($existing, $couponCode);
+
             return;
         }
 
@@ -209,7 +218,7 @@ class PaymentService
             $historyData['admin_revenue'] = ($totalPrice - $instructorRevenueAmount) + $taxAmount;
         }
 
-        PaymentHistory::create([
+        $history = PaymentHistory::create([
             'user_id' => $subscription->user_id,
             'amount' => $totalPrice,
             'tax' => $taxAmount,
@@ -221,9 +230,7 @@ class PaymentService
             ...$historyData,
         ]);
 
-        if ($couponCode) {
-            CourseCoupon::where('code', $couponCode)->increment('used_count');
-        }
+        $this->applyCouponToPayment($history, $couponCode);
     }
 
     public function recordLaunchOfferPayment(
@@ -236,6 +243,8 @@ class PaymentService
         ?string $couponCode = null,
     ): PaymentHistory {
         if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
+            $this->applyCouponToPayment($existing, $couponCode);
+
             return $existing;
         }
 
@@ -272,9 +281,7 @@ class PaymentService
             ...$historyData,
         ]);
 
-        if ($couponCode) {
-            CourseCoupon::where('code', $couponCode)->increment('used_count');
-        }
+        $this->applyCouponToPayment($history, $couponCode);
 
         return $history;
     }
@@ -338,6 +345,38 @@ class PaymentService
             'discountedPrice' => $discountedPrice,
             'finalPrice' => $finalPrice,
         ];
+    }
+
+    public function applyCouponToPayment(PaymentHistory $payment, ?string $couponCode): void
+    {
+        $couponCode = trim((string) $couponCode);
+
+        if ($couponCode === '') {
+            return;
+        }
+
+        if (trim((string) $payment->coupon) === '') {
+            $payment->forceFill(['coupon' => $couponCode])->save();
+        }
+
+        $this->syncCouponUsedCount($couponCode);
+    }
+
+    public function syncCouponUsedCount(string $code): void
+    {
+        $code = trim($code);
+
+        if ($code === '') {
+            return;
+        }
+
+        $count = PaymentHistory::query()
+            ->whereRaw('LOWER(coupon) = ?', [strtolower($code)])
+            ->count();
+
+        CourseCoupon::query()
+            ->whereRaw('LOWER(code) = ?', [strtolower($code)])
+            ->update(['used_count' => $count]);
     }
 
     /**

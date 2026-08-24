@@ -115,6 +115,7 @@ class CourseCouponService
       $search = $data['coupon_search'] ?? $data['search'] ?? null;
 
       $coupons = CourseCoupon::with('course:id,title')
+         ->withCount('usages')
          ->when(!isAdmin(), function ($query) use ($user) {
             $query->where(function ($scoped) use ($user) {
                $scoped->where(function ($global) use ($user) {
@@ -137,9 +138,20 @@ class CourseCouponService
          ->orderBy('created_at', 'desc');
 
       if ($paginate) {
-         return $coupons->paginate($page);
+         $result = $coupons->paginate($page);
+         $result->getCollection()->transform(function (CourseCoupon $coupon) {
+            $coupon->used_count = (int) ($coupon->usages_count ?? $coupon->used_count);
+
+            return $coupon;
+         });
+
+         return $result;
       }
 
-      return $coupons->get();
+      return $coupons->get()->transform(function (CourseCoupon $coupon) {
+         $coupon->used_count = (int) ($coupon->usages_count ?? $coupon->used_count);
+
+         return $coupon;
+      });
    }
 }

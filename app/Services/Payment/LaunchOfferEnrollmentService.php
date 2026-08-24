@@ -150,7 +150,18 @@ class LaunchOfferEnrollmentService
                 throw new \RuntimeException('No reserved seat found for balance payment.');
             }
 
-            if (PaymentHistory::where('transaction_id', $transactionId)->exists()) {
+            if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
+                $this->paymentService->applyCouponToPayment($existing, $couponCode);
+
+                if ($enrollment->isReservedSeat()) {
+                    $enrollment->update([
+                        'balance_paid_at' => now(),
+                        'balance_payment_history_id' => $existing->id,
+                        'access_status' => EnrollmentAccessStatus::ACTIVE,
+                        'enrollment_type' => 'paid',
+                    ]);
+                }
+
                 return $enrollment->fresh(['user', 'course']);
             }
 
