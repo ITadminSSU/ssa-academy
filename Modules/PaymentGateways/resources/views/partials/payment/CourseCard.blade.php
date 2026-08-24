@@ -103,8 +103,6 @@
                   @if ($showListStrike)
                      <span class="text-muted-foreground line-through">{{ $formatMoney($listPrice) }}</span>
                      <span class="font-semibold">{{ $formatMoney($courseDisplayPrice) }}</span>
-                  @elseif ($showOfferTotal)
-                     <span class="text-muted-foreground line-through">{{ $formatMoney($courseDisplayPrice) }}</span>
                   @else
                      <span class="font-semibold">{{ $formatMoney($courseDisplayPrice) }}</span>
                   @endif
