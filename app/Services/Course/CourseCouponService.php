@@ -41,7 +41,9 @@ class CourseCouponService
          return ['coupon' => null, 'error' => null];
       }
 
-      $coupon = CourseCoupon::where('code', $code)->first();
+      $coupon = CourseCoupon::query()
+         ->whereRaw('LOWER(code) = ?', [strtolower($code)])
+         ->first();
 
       if (! $coupon) {
          return ['coupon' => null, 'error' => 'Invalid coupon code.'];

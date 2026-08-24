@@ -47,11 +47,11 @@ class CourseEnrollmentWelcomeMailService
         $variant = CourseWelcomeEmailCopy::resolveVariant($course);
         $intro = 'Thank you for your payment of '.$this->money($breakdown['this_payment_amount']).' for “'.$course->title.'”.';
 
-        if ($breakdown['discount_amount'] > 0) {
-            $voucherLabel = $breakdown['coupon_code'] !== ''
-                ? 'Voucher '.$breakdown['coupon_code']
-                : 'A voucher';
-            $intro .= ' '.$voucherLabel.' was applied (−'.$this->money($breakdown['discount_amount']).').';
+        if ($breakdown['coupon_code'] !== '') {
+            $voucherLabel = 'Voucher '.$breakdown['coupon_code'];
+            $intro .= $breakdown['discount_amount'] > 0
+                ? ' '.$voucherLabel.' was applied (−'.$this->money($breakdown['discount_amount']).').'
+                : ' '.$voucherLabel.' was applied.';
         } else {
             $intro .= ' This completes your course payment.';
         }
@@ -135,7 +135,7 @@ class CourseEnrollmentWelcomeMailService
             ?? now();
 
         $expectedSubtotal = $this->expectedSubtotalBeforeDiscount($enrollment, $thisPayment);
-        $voucher = $this->resolveVoucher($thisPayment, $expectedSubtotal, $thisPaymentAmount);
+        $voucher = $this->resolveVoucher($enrollment, $thisPayment, $expectedSubtotal, $thisPaymentAmount);
         $discountAmount = $voucher['amount'];
         $couponCode = $voucher['code'];
 
@@ -160,10 +160,15 @@ class CourseEnrollmentWelcomeMailService
             $bullets[] = 'Pre-registration ('.$this->date($depositDate).'): '.$this->money($depositAmount);
         }
 
-        if ($discountAmount > 0 && $expectedSubtotal > 0) {
-            $priceLabel = $depositAmount > 0 ? 'Balance' : 'Course Price';
-            $bullets[] = $priceLabel.': '.$this->money($expectedSubtotal);
-            $bullets[] = PaymentVoucherCopy::breakdownLine($couponCode, $discountAmount);
+        if ($couponCode !== '' || $discountAmount > 0) {
+            if ($expectedSubtotal > 0) {
+                $priceLabel = $depositAmount > 0 ? 'Balance' : 'Course Price';
+                $bullets[] = $priceLabel.': '.$this->money($expectedSubtotal);
+            }
+
+            $bullets[] = $discountAmount > 0
+                ? PaymentVoucherCopy::breakdownLine($couponCode, $discountAmount)
+                : 'Voucher '.$couponCode.' applied';
         }
 
         $bullets[] = 'This Payment ('.$this->date($thisPaymentDate).'): '.$this->money($thisPaymentAmount);
@@ -226,9 +231,23 @@ class CourseEnrollmentWelcomeMailService
     /**
      * @return array{code: string, amount: float}
      */
-    private function resolveVoucher(?PaymentHistory $thisPayment, float $expectedSubtotal, float $paidAmount): array
-    {
-        $couponCode = PaymentVoucherCopy::normalizeCode($thisPayment?->coupon);
+    private function resolveVoucher(
+        CourseEnrollment $enrollment,
+        ?PaymentHistory $thisPayment,
+        float $expectedSubtotal,
+        float $paidAmount,
+    ): array {
+        $couponCode = '';
+
+        foreach ($this->relatedPayments($enrollment, $thisPayment) as $payment) {
+            $couponCode = PaymentVoucherCopy::normalizeCode($payment->coupon)
+                ?: PaymentVoucherCopy::normalizeCode(data_get($payment->meta, 'coupon_code'));
+
+            if ($couponCode !== '') {
+                break;
+            }
+        }
+
         $discountAmount = 0.0;
 
         if ($couponCode !== '' && $expectedSubtotal > 0) {
@@ -242,14 +261,55 @@ class CourseEnrollmentWelcomeMailService
             }
         }
 
-        if ($discountAmount <= 0 && $expectedSubtotal > 0 && $paidAmount > 0 && $expectedSubtotal > $paidAmount) {
-            $discountAmount = max(0, round($expectedSubtotal - $paidAmount, 2));
+        if ($discountAmount <= 0 && $expectedSubtotal > 0 && $paidAmount > 0 && $expectedSubtotal > $paidAmount + 0.009) {
+            $discountAmount = round($expectedSubtotal - $paidAmount, 2);
         }
 
         return [
             'code' => $couponCode,
             'amount' => $discountAmount,
         ];
+    }
+
+    /**
+     * @return list<PaymentHistory>
+     */
+    private function relatedPayments(CourseEnrollment $enrollment, ?PaymentHistory $thisPayment): array
+    {
+        $payments = [];
+        $seen = [];
+
+        $add = function (?PaymentHistory $payment) use (&$payments, &$seen): void {
+            if (! $payment || isset($seen[$payment->id])) {
+                return;
+            }
+
+            $seen[$payment->id] = true;
+            $payments[] = $payment;
+        };
+
+        $add($thisPayment);
+
+        foreach ([$enrollment->balance_payment_history_id, $enrollment->deposit_payment_history_id] as $id) {
+            if ($id) {
+                $add(PaymentHistory::query()->find($id));
+            }
+        }
+
+        PaymentHistory::query()
+            ->where('user_id', $enrollment->user_id)
+            ->where('purchase_type', Course::class)
+            ->where('purchase_id', $enrollment->course_id)
+            ->where(function ($query) {
+                $query->where(function ($couponQuery) {
+                    $couponQuery->whereNotNull('coupon')->where('coupon', '!=', '');
+                })->orWhereNotNull('meta->coupon_code');
+            })
+            ->orderByDesc('id')
+            ->get()
+            ->each($add);
+
+        return $payments;
     }
 
     private function shortBio(?string $biography): string

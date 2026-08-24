@@ -359,6 +359,12 @@ class PaymentService
             $payment->forceFill(['coupon' => $couponCode])->save();
         }
 
+        $meta = is_array($payment->meta) ? $payment->meta : [];
+        if (($meta['coupon_code'] ?? '') === '') {
+            $meta['coupon_code'] = $couponCode;
+            $payment->forceFill(['meta' => $meta])->save();
+        }
+
         $this->syncCouponUsedCount($couponCode);
     }
 
