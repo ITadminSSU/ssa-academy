@@ -7,6 +7,7 @@ import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import { ReactNode } from 'react';
+import PaymentDateFilter from './partials/payment-date-filter';
 import TableColumn from './partials/online-table-columns';
 
 interface Props extends SharedData {
@@ -34,6 +35,8 @@ const Online = ({ payments, translate }: Props) => {
             routeName="payment-reports.online.index"
             className="w-full"
          />
+
+         <PaymentDateFilter routeName="payment-reports.online.index" />
 
          <Table className="border-border border-y">
             <TableHeader table={table} />

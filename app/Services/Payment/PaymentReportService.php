@@ -41,12 +41,7 @@ class PaymentReportService
          ->when(array_key_exists('user_id', $params), function ($query) use ($params) {
             return $query->where('user_id', $params['user_id']);
          })
-         ->when(array_key_exists('date_from', $params) && $params['date_from'], function ($query) use ($params) {
-            return $query->whereDate('created_at', '>=', $params['date_from']);
-         })
-         ->when(array_key_exists('date_to', $params) && $params['date_to'], function ($query) use ($params) {
-            return $query->whereDate('created_at', '<=', $params['date_to']);
-         })
+         ->tap(fn ($query) => $this->applyDateFilters($query, $params))
          ->orderBy('created_at', 'desc');
 
       if (!$paginate) {
@@ -77,12 +72,7 @@ class PaymentReportService
                   });
             });
          })
-         ->when(array_key_exists('date_from', $params) && $params['date_from'], function ($query) use ($params) {
-            return $query->whereDate('created_at', '>=', $params['date_from']);
-         })
-         ->when(array_key_exists('date_to', $params) && $params['date_to'], function ($query) use ($params) {
-            return $query->whereDate('created_at', '<=', $params['date_to']);
-         })
+         ->tap(fn ($query) => $this->applyDateFilters($query, $params))
          ->orderBy('created_at', 'desc');
 
       if (!$paginate) {
@@ -119,12 +109,7 @@ class PaymentReportService
             }
             return $query;
          })
-         ->when(array_key_exists('date_from', $params) && $params['date_from'], function ($query) use ($params) {
-            return $query->whereDate('created_at', '>=', $params['date_from']);
-         })
-         ->when(array_key_exists('date_to', $params) && $params['date_to'], function ($query) use ($params) {
-            return $query->whereDate('created_at', '<=', $params['date_to']);
-         })
+         ->tap(fn ($query) => $this->applyDateFilters($query, $params))
          ->orderBy('created_at', 'desc');
 
       if (!$paginate) {
@@ -171,6 +156,38 @@ class PaymentReportService
       $payment->update(['meta' => $meta]);
 
       return true;
+   }
+
+   private function applyDateFilters($query, array $params)
+   {
+      $period = $params['period'] ?? null;
+
+      if ($period === '24h') {
+         return $query->where('created_at', '>=', now()->subHours(24));
+      }
+
+      if ($period === '7d') {
+         return $query->where('created_at', '>=', now()->subDays(7));
+      }
+
+      if ($period === '30d') {
+         return $query->where('created_at', '>=', now()->subDays(30));
+      }
+
+      $date = $params['date'] ?? null;
+      if (is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+         return $query->whereDate('created_at', $date);
+      }
+
+      if (! empty($params['date_from'])) {
+         $query->whereDate('created_at', '>=', $params['date_from']);
+      }
+
+      if (! empty($params['date_to'])) {
+         $query->whereDate('created_at', '<=', $params['date_to']);
+      }
+
+      return $query;
    }
 }
 

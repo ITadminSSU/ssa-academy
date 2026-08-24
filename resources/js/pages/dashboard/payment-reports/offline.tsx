@@ -7,6 +7,7 @@ import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import { ReactNode, useState } from 'react';
+import PaymentDateFilter from './partials/payment-date-filter';
 import TableColumn from './partials/offline-table-columns';
 import VerifyPaymentModal from './partials/verify-payment-modal';
 
@@ -43,6 +44,8 @@ const Offline = ({ payments, translate }: Props) => {
                routeName="payment-reports.offline.index"
                className="w-full"
             />
+
+            <PaymentDateFilter routeName="payment-reports.offline.index" />
 
             <Table className="border-border border-y">
                <TableHeader table={table} />
