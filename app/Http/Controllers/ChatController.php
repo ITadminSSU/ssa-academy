@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatConversation;
+use App\Models\ChatMessage;
 use App\Models\Course\Course;
 use App\Services\Chat\ChatService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ChatController extends Controller
@@ -14,19 +16,28 @@ class ChatController extends Controller
 
     public function index(Request $request)
     {
-        $conversations = $this->chat->inboxFor($request->user());
+        $conversations = $this->chat->inboxFor(
+            $request->user(),
+            $request->query('q'),
+            $request->query('filter'),
+        );
         $activeId = $request->integer('conversation') ?: null;
         $active = null;
 
         if ($activeId) {
             $conversation = ChatConversation::query()->findOrFail($activeId);
             abort_unless($this->chat->canView($request->user(), $conversation), 403);
-            $active = $this->chat->conversationPayload($conversation, $request->user());
+            $active = $this->chat->conversationPayload($conversation, $request->user(), $request->query('mq'));
         }
 
         return Inertia::render('messages/index', [
             'conversations' => $conversations,
             'activeConversation' => $active,
+            'filters' => [
+                'q' => $request->query('q'),
+                'filter' => $request->query('filter'),
+                'mq' => $request->query('mq'),
+            ],
         ]);
     }
 
@@ -35,8 +46,21 @@ class ChatController extends Controller
         abort_unless($this->chat->canView($request->user(), $conversation), 403);
 
         return Inertia::render('messages/index', [
-            'conversations' => $this->chat->inboxFor($request->user()),
-            'activeConversation' => $this->chat->conversationPayload($conversation, $request->user()),
+            'conversations' => $this->chat->inboxFor(
+                $request->user(),
+                $request->query('q'),
+                $request->query('filter'),
+            ),
+            'activeConversation' => $this->chat->conversationPayload(
+                $conversation,
+                $request->user(),
+                $request->query('mq'),
+            ),
+            'filters' => [
+                'q' => $request->query('q'),
+                'filter' => $request->query('filter'),
+                'mq' => $request->query('mq'),
+            ],
         ]);
     }
 
@@ -46,7 +70,12 @@ class ChatController extends Controller
 
         $data = $request->validate([
             'body' => ['nullable', 'string', 'max:5000'],
-            'attachment' => ['nullable', 'image', 'max:5120'],
+            'attachment' => [
+                'nullable',
+                'file',
+                'max:51200',
+                Rule::file()->types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'webm', 'mov', 'pdf']),
+            ],
         ]);
 
         $this->chat->sendMessage(
@@ -56,7 +85,62 @@ class ChatController extends Controller
             $request->file('attachment'),
         );
 
-        return redirect()->route('messages.show', $conversation);
+        return redirect()->route('messages.show', array_merge(
+            ['conversation' => $conversation],
+            array_filter([
+                'q' => $request->query('q'),
+                'filter' => $request->query('filter'),
+                'mq' => $request->query('mq'),
+            ])
+        ));
+    }
+
+    public function resolve(Request $request, ChatConversation $conversation)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->resolveConversation($request->user(), $conversation);
+
+        return back();
+    }
+
+    public function reopen(Request $request, ChatConversation $conversation)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->reopenConversation($request->user(), $conversation);
+
+        return back();
+    }
+
+    public function mute(Request $request, ChatConversation $conversation)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->toggleMute($request->user(), $conversation);
+
+        return back();
+    }
+
+    public function pin(Request $request, ChatConversation $conversation, ChatMessage $message)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->pinMessage($request->user(), $conversation, $message);
+
+        return back();
+    }
+
+    public function unpin(Request $request, ChatConversation $conversation)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->unpinMessage($request->user(), $conversation);
+
+        return back();
+    }
+
+    public function destroyMessage(Request $request, ChatConversation $conversation, ChatMessage $message)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->deleteMessage($request->user(), $conversation, $message);
+
+        return back();
     }
 
     public function openDirect(Request $request, Course $course)

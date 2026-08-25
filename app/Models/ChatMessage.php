@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ChatAttachmentType;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,11 @@ class ChatMessage extends Model implements HasMedia
         'body',
         'attachment',
         'attachment_name',
+        'attachment_type',
+    ];
+
+    protected $casts = [
+        'attachment_type' => ChatAttachmentType::class,
     ];
 
     public function conversation(): BelongsTo

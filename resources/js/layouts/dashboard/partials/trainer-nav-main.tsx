@@ -49,6 +49,7 @@ export function TrainerNavMain() {
    const { auth, system, features } = page.props;
    const routes = getDashboardRoutes(auth.dashboardUrl ?? route('dashboard'), features, Boolean(auth.canManagePlatformSettings));
    const pages = routes[0]?.pages ?? [];
+   const messagesPath = route('messages.index');
 
    const canAccess = (access: string[]) =>
       access.includes(auth.user?.role || '') && access.includes(system?.sub_type || 'collaborative');
@@ -108,6 +109,11 @@ export function TrainerNavMain() {
                            >
                               <Link href={item.path}>
                                  <span className="text-sm">{item.name}</span>
+                                 {item.path === messagesPath && auth.messagesUnreadCount ? (
+                                    <span className="bg-accent ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
+                                       {auth.messagesUnreadCount}
+                                    </span>
+                                 ) : null}
                               </Link>
                            </SidebarMenuButton>
                         </SidebarMenuItem>

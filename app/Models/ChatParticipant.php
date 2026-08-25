@@ -14,12 +14,14 @@ class ChatParticipant extends Model
         'role',
         'last_read_at',
         'is_active',
+        'is_muted',
     ];
 
     protected $casts = [
         'role' => ChatParticipantRole::class,
         'last_read_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_muted' => 'boolean',
     ];
 
     public function conversation(): BelongsTo

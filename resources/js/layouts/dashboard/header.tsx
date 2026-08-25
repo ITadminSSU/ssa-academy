@@ -6,10 +6,12 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { isEmployeeLearner } from '@/lib/dashboard';
 import { SharedData } from '@/types/global';
 import { Link, usePage } from '@inertiajs/react';
+import { MessageCircle } from 'lucide-react';
 
 const DashboardHeader = ({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) => {
    const { props } = usePage<SharedData>();
    const { system, auth } = props;
+   const showMessagesLink = ['student', 'instructor', 'admin'].includes(auth.user?.role ?? '');
 
    const coursesHref = (() => {
       const user = auth?.user;
@@ -27,6 +29,17 @@ const DashboardHeader = ({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] 
                <Link href={coursesHref} className="hover:text-foreground transition-colors">
                   Courses
                </Link>
+               {showMessagesLink && (
+                  <Link href={route('messages.index')} className="hover:text-foreground relative inline-flex items-center gap-1.5 transition-colors">
+                     <MessageCircle className="h-4 w-4" />
+                     Messages
+                     {auth.messagesUnreadCount ? (
+                        <span className="bg-accent inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                           {auth.messagesUnreadCount}
+                        </span>
+                     ) : null}
+                  </Link>
+               )}
             </nav>
             <Breadcrumbs breadcrumbs={breadcrumbs} />
          </div>

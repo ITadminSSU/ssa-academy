@@ -35,4 +35,9 @@ class ChatAccessService
     {
         return $user->role === 'admin';
     }
+
+    public function canModerate(User $user, Course $course): bool
+    {
+        return $this->isAdmin($user) || $this->isCourseInstructor($user, $course);
+    }
 }
