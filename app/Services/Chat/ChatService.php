@@ -377,6 +377,7 @@ class ChatService
 
             $conversation->update(['last_message_at' => now()]);
 
+            $this->markRead($conversation, $sender);
             $this->notifyParticipants($sender, $conversation, $message->fresh(['sender']));
 
             return $message->fresh(['sender:id,name,photo,role']);
@@ -455,6 +456,11 @@ class ChatService
             return 0;
         }
 
+        $latestMessageIds = ChatMessage::query()
+            ->selectRaw('MAX(id) as id')
+            ->whereNull('deleted_at')
+            ->groupBy('chat_conversation_id');
+
         return ChatParticipant::query()
             ->where('chat_participants.user_id', $user->id)
             ->where('chat_participants.is_active', true)
@@ -463,6 +469,13 @@ class ChatService
             ->where(function ($query) {
                 $query->whereNull('chat_participants.last_read_at')
                     ->orWhereColumn('chat_conversations.last_message_at', '>', 'chat_participants.last_read_at');
+            })
+            ->whereNotExists(function ($query) use ($user, $latestMessageIds) {
+                $query->select(DB::raw(1))
+                    ->fromSub($latestMessageIds, 'latest_message_ids')
+                    ->join('chat_messages', 'chat_messages.id', '=', 'latest_message_ids.id')
+                    ->whereColumn('chat_messages.chat_conversation_id', 'chat_conversations.id')
+                    ->where('chat_messages.user_id', $user->id);
             })
             ->count();
     }
@@ -488,6 +501,8 @@ class ChatService
 
     private function notifyParticipants(User $sender, ChatConversation $conversation, ChatMessage $message): void
     {
+        $this->ensureNotifyParticipants($conversation);
+
         $recipients = ChatParticipant::query()
             ->where('chat_conversation_id', $conversation->id)
             ->where('user_id', '!=', $sender->id)
@@ -496,13 +511,9 @@ class ChatService
             ->with('user')
             ->get()
             ->pluck('user')
-            ->filter();
+            ->filter(fn ($user) => $user instanceof User && filter_var($user->email, FILTER_VALIDATE_EMAIL));
 
         foreach ($recipients as $recipient) {
-            if (! $recipient instanceof User) {
-                continue;
-            }
-
             try {
                 $this->mailSender->send(
                     $recipient,
@@ -516,6 +527,29 @@ class ChatService
                     'error' => $e->getMessage(),
                 ]);
             }
+        }
+    }
+
+    private function ensureNotifyParticipants(ChatConversation $conversation): void
+    {
+        $conversation->loadMissing(['course.instructor.user', 'student']);
+
+        if ($conversation->type === ChatConversationType::Direct) {
+            if ($conversation->student) {
+                $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
+            }
+
+            $instructorUser = $conversation->course?->instructor?->user;
+            if ($instructorUser) {
+                $this->upsertParticipant($conversation, $instructorUser, ChatParticipantRole::Instructor, true);
+            }
+
+            return;
+        }
+
+        $instructorUser = $conversation->course?->instructor?->user;
+        if ($instructorUser) {
+            $this->upsertParticipant($conversation, $instructorUser, ChatParticipantRole::Instructor, true);
         }
     }
 
@@ -593,6 +627,7 @@ class ChatService
             ->first();
 
         $unread = $participant && $latest
+            && (int) $latest->user_id !== (int) $viewer->id
             && ($participant->last_read_at === null || $latest->created_at->gt($participant->last_read_at));
 
         $label = $conversation->type === ChatConversationType::Group
