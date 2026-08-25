@@ -25,28 +25,25 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
             </svg>
          </div>
          <div className="flex min-w-0 flex-col items-center text-center">
-            <p
-               className={cn(
-                  'font-semibold tracking-[0.18em] text-[#01123A] uppercase',
-                  isFooter ? 'text-[9px]' : 'text-[11px] sm:text-xs',
-               )}
-            >
-               Fraud Training
-            </p>
-            <p
-               className={cn(
-                  'font-display leading-none font-bold tracking-tight text-[#8C2A23] uppercase',
-                  isFooter ? 'text-xl' : 'text-3xl sm:text-4xl',
-               )}
-            >
-               TIPLINE
-            </p>
-            <span
-               className={cn(
-                  'block h-0.5 bg-[#8C2A23]',
-                  isFooter ? 'mt-0.5 w-[120px]' : 'mt-1 w-[160px] sm:w-[200px]',
-               )}
-            />
+            <div className="inline-block w-max max-w-full">
+               <p
+                  className={cn(
+                     'whitespace-nowrap font-semibold tracking-[0.18em] text-[#01123A] uppercase',
+                     isFooter ? 'text-[9px]' : 'text-[11px] sm:text-xs',
+                  )}
+               >
+                  Fraud Training
+               </p>
+               <p
+                  className={cn(
+                     'font-display w-full leading-none font-bold text-[#8C2A23] uppercase',
+                     isFooter ? 'text-[1.65rem] tracking-[0.2em]' : 'text-[2.1rem] tracking-[0.14em] sm:text-[2.65rem] sm:tracking-[0.16em]',
+                  )}
+               >
+                  TIPLINE
+               </p>
+               <span className={cn('mt-0.5 block h-0.5 w-full bg-[#8C2A23]', !isFooter && 'mt-1')} />
+            </div>
             <p
                className={cn(
                   'inline-flex rounded-full bg-[#01123A] font-semibold tracking-[0.12em] text-white uppercase',
