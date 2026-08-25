@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,8 +14,10 @@ return new class extends Migration
                 $table->id();
                 $table->string('reporter_name')->nullable();
                 $table->string('reporter_email')->nullable();
-                $table->string('link', 2048)->nullable();
-                $table->string('normalized_link', 2048)->nullable()->index();
+                $table->text('link')->nullable();
+                $table->text('normalized_link')->nullable();
+                // Short hash keeps MySQL index under the 3072-byte key limit.
+                $table->string('normalized_link_hash', 64)->nullable()->index();
                 $table->text('details')->nullable();
                 $table->string('screenshot')->nullable();
                 $table->string('screenshot_name')->nullable();
@@ -30,6 +33,8 @@ return new class extends Migration
                 $table->timestamps();
                 $table->softDeletes();
             });
+        } else {
+            $this->repairExistingReportsTable();
         }
 
         if (! Schema::hasTable('scam_tipline_audits')) {
@@ -50,5 +55,31 @@ return new class extends Migration
     {
         Schema::dropIfExists('scam_tipline_audits');
         Schema::dropIfExists('scam_tipline_reports');
+    }
+
+    private function repairExistingReportsTable(): void
+    {
+        // Drop oversized index from the failed first attempt (if present).
+        try {
+            Schema::table('scam_tipline_reports', function (Blueprint $table) {
+                $table->dropIndex('scam_tipline_reports_normalized_link_index');
+            });
+        } catch (\Throwable) {
+            // Index may not exist.
+        }
+
+        Schema::table('scam_tipline_reports', function (Blueprint $table) {
+            if (! Schema::hasColumn('scam_tipline_reports', 'normalized_link_hash')) {
+                $table->string('normalized_link_hash', 64)->nullable()->after('normalized_link')->index();
+            }
+        });
+
+        // Widen link columns if they were created as VARCHAR(2048).
+        try {
+            DB::statement('ALTER TABLE `'.DB::getTablePrefix().'scam_tipline_reports` MODIFY `link` TEXT NULL');
+            DB::statement('ALTER TABLE `'.DB::getTablePrefix().'scam_tipline_reports` MODIFY `normalized_link` TEXT NULL');
+        } catch (\Throwable) {
+            // Already TEXT or unsupported on this engine.
+        }
     }
 };

@@ -24,6 +24,7 @@ class ScamTiplineReport extends Model implements HasMedia
         'reporter_email',
         'link',
         'normalized_link',
+        'normalized_link_hash',
         'details',
         'screenshot',
         'screenshot_name',

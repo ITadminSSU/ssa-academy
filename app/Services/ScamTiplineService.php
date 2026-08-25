@@ -62,14 +62,24 @@ class ScamTiplineService
         return $host.$path.$query;
     }
 
-    public function findLikelyDuplicate(?string $normalizedLink, ?int $excludeId = null): ?ScamTiplineReport
+    public function hashNormalizedLink(?string $normalizedLink): ?string
     {
         if (! $normalizedLink) {
             return null;
         }
 
+        return hash('sha256', $normalizedLink);
+    }
+
+    public function findLikelyDuplicate(?string $normalizedLink, ?int $excludeId = null): ?ScamTiplineReport
+    {
+        $hash = $this->hashNormalizedLink($normalizedLink);
+        if (! $hash) {
+            return null;
+        }
+
         return ScamTiplineReport::query()
-            ->where('normalized_link', $normalizedLink)
+            ->where('normalized_link_hash', $hash)
             ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
             ->whereIn('status', [
                 ScamTiplineStatus::New->value,
@@ -93,6 +103,7 @@ class ScamTiplineService
             'reporter_email' => $this->nullableString($data['reporter_email'] ?? null),
             'link' => $this->nullableString($data['link'] ?? null),
             'normalized_link' => $normalized,
+            'normalized_link_hash' => $this->hashNormalizedLink($normalized),
             'details' => $this->nullableString($data['details'] ?? null),
             'status' => ScamTiplineStatus::New,
             'duplicate_of_id' => $duplicate?->id,
