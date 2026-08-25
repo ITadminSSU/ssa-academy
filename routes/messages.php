@@ -14,5 +14,5 @@ Route::prefix('messages')->name('messages.')->group(function () {
     Route::post('{conversation}/mute', [ChatController::class, 'mute'])->name('mute');
     Route::post('{conversation}/pin/{message}', [ChatController::class, 'pin'])->name('pin');
     Route::delete('{conversation}/pin', [ChatController::class, 'unpin'])->name('unpin');
-    Route::delete('{conversation}/messages/{message}', [ChatController::class, 'destroyMessage'])->name('messages.destroy');
+    Route::delete('{conversation}/messages/{message}', [ChatController::class, 'destroyMessage'])->name('message.destroy');
 });

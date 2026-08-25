@@ -188,7 +188,10 @@ function MessageBubble({
 }
 
 export default function MessagesIndex() {
-   const { conversations, activeConversation, auth, filters = {} } = usePage<Props>().props;
+   const pageProps = usePage<Props>().props;
+   const conversations = pageProps.conversations ?? [];
+   const activeConversation = pageProps.activeConversation ?? null;
+   const { auth, filters = {} } = pageProps;
    const isLearner = auth.user?.role === 'student';
    const [inboxQuery, setInboxQuery] = useState(filters.q ?? '');
    const [threadQuery, setThreadQuery] = useState(filters.mq ?? '');
@@ -260,13 +263,20 @@ export default function MessagesIndex() {
 
    const pinMessage = (messageId: number) => {
       if (!activeConversation) return;
-      router.post(route('messages.pin', [activeConversation.id, messageId]), {}, { preserveScroll: true });
+      router.post(
+         route('messages.pin', { conversation: activeConversation.id, message: messageId }),
+         {},
+         { preserveScroll: true },
+      );
    };
 
    const deleteMessage = (messageId: number) => {
       if (!activeConversation) return;
       if (!window.confirm('Delete this message?')) return;
-      router.delete(route('messages.messages.destroy', [activeConversation.id, messageId]), { preserveScroll: true });
+      router.delete(
+         route('messages.message.destroy', { conversation: activeConversation.id, message: messageId }),
+         { preserveScroll: true },
+      );
    };
 
    return (
@@ -443,12 +453,12 @@ export default function MessagesIndex() {
                      )}
 
                      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-                        {activeConversation.messages.length === 0 ? (
+                        {(activeConversation.messages ?? []).length === 0 ? (
                            <p className="text-sm text-muted-foreground">
                               {filters.mq ? 'No messages match your search.' : 'No messages yet.'}
                            </p>
                         ) : (
-                           activeConversation.messages
+                           (activeConversation.messages ?? [])
                               .filter((message) => message.id !== activeConversation.pinned_message?.id)
                               .map((message) => (
                               <MessageBubble

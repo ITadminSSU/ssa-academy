@@ -308,7 +308,9 @@ class ChatService
         $messages = $messagesQuery
             ->limit(200)
             ->get()
-            ->map(fn (ChatMessage $message) => $this->formatMessage($message, $viewer, $conversation));
+            ->map(fn (ChatMessage $message) => $this->formatMessage($message, $viewer, $conversation))
+            ->values()
+            ->all();
 
         $this->markRead($conversation, $viewer);
 
@@ -597,7 +599,7 @@ class ChatService
             ? ($conversation->title ?? 'Class chat')
             : ($conversation->student?->name ?? 'Direct message');
 
-        if ($conversation->type === ChatConversationType::Direct && $this->access->isCourseInstructor($viewer, $conversation->course)) {
+        if ($conversation->type === ChatConversationType::Direct && $conversation->course && $this->access->isCourseInstructor($viewer, $conversation->course)) {
             $label = $conversation->student?->name ?? 'Student';
         }
 
@@ -643,7 +645,7 @@ class ChatService
             ],
             'is_mine' => (int) $message->user_id === (int) $viewer->id,
             'can_delete' => $this->canDeleteMessage($viewer, $conversation, $message),
-            'is_pinned' => (int) $conversation->pinned_message_id === (int) $message->id,
+            'is_pinned' => (int) ($conversation->pinned_message_id ?? 0) === (int) $message->id,
         ];
     }
 
