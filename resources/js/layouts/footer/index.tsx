@@ -82,11 +82,11 @@ const Index = () => {
                               <li className="mt-4 list-none">
                                  <Link
                                     href={route('fraud-training-tipline')}
-                                    className="group inline-block rounded-lg transition-opacity hover:opacity-90"
+                                    className="group inline-flex flex-col items-center rounded-lg transition-opacity hover:opacity-90"
                                     aria-label="Fraud Training Tipline — click here to report a suspicious site"
                                  >
                                     <FraudTrainingTiplineMark variant="footer" />
-                                    <span className="mt-2 block text-xs font-medium text-[#8C2A23] group-hover:underline">
+                                    <span className="mt-2 text-center text-xs font-medium text-[#8C2A23] group-hover:underline">
                                        Click here to report a suspicious site
                                     </span>
                                  </Link>

@@ -9,7 +9,7 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
    const isFooter = variant === 'footer';
 
    return (
-      <div className={cn('flex items-center gap-3', isFooter ? 'gap-2.5' : 'mx-auto w-fit justify-center gap-4', className)}>
+      <div className={cn('flex items-center', isFooter ? 'gap-2.5' : 'mx-auto w-fit justify-center gap-4', className)}>
          <div
             className={cn(
                'relative flex shrink-0 items-center justify-center rounded-2xl bg-[#01123A] text-white shadow-sm',
@@ -24,7 +24,7 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
                <path d="M49 49l6 6" stroke="#8C2A23" strokeWidth="3" strokeLinecap="round" />
             </svg>
          </div>
-         <div className={cn('min-w-0', isFooter ? 'text-left' : 'text-center')}>
+         <div className="flex min-w-0 flex-col items-center text-center">
             <p
                className={cn(
                   'font-semibold tracking-[0.18em] text-[#01123A] uppercase',
@@ -35,18 +35,18 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
             </p>
             <p
                className={cn(
-                  'font-display leading-none font-bold tracking-tight text-[#8C2A23]',
+                  'font-display leading-none font-bold tracking-tight text-[#8C2A23] uppercase',
                   isFooter ? 'text-xl' : 'text-3xl sm:text-4xl',
                )}
             >
                TIPLINE
-               <span
-                  className={cn(
-                     'mt-0.5 block h-0.5 bg-[#8C2A23]',
-                     isFooter ? 'w-full' : 'mx-auto w-full max-w-[220px] sm:max-w-[260px]',
-                  )}
-               />
             </p>
+            <span
+               className={cn(
+                  'block h-0.5 bg-[#8C2A23]',
+                  isFooter ? 'mt-0.5 w-[120px]' : 'mt-1 w-[160px] sm:w-[200px]',
+               )}
+            />
             <p
                className={cn(
                   'inline-flex rounded-full bg-[#01123A] font-semibold tracking-[0.12em] text-white uppercase',
