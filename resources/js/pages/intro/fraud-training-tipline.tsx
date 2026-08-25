@@ -1,4 +1,5 @@
 import LandingLayout from '@/layouts/landing-layout';
+import FraudTrainingTiplineMark from '@/components/fraud-training-tipline-mark';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,32 +29,6 @@ type PageProps = {
    flashSuccess?: string | null;
    flash?: { success?: string };
 };
-
-function FraudTrainingTiplineMark({ className }: { className?: string }) {
-   return (
-      <div className={cn('mx-auto flex w-fit items-center justify-center gap-4', className)}>
-         <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#01123A] text-white shadow-sm sm:h-20 sm:w-20">
-            <svg viewBox="0 0 64 64" className="h-10 w-10 sm:h-12 sm:w-12" aria-hidden>
-               <rect x="14" y="10" width="28" height="36" rx="3" fill="none" stroke="currentColor" strokeWidth="2.5" />
-               <path d="M20 18h16M20 24h16M20 30h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-               <circle cx="42" cy="42" r="10" fill="#01123A" stroke="#F1F1F1" strokeWidth="2.5" />
-               <circle cx="42" cy="42" r="5" fill="none" stroke="#F1F1F1" strokeWidth="2" />
-               <path d="M49 49l6 6" stroke="#8C2A23" strokeWidth="3" strokeLinecap="round" />
-            </svg>
-         </div>
-         <div className="min-w-0 text-center">
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-[#01123A] uppercase sm:text-xs">Fraud Training</p>
-            <p className="font-display text-3xl leading-none font-bold tracking-tight text-[#8C2A23] sm:text-4xl">
-               TIPLINE
-               <span className="mx-auto mt-1 block h-0.5 w-full max-w-[220px] bg-[#8C2A23] sm:max-w-[260px]" />
-            </p>
-            <p className="mt-2 inline-flex rounded-full bg-[#01123A] px-3 py-1 text-[10px] font-semibold tracking-[0.12em] text-white uppercase sm:text-[11px]">
-               We investigate for you
-            </p>
-         </div>
-      </div>
-   );
-}
 
 export default function FraudTrainingTiplinePage() {
    const { warnings, filters, flashSuccess, flash } = usePage<PageProps>().props;

@@ -1,4 +1,5 @@
 import AppLogo from '@/components/app-logo';
+import FraudTrainingTiplineMark from '@/components/fraud-training-tipline-mark';
 import SocialMediaIcon from '@/components/social-media-icon';
 import { Button } from '@/components/ui/button';
 import { SystemProps } from '@/pages/dashboard/settings/system';
@@ -26,12 +27,6 @@ const Index = () => {
                   </div>
 
                   <p className="text-muted-foreground text-sm">{system.fields.description}</p>
-
-                  <p className="text-sm">
-                     <Link href={route('fraud-training-tipline')} className="font-medium text-[#01123A] underline-offset-4 hover:underline">
-                        Fraud Training Tipline — report a suspicious site
-                     </Link>
-                  </p>
 
                   {socialMediaItem && (
                      <div className="flex flex-wrap gap-3">
@@ -82,6 +77,20 @@ const Index = () => {
                                     )}
                                  </li>
                               ),
+                           )}
+                           {section.slug === 'address' && (
+                              <li className="mt-4 list-none">
+                                 <Link
+                                    href={route('fraud-training-tipline')}
+                                    className="group inline-block rounded-lg transition-opacity hover:opacity-90"
+                                    aria-label="Fraud Training Tipline — click here to report a suspicious site"
+                                 >
+                                    <FraudTrainingTiplineMark variant="footer" />
+                                    <span className="mt-2 block text-xs font-medium text-[#8C2A23] group-hover:underline">
+                                       Click here to report a suspicious site
+                                    </span>
+                                 </Link>
+                              </li>
                            )}
                         </ul>
                      </div>
