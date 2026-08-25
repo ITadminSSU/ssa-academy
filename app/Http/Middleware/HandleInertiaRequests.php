@@ -196,9 +196,9 @@ class HandleInertiaRequests extends Middleware
         return [
             'enabled' => $enabled,
             'key' => $enabled ? (string) config('broadcasting.connections.reverb.key') : '',
-            'host' => $enabled ? (string) config('broadcasting.connections.reverb.options.host') : '',
-            'port' => $enabled ? (int) config('broadcasting.connections.reverb.options.port') : 443,
-            'scheme' => $enabled ? (string) config('broadcasting.connections.reverb.options.scheme') : 'https',
+            'host' => $enabled ? (string) env('REVERB_HOST', 'localhost') : '',
+            'port' => $enabled ? (int) env('REVERB_PORT', 443) : 443,
+            'scheme' => $enabled ? (string) env('REVERB_SCHEME', 'https') : 'https',
             'authEndpoint' => url('/broadcasting/auth'),
         ];
     }

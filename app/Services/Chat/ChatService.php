@@ -561,6 +561,22 @@ class ChatService
         abort(422, 'Attachments must be an image, video, or PDF.');
     }
 
+    private function safeBroadcast(object $event): void
+    {
+        if (config('broadcasting.default') === 'null') {
+            return;
+        }
+
+        try {
+            broadcast($event);
+        } catch (\Throwable $e) {
+            Log::warning('chat_broadcast_failed', [
+                'event' => $event::class,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function notifyParticipants(User $sender, ChatConversation $conversation, ChatMessage $message): void
     {
         $this->ensureNotifyParticipants($conversation);
@@ -570,7 +586,7 @@ class ChatService
 
         $senderPayload = $this->messageBroadcastPayload($message, $conversation);
 
-        broadcast(new ChatMessageSent(
+        $this->safeBroadcast(new ChatMessageSent(
             $conversation->id,
             $senderPayload,
             $sender->id,
@@ -597,7 +613,7 @@ class ChatService
             $inboxPreview = $this->inboxPreviewFor($conversation, $recipient);
             $unreadCount = $this->unreadCount($recipient);
 
-            broadcast(new ChatInboxUpdated(
+            $this->safeBroadcast(new ChatInboxUpdated(
                 $recipient->id,
                 $inboxPreview,
                 $unreadCount,
