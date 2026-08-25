@@ -31,7 +31,7 @@ type PageProps = {
 
 function FraudTrainingTiplineMark({ className }: { className?: string }) {
    return (
-      <div className={cn('flex items-center gap-4', className)}>
+      <div className={cn('mx-auto flex w-fit items-center justify-center gap-4', className)}>
          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#01123A] text-white shadow-sm sm:h-20 sm:w-20">
             <svg viewBox="0 0 64 64" className="h-10 w-10 sm:h-12 sm:w-12" aria-hidden>
                <rect x="14" y="10" width="28" height="36" rx="3" fill="none" stroke="currentColor" strokeWidth="2.5" />
@@ -95,12 +95,12 @@ export default function FraudTrainingTiplinePage() {
 
          <section className="relative overflow-hidden border-b border-border/60 bg-[linear-gradient(160deg,#F7F8FA_0%,#EEF1F6_45%,#F7F8FA_100%)]">
             <div className="pointer-events-none absolute inset-0 opacity-[0.35]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(140,42,35,0.08), transparent 40%), radial-gradient(circle at 80% 0%, rgba(1,18,58,0.08), transparent 35%)' }} />
-            <div className="container relative py-14 sm:py-20">
+            <div className="container relative py-14 text-center sm:py-20">
                <FraudTrainingTiplineMark />
-               <h1 className="mt-8 max-w-2xl text-3xl font-semibold tracking-tight text-[#01123A] sm:text-4xl">
+               <h1 className="mx-auto mt-8 max-w-2xl text-3xl font-semibold tracking-tight text-[#01123A] sm:text-4xl">
                   Report suspicious training websites
                </h1>
-               <p className="mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">
+               <p className="mx-auto mt-3 max-w-2xl text-base text-muted-foreground sm:text-lg">
                   Community tips help us spot fake training programs. Our team reviews every report. Confirmed warnings appear below so others can stay safe.
                </p>
             </div>
