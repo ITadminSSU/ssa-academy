@@ -7,6 +7,7 @@ use App\Support\Features;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
+use App\Services\Chat\ChatService;
 use App\Services\Course\CourseCategoryService;
 use App\Services\NotificationService;
 use App\Services\SettingsService;
@@ -35,6 +36,7 @@ class HandleInertiaRequests extends Middleware
         private CourseCategoryService $courseCategoryService,
         private LegalAgreementService $legalAgreement,
         private TwoFactorAuthenticationService $twoFactor,
+        private ChatService $chatService,
     ) {}
 
     /**
@@ -129,6 +131,9 @@ class HandleInertiaRequests extends Middleware
                 'twoFactorEnabled' => $user ? $this->twoFactor->isEnabled($user) : false,
                 'canManageTwoFactor' => $user ? $this->twoFactor->canUse($user) : false,
                 'canManagePlatformSettings' => $user ? $user->canManagePlatformSettings() : false,
+                'messagesUnreadCount' => $user && in_array($user->role, ['student', 'instructor', 'admin'], true)
+                    ? $this->chatService->unreadCount($user)
+                    : 0,
             ],
             'system' => $system,
             'branding' => Branding::payload(),

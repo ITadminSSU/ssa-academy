@@ -9,7 +9,7 @@ import useScreen from '@/hooks/use-screen';
 import { getCompletedContents, getCourseCompletion } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, ListTree, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, ListTree, MessageCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 const Navbar = () => {
    const { screen } = useScreen();
@@ -49,6 +49,17 @@ const Navbar = () => {
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
+               <Button
+                  asChild
+                  size="icon"
+                  variant="secondary"
+                  className="rounded-full border-white/30 bg-card/15 text-white hover:bg-card/25 hover:text-white"
+               >
+                  <Link href={route('messages.group', course.id)} title="Class chat">
+                     <MessageCircle className="h-4 w-4" />
+                  </Link>
+               </Button>
+
                <Appearance />
 
                <Notification />

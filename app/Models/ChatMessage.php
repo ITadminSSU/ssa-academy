@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+
+class ChatMessage extends Model implements HasMedia
+{
+    use InteractsWithMedia;
+    use SoftDeletes;
+
+    protected $fillable = [
+        'chat_conversation_id',
+        'user_id',
+        'body',
+        'attachment',
+        'attachment_name',
+    ];
+
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(ChatConversation::class, 'chat_conversation_id');
+    }
+
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    protected function attachment(): Attribute
+    {
+        return Attribute::make(get: fn (?string $value) => $value ? public_asset_url($value) : null);
+    }
+}

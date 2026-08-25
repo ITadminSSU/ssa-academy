@@ -1,5 +1,5 @@
 import { routeLastSegment } from '@/lib/route';
-import { Award, Book, Briefcase, CassetteTape, CreditCard, Folder, LayoutDashboard, LifeBuoy, Newspaper, School, Search, Settings, UserCheck, Users } from 'lucide-react';
+import { Award, Book, Briefcase, CassetteTape, CreditCard, Folder, LayoutDashboard, LifeBuoy, MessageCircle, Newspaper, School, Search, Settings, UserCheck, Users } from 'lucide-react';
 
 function buildDashboardRouteTemplate(): DashboardRoute[] {
    return [
@@ -300,6 +300,12 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   slug: 'forum-questions',
                   path: route('admin.forum-questions.index'),
                   access: ['admin'],
+               },
+               {
+                  name: 'Messages',
+                  slug: routeLastSegment(route('messages.index')),
+                  path: route('messages.index'),
+                  access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
             ],
          },

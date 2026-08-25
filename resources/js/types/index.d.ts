@@ -8,6 +8,7 @@ interface Auth {
    twoFactorEnabled?: boolean;
    canManageTwoFactor?: boolean;
    canManagePlatformSettings?: boolean;
+   messagesUnreadCount?: number;
 }
 
 interface BreadcrumbItem {

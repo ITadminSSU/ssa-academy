@@ -21,6 +21,7 @@ import {
    Home as HomeIcon,
    LayoutDashboard,
    Megaphone,
+   MessageCircle,
    MessagesSquare,
    CreditCard,
    Search,
@@ -92,6 +93,20 @@ export function LearnerNavMain() {
 
             {/* 9. Community Discussion */}
             {tabItem('community', 'Community Discussion', MessagesSquare)}
+
+            <SidebarMenuItem>
+               <SidebarMenuButton asChild className="h-9 rounded-lg">
+                  <Link href={route('messages.index')} prefetch>
+                     <MessageCircle className="h-4 w-4" />
+                     <span className="text-sm">Messages</span>
+                     {auth.messagesUnreadCount ? (
+                        <span className="bg-accent ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
+                           {auth.messagesUnreadCount}
+                        </span>
+                     ) : null}
+                  </Link>
+               </SidebarMenuButton>
+            </SidebarMenuItem>
 
             {/* 10. Help Center */}
             {tabItem('help-center', 'Help Center', HelpCircle)}

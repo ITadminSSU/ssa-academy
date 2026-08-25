@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Course\CourseEnrollment;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Models\User;
+use App\Observers\CourseEnrollmentObserver;
 use App\Services\Payment\PaymentGatewaySyncService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
@@ -103,6 +105,10 @@ class AppServiceProvider extends ServiceProvider
             app(PaymentGatewaySyncService::class)->syncStripeFromEnvironment();
         } catch (\Throwable $th) {
             // Ignore during install or when the database is unavailable.
+        }
+
+        if (Schema::hasTable('course_enrollments')) {
+            CourseEnrollment::observe(CourseEnrollmentObserver::class);
         }
     }
 }

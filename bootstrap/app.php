@@ -46,6 +46,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 // Fraud Training Tipline (admin + social media)
                 Route::middleware(['auth', 'twoFactor', 'role:admin,social_media'])->group(base_path('routes/scam-tipline.php'));
 
+                // Messages (student, instructor, admin)
+                Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:student,instructor,admin'])->group(base_path('routes/messages.php'));
+
                 // Instructor routes
                 Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:admin,instructor'])->group(base_path('routes/instructor.php'));
 

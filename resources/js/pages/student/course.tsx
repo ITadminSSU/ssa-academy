@@ -1,4 +1,5 @@
 import CourseCard7 from '@/components/cards/course-card-7';
+import CourseMessagingLinks from '@/components/course-messaging-links';
 import Tabs from '@/components/tabs';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -15,7 +16,8 @@ import CourseResources from './tabs-content/course-resources';
 import SubscriptionAccessBanner from '@/pages/course-player/partials/subscription-access-banner';
 
 const Course = (props: StudentCourseProps) => {
-   const { tab, course, watchHistory, completion } = props;
+   const { tab, course, watchHistory, completion, subscriptionAccess } = props;
+   const canMessage = subscriptionAccess?.mode !== 'none';
 
    const tabs = [
       {
@@ -62,6 +64,8 @@ const Course = (props: StudentCourseProps) => {
          <Head title={course.title} />
 
          <CourseCard7 course={course} watch_history={watchHistory} completion={completion} />
+
+         <CourseMessagingLinks courseId={course.id} canAccess={canMessage} />
 
          <SubscriptionAccessBanner />
 
