@@ -23,6 +23,7 @@ import {
    Megaphone,
    MessagesSquare,
    CreditCard,
+   Search,
    Settings as SettingsIcon,
    UserCircle,
 } from 'lucide-react';
@@ -94,6 +95,15 @@ export function LearnerNavMain() {
 
             {/* 10. Help Center */}
             {tabItem('help-center', 'Help Center', HelpCircle)}
+
+            <SidebarMenuItem>
+               <SidebarMenuButton asChild className="h-9 rounded-lg">
+                  <Link href={route('fraud-training-tipline')} prefetch>
+                     <Search className="h-4 w-4" />
+                     <span className="text-sm">Fraud Training Tipline</span>
+                  </Link>
+               </SidebarMenuButton>
+            </SidebarMenuItem>
 
             {/* Explore */}
             <SidebarGroupLabel className="text-sidebar-foreground/60 mt-4 text-[11px] tracking-[0.14em] uppercase">Explore</SidebarGroupLabel>

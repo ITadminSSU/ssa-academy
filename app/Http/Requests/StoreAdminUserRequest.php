@@ -23,7 +23,7 @@ class StoreAdminUserRequest extends FormRequest
     public function rules(): array
     {
         $allowedTypes = canManagePlatformSettings()
-            ? 'admin,operations,employee,trainer'
+            ? 'admin,operations,employee,trainer,social_media'
             : 'employee,trainer';
 
         $rules = [

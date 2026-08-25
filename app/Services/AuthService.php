@@ -118,6 +118,7 @@ class AuthService
         return match ($user->role) {
             UserType::ADMIN->value => 'dashboard.admin',
             UserType::INSTRUCTOR->value => 'dashboard.trainer',
+            UserType::SOCIAL_MEDIA->value => 'dashboard.social',
             UserType::STUDENT->value => $user->isEmployeeLearner()
                 ? 'dashboard.internal'
                 : 'dashboard.external',

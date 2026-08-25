@@ -136,6 +136,7 @@ class UsersController extends Controller
             $user->role === 'admin' && ! $user->canManagePlatformSettings() => 'Operations admin',
             $user->role === 'admin' => 'Admin',
             $user->role === 'instructor' => 'Trainer',
+            $user->role === 'social_media' => 'Social Media',
             default => 'Internal employee',
         };
 
@@ -155,6 +156,7 @@ class UsersController extends Controller
             $updated->role === 'admin' && ! $updated->canManagePlatformSettings() => 'Operations admin',
             $updated->role === 'admin' => 'Admin',
             $updated->role === 'instructor' => 'Trainer',
+            $updated->role === 'social_media' => 'Social Media',
             default => 'User',
         };
 

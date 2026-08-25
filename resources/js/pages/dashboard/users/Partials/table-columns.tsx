@@ -21,6 +21,8 @@ const roleLabel = (user: User, dashboard?: LanguageTranslations['dashboard']) =>
          return 'Trainer';
       case 'student':
          return 'Student';
+      case 'social_media':
+         return 'Social Media';
       default:
          return user.role;
    }

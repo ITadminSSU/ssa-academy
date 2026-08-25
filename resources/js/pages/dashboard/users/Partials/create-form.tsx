@@ -10,7 +10,7 @@ import { useForm, usePage } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
-type AccountType = 'admin' | 'operations' | 'employee' | 'trainer';
+type AccountType = 'admin' | 'operations' | 'employee' | 'trainer' | 'social_media';
 
 const ACCOUNT_TYPE_OPTIONS: Array<{
    value: AccountType;
@@ -49,6 +49,14 @@ const ACCOUNT_TYPE_OPTIONS: Array<{
       descriptionKey: 'account_type_trainer_description',
       fallbackLabel: 'Trainer',
       fallbackDescription: 'Instructor access to manage courses',
+   },
+   {
+      value: 'social_media',
+      labelKey: 'account_type_social_media',
+      descriptionKey: 'account_type_social_media_description',
+      fallbackLabel: 'Social Media',
+      fallbackDescription: 'Fraud Training Tipline inbox only',
+      requiresPlatformSettings: true,
    },
 ];
 

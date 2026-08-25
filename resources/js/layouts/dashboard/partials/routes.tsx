@@ -1,5 +1,5 @@
 import { routeLastSegment } from '@/lib/route';
-import { Award, Book, Briefcase, CassetteTape, CreditCard, Folder, LayoutDashboard, LifeBuoy, Newspaper, School, Settings, UserCheck, Users } from 'lucide-react';
+import { Award, Book, Briefcase, CassetteTape, CreditCard, Folder, LayoutDashboard, LifeBuoy, Newspaper, School, Search, Settings, UserCheck, Users } from 'lucide-react';
 
 function buildDashboardRouteTemplate(): DashboardRoute[] {
    return [
@@ -302,6 +302,14 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   access: ['admin'],
                },
             ],
+         },
+         {
+            Icon: Search,
+            name: 'Fraud Training Tipline',
+            path: route('scam-tipline.index'),
+            slug: routeLastSegment(route('scam-tipline.index')),
+            access: ['admin', 'social_media', 'collaborative', 'administrative'],
+            children: [],
          },
          {
             Icon: LifeBuoy,

@@ -71,7 +71,7 @@ class LegalAgreementService
             return false;
         }
 
-        if ($user->role === 'admin') {
+        if (in_array($user->role, ['admin', 'social_media'], true)) {
             return false;
         }
 

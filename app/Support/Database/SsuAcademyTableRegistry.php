@@ -92,6 +92,8 @@ class SsuAcademyTableRegistry
             'question_answers',
             'quiz_questions',
             'quiz_submissions',
+            'scam_tipline_audits',
+            'scam_tipline_reports',
             'section_lessons',
             'section_quizzes',
             'sessions',

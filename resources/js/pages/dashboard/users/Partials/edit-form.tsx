@@ -8,7 +8,7 @@ import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
 import { ReactNode, useMemo, useState } from 'react';
 
-type AccountType = 'admin' | 'operations' | 'employee' | 'trainer' | 'external';
+type AccountType = 'admin' | 'operations' | 'employee' | 'trainer' | 'external' | 'social_media';
 
 const ACCOUNT_TYPE_OPTIONS: Array<{
    value: AccountType;
@@ -20,6 +20,7 @@ const ACCOUNT_TYPE_OPTIONS: Array<{
    { value: 'employee', labelKey: 'account_type_employee', fallbackLabel: 'Internal employee (student access, free courses)' },
    { value: 'external', labelKey: 'account_type_external', fallbackLabel: 'External learner (student access, may pay)' },
    { value: 'trainer', labelKey: 'account_type_trainer', fallbackLabel: 'Trainer (instructor access)' },
+   { value: 'social_media', labelKey: 'account_type_social_media', fallbackLabel: 'Social Media (Fraud Training Tipline only)' },
 ];
 
 const currentAccountType = (user: User): AccountType => {
@@ -29,6 +30,10 @@ const currentAccountType = (user: User): AccountType => {
 
    if (user.role === 'instructor') {
       return 'trainer';
+   }
+
+   if (user.role === 'social_media') {
+      return 'social_media';
    }
 
    return user.user_type === 'employee' ? 'employee' : 'external';
@@ -55,6 +60,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
    const accountKind = useMemo(() => {
       if (user.role === 'admin') return 'admin';
       if (user.role === 'instructor') return 'trainer';
+      if (user.role === 'social_media') return 'social_media';
       return 'student';
    }, [user.role]);
 
@@ -68,6 +74,8 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
             return text(dashboard.update_admin, 'Update Admin');
          case 'trainer':
             return text(dashboard.update_trainer, 'Update Trainer');
+         case 'social_media':
+            return 'Update Social Media';
          default:
             return text(dashboard.update_user, 'Update User');
       }

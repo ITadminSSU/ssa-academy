@@ -26,6 +26,7 @@ interface RoleCounts {
    internal_employee: number;
    external: number;
    trainer: number;
+   social_media?: number;
 }
 
 interface Props extends SharedData {

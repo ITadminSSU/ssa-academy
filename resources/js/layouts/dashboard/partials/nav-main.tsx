@@ -3,7 +3,7 @@ import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem } from '@
 import { getRouteSegments } from '@/lib/route';
 import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import NavMainItem from './nav-main-item';
 import { getDashboardRoutes } from './routes';
 
@@ -12,6 +12,30 @@ export function NavMain() {
    const { auth, system, features } = page.props;
    const routes = getDashboardRoutes(auth.dashboardUrl ?? route('dashboard'), features, Boolean(auth.canManagePlatformSettings));
    const [openAccordions, setOpenAccordions] = useState<string>('');
+
+   const role = auth.user?.role || 'admin';
+   const subType = system?.sub_type || 'collaborative';
+
+   const visibleRoutes = useMemo(() => {
+      return routes
+         .map((group) => ({
+            ...group,
+            pages: group.pages.filter((pageRoute) => {
+               const roleOk = pageRoute.access.includes(role);
+               const subTypeOk = pageRoute.access.includes(subType);
+               if (!roleOk || !subTypeOk) {
+                  return false;
+               }
+
+               if (pageRoute.children?.length) {
+                  return pageRoute.children.some((child) => child.access.includes(role));
+               }
+
+               return true;
+            }),
+         }))
+         .filter((group) => group.pages.length > 0);
+   }, [routes, role, subType]);
 
    // Set initial accordion state based on URL
    useEffect(() => {
@@ -25,22 +49,15 @@ export function NavMain() {
    return (
       <SidebarGroup className="px-2 py-0">
          <Accordion type="single" collapsible value={openAccordions} defaultValue={openAccordions} onValueChange={setOpenAccordions}>
-            {routes.map(({ title, pages }, key) => (
+            {visibleRoutes.map(({ title, pages }, key) => (
                <SidebarMenu key={key} className="space-y-1">
                   <SidebarGroupLabel className="text-sidebar-foreground/60 text-[11px] tracking-[0.14em] uppercase">{title}</SidebarGroupLabel>
 
-                  {pages.map((page) => {
-                     const role = page.access.includes(auth.user?.role || 'admin');
-                     const subType = page.access.includes(system?.sub_type || 'collaborative');
-
-                     if (role && subType) {
-                        return (
-                           <SidebarMenuItem key={page.slug}>
-                              <NavMainItem pageRoute={page} />
-                           </SidebarMenuItem>
-                        );
-                     }
-                  })}
+                  {pages.map((pageRoute) => (
+                     <SidebarMenuItem key={pageRoute.slug}>
+                        <NavMainItem pageRoute={pageRoute} />
+                     </SidebarMenuItem>
+                  ))}
                </SidebarMenu>
             ))}
          </Accordion>

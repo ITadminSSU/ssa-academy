@@ -27,6 +27,12 @@ const Index = () => {
 
                   <p className="text-muted-foreground text-sm">{system.fields.description}</p>
 
+                  <p className="text-sm">
+                     <Link href={route('fraud-training-tipline')} className="font-medium text-[#01123A] underline-offset-4 hover:underline">
+                        Fraud Training Tipline — report a suspicious site
+                     </Link>
+                  </p>
+
                   {socialMediaItem && (
                      <div className="flex flex-wrap gap-3">
                         {socialMediaItem.items &&

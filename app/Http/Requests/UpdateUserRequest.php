@@ -60,7 +60,7 @@ class UpdateUserRequest extends FormRequest
         ];
 
         if ($this->actorCanChangeAccountType($user)) {
-            $rules['account_type'] = ['required', 'in:admin,operations,employee,trainer,external'];
+            $rules['account_type'] = ['required', 'in:admin,operations,employee,trainer,external,social_media'];
 
             if ($this->input('account_type') === 'trainer') {
                 $rules['designation'] = ['required', 'string', 'max:255'];

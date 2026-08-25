@@ -24,12 +24,14 @@ class UserService
             ->when(!$includeAllRoles, function ($query) {
                 return $query
                     ->where('role', '!=', 'admin')
-                    ->where('role', '!=', 'instructor');
+                    ->where('role', '!=', 'instructor')
+                    ->where('role', '!=', 'social_media');
             })
             ->when($includeAllRoles && !empty($data['role_filter']) && $data['role_filter'] !== 'all', function ($query) use ($data) {
                 return match ($data['role_filter']) {
                     'admin' => $query->where('role', 'admin'),
                     'trainer' => $query->where('role', 'instructor'),
+                    'social_media' => $query->where('role', 'social_media'),
                     'internal_employee' => $query->where('role', 'student')->where('user_type', 'employee'),
                     'external' => $query->where('role', 'student')->where('user_type', 'external'),
                     default => $query,
@@ -133,7 +135,7 @@ class UserService
     }
 
     /**
-     * @return array{all: int, admin: int, internal_employee: int, external: int, trainer: int}
+     * @return array{all: int, admin: int, internal_employee: int, external: int, trainer: int, social_media: int}
      */
     public function getRoleCounts(): array
     {
@@ -143,6 +145,7 @@ class UserService
             'internal_employee' => User::where('role', 'student')->where('user_type', 'employee')->count(),
             'external' => User::where('role', 'student')->where('user_type', 'external')->count(),
             'trainer' => User::where('role', 'instructor')->count(),
+            'social_media' => User::where('role', 'social_media')->count(),
         ];
     }
 
@@ -171,6 +174,7 @@ class UserService
             ['value' => 'internal_employee', 'label' => __('dashboard.role_filter_internal_employee')],
             ['value' => 'external', 'label' => __('dashboard.role_filter_external')],
             ['value' => 'trainer', 'label' => __('dashboard.role_filter_trainer')],
+            ['value' => 'social_media', 'label' => 'Social Media'],
         ];
     }
 
@@ -238,6 +242,7 @@ class UserService
             'admin' => 'Admin',
             'instructor' => 'Trainer',
             'student' => 'Student',
+            'social_media' => 'Social Media',
             default => $role,
         };
     }
@@ -285,10 +290,15 @@ class UserService
                 'can_manage_platform_settings' => false,
                 'instructor_id' => $this->ensureInstructorProfile($user, $data['designation'] ?? null)->id,
             ],
+            'social_media' => [
+                'role' => 'social_media',
+                'can_manage_platform_settings' => false,
+                'instructor_id' => null,
+            ],
             default => [],
         };
 
-        if (in_array($type, ['admin', 'operations'], true)) {
+        if (in_array($type, ['admin', 'operations', 'social_media'], true)) {
             $payload['instructor_id'] = null;
         }
 

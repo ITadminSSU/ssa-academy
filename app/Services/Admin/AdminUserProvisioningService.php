@@ -18,7 +18,7 @@ class AdminUserProvisioningService
     ) {}
 
     /**
-     * @param  array{name: string, email: string, password: string, account_type: 'admin'|'operations'|'employee'|'trainer', designation?: string|null}  $data
+     * @param  array{name: string, email: string, password: string, account_type: 'admin'|'operations'|'employee'|'trainer'|'social_media', designation?: string|null}  $data
      */
     public function provision(array $data, Request $request): User
     {
@@ -31,6 +31,7 @@ class AdminUserProvisioningService
             $role = match ($data['account_type']) {
                 'admin', 'operations' => 'admin',
                 'trainer' => 'instructor',
+                'social_media' => 'social_media',
                 default => 'student',
             };
 
@@ -60,7 +61,7 @@ class AdminUserProvisioningService
                 $user->update(['instructor_id' => $instructor->id]);
             }
 
-            if (! in_array($data['account_type'], ['admin', 'operations'], true)) {
+            if (! in_array($data['account_type'], ['admin', 'operations', 'social_media'], true)) {
                 $this->legalAgreement->recordAcceptance($user->fresh(), $request, sendEmail: false);
             }
 
