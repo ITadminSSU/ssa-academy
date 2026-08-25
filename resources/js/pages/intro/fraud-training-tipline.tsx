@@ -41,11 +41,11 @@ function FraudTrainingTiplineMark({ className }: { className?: string }) {
                <path d="M49 49l6 6" stroke="#8C2A23" strokeWidth="3" strokeLinecap="round" />
             </svg>
          </div>
-         <div className="min-w-0 text-left">
+         <div className="min-w-0 text-center">
             <p className="text-[11px] font-semibold tracking-[0.18em] text-[#01123A] uppercase sm:text-xs">Fraud Training</p>
             <p className="font-display text-3xl leading-none font-bold tracking-tight text-[#8C2A23] sm:text-4xl">
                TIPLINE
-               <span className="mt-1 block h-0.5 w-full bg-[#8C2A23]" />
+               <span className="mx-auto mt-1 block h-0.5 w-full max-w-[220px] bg-[#8C2A23] sm:max-w-[260px]" />
             </p>
             <p className="mt-2 inline-flex rounded-full bg-[#01123A] px-3 py-1 text-[10px] font-semibold tracking-[0.12em] text-white uppercase sm:text-[11px]">
                We investigate for you
