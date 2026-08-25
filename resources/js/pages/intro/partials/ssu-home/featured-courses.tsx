@@ -16,7 +16,7 @@ const FeaturedCourses = () => {
    const courses = topCourses ?? [];
    const [api, setApi] = useState<CarouselApi>();
    const [currentSlide, setCurrentSlide] = useState(0);
-   const autoplay = useRef(Autoplay({ delay: 3500, stopOnInteraction: false }));
+   const autoplay = useRef(Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }));
 
    useEffect(() => {
       if (!api) {
@@ -56,8 +56,8 @@ const FeaturedCourses = () => {
                <div className="space-y-6">
                   <Carousel
                      setApi={setApi}
-                     opts={{ align: 'start', loop: courses.length > 1 }}
-                     plugins={[autoplay.current]}
+                     opts={{ align: 'start', loop: courses.length > 1, skipSnaps: false }}
+                     plugins={courses.length > 1 ? [autoplay.current] : []}
                      className="relative"
                   >
                      <CarouselContent className="-ml-4">

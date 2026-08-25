@@ -17,7 +17,10 @@ class PageService extends PageSectionService
             in_array($slug, $data)
             && isset($section->properties['contents'])
          ) {
-            $idCollection[$slug] = $section->properties['contents'];
+            $idCollection[$slug] = array_values(array_map(
+               'intval',
+               array_filter((array) $section->properties['contents'], fn ($id) => (int) $id > 0)
+            ));
          }
       }
 

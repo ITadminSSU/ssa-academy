@@ -213,7 +213,13 @@ class PageSectionService extends MediaService
 
    public function getTopCourses(array $courseIds)
    {
-      return Course::query()
+      $courseIds = array_values(array_map('intval', array_filter($courseIds, fn ($id) => (int) $id > 0)));
+
+      if ($courseIds === []) {
+         return collect();
+      }
+
+      $courses = Course::query()
          ->whereIn('id', $courseIds)
          ->with([
             'sections' => function ($query) {
@@ -224,20 +230,23 @@ class PageSectionService extends MediaService
             },
             'course_category' => function ($query) {
                $query->select('id', 'title');
-            }
+            },
          ])
          ->withCount('enrollments')
-         ->where('status', 'approved')
-         ->launched()
-         ->visibleInCatalog(Auth::user())
-         ->orderBy('enrollments_count', 'desc')
-         ->orderBy('created_at', 'desc')
+         ->listedInCatalog()
          ->get()
          ->map(function ($course) {
             $course->average_rating = $course->reviews()->avg('rating') ?? 0;
             $course->reviews_count = $course->reviews()->count();
+
             return $course;
          });
+
+      $order = array_flip($courseIds);
+
+      return $courses
+         ->sortBy(fn (Course $course) => $order[$course->id] ?? PHP_INT_MAX)
+         ->values();
    }
 
    public function getFeaturedCatalogCourses(int $limit = 6)
