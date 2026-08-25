@@ -16,12 +16,17 @@ interface CoursesProps {
 }
 
 const Courses = ({ courses, selectedIds = [], onCourseSelect }: CoursesProps) => {
-   const page = usePage<IntroPageProps>();
-   const routeName = page.props.type === 'demo' ? 'home.demo' : 'home';
+   const page = usePage<IntroPageProps | PageSelectProps>();
+   const routeName = page.url.includes('/settings/pages')
+      ? 'settings.pages'
+      : page.props.type === 'demo'
+        ? 'home.demo'
+        : 'home';
+   const courseItems = courses?.data ?? [];
 
    const [sorting, setSorting] = React.useState<SortingState>([]);
    const table = useReactTable({
-      data: courses.data,
+      data: courseItems,
       columns: TableColumn(page.props.translate),
       onSortingChange: setSorting,
       getCoreRowModel: getCoreRowModel(),

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Services\StudentService;
 use App\Services\SettingsService;
 use App\Services\InstructorService;
+use App\Services\PageService;
 use App\Http\Requests\FooterItemRequest;
 use App\Http\Requests\NavbarItemRequest;
 use App\Http\Requests\StoreCustomPageRequest;
@@ -32,7 +33,8 @@ class SettingController extends Controller
     public function __construct(
         private StudentService $studentService,
         private SettingsService $settingsService,
-        private InstructorService $instructorService
+        private InstructorService $instructorService,
+        private PageService $pageService,
     ) {}
 
     /**
@@ -104,6 +106,9 @@ class SettingController extends Controller
         $pages = Page::with('sections')->get();
         $ssuLandingPage = Page::where('slug', 'ssu-home')->with('sections')->first();
         $appTimezone = config('app.timezone');
+        $courses = $this->pageService->getSectionEditorCourses($request->all());
+        $categories = $this->pageService->getCategories($request->all());
+        $instructors = $this->pageService->getInstructors($request->all());
 
         return Inertia::render('dashboard/settings/pages/index', compact(
             'home',
@@ -111,6 +116,9 @@ class SettingController extends Controller
             'pages',
             'ssuLandingPage',
             'appTimezone',
+            'courses',
+            'categories',
+            'instructors',
         ));
     }
 

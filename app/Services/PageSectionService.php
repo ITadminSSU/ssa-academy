@@ -181,6 +181,36 @@ class PageSectionService extends MediaService
       return $paginator;
    }
 
+   public function getSectionEditorCourses(array $data): LengthAwarePaginator
+   {
+      $per_page = array_key_exists('course_per_page', $data) ? intval($data['course_per_page']) : 10;
+
+      $paginator = Course::query()
+         ->with(['sections' => function ($query) {
+            $query->select('id', 'course_id')
+               ->with(['section_lessons' => function ($query) {
+                  $query->select('id', 'course_section_id', 'duration');
+               }]);
+         }])
+         ->when(array_key_exists('course', $data), function ($query) use ($data) {
+            return $query->where('title', 'LIKE', '%'.$data['course'].'%');
+         })
+         ->withCount('enrollments')
+         ->listedInCatalog()
+         ->visibleInCatalog(Auth::user())
+         ->orderBy('created_at', 'desc')
+         ->paginate($per_page);
+
+      $paginator->getCollection()->transform(function ($course) {
+         $course->average_rating = $course->reviews()->avg('rating') ?? 0;
+         $course->reviews_count = $course->reviews()->count();
+
+         return $course;
+      });
+
+      return $paginator;
+   }
+
    public function getTopCourses(array $courseIds)
    {
       return Course::query()

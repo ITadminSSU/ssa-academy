@@ -193,6 +193,9 @@ export interface PageSelectProps extends SharedData {
    }>;
    appTimezone?: string;
    ssuLandingPage?: Page | null;
+   courses?: Pagination<Course>;
+   categories?: Pagination<CourseCategory>;
+   instructors?: Pagination<Instructor>;
 }
 
 // pages/exams/show

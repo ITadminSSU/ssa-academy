@@ -1,4 +1,4 @@
-import { IntroPageProps } from '@/types/page';
+import { IntroPageProps, PageSelectProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { useSectionEditor } from '../../context';
@@ -12,9 +12,27 @@ interface Props {
    onChange?: (value: any) => void;
 }
 
+const emptyPagination = <T,>(): Pagination<T> => ({
+   data: [],
+   current_page: 1,
+   last_page: 1,
+   first_page_url: '',
+   last_page_url: '',
+   next_page_url: null,
+   prev_page_url: null,
+   path: '',
+   per_page: 10,
+   total: 0,
+   from: null,
+   to: null,
+   links: [],
+});
+
 const Contents = ({ field, section_slug, onChange }: Props) => {
-   const { props } = usePage<IntroPageProps>();
-   const { courses, categories, instructors } = props;
+   const { props } = usePage<IntroPageProps | PageSelectProps>();
+   const courses = ('courses' in props ? props.courses : undefined) ?? emptyPagination<Course>();
+   const categories = ('categories' in props ? props.categories : undefined) ?? emptyPagination<CourseCategory>();
+   const instructors = ('instructors' in props ? props.instructors : undefined) ?? emptyPagination<Instructor>();
    const { section } = useSectionEditor();
    const [contentList, setContentList] = useState<number[]>(section.properties?.contents ? section.properties?.contents : []);
 
