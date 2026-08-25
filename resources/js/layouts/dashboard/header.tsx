@@ -1,3 +1,4 @@
+import MessagesUnreadBadge from '@/components/messages-unread-badge';
 import Appearance from '@/components/appearance';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import Language from '@/components/language';
@@ -33,11 +34,7 @@ const DashboardHeader = ({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] 
                   <Link href={route('messages.index')} className="hover:text-foreground relative inline-flex items-center gap-1.5 transition-colors">
                      <MessageCircle className="h-4 w-4" />
                      Messages
-                     {auth.messagesUnreadCount ? (
-                        <span className="bg-accent inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                           {auth.messagesUnreadCount}
-                        </span>
-                     ) : null}
+                     <MessagesUnreadBadge className="bg-accent" />
                   </Link>
                )}
             </nav>

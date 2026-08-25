@@ -5,6 +5,8 @@ namespace App\Services\Chat;
 use App\Enums\ChatAttachmentType;
 use App\Enums\ChatConversationType;
 use App\Enums\ChatParticipantRole;
+use App\Events\ChatInboxUpdated;
+use App\Events\ChatMessageSent;
 use App\Mail\ChatMessageMail;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
@@ -12,6 +14,7 @@ use App\Models\ChatParticipant;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
+use App\Notifications\ChatMessageNotification;
 use App\Support\TransactionalMailSender;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +24,7 @@ class ChatService
 {
     public function __construct(
         private ChatAccessService $access,
+        private ChatPresenceService $presence,
         private TransactionalMailSender $mailSender,
         private \App\Services\MediaService $mediaService,
     ) {}
@@ -450,6 +454,64 @@ class ChatService
         });
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function messagePayload(
+        ChatMessage $message,
+        User $viewer,
+        ChatConversation $conversation,
+    ): array {
+        return $this->formatMessage($message, $viewer, $conversation);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function inboxPreviewFor(
+        ChatConversation $conversation,
+        User $viewer,
+    ): array {
+        $conversation->loadMissing([
+            'course.instructor.user',
+            'student:id,name',
+            'messages' => fn ($q) => $q->latest('id')->limit(1)->with('sender:id,name'),
+        ]);
+
+        $participant = ChatParticipant::query()
+            ->where('chat_conversation_id', $conversation->id)
+            ->where('user_id', $viewer->id)
+            ->first();
+
+        return $this->formatConversationRow($conversation, $viewer, $participant);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function messageBroadcastPayload(
+        ChatMessage $message,
+        ChatConversation $conversation,
+    ): array {
+        $message->loadMissing('sender:id,name,photo,role');
+
+        return [
+            'id' => $message->id,
+            'body' => $message->body,
+            'attachment' => $message->attachment,
+            'attachment_name' => $message->attachment_name,
+            'attachment_type' => $message->attachment_type?->value,
+            'created_at' => optional($message->created_at)?->toIso8601String(),
+            'sender' => [
+                'id' => $message->sender?->id,
+                'name' => $message->sender?->name,
+                'photo' => $message->sender?->photo,
+                'role' => $message->sender?->role,
+            ],
+            'is_pinned' => (int) ($conversation->pinned_message_id ?? 0) === (int) $message->id,
+        ];
+    }
+
     public function unreadCount(User $user): int
     {
         if ($this->access->isAdmin($user)) {
@@ -503,29 +565,73 @@ class ChatService
     {
         $this->ensureNotifyParticipants($conversation);
 
+        $conversation->loadMissing(['course', 'student:id,name']);
+        $message->loadMissing('sender:id,name,photo,role');
+
+        $senderPayload = $this->messageBroadcastPayload($message, $conversation);
+
+        broadcast(new ChatMessageSent(
+            $conversation->id,
+            $senderPayload,
+            $sender->id,
+        ));
+
         $recipients = ChatParticipant::query()
             ->where('chat_conversation_id', $conversation->id)
             ->where('user_id', '!=', $sender->id)
             ->where('is_active', true)
             ->where('is_muted', false)
             ->with('user')
-            ->get()
-            ->pluck('user')
-            ->filter(fn ($user) => $user instanceof User && filter_var($user->email, FILTER_VALIDATE_EMAIL));
+            ->get();
 
-        foreach ($recipients as $recipient) {
-            try {
-                $this->mailSender->send(
-                    $recipient,
-                    new ChatMessageMail($conversation, $message),
-                    'chat_new_message'
-                );
-            } catch (\Throwable $e) {
-                Log::warning('chat_new_message notify failed', [
-                    'recipient_id' => $recipient->id,
-                    'conversation_id' => $conversation->id,
-                    'error' => $e->getMessage(),
-                ]);
+        $label = $conversation->type === ChatConversationType::Group
+            ? ($conversation->title ?? 'Class chat')
+            : ($conversation->student?->name ?? 'Direct message');
+
+        foreach ($recipients as $participantRow) {
+            $recipient = $participantRow->user;
+            if (! $recipient instanceof User) {
+                continue;
+            }
+
+            $inboxPreview = $this->inboxPreviewFor($conversation, $recipient);
+            $unreadCount = $this->unreadCount($recipient);
+
+            broadcast(new ChatInboxUpdated(
+                $recipient->id,
+                $inboxPreview,
+                $unreadCount,
+            ));
+
+            if (! $this->presence->isViewingConversation($recipient, $conversation->id)) {
+                try {
+                    $recipient->notify(new ChatMessageNotification($conversation, $message, $label));
+                } catch (\Throwable $e) {
+                    Log::warning('chat_in_app notify failed', [
+                        'recipient_id' => $recipient->id,
+                        'conversation_id' => $conversation->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            if (
+                filter_var($recipient->email, FILTER_VALIDATE_EMAIL)
+                && $this->presence->shouldSendEmail($recipient, $conversation->id)
+            ) {
+                try {
+                    $this->mailSender->send(
+                        $recipient,
+                        new ChatMessageMail($conversation, $message),
+                        'chat_new_message'
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('chat_new_message notify failed', [
+                        'recipient_id' => $recipient->id,
+                        'conversation_id' => $conversation->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
     }
@@ -559,6 +665,13 @@ class ChatService
             ->where('chat_conversation_id', $conversation->id)
             ->where('user_id', $user->id)
             ->update(['last_read_at' => now()]);
+    }
+
+    public function markConversationRead(ChatConversation $conversation, User $user): void
+    {
+        if ($this->canView($user, $conversation)) {
+            $this->markRead($conversation, $user);
+        }
     }
 
     private function setParticipantActiveForCourse(User $user, Course $course, bool $active): void

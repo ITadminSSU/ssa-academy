@@ -181,6 +181,25 @@ class HandleInertiaRequests extends Middleware
                 'settings' => trans('settings'),
                 'table' => trans('table'),
             ],
+            'reverb' => $this->reverbPayload(),
+        ];
+    }
+
+    /**
+     * @return array{enabled: bool, key: string, host: string, port: int, scheme: string, authEndpoint: string}
+     */
+    private function reverbPayload(): array
+    {
+        $connection = (string) config('broadcasting.default');
+        $enabled = $connection === 'reverb' && filled(config('broadcasting.connections.reverb.key'));
+
+        return [
+            'enabled' => $enabled,
+            'key' => $enabled ? (string) config('broadcasting.connections.reverb.key') : '',
+            'host' => $enabled ? (string) config('broadcasting.connections.reverb.options.host') : '',
+            'port' => $enabled ? (int) config('broadcasting.connections.reverb.options.port') : 443,
+            'scheme' => $enabled ? (string) config('broadcasting.connections.reverb.options.scheme') : 'https',
+            'authEndpoint' => url('/broadcasting/auth'),
         ];
     }
 

@@ -56,6 +56,14 @@ export interface LearnerNav {
 export interface SharedData {
    page: Page;
    auth: Auth;
+   reverb?: {
+      enabled: boolean;
+      key: string;
+      host: string;
+      port: number;
+      scheme: string;
+      authEndpoint: string;
+   };
    learnerNav?: LearnerNav | null;
    branding: Branding;
    features: PlatformFeatures;

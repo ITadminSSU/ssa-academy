@@ -1,5 +1,6 @@
 import '../css/app.css';
 
+import AppRealtimeShell from '@/components/app-realtime-shell';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
@@ -9,7 +10,16 @@ const appName = import.meta.env.VITE_APP_NAME;
 
 createInertiaApp({
    title: (title) => `${title}`,
-   resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
+   resolve: async (name) => {
+      const page = await resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'));
+      const PageComponent = page.default;
+
+      return (props: Record<string, unknown>) => (
+         <AppRealtimeShell>
+            <PageComponent {...props} />
+         </AppRealtimeShell>
+      );
+   },
    setup({ el, App, props }) {
       const root = createRoot(el);
 

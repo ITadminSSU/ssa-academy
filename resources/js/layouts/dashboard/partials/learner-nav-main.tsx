@@ -1,3 +1,4 @@
+import MessagesUnreadBadge from '@/components/messages-unread-badge';
 import {
    SidebarGroup,
    SidebarGroupLabel,
@@ -99,11 +100,7 @@ export function LearnerNavMain() {
                   <Link href={route('messages.index')} prefetch>
                      <MessageCircle className="h-4 w-4" />
                      <span className="text-sm">Messages</span>
-                     {auth.messagesUnreadCount ? (
-                        <span className="bg-accent ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
-                           {auth.messagesUnreadCount}
-                        </span>
-                     ) : null}
+                     <MessagesUnreadBadge className="bg-accent ml-auto" />
                   </Link>
                </SidebarMenuButton>
             </SidebarMenuItem>

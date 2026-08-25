@@ -1,3 +1,4 @@
+import MessagesUnreadBadge from '@/components/messages-unread-badge';
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -109,11 +110,7 @@ export function TrainerNavMain() {
                            >
                               <Link href={item.path}>
                                  <span className="text-sm">{item.name}</span>
-                                 {item.path === messagesPath && auth.messagesUnreadCount ? (
-                                    <span className="bg-accent ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold text-white">
-                                       {auth.messagesUnreadCount}
-                                    </span>
-                                 ) : null}
+                                 {item.path === messagesPath ? <MessagesUnreadBadge className="bg-accent ml-auto" /> : null}
                               </Link>
                            </SidebarMenuButton>
                         </SidebarMenuItem>

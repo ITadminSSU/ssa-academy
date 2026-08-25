@@ -3,39 +3,17 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+   ChatMessageItem,
+   ConversationListItem,
+   useMessagesRealtime,
+} from '@/contexts/messages-realtime-context';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { BellOff, FileText, Pin, Search, Trash2, X } from 'lucide-react';
-import { FormEvent, useState } from 'react';
-
-type ConversationListItem = {
-   id: number;
-   type: 'direct' | 'group';
-   course_id: number;
-   course_title?: string | null;
-   label: string;
-   last_message_at?: string | null;
-   preview?: string | null;
-   preview_sender?: string | null;
-   unread?: boolean;
-   is_resolved?: boolean;
-   is_muted?: boolean;
-};
-
-type ChatMessageItem = {
-   id: number;
-   body?: string | null;
-   attachment?: string | null;
-   attachment_name?: string | null;
-   attachment_type?: 'image' | 'video' | 'pdf' | null;
-   created_at?: string | null;
-   is_mine?: boolean;
-   can_delete?: boolean;
-   is_pinned?: boolean;
-   sender?: { id?: number; name?: string; photo?: string | null; role?: string };
-};
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type ActiveConversation = ConversationListItem & {
    messages: ChatMessageItem[];
@@ -195,6 +173,87 @@ export default function MessagesIndex() {
    const isLearner = auth.user?.role === 'student';
    const [inboxQuery, setInboxQuery] = useState(filters.q ?? '');
    const [threadQuery, setThreadQuery] = useState(filters.mq ?? '');
+   const [liveMessages, setLiveMessages] = useState<ChatMessageItem[]>(activeConversation?.messages ?? []);
+   const threadRef = useRef<HTMLDivElement>(null);
+   const realtime = useMessagesRealtime();
+
+   useEffect(() => {
+      realtime?.setActiveConversationId(activeConversation?.id ?? null);
+   }, [activeConversation?.id, realtime]);
+
+   useEffect(() => {
+      setLiveMessages(activeConversation?.messages ?? []);
+   }, [activeConversation?.id, activeConversation?.messages]);
+
+   useEffect(() => {
+      if (!activeConversation?.id || !realtime) {
+         return;
+      }
+
+      return realtime.onConversationMessage(activeConversation.id, (message) => {
+         const normalized: ChatMessageItem = {
+            ...message,
+            is_mine: message.sender?.id === auth.user?.id,
+            can_delete: message.sender?.id === auth.user?.id,
+         };
+
+         setLiveMessages((current) => {
+            if (current.some((item) => item.id === normalized.id)) {
+               return current;
+            }
+
+            return [...current, normalized];
+         });
+
+         void fetch(route('messages.read', activeConversation.id), {
+            method: 'POST',
+            headers: {
+               Accept: 'application/json',
+               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+            },
+            credentials: 'same-origin',
+         }).then(async (response) => {
+            if (!response.ok) {
+               return;
+            }
+
+            const data = (await response.json()) as { messages_unread_count?: number };
+            if (typeof data.messages_unread_count === 'number') {
+               realtime.setMessagesUnreadCount(data.messages_unread_count);
+            }
+         });
+      });
+   }, [activeConversation?.id, auth.user?.id, realtime]);
+
+   useEffect(() => {
+      const node = threadRef.current;
+      if (!node) {
+         return;
+      }
+
+      node.scrollTop = node.scrollHeight;
+   }, [liveMessages.length, activeConversation?.id]);
+
+   const mergedConversations = useMemo(() => {
+      if (!realtime) {
+         return conversations;
+      }
+
+      const merged = conversations.map((conversation) => realtime.inboxPreviews[conversation.id] ?? conversation);
+
+      Object.values(realtime.inboxPreviews).forEach((preview) => {
+         if (!merged.some((item) => item.id === preview.id)) {
+            merged.push(preview);
+         }
+      });
+
+      return merged.sort((a, b) => {
+         const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+         const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+
+         return bTime - aTime;
+      });
+   }, [conversations, realtime]);
 
    const { data, setData, post, processing, errors, reset } = useForm<{
       body: string;
@@ -324,12 +383,12 @@ export default function MessagesIndex() {
                   </div>
                </div>
                <div className="max-h-[520px] overflow-y-auto">
-                  {conversations.length === 0 ? (
+                  {mergedConversations.length === 0 ? (
                      <p className="px-4 py-8 text-sm text-muted-foreground">
                         No conversations match your filters yet.
                      </p>
                   ) : (
-                     conversations.map((conversation) => (
+                     mergedConversations.map((conversation) => (
                         <Link
                            key={conversation.id}
                            href={inboxHref(conversation.id, filters)}
@@ -452,13 +511,13 @@ export default function MessagesIndex() {
                         </div>
                      )}
 
-                     <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-                        {(activeConversation.messages ?? []).length === 0 ? (
+                     <div ref={threadRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+                        {liveMessages.length === 0 ? (
                            <p className="text-sm text-muted-foreground">
                               {filters.mq ? 'No messages match your search.' : 'No messages yet.'}
                            </p>
                         ) : (
-                           (activeConversation.messages ?? [])
+                           liveMessages
                               .filter((message) => message.id !== activeConversation.pinned_message?.id)
                               .map((message) => (
                               <MessageBubble

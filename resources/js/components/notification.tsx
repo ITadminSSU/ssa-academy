@@ -4,12 +4,29 @@ import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Bell } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 
 const Notification = () => {
-   const { notifications, translate } = usePage<SharedData>().props;
+   const page = usePage<SharedData>();
+   const { notifications: initialNotifications, translate } = page.props;
    const { button, frontend, dashboard } = translate;
+   const [notifications, setNotifications] = useState(initialNotifications);
+
+   useEffect(() => {
+      setNotifications(initialNotifications);
+   }, [initialNotifications]);
+
+   useEffect(() => {
+      const refresh = () => {
+         router.reload({ only: ['notifications'], preserveScroll: true, preserveState: true });
+      };
+
+      window.addEventListener('ssu:notifications-updated', refresh);
+
+      return () => window.removeEventListener('ssu:notifications-updated', refresh);
+   }, []);
 
    return (
       <Popover>

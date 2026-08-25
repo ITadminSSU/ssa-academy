@@ -1,3 +1,4 @@
+import MessagesUnreadBadge from '@/components/messages-unread-badge';
 import AppLogo from '@/components/app-logo';
 import Appearance from '@/components/appearance';
 import Notification from '@/components/notification';
@@ -55,8 +56,9 @@ const Navbar = () => {
                   variant="secondary"
                   className="rounded-full border-white/30 bg-card/15 text-white hover:bg-card/25 hover:text-white"
                >
-                  <Link href={route('messages.group', course.id)} title="Class chat">
+                  <Link href={route('messages.group', course.id)} title="Class chat" className="relative">
                      <MessageCircle className="h-4 w-4" />
+                     <MessagesUnreadBadge className="bg-[#8C2A23] absolute -top-1.5 -right-1.5 min-w-4 px-1 py-0 text-[9px]" />
                   </Link>
                </Button>
 

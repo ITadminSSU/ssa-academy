@@ -85,14 +85,52 @@ class ChatController extends Controller
             $request->file('attachment'),
         );
 
-        return redirect()->route('messages.show', array_merge(
-            ['conversation' => $conversation],
-            array_filter([
-                'q' => $request->query('q'),
-                'filter' => $request->query('filter'),
-                'mq' => $request->query('mq'),
-            ])
-        ));
+        return back();
+    }
+
+    public function presence(Request $request)
+    {
+        $data = $request->validate([
+            'conversation_id' => ['nullable', 'integer', Rule::exists(ChatConversation::class, 'id')],
+            'visible' => ['required', 'boolean'],
+        ]);
+
+        $conversationId = isset($data['conversation_id']) ? (int) $data['conversation_id'] : null;
+
+        if ($conversationId) {
+            $conversation = ChatConversation::query()->findOrFail($conversationId);
+            abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        }
+
+        app(\App\Services\Chat\ChatPresenceService::class)->update(
+            $request->user(),
+            $conversationId,
+            (bool) $data['visible'],
+        );
+
+        if ($conversationId && $data['visible']) {
+            $conversation = ChatConversation::query()->findOrFail($conversationId);
+            $this->chat->markConversationRead($conversation, $request->user());
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function unread(Request $request)
+    {
+        return response()->json([
+            'messages_unread_count' => $this->chat->unreadCount($request->user()),
+        ]);
+    }
+
+    public function read(Request $request, ChatConversation $conversation)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+        $this->chat->markConversationRead($conversation, $request->user());
+
+        return response()->json([
+            'messages_unread_count' => $this->chat->unreadCount($request->user()),
+        ]);
     }
 
     public function resolve(Request $request, ChatConversation $conversation)
