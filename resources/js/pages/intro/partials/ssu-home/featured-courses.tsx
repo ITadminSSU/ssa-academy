@@ -60,10 +60,10 @@ const FeaturedCourses = () => {
                      plugins={courses.length > 1 ? [autoplay.current] : []}
                      className="relative"
                   >
-                     <CarouselContent className="-ml-4">
+                     <CarouselContent className="-ml-4 items-stretch">
                         {courses.map((course) => (
-                           <CarouselItem key={course.id} className="basis-full pl-4 sm:basis-1/2 lg:basis-1/3">
-                              <CourseCard1 course={course} />
+                           <CarouselItem key={course.id} className="flex basis-full pl-4 sm:basis-1/2 lg:basis-1/3">
+                              <CourseCard1 course={course} className="h-full w-full" />
                            </CarouselItem>
                         ))}
                      </CarouselContent>

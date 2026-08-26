@@ -647,7 +647,7 @@
    }
 
    .ssu-course-card__title {
-      @apply font-display text-foreground group-hover:text-primary line-clamp-2 text-base leading-snug font-semibold transition-colors;
+      @apply font-display text-foreground group-hover:text-primary line-clamp-2 min-h-[2.75rem] text-base leading-snug font-semibold transition-colors;
    }
 
    .ssu-course-card__price {
