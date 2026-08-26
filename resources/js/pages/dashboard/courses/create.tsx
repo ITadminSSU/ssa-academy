@@ -37,7 +37,21 @@ const Index = (props: Props) => {
    const user = props.auth.user;
    const { labels, prices, audiences, expiries, categories, instructors, system } = props;
 
-   const { data, setData, post, errors, processing } = useForm({
+   const resolvedInstructorId = useMemo(() => {
+      if (user.role === 'admin' && system.sub_type === 'collaborative') {
+         return '';
+      }
+
+      if (user.instructor_id) {
+         return String(user.instructor_id);
+      }
+
+      const linked = instructors.find((instructor) => instructor.user_id === user.id || instructor.user?.id === user.id);
+
+      return linked ? String(linked.id) : '';
+   }, [user, system.sub_type, instructors]);
+
+   const { data, setData, post, errors, processing, clearErrors } = useForm({
       title: '',
       short_description: '',
       description: '',
@@ -51,17 +65,26 @@ const Index = (props: Props) => {
       discount_price: '',
       expiry_type: 'lifetime',
       expiry_duration: '',
-      thumbnail: null,
-      instructor_id: user.role === 'admin' && system.sub_type === 'collaborative' ? '' : user.instructor_id,
+      thumbnail: null as File | null,
+      instructor_id: resolvedInstructorId,
       course_category_id: '',
       course_category_child_id: '',
    });
 
-   // Handle form submission
+   const errorList = Object.values(errors).filter(Boolean) as string[];
+
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      clearErrors();
 
-      post(route('courses.store'));
+      post(route('courses.store'), {
+         forceFormData: true,
+         preserveScroll: true,
+         onError: () => {
+            // Keep entered values; surface validation messages.
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+         },
+      });
    };
 
    const transformedCategories = useMemo(() => {
@@ -89,12 +112,23 @@ const Index = (props: Props) => {
 
    const transformedInstructors = instructors.map((instructor) => ({
       label: instructor.user.name,
-      value: instructor.id as string,
+      value: String(instructor.id),
    }));
 
    return (
       <Card className="container p-6">
          <form onSubmit={handleSubmit} className="space-y-6">
+            {errorList.length > 0 && (
+               <div className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border px-4 py-3 text-sm">
+                  <p className="font-medium">Could not create the course. Please fix the following:</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                     {errorList.map((message) => (
+                        <li key={message}>{message}</li>
+                     ))}
+                  </ul>
+               </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                {/* Left Column */}
                <div className="space-y-4">
@@ -105,7 +139,7 @@ const Index = (props: Props) => {
                   </div>
 
                   <div>
-                     <Label>{input.short_description}</Label>
+                     <Label>{input.short_description} *</Label>
                      <Textarea
                         rows={5}
                         name="short_description"
@@ -145,9 +179,10 @@ const Index = (props: Props) => {
                      <div>
                         <Label htmlFor="instructor_id">{input.course_instructor} *</Label>
                         <Combobox
-                           defaultValue={data.instructor_id as string}
+                           defaultValue={data.instructor_id ? String(data.instructor_id) : ''}
                            data={transformedInstructors || []}
                            placeholder={input.course_instructor}
+                           allowDeselect={false}
                            onSelect={(selected) => setData('instructor_id', selected.value)}
                         />
                         <InputError message={errors.instructor_id} />
@@ -160,9 +195,13 @@ const Index = (props: Props) => {
                         <Combobox
                            data={transformedCategories}
                            placeholder={input.category_placeholder}
+                           allowDeselect={false}
                            onSelect={(selected) => {
-                              setData('course_category_id', selected.id as any);
-                              setData('course_category_child_id', selected.child_id as any);
+                              setData((prev) => ({
+                                 ...prev,
+                                 course_category_id: String(selected.id ?? ''),
+                                 course_category_child_id: selected.child_id ? String(selected.child_id) : '',
+                              }));
                            }}
                         />
                         <InputError message={errors.course_category_id} />
@@ -191,6 +230,8 @@ const Index = (props: Props) => {
                      <Combobox
                         data={courseLanguages}
                         placeholder={input.course_language_placeholder}
+                        allowDeselect={false}
+                        defaultValue={data.language}
                         onSelect={(selected) => setData('language', selected.value)}
                      />
                      <InputError message={errors.language} />
@@ -218,7 +259,7 @@ const Index = (props: Props) => {
                   <div>
                      <Label>{input.pricing_type} *</Label>
                      <RadioGroup
-                        defaultValue={data.pricing_type as string}
+                        value={data.pricing_type as string}
                         className="flex items-center space-x-4 pt-2 pb-1"
                         onValueChange={(value) => setData('pricing_type', value)}
                      >
@@ -282,7 +323,7 @@ const Index = (props: Props) => {
                   <div>
                      <Label>{input.expiry_period_type}</Label>
                      <RadioGroup
-                        defaultValue={data.expiry_type}
+                        value={data.expiry_type}
                         className="flex items-center space-x-4 pt-2 pb-1"
                         onValueChange={(value) => setData('expiry_type', value)}
                      >
@@ -306,6 +347,7 @@ const Index = (props: Props) => {
                                     defaultValue={data.expiry_duration}
                                     data={courseDurations}
                                     placeholder={input.expiry_duration_placeholder || 'Select duration'}
+                                    allowDeselect={false}
                                     onSelect={(selected) => setData('expiry_duration', selected.value)}
                                  />
                                  <InputError message={errors.expiry_duration} />

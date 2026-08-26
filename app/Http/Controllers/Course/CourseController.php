@@ -163,10 +163,10 @@ class CourseController extends Controller
 
     public function create()
     {
-        $labels = CourseLevelType::cases();
-        $prices = CoursePricingType::cases();
-        $audiences = CourseAudience::cases();
-        $expiries = ExpiryLimitType::cases();
+        $labels = array_map(fn ($case) => $case->value, CourseLevelType::cases());
+        $prices = array_map(fn ($case) => $case->value, CoursePricingType::cases());
+        $audiences = array_map(fn ($case) => $case->value, CourseAudience::cases());
+        $expiries = array_map(fn ($case) => $case->value, ExpiryLimitType::cases());
         $categories = $this->categoryService->getCategories()['categories'];
         $instructors = $this->instructorService->getInstructors(['status' => 'approved'], false);
 
