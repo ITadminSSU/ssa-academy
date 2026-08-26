@@ -8,7 +8,6 @@ use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
 use App\Services\Chat\ChatService;
-use App\Services\Course\CourseCategoryService;
 use App\Services\NotificationService;
 use App\Services\SettingsService;
 use App\Services\StudentService;
@@ -33,7 +32,6 @@ class HandleInertiaRequests extends Middleware
         private SettingsService $settingsService,
         private LanguageService $languageService,
         private NotificationService $notificationService,
-        private CourseCategoryService $courseCategoryService,
         private LegalAgreementService $legalAgreement,
         private TwoFactorAuthenticationService $twoFactor,
         private ChatService $chatService,
@@ -142,16 +140,6 @@ class HandleInertiaRequests extends Middleware
             'navbar' => Schema::hasTable('navbars') ? $this->filterNavbar($this->settingsService->getNavbar('navbar_1')) : null,
             'footer' => Schema::hasTable('footers') ? $this->settingsService->getFooter('footer_1') : null,
             'notifications' => $user ? $this->notificationService->notifications(['unread' => true]) : [],
-            'learnerNav' => $user
-                ? [
-                    'categories' => $this->courseCategoryService->getLearnerNavCategories($user),
-                    'guides' => Schema::hasTable('professional_development_guides')
-                        ? \App\Models\ProfessionalDevelopmentGuide::where('is_published', true)
-                            ->orderBy('sort')
-                            ->get(['id', 'key', 'title'])
-                        : [],
-                ]
-                : null,
             'ziggy' => fn(): array => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),

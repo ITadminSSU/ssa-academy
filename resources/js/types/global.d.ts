@@ -29,30 +29,6 @@ export interface Branding {
    };
 }
 
-export interface LearnerNavCourse {
-   id: number;
-   title: string;
-   slug: string;
-}
-
-export interface LearnerNavCategory {
-   id: number;
-   title: string;
-   slug: string;
-   courses: LearnerNavCourse[];
-}
-
-export interface LearnerNavGuide {
-   id: number;
-   key: string;
-   title: string;
-}
-
-export interface LearnerNav {
-   categories: LearnerNavCategory[];
-   guides?: LearnerNavGuide[];
-}
-
 export interface SharedData {
    page: Page;
    auth: Auth;
@@ -64,7 +40,6 @@ export interface SharedData {
       scheme: string;
       authEndpoint: string;
    };
-   learnerNav?: LearnerNav | null;
    branding: Branding;
    features: PlatformFeatures;
    bunnyStream?: { enabled: boolean; library_id?: string; cdn_hostname?: string };

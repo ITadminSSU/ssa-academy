@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useLang } from '@/hooks/use-lang';
 import { onHandleChange } from '@/lib/inertia';
@@ -28,7 +27,6 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
       title: category ? category.title : '',
       sort: category ? category.sort : lastPosition + 1,
       status: category ? category.status : 1,
-      show_in_nav: category ? !!category.show_in_nav : true,
       description: category ? category.description || '' : '',
       thumbnail: null as File | null,
    });
@@ -108,13 +106,6 @@ const CategoryForm = ({ title, category, lastPosition, handler }: Props) => {
                            <SelectItem value="0">Inactive</SelectItem>
                         </SelectContent>
                      </Select>
-                  </div>
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                     <div className="space-y-0.5">
-                        <Label>Show in learner sidebar</Label>
-                        <p className="text-xs text-muted-foreground">Display this category as a direct link in the learner dashboard navigation.</p>
-                     </div>
-                     <Switch checked={data.show_in_nav} onCheckedChange={(checked) => setData('show_in_nav', checked)} />
                   </div>
                   <div>
                      <Label>{input.description}</Label>

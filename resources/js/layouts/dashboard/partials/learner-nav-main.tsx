@@ -15,7 +15,6 @@ import { Link, usePage } from '@inertiajs/react';
 import {
    Award,
    FileQuestion,
-   FolderClosed,
    GraduationCap,
    Heart,
    HelpCircle,
@@ -31,10 +30,9 @@ import {
 } from 'lucide-react';
 export function LearnerNavMain() {
    const page = usePage<SharedData & StudentDashboardProps>();
-   const { auth, translate, instructor, learnerNav } = page.props;
+   const { auth, translate, instructor } = page.props;
    const { button } = translate;
    const activeTab = routeLastSegment(page.url) || 'home';
-   const categories = learnerNav?.categories ?? [];
 
    const tabItem = (slug: string, name: string, Icon: typeof HomeIcon) => (
       <SidebarMenuItem key={slug}>
@@ -56,31 +54,7 @@ export function LearnerNavMain() {
          <SidebarMenu className="space-y-1">
             <SidebarGroupLabel className="text-sidebar-foreground/60 text-[11px] tracking-[0.14em] uppercase">My Academy</SidebarGroupLabel>
 
-            {/* 1. Home */}
             {tabItem('home', 'Home', HomeIcon)}
-
-            {/* 2. Dynamic course-category links (open the filtered catalog page) */}
-            {categories.map((category) => {
-               const categoryUrl = route('student.category.courses', { category: category.slug });
-               const isActive = page.url.split('?')[0].replace(/\/$/, '') === new URL(categoryUrl, window.location.origin).pathname.replace(/\/$/, '');
-
-               return (
-                  <SidebarMenuItem key={category.id}>
-                     <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        className={cn('h-9 rounded-lg data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground')}
-                     >
-                        <Link href={categoryUrl} prefetch>
-                           <FolderClosed className="h-4 w-4" />
-                           <span className="truncate text-sm">{category.title}</span>
-                        </Link>
-                     </SidebarMenuButton>
-                  </SidebarMenuItem>
-               );
-            })}
-
-            {/* 3. My Courses */}
             {tabItem('courses', button.my_courses || 'My Courses', GraduationCap)}
 
             {/* 4. Certificates */}
