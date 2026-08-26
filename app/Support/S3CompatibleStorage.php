@@ -215,7 +215,7 @@ class S3CompatibleStorage
         }
 
         if (! str_starts_with($value, 'http://') && ! str_starts_with($value, 'https://')) {
-            return ltrim($value, '/');
+            return static::decodeObjectKey(ltrim($value, '/'));
         }
 
         $path = ltrim((string) parse_url($value, PHP_URL_PATH), '/');
@@ -247,17 +247,42 @@ class S3CompatibleStorage
             return null;
         }
 
-        if ($bucket !== '' && str_starts_with($path, $bucket.'/')) {
-            return substr($path, strlen($bucket) + 1) ?: null;
-        }
+        $key = null;
 
-        if ($publicBase !== '') {
+        if ($bucket !== '' && str_starts_with($path, $bucket.'/')) {
+            $key = substr($path, strlen($bucket) + 1) ?: null;
+        } elseif ($publicBase !== '') {
             $publicPath = ltrim((string) parse_url($publicBase, PHP_URL_PATH), '/');
             if ($publicPath !== '' && str_starts_with($path, $publicPath.'/')) {
-                return substr($path, strlen($publicPath) + 1) ?: null;
+                $key = substr($path, strlen($publicPath) + 1) ?: null;
             }
         }
 
-        return $path !== '' ? $path : null;
+        if ($key === null && $path !== '') {
+            $key = $path;
+        }
+
+        return $key !== null ? static::decodeObjectKey($key) : null;
+    }
+
+    /**
+     * URL paths keep percent-encoding (e.g. %28 for "("). Signing re-encodes the key,
+     * which turns %28 into %2528 and breaks R2/S3 lookups for filenames with spaces/parens.
+     */
+    public static function decodeObjectKey(string $key): string
+    {
+        $decoded = $key;
+
+        for ($i = 0; $i < 3; $i++) {
+            $next = rawurldecode($decoded);
+
+            if ($next === $decoded) {
+                break;
+            }
+
+            $decoded = $next;
+        }
+
+        return $decoded;
     }
 }
