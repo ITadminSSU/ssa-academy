@@ -7,12 +7,12 @@ import { File, FileQuestion, FileText, Image, Video } from 'lucide-react';
 const Curriculum = ({ course }: { course: Course }) => {
    const { props } = usePage<SharedData>();
    const { translate } = props;
-   const { frontend } = translate;
+   const { frontend, button } = translate;
    const videoTypes = ['video', 'video_url'];
 
    return (
       <>
-         <h6 className="mb-4 text-xl font-semibold">Modules</h6>
+         <h6 className="mb-4 text-xl font-semibold">{button.curriculum ?? 'Curriculum'}</h6>
 
          <Separator className="my-6" />
 

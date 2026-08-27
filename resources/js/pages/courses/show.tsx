@@ -11,7 +11,7 @@ import Curriculum from './partials/curriculum';
 import Details from './partials/details';
 import Instructor from './partials/instructor';
 import Overview from './partials/overview';
-import Videos from './partials/videos';
+import UsExperience from './partials/us-experience';
 
 export interface CourseDetailsProps extends SharedData {
    course: Course;
@@ -38,12 +38,12 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
       {
          value: 'curriculum',
          label: button.curriculum,
-         Component: <Videos course={course} />,
+         Component: <Curriculum course={course} />,
       },
       {
-         value: 'modules',
-         label: button.modules || 'Modules',
-         Component: <Curriculum course={course} />,
+         value: 'us-experience',
+         label: button.build_your_us_experience ?? 'Build Your US Experience',
+         Component: <UsExperience />,
       },
       {
          value: 'details',

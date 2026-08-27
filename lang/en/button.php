@@ -222,6 +222,7 @@ return [
     'become_instructor' => 'Become Instructor',
     'overview' => 'Overview',
     'curriculum' => 'Curriculum',
+    'build_your_us_experience' => 'Build Your US Experience',
     'details' => 'Details',
     'instructor' => 'Instructor',
     'reviews' => 'Reviews',
