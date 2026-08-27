@@ -1,16 +1,20 @@
 import { cn } from '@/lib/utils';
-import { ComponentPropsWithoutRef } from 'react';
+import { Link } from '@inertiajs/react';
+import { ComponentProps, forwardRef } from 'react';
+
+type PlayerNavLinkProps = ComponentProps<typeof Link>;
 
 /**
- * Full-page navigation for course-player lesson/quiz changes.
- * Inertia SPA visits reuse the page and leave Plyr's externally managed DOM
- * in place; swapping the video source then crashes React (white screen).
- * A normal document load tears the player down cleanly.
+ * Inertia navigation for course-player lesson/quiz changes.
+ * The video player is isolated from React's DOM, so SPA visits are safe
+ * and keep the player chrome on screen.
  */
-const PlayerNavLink = ({ className, children, ...props }: ComponentPropsWithoutRef<'a'>) => (
-   <a className={cn(className)} {...props}>
+const PlayerNavLink = forwardRef<HTMLAnchorElement, PlayerNavLinkProps>(({ className, children, ...props }, ref) => (
+   <Link ref={ref} className={cn(className)} {...props} preserveScroll preserveState>
       {children}
-   </a>
-);
+   </Link>
+));
+
+PlayerNavLink.displayName = 'PlayerNavLink';
 
 export default PlayerNavLink;

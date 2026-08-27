@@ -1,3 +1,4 @@
+import ErrorBoundary from '@/components/error-boundary';
 import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { useContentProtection } from '@/hooks/use-content-protection';
 import Main from '@/layouts/main';
@@ -48,10 +49,7 @@ const Index = (props: CoursePlayerProps) => {
    }, []);
 
    return (
-      <div
-         key={`${type}-${watching?.id ?? 'none'}`}
-         className="course-player-protected ssu-player-shell min-h-screen"
-      >
+      <div className="course-player-protected ssu-player-shell min-h-screen">
          <SidebarProvider
             className="flex-col"
             style={
@@ -71,17 +69,20 @@ const Index = (props: CoursePlayerProps) => {
 
                <SidebarInset>
                   <Main>
-                     {/* Remount viewer on each lesson/quiz so Plyr/Bunny are not
-                         reused across Inertia visits — source swaps on a live
-                         Plyr instance crash React with insertBefore (white screen). */}
-                     {type === 'lesson' ? (
-                        <LessonViewer
-                           key={`lesson-${watching?.id ?? 'none'}`}
-                           lesson={(watching as SectionLesson) ?? null}
-                        />
-                     ) : (
-                        <QuizViewer key={`quiz-${watching?.id ?? 'none'}`} quiz={watching as SectionQuiz} />
-                     )}
+                     <ErrorBoundary
+                        resetKeys={[type, watching?.id]}
+                        title="This lesson could not be shown"
+                        description="The player hit a display error. Try again, or reload the page to continue."
+                     >
+                        {type === 'lesson' ? (
+                           <LessonViewer
+                              key={`lesson-${watching?.id ?? 'none'}`}
+                              lesson={(watching as SectionLesson) ?? null}
+                           />
+                        ) : (
+                           <QuizViewer key={`quiz-${watching?.id ?? 'none'}`} quiz={watching as SectionQuiz} />
+                        )}
+                     </ErrorBoundary>
 
                      <ContentSummery />
                      <Footer />

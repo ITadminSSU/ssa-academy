@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import ErrorBoundary from '@/components/error-boundary';
 import PlayerNavLink from '@/components/player-nav-link';
 import VideoPlayer from '@/components/video-player';
 import { isExternalVideoLesson, isVideoLesson } from '@/lib/lesson';
@@ -148,9 +149,6 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
       >
          <LessonControl className="opacity-100 md:opacity-0 md:transition-all md:duration-300 md:group-hover:opacity-100" />
 
-         {/* Always render this badge and toggle visibility with CSS. Mounting /
-             unmounting a node beside the Plyr video (which rewrites its own DOM)
-             makes React's insertBefore crash and white-screens the player. */}
          {lessonIsVideo && (
             <div
                className={cn(
@@ -164,25 +162,31 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
          )}
 
          {lessonIsVideo && (
-            <VideoPlayer
-               key={lesson.id}
-               protectDownload
-               secureStream={Boolean(lesson.stream_protected)}
-               lessonId={lesson.id}
-               initialPlayback={lesson.video_playback ?? null}
-               source={{
-                  type: 'video' as const,
-                  sources: [
-                     {
-                        src: lesson.lesson_src || '',
-                        type: 'video/mp4' as const,
-                     },
-                  ],
-               }}
-               translate={translate}
-               onEnded={handleVideoEnded}
-               onWatchProgress={reportWatchProgress}
-            />
+            <ErrorBoundary
+               resetKeys={[lesson.id]}
+               title="This video could not be shown"
+               description="The video player hit a display error. Try again, or reload the page to continue."
+            >
+               <VideoPlayer
+                  key={lesson.id}
+                  protectDownload
+                  secureStream={Boolean(lesson.stream_protected)}
+                  lessonId={lesson.id}
+                  initialPlayback={lesson.video_playback ?? null}
+                  source={{
+                     type: 'video' as const,
+                     sources: [
+                        {
+                           src: lesson.lesson_src || '',
+                           type: 'video/mp4' as const,
+                        },
+                     ],
+                  }}
+                  translate={translate}
+                  onEnded={handleVideoEnded}
+                  onWatchProgress={reportWatchProgress}
+               />
+            </ErrorBoundary>
          )}
 
          {lesson.lesson_type === 'document' && <DocumentViewer src={lesson.lesson_src || ''} protectedMode />}

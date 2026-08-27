@@ -13,7 +13,7 @@ export interface SecureVideoPlayback {
 }
 
 interface UseSecureVideoStreamOptions {
-   lessonId?: number;
+   lessonId?: number | string;
    initialSrc?: string;
    secureStream?: boolean;
    initialPlayback?: SecureVideoPlayback | null;

@@ -1,10 +1,9 @@
+import BunnyEmbedPlayer from '@/components/bunny-embed-player';
 import { useSecureVideoStream, type SecureVideoPlayback } from '@/hooks/use-secure-video-stream';
 import { useVideoPlayerGuards } from '@/hooks/use-video-player-guards';
-import BunnyEmbedPlayer from '@/components/bunny-embed-player';
-import { cn } from '@/lib/utils';
+import Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Plyr, { APITypes } from 'plyr-react';
-import 'plyr-react/plyr.css';
 
 interface Props {
    source: {
@@ -20,8 +19,124 @@ interface Props {
    onWatchProgress?: (currentTime: number, duration: number) => void;
    protectDownload?: boolean;
    secureStream?: boolean;
-   lessonId?: number;
+   lessonId?: number | string;
    initialPlayback?: SecureVideoPlayback | null;
+}
+
+type PlyrSource = {
+   type: 'video' | 'audio';
+   sources: Array<{
+      src: string;
+      type?: string;
+      provider?: 'youtube' | 'vimeo';
+   }>;
+};
+
+const PLYR_OPTIONS: Plyr.Options = {
+   ratio: '16:9',
+   controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen'],
+   settings: ['quality', 'speed'],
+   speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+   resetOnEnd: true,
+   keyboard: { focused: true, global: false },
+   displayDuration: true,
+   tooltips: { controls: true, seek: true },
+   i18n: {
+      restart: 'Restart',
+      rewind: 'Rewind {seektime}s',
+      play: 'Play',
+      pause: 'Pause',
+      forward: 'Forward {seektime}s',
+      played: 'Played',
+      buffered: 'Buffered',
+      currentTime: 'Current time',
+      duration: 'Duration',
+      volume: 'Volume',
+      toggleMute: 'Toggle Mute',
+      toggleCaptions: 'Toggle Captions',
+      toggleFullscreen: 'Toggle Fullscreen',
+   },
+};
+
+function buildPlyrSource(playbackUrl: string, sourceKind: 'video' | 'audio', sourceMimeType: string): PlyrSource | null {
+   if (!playbackUrl) {
+      return null;
+   }
+
+   const isYouTube = playbackUrl.includes('youtube.com') || playbackUrl.includes('youtu.be');
+   const isVimeo = playbackUrl.includes('vimeo.com');
+
+   if (isYouTube) {
+      const match = playbackUrl.match(/^.*(youtu.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+      const videoId = match && match[2].length === 11 ? match[2] : null;
+
+      if (!videoId) {
+         return null;
+      }
+
+      return {
+         type: 'video',
+         sources: [{ src: videoId, provider: 'youtube' }],
+      };
+   }
+
+   if (isVimeo) {
+      const vimeoId = playbackUrl.split('/').pop()?.split('?')[0];
+
+      if (!vimeoId) {
+         return null;
+      }
+
+      return {
+         type: 'video',
+         sources: [{ src: vimeoId, provider: 'vimeo' }],
+      };
+   }
+
+   return {
+      type: sourceKind,
+      sources: [
+         {
+            src: playbackUrl,
+            type: sourceMimeType,
+         },
+      ],
+   };
+}
+
+function mountPlyrTarget(host: HTMLDivElement, processedSource: PlyrSource, protectDownload: boolean): HTMLElement {
+   const source = processedSource.sources[0];
+   const provider = source?.provider;
+
+   if (provider === 'youtube' || provider === 'vimeo') {
+      const embed = document.createElement('div');
+      embed.setAttribute('data-plyr-provider', provider);
+      embed.setAttribute('data-plyr-embed-id', source.src);
+      host.appendChild(embed);
+      return embed;
+   }
+
+   const video = document.createElement('video');
+   video.playsInline = true;
+   video.controls = true;
+
+   if (protectDownload) {
+      video.setAttribute('controlsList', 'nodownload noremoteplayback');
+      video.setAttribute('disablePictureInPicture', 'true');
+      video.oncontextmenu = (event) => event.preventDefault();
+   }
+
+   const sourceEl = document.createElement('source');
+   sourceEl.src = source.src;
+
+   if (source.type) {
+      sourceEl.type = source.type;
+   }
+
+   video.appendChild(sourceEl);
+   host.appendChild(video);
+
+   return video;
 }
 
 const VideoPlayer = ({
@@ -34,12 +149,19 @@ const VideoPlayer = ({
    lessonId,
    initialPlayback = null,
 }: Props) => {
-   const playerRef = useRef<APITypes>(null);
    const containerRef = useRef<HTMLDivElement>(null);
-   const initialSrc = source.sources[0]?.src ?? '';
-   const [hasStarted, setHasStarted] = useState(false);
-   const [playbackError, setPlaybackError] = useState<string | null>(null);
+   const hostRef = useRef<HTMLDivElement>(null);
+   const onEndedRef = useRef(onEnded);
+   const onWatchProgressRef = useRef(onWatchProgress);
    const lastReportedSecond = useRef(-1);
+   const [playbackError, setPlaybackError] = useState<string | null>(null);
+
+   onEndedRef.current = onEnded;
+   onWatchProgressRef.current = onWatchProgress;
+
+   const initialSrc = source.sources[0]?.src ?? '';
+   const sourceKind = source.type;
+   const sourceMimeType = source.sources[0]?.type ?? 'video/mp4';
 
    const { playbackUrl, embedUrl, delivery, loading, error } = useSecureVideoStream({
       lessonId,
@@ -50,247 +172,76 @@ const VideoPlayer = ({
 
    useVideoPlayerGuards(containerRef, protectDownload);
 
-   const plyrOptions = useMemo(
-      () => ({
-         ratio: '16:9',
-         controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen'],
-         settings: ['quality', 'speed'],
-         speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-         resetOnEnd: true,
-         keyboard: { focused: true, global: false },
-         displayDuration: true,
-         tooltips: { controls: true, seek: true },
-         i18n: {
-            restart: 'Restart',
-            rewind: 'Rewind {seektime}s',
-            play: 'Play',
-            pause: 'Pause',
-            forward: 'Forward {seektime}s',
-            played: 'Played',
-            buffered: 'Buffered',
-            currentTime: 'Current time',
-            duration: 'Duration',
-            volume: 'Volume',
-            toggleMute: 'Toggle Mute',
-            toggleCaptions: 'Toggle Captions',
-            toggleFullscreen: 'Toggle Fullscreen',
-         },
-      }),
-      [],
+   const processedSource = useMemo(
+      () => buildPlyrSource(playbackUrl ?? '', sourceKind, sourceMimeType),
+      [playbackUrl, sourceKind, sourceMimeType],
    );
 
-   // Read the source as primitives so the memo below stays stable across parent
-   // re-renders. The parent recreates the `source` object on every render (it
-   // updates once a second from watch-progress), and depending on that object
-   // identity would re-run this memo, hand Plyr a brand-new source every second,
-   // and force plyr-react to tear down / re-create the player mid-playback —
-   // which crashes with an insertBefore DOM error (white screen).
-   const sourceKind = source.type;
-   const sourceMimeType = source.sources[0]?.type ?? 'video/mp4';
+   const sourceKey = processedSource
+      ? `${processedSource.sources[0]?.provider ?? 'html5'}:${processedSource.sources[0]?.src}:${processedSource.sources[0]?.type ?? ''}`
+      : '';
 
-   const processedSource = useMemo(() => {
-      const videoSrc = playbackUrl ?? '';
-
-      if (!videoSrc) {
-         return null;
-      }
-
-      const isYouTube = videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be');
-      const isVimeo = videoSrc.includes('vimeo.com');
-
-      if (isYouTube) {
-         const regExp = /^.*(youtu.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-         const match = videoSrc.match(regExp);
-         const videoId = match && match[2].length === 11 ? match[2] : null;
-
-         if (!videoId) {
-            return null;
-         }
-
-         return {
-            type: 'video' as const,
-            sources: [{ src: videoId, provider: 'youtube' as const }],
-         };
-      }
-
-      if (isVimeo) {
-         const vimeoId = videoSrc.split('/').pop()?.split('?')[0];
-         if (!vimeoId) {
-            return null;
-         }
-
-         return {
-            type: 'video' as const,
-            sources: [{ src: vimeoId, provider: 'vimeo' as const }],
-         };
-      }
-
-      return {
-         type: sourceKind,
-         sources: [
-            {
-               src: videoSrc,
-               type: sourceMimeType,
-            },
-         ],
-      };
-   }, [playbackUrl, sourceKind, sourceMimeType]);
+   const playbackFailedMessage =
+      translate?.frontend?.video_playback_failed ||
+      'This video file could not be loaded. Please ask your trainer to re-upload the lesson video.';
 
    useEffect(() => {
       lastReportedSecond.current = -1;
-      setHasStarted(false);
       setPlaybackError(null);
-   }, [playbackUrl, processedSource]);
+   }, [sourceKey]);
 
-   // Bind media events on the actual Plyr instance. Plyr's `listeners` option
-   // only covers control buttons, not media events like `timeupdate`/`ended`,
-   // so watch-progress and auto-complete must be wired through `player.on()`.
-   //
-   // plyr-react creates the underlying Plyr instance asynchronously *after* the
-   // source is set, so on the first render `playerRef.current.plyr` may not have
-   // its media methods yet. We poll briefly until the instance is ready, then
-   // bind, so the `ended` (auto-complete) listener is never missed.
+   // Plyr rewrites its own DOM. React only owns the empty host node; everything
+   // inside is created and destroyed here so a source change never hits insertBefore.
    useEffect(() => {
-      if (!processedSource) {
+      const host = hostRef.current;
+
+      if (!host || !processedSource) {
          return;
       }
 
-      type PlyrInstance = NonNullable<APITypes['plyr']>;
-      let player: PlyrInstance | null = null;
-      let frame = 0;
-      let attempts = 0;
+      host.replaceChildren();
 
-      const handlePlay = () => setHasStarted(true);
+      const target = mountPlyrTarget(host, processedSource, protectDownload);
+      const player = new Plyr(target, PLYR_OPTIONS);
 
       const handleTimeUpdate = () => {
-         if (!player || !onWatchProgress) {
-            return;
-         }
-
          const currentTime = Math.floor(player.currentTime ?? 0);
          const duration = player.duration ?? 0;
 
          if (currentTime !== lastReportedSecond.current && duration > 0) {
             lastReportedSecond.current = currentTime;
-            onWatchProgress(currentTime, duration);
+            onWatchProgressRef.current?.(currentTime, duration);
          }
       };
 
       const handleEnded = () => {
-         if (!player) {
-            return;
-         }
-
          const duration = player.duration > 0 ? player.duration : player.currentTime > 0 ? player.currentTime : 1;
-
-         onWatchProgress?.(duration, duration);
-         onEnded?.();
+         onWatchProgressRef.current?.(duration, duration);
+         onEndedRef.current?.();
       };
 
-      const bind = () => {
-         const instance = playerRef.current?.plyr as PlyrInstance | undefined;
-
-         // Wait until the real Plyr instance (with media event support) exists.
-         if (!instance || typeof instance.on !== 'function') {
-            attempts += 1;
-
-            if (attempts < 120) {
-               frame = window.requestAnimationFrame(bind);
-            }
-
-            return;
-         }
-
-         player = instance;
-         player.on('play', handlePlay);
-         player.on('playing', handlePlay);
-         player.on('timeupdate', handleTimeUpdate);
-         player.on('ended', handleEnded);
+      const handleError = () => {
+         setPlaybackError(playbackFailedMessage);
       };
 
-      bind();
+      player.on('timeupdate', handleTimeUpdate);
+      player.on('ended', handleEnded);
+      player.on('error', handleError);
 
       return () => {
-         if (frame) {
-            window.cancelAnimationFrame(frame);
+         player.off('timeupdate', handleTimeUpdate);
+         player.off('ended', handleEnded);
+         player.off('error', handleError);
+
+         try {
+            player.destroy();
+         } catch {
+            // Plyr can throw if its node was already removed.
          }
 
-         if (player && typeof player.off === 'function') {
-            player.off('play', handlePlay);
-            player.off('playing', handlePlay);
-            player.off('timeupdate', handleTimeUpdate);
-            player.off('ended', handleEnded);
-         }
+         host.replaceChildren();
       };
-   }, [onEnded, onWatchProgress, processedSource]);
-
-   useEffect(() => {
-      if (!protectDownload || !containerRef.current) {
-         return;
-      }
-
-      const applyVideoGuards = () => {
-         const video = containerRef.current?.querySelector('video');
-
-         if (!video) {
-            return;
-         }
-
-         video.setAttribute('controlsList', 'nodownload noremoteplayback');
-         video.setAttribute('disablePictureInPicture', 'true');
-         video.setAttribute('playsinline', 'true');
-         video.removeAttribute('srcset');
-         video.oncontextmenu = (event) => event.preventDefault();
-      };
-
-      applyVideoGuards();
-
-      const observer = new MutationObserver(applyVideoGuards);
-      observer.observe(containerRef.current, { childList: true, subtree: true });
-
-      return () => observer.disconnect();
-   }, [protectDownload, processedSource]);
-
-   useEffect(() => {
-      if (!processedSource || !containerRef.current) {
-         return;
-      }
-
-      const handleMediaError = () => {
-         setPlaybackError(
-            translate?.frontend?.video_playback_failed ||
-               'This video file could not be loaded. Please ask your trainer to re-upload the lesson video.',
-         );
-      };
-
-      const bindMediaError = () => {
-         const video = containerRef.current?.querySelector('video');
-
-         if (!video) {
-            return false;
-         }
-
-         video.addEventListener('error', handleMediaError);
-         return true;
-      };
-
-      if (!bindMediaError()) {
-         const observer = new MutationObserver(() => {
-            if (bindMediaError()) {
-               observer.disconnect();
-            }
-         });
-
-         observer.observe(containerRef.current, { childList: true, subtree: true });
-
-         return () => observer.disconnect();
-      }
-
-      return () => {
-         const video = containerRef.current?.querySelector('video');
-         video?.removeEventListener('error', handleMediaError);
-      };
-   }, [processedSource, translate]);
+   }, [sourceKey, processedSource, protectDownload, playbackFailedMessage]);
 
    if (loading) {
       return (
@@ -332,14 +283,9 @@ const VideoPlayer = ({
          ref={containerRef}
          className="bg-muted relative w-full select-none [&_video]:pointer-events-auto"
          style={{ WebkitUserSelect: 'none', userSelect: 'none' } as React.CSSProperties}
-         onContextMenu={protectDownload ? (e) => e.preventDefault() : undefined}
+         onContextMenu={protectDownload ? (event) => event.preventDefault() : undefined}
       >
-         {/* Empty placeholder kept always mounted next to Plyr. Conditionally
-             mounting/unmounting a node next to Plyr's externally managed DOM
-             makes React's insertBefore fail and white-screens the page, so we
-             keep this node present but render nothing inside it. */}
-         <div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true" />
-         <Plyr ref={playerRef} options={plyrOptions} source={processedSource} />
+         <div ref={hostRef} className="w-full" />
       </div>
    );
 };
