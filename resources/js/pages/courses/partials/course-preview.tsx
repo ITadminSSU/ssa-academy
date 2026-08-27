@@ -175,7 +175,7 @@ const CoursePreview = () => {
                   offer.enabled && offer.phase === 'full_price'
                      ? `Pay the full upfront price plus the first ${currency?.symbol ?? '$'}${offer.subscriptionPrice}/mo of Project Plans today (not a free month). Monthly billing continues after that.`
                      : offer.enabled && offer.phase === 'pre_register'
-                       ? 'Reserve your seat with a deposit. Pay the launch balance on launch day or within 5 grace days to unlock access and get one free subscription month, then monthly billing starts.'
+                       ? 'Reserve your seat by paying the deposit. Pay the balance by launch day or within the five-day grace period to activate access and get one month free subscription. Monthly billing starts afterward.'
                        : undefined
                }
             >
