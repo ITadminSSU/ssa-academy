@@ -259,6 +259,8 @@ return [
             'requirements' => 'Requirements',
             'outcomes' => 'Outcomes',
             'view_details' => 'View Details',
+            'instructor_biography' => 'Instructor Biography',
+            'courses_by_instructor' => 'Courses By Instructor',
             'students' => 'Students',
             'language' => 'Language',
             'level' => 'Level',

@@ -19,6 +19,7 @@ const Instructor = () => {
       total_exam_average_rating,
       total_exam_instructors_count,
    } = instructor;
+   const biography = instructor.biography?.trim() || '';
 
    return (
       <div>
@@ -26,8 +27,8 @@ const Instructor = () => {
             <div className="flex items-center gap-4">
                <Link href={route('instructors.show', instructor.id)}>
                   <Avatar className="h-12 w-12">
-                     <AvatarImage src={user.photo || ''} alt="@shadcn" className="object-cover" />
-                     <AvatarFallback>CN</AvatarFallback>
+                     <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
+                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                </Link>
 
@@ -39,8 +40,10 @@ const Instructor = () => {
                </Link>
             </div>
 
-            <Button>
-               <Link href={route('instructors.show', instructor.id)}>{frontend.view_details}</Link>
+            <Button asChild>
+               <Link href={route('instructors.show', instructor.id)}>
+                  {frontend.courses_by_instructor ?? 'Courses By Instructor'}
+               </Link>
             </Button>
          </div>
 
@@ -91,6 +94,13 @@ const Instructor = () => {
                <RatingStars rating={total_exam_average_rating || 0} starClass="h-4 w-4" />
             </div>
          </div>
+
+         {biography ? (
+            <div className="mt-6 space-y-2">
+               <h4 className="text-sm font-semibold">{frontend.instructor_biography ?? 'Instructor Biography'}</h4>
+               <p className="text-muted-foreground max-w-prose whitespace-pre-wrap text-sm leading-relaxed">{biography}</p>
+            </div>
+         ) : null}
       </div>
    );
 };

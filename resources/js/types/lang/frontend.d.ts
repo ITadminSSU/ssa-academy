@@ -173,6 +173,8 @@ interface FrontendLang {
    outcomes: string;
 
    view_details: string;
+   instructor_biography: string;
+   courses_by_instructor: string;
    students: string;
    language: string;
    level: string;

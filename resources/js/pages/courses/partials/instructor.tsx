@@ -13,6 +13,7 @@ const Instructor = ({ course }: { course: Course }) => {
    const { instructor } = course;
    const { user, courses } = instructor;
    const enrollmentsCount = courses.reduce((acc, course) => acc + (course.enrollments_count || 0), 0);
+   const biography = instructor.biography?.trim() || '';
 
    return (
       <div>
@@ -22,8 +23,8 @@ const Instructor = ({ course }: { course: Course }) => {
          <div className="flex items-center gap-4">
             <Link href={route('instructors.show', instructor.id)}>
                <Avatar className="h-12 w-12">
-                  <AvatarImage src={user.photo || ''} alt="@shadcn" className="object-cover" />
-                  <AvatarFallback>CN</AvatarFallback>
+                  <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
+                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                </Avatar>
             </Link>
 
@@ -43,10 +44,12 @@ const Instructor = ({ course }: { course: Course }) => {
             </div>
          </div>
 
-         <div className="mt-6 flex gap-8">
+         <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
             <div className="flex items-center gap-2">
                <Users className="h-5 w-5 text-muted-foreground" />
-               <span>{enrollmentsCount} {frontend.students}</span>
+               <span>
+                  {enrollmentsCount} {frontend.students}
+               </span>
             </div>
             <div className="flex items-center gap-2">
                <Book className="h-5 w-5 text-muted-foreground" />
@@ -58,8 +61,17 @@ const Instructor = ({ course }: { course: Course }) => {
             </div>
          </div>
 
-         <Button className="mt-6">
-            <Link href={route('instructors.show', instructor.id)}>{frontend.view_details}</Link>
+         {biography ? (
+            <div className="mt-6 space-y-2">
+               <h4 className="text-sm font-semibold">{frontend.instructor_biography ?? 'Instructor Biography'}</h4>
+               <p className="text-muted-foreground max-w-prose whitespace-pre-wrap text-sm leading-relaxed">{biography}</p>
+            </div>
+         ) : null}
+
+         <Button asChild className="mt-6">
+            <Link href={route('instructors.show', instructor.id)}>
+               {frontend.courses_by_instructor ?? 'Courses By Instructor'}
+            </Link>
          </Button>
       </div>
    );
