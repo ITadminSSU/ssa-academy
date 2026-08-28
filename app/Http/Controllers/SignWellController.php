@@ -7,7 +7,6 @@ use App\Services\LegalAgreementService;
 use App\Services\SignWellService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Inertia\Inertia;
 
 class SignWellController extends Controller
 {
@@ -48,11 +47,7 @@ class SignWellController extends Controller
         try {
             $url = $this->signWell->startSigning($user->fresh());
 
-            return Inertia::render('legal/signwell-embed', [
-                'signingUrl' => $url,
-                'completeUrl' => route('signwell.complete', ['document_status' => 'completed'], true),
-                'cancelUrl' => route('legal.agreement.show'),
-            ]);
+            return redirect()->away($url);
         } catch (\Throwable $e) {
             Log::warning('SignWell start failed', [
                 'user_id' => $user->id,

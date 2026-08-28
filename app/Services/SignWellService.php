@@ -119,7 +119,8 @@ class SignWellService
 
         $documentId = (string) ($response['id'] ?? '');
         $recipient = $this->findStudentRecipient($response['recipients'] ?? [], $user, $studentPlaceholder);
-        $signingUrl = (string) ($recipient['embedded_signing_url'] ?? $recipient['signing_url'] ?? '');
+        // Prefer the hosted signing page so the PDF renders outside the academy iframe.
+        $signingUrl = (string) ($recipient['signing_url'] ?? $recipient['embedded_signing_url'] ?? '');
 
         if ($documentId === '' || $signingUrl === '') {
             Log::error('SignWell response missing signing URL', [
