@@ -36,12 +36,7 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
             <Alert>
                <Lock className="h-4 w-4" />
                <AlertTitle>Quiz locked</AlertTitle>
-               <AlertDescription>
-                  Submit all course assignments before taking this quiz.
-                  {courseGates.pending_assignments_count > 0
-                     ? ` ${courseGates.pending_assignments_count} assignment(s) still need trainer approval.`
-                     : ''}
-               </AlertDescription>
+               <AlertDescription>Complete all video lessons before taking this quiz.</AlertDescription>
             </Alert>
          </Card>
       );

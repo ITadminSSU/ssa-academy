@@ -38,7 +38,7 @@ class QuizSubmissionController extends Controller
         }
 
         if (!$this->courseCompletionGateService->canAccessQuiz($quiz->course, $request->user_id, $quiz->id)) {
-            return back()->with('error', 'Submit all course assignments before taking the quiz.');
+            return back()->with('error', 'Complete all video lessons before taking the quiz.');
         }
 
         $submission = $this->quizService->quizSubmission($request->validated());

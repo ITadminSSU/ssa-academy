@@ -7,6 +7,7 @@ class QuantityTakeoffGradingService
     /**
      * @param array<int, array{key: string, item: string, unit: string, expected_qty: float, tolerance_override?: float|null}> $answerKeyLines
      * @param array{quantities?: array<string, mixed>, line_overrides?: array<string, bool|null>} $answerData
+     * @param float|null $defaultAbsoluteTolerance When set, unused per-line overrides use this ± band instead of exam 1%/unit floors.
      * @return array{
      *     marks_obtained: float,
      *     is_correct: bool,
@@ -16,7 +17,7 @@ class QuantityTakeoffGradingService
      *     grading_breakdown: array<int, array<string, mixed>>
      * }
      */
-    public function grade(array $answerKeyLines, array $answerData, float $totalMarks): array
+    public function grade(array $answerKeyLines, array $answerData, float $totalMarks, ?float $defaultAbsoluteTolerance = null): array
     {
         $submitted = collect($answerData['quantities'] ?? [])
             ->mapWithKeys(fn ($value, $key) => [(string) $key => $this->parseSubmittedValue($value)])
@@ -30,7 +31,7 @@ class QuantityTakeoffGradingService
             $key = $line['key'];
             $expected = (float) $line['expected_qty'];
             $submittedValue = $submitted[$key] ?? null;
-            $tolerance = $this->toleranceForLine($line, $expected, $line['unit']);
+            $tolerance = $this->toleranceForLine($line, $expected, $line['unit'] ?? '', $defaultAbsoluteTolerance);
             $autoCorrect = $submittedValue !== null && abs($submittedValue - $expected) <= $tolerance;
             $finalCorrect = array_key_exists($key, $lineOverrides)
                 ? (bool) $lineOverrides[$key]
@@ -88,10 +89,14 @@ class QuantityTakeoffGradingService
     /**
      * @param array{unit?: string, tolerance_override?: float|null} $line
      */
-    private function toleranceForLine(array $line, float $expected, string $unit): float
+    private function toleranceForLine(array $line, float $expected, string $unit, ?float $defaultAbsoluteTolerance = null): float
     {
         if (isset($line['tolerance_override']) && $line['tolerance_override'] !== null && $line['tolerance_override'] !== '') {
             return max(0, (float) $line['tolerance_override']);
+        }
+
+        if ($defaultAbsoluteTolerance !== null) {
+            return max(0, $defaultAbsoluteTolerance);
         }
 
         return $this->toleranceForUnit($unit, $expected);

@@ -285,6 +285,11 @@ class Course extends Model implements HasMedia
         return $this->hasMany(CourseAssignment::class)->orderBy('created_at', 'desc');
     }
 
+    public function usExperiencePlans(): HasMany
+    {
+        return $this->hasMany(UsExperiencePlan::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function sections(): HasMany
     {
         return $this->hasMany(CourseSection::class)->orderBy('sort', 'asc');

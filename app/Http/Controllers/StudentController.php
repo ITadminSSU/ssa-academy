@@ -15,6 +15,7 @@ use App\Services\Course\CourseService;
 use App\Services\Course\CourseWishlistService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\StudentService;
+use App\Services\UsExperience\UsExperienceUnlockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -39,6 +40,7 @@ class StudentController extends Controller
         protected CourseWishlistService $wishlistService,
         protected CourseFinalExamService $courseFinalExamService,
         protected SubscriptionAccessService $subscriptionAccess,
+        protected UsExperienceUnlockService $usExperienceUnlock,
     ) {}
 
     /**
@@ -113,6 +115,10 @@ class StudentController extends Controller
             return redirect()->route('student.course.show', ['id' => $id, 'tab' => 'modules']);
         }
 
+        if ($tab === 'assignments') {
+            return redirect()->route('student.course.show', ['id' => $id, 'tab' => 'us-experience']);
+        }
+
         $user = Auth::user();
         $course = $this->studentService->getEnrolledCourse($id, $user);
 
@@ -142,16 +148,10 @@ class StudentController extends Controller
         $courseGates = $this->courseCompletionGateService->getGateStatus($course, $user->id, $completion, $watchHistory);
         $subscriptionAccess = $this->subscriptionAccess->toFrontendPayload($user, $course);
 
-        if ($tab === 'assignments' && !$courseGates['assignments_unlocked']) {
-            return redirect()
-                ->route('student.course.show', ['id' => $id, 'tab' => 'modules'])
-                ->with('error', 'Complete all video lessons before accessing assignments.');
-        }
-
         if ($tab === 'quizzes' && !$courseGates['quizzes_unlocked']) {
             return redirect()
-                ->route('student.course.show', ['id' => $id, 'tab' => 'assignments'])
-                ->with('error', 'Submit assignments and receive trainer approval before accessing quizzes.');
+                ->route('student.course.show', ['id' => $id, 'tab' => 'modules'])
+                ->with('error', 'Complete all video lessons before accessing quizzes.');
         }
 
         $certificate = null;
@@ -172,6 +172,9 @@ class StudentController extends Controller
             'courseGates' => $courseGates,
             'certificate' => $certificate,
             'subscriptionAccess' => $subscriptionAccess,
+            'usExperience' => $tab === 'us-experience'
+                ? $this->usExperienceUnlock->studentOverview($course, $user)
+                : null,
         ]);
     }
 

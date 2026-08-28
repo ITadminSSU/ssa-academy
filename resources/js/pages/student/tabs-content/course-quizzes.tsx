@@ -12,16 +12,11 @@ const CourseQuizzes = () => {
 
    return (
       <>
-         {courseGates?.has_assignments && !courseGates.quizzes_unlocked && (
+         {courseGates && !courseGates.quizzes_unlocked && (
             <Alert className="mb-4">
                <Lock className="h-4 w-4" />
                <AlertTitle>Quizzes locked</AlertTitle>
-               <AlertDescription>
-                  Complete assignments (download sample, submit, and receive trainer Passed/Approved status) before taking quizzes
-                  {courseGates.pending_assignments_count > 0
-                     ? ` (${courseGates.pending_assignments_count} remaining).`
-                     : '.'}
-               </AlertDescription>
+               <AlertDescription>Complete all video lessons before taking quizzes.</AlertDescription>
             </Alert>
          )}
 

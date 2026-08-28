@@ -3,10 +3,9 @@ import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
-import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FileText, FlaskConical, FolderInput, Settings } from 'lucide-react';
+import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FolderInput, Ruler, Settings, FlaskConical } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { ReactNode } from 'react';
-import Assignment from './partials/assignment';
 import Basic from './partials/basic';
 import CourseUpdateHeader from './partials/course-update-header';
 import Curriculum from './partials/curriculum';
@@ -15,7 +14,7 @@ import Media from './partials/media';
 import Pricing from './partials/pricing';
 import SEO from './partials/seo';
 import ActivitySubmissions from './partials/activity-submissions';
-import Submissions from './partials/submissions';
+import UsExperiencePlans from './partials/us-experience-plans';
 
 export interface CourseUpdateProps extends SharedData {
    tab?: string;
@@ -41,10 +40,13 @@ export interface CourseUpdateProps extends SharedData {
    stripeActive?: boolean;
    stripeSynced?: boolean;
    launchNotificationCount?: number;
+   usExperiencePlans?: UsExperiencePlan[];
+   usExperiencePlan?: UsExperiencePlan | null;
+   usExperienceDefaultTolerance?: number;
 }
 
 const Update = (props: CourseUpdateProps) => {
-   const { tab, assignment, course, translate } = props;
+   const { tab, course, translate } = props;
    const { button } = translate;
 
    const tabs = [
@@ -57,10 +59,10 @@ const Update = (props: CourseUpdateProps) => {
       },
       {
          id: nanoid(),
-         name: 'Assignment',
-         slug: 'assignment',
-         Icon: FileText,
-         Component: assignment ? Submissions : Assignment,
+         name: button.build_your_us_experience ?? 'Build Your US Experience',
+         slug: 'us-experience',
+         Icon: Ruler,
+         Component: UsExperiencePlans,
       },
       {
          id: nanoid(),

@@ -25,6 +25,7 @@ export interface CourseDetailsProps extends SharedData {
    canViewCurriculum?: boolean;
    launchOffer?: Record<string, unknown> | null;
    launchNotifySubscribed?: boolean;
+   usExperiencePreview?: UsExperiencePublicGroup[];
 }
 
 const Show = ({ course, system, translate }: CourseDetailsProps & { translate: any }) => {

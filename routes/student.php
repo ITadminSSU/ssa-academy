@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ChunkedUploadController;
+use App\Http\Controllers\Course\UsExperienceStudentController;
 use App\Http\Controllers\Course\AssignmentSampleController;
 use App\Http\Controllers\Course\AssignmentSubmissionController;
 use App\Http\Controllers\Course\CourseEnrollmentController;
@@ -77,6 +78,13 @@ Route::middleware('auth')->group(function () {
 Route::get('assignment/{assignment}/sample/download', [AssignmentSampleController::class, 'download'])
     ->middleware('auth')
     ->name('assignment.sample.download');
+
+Route::middleware('auth')->group(function () {
+    Route::get('us-experience/plans/{plan}/pack', [UsExperienceStudentController::class, 'downloadPack'])
+        ->name('us-experience.pack');
+    Route::post('us-experience/plans/{plan}/submit', [UsExperienceStudentController::class, 'submit'])
+        ->name('us-experience.submit');
+});
 
 // assignment submission route
 Route::controller(AssignmentSubmissionController::class)->group(function () {

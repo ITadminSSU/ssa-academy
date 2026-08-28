@@ -71,10 +71,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
                <Lock className="h-5 w-5 shrink-0" />
                <QuizIcon quiz={quiz} latestSubmission={null} />
             </div>
-            <p className="text-muted-foreground max-w-xs text-right text-sm">
-               Submit {courseGates?.pending_assignments_count || 'all'} assignment
-               {(courseGates?.pending_assignments_count || 0) === 1 ? '' : 's'} first
-            </p>
+            <p className="text-muted-foreground max-w-xs text-right text-sm">Complete all video lessons first</p>
          </div>
       );
    }

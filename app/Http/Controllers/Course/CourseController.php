@@ -29,6 +29,7 @@ use App\Services\LiveClass\ZoomLiveService;
 use App\Services\Payment\CourseStripeSyncService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionAccessService;
+use App\Services\UsExperience\UsExperiencePlanService;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -50,6 +51,7 @@ class CourseController extends Controller
         protected StripeCustomerService $stripeCustomer,
         protected CourseStripeSyncService $courseStripeSync,
         protected CourseLaunchNotificationService $launchNotifications,
+        protected UsExperiencePlanService $usExperiencePlans,
     ) {}
 
     public function index(Request $request)
@@ -262,6 +264,7 @@ class CourseController extends Controller
                         $user,
                         $user?->email,
                     ),
+                    'usExperiencePreview' => $this->usExperiencePlans->publicTease($course),
                 ]
             )->withViewData([
                 'metaTitle' => $pageTitle,
@@ -321,6 +324,19 @@ class CourseController extends Controller
             ? $this->activitySubmissionService->getSubmissionsForCourse((int) $course->id, $request->all())
             : null;
 
+        $usExperiencePlans = ($tab === 'us-experience' || $request->plan)
+            ? $this->usExperiencePlans->listForTrainer($course)
+            : [];
+        $usExperiencePlan = null;
+        if ($request->plan) {
+            $usExperiencePlan = \App\Models\Course\UsExperiencePlan::query()
+                ->where('course_id', $course->id)
+                ->find($request->plan);
+            if ($usExperiencePlan) {
+                $usExperiencePlan = $usExperiencePlan->toTrainerArray();
+            }
+        }
+
         return Inertia::render(
             'dashboard/courses/update',
             [
@@ -352,6 +368,9 @@ class CourseController extends Controller
                 'stripeActive' => $this->stripeCustomer->isStripeActive(),
                 'stripeSynced' => $this->courseStripeSync->isSynced($course),
                 'launchNotificationCount' => $this->launchNotifications->pendingCountForCourse($course),
+                'usExperiencePlans' => $usExperiencePlans,
+                'usExperiencePlan' => $usExperiencePlan,
+                'usExperienceDefaultTolerance' => (float) config('us_experience.default_tolerance', 2),
             ]
         );
     }

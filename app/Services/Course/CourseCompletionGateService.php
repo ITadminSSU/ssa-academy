@@ -22,13 +22,13 @@ class CourseCompletionGateService
     /**
      * Linear workflow gates:
      * 1. Video phase — all lessons watched (videos at 100%).
-     * 2. Assignment phase — sample downloaded, submitted, trainer Passed/Approved.
-     * 3. Quiz phase — all quizzes passed.
-     * 4. Certification — auto-issued when quizzes complete.
+     * 2. Quiz phase — all quizzes passed. Classic course assignments are not a gate.
+     * 3. Certification — auto-issued when quizzes complete (or all lessons if there are no quizzes).
+     * Practice plans (Build Your US Experience) never block the certificate.
      */
     public function getGateStatus(Course $course, int $userId, ?array $completion = null, ?WatchHistory $watchHistory = null): array
     {
-        $course->loadMissing(['assignments', 'sections.section_lessons']);
+        $course->loadMissing(['sections.section_lessons']);
 
         $watchHistory ??= WatchHistory::query()
             ->where('course_id', $course->id)
@@ -36,7 +36,7 @@ class CourseCompletionGateService
             ->first();
 
         $quizzes = SectionQuiz::where('course_id', $course->id)->get();
-        $hasAssignments = $course->assignments->isNotEmpty();
+        $hasAssignments = false;
         $hasQuizzes = $quizzes->isNotEmpty();
         $hasVideoLessons = $this->lessonWatchProgress->getVideoLessons($course)->isNotEmpty();
 
@@ -48,26 +48,21 @@ class CourseCompletionGateService
             ? $this->lessonWatchProgress->allLessonsCompleted($course, $watchHistory)
             : false;
 
-        $assignmentsUnlocked = $videosCompleted;
-        $assignmentsApproved = $this->hasApprovedAllAssignments($course, $userId);
-        $assignmentsSubmitted = $this->hasSubmittedAllAssignments($course, $userId);
+        $assignmentsUnlocked = true;
+        $assignmentsApproved = true;
+        $assignmentsSubmitted = true;
 
-        $quizzesUnlocked = !$hasAssignments || $assignmentsApproved;
+        $quizzesUnlocked = $videosCompleted;
         $allQuizzesPassed = $this->hasPassedAllQuizzes($quizzes, $userId);
 
-        $completionPercent = (float) ($completion['completion'] ?? 0);
         $certificateUnlocked = $hasQuizzes
             ? $allQuizzesPassed
-            : ($allLessonsCompleted && (!$hasAssignments || $assignmentsApproved));
+            : $allLessonsCompleted;
 
-        $pendingAssignments = $hasAssignments && !$assignmentsApproved
-            ? $this->countPendingAssignments($course, $userId)
-            : 0;
+        $pendingAssignments = 0;
 
         $currentPhase = $this->resolveCurrentPhase(
             $videosCompleted,
-            $hasAssignments,
-            $assignmentsApproved,
             $hasQuizzes,
             $allQuizzesPassed,
             $certificateUnlocked,
@@ -226,8 +221,6 @@ class CourseCompletionGateService
 
     private function resolveCurrentPhase(
         bool $videosCompleted,
-        bool $hasAssignments,
-        bool $assignmentsApproved,
         bool $hasQuizzes,
         bool $allQuizzesPassed,
         bool $certificateUnlocked,
@@ -236,19 +229,11 @@ class CourseCompletionGateService
             return 'completed';
         }
 
-        if ($hasQuizzes && $assignmentsApproved) {
-            return 'quiz';
-        }
-
-        if ($hasAssignments && $videosCompleted) {
-            return 'assignment';
-        }
-
         if (!$videosCompleted) {
             return 'video';
         }
 
-        if ($hasQuizzes) {
+        if ($hasQuizzes && !$allQuizzesPassed) {
             return 'quiz';
         }
 

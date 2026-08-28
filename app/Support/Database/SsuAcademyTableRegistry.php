@@ -51,6 +51,8 @@ class SsuAcademyTableRegistry
             'course_sections',
             'course_wishlists',
             'courses',
+            'us_experience_attempts',
+            'us_experience_plans',
             'exam_attempt_answers',
             'exam_attempts',
             'exam_coupons',

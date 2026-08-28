@@ -8,11 +8,11 @@ import { StudentCourseProps } from '@/types/page';
 import { Head, Link } from '@inertiajs/react';
 import { ReactNode } from 'react';
 import Layout from './partials/layout';
-import CourseAssignments from './tabs-content/course-assignments';
 import CourseCertificate from './tabs-content/course-certificate';
 import CourseModules from './tabs-content/course-modules';
 import CourseQuizzes from './tabs-content/course-quizzes';
 import CourseResources from './tabs-content/course-resources';
+import UsExperience from './tabs-content/us-experience';
 import SubscriptionAccessBanner from '@/pages/course-player/partials/subscription-access-banner';
 
 const Course = (props: StudentCourseProps) => {
@@ -25,8 +25,8 @@ const Course = (props: StudentCourseProps) => {
          label: 'Modules',
       },
       {
-         value: 'assignments',
-         label: 'Assignments',
+         value: 'us-experience',
+         label: 'Build Your US Experience',
       },
       {
          value: 'quizzes',
@@ -46,8 +46,8 @@ const Course = (props: StudentCourseProps) => {
       switch (tab) {
          case 'modules':
             return <CourseModules />;
-         case 'assignments':
-            return <CourseAssignments />;
+         case 'us-experience':
+            return <UsExperience />;
          case 'quizzes':
             return <CourseQuizzes />;
          case 'resources':

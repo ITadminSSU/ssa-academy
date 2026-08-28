@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Course\CategoryChildController;
+use App\Http\Controllers\Course\UsExperiencePlanController;
 use App\Http\Controllers\Course\CourseAssignmentController;
 use App\Http\Controllers\Course\CourseStripeSyncController;
 use App\Http\Controllers\Course\CourseCategoryController;
@@ -113,6 +114,19 @@ Route::prefix('dashboard/trainer')->group(function () {
       Route::post('section/assignment', 'store')->name('assignment.store');
       Route::put('section/assignment/{id}', 'update')->name('assignment.update');
       Route::delete('section/assignment/{id}', 'destroy')->name('assignment.delete');
+   });
+
+   Route::prefix('courses/{course}/us-experience/plans')->name('courses.us-experience.')->group(function () {
+      Route::post('/', [UsExperiencePlanController::class, 'store'])->name('store');
+      Route::put('{plan}', [UsExperiencePlanController::class, 'update'])->name('update');
+      Route::delete('{plan}', [UsExperiencePlanController::class, 'destroy'])->name('destroy');
+      Route::post('{plan}/move', [UsExperiencePlanController::class, 'move'])->name('move');
+      Route::post('{plan}/drawings', [UsExperiencePlanController::class, 'addDrawing'])->name('drawings.store');
+      Route::post('{plan}/drawings/remove', [UsExperiencePlanController::class, 'removeDrawing'])->name('drawings.destroy');
+      Route::post('{plan}/answer-key', [UsExperiencePlanController::class, 'importAnswerKey'])->name('answer-key');
+      Route::post('{plan}/student-template', [UsExperiencePlanController::class, 'saveStudentTemplate'])->name('student-template');
+      Route::post('{plan}/tutorial', [UsExperiencePlanController::class, 'saveTutorial'])->name('tutorial');
+      Route::post('{plan}/tolerances', [UsExperiencePlanController::class, 'saveTolerances'])->name('tolerances');
    });
 
    // Route::post('assignment/submission/grade/{id}', [AssignmentSubmissionController::class, 'update'])->name('assignment.submission.grade');
