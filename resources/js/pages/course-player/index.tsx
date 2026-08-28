@@ -2,6 +2,7 @@ import ErrorBoundary from '@/components/error-boundary';
 import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { useContentProtection } from '@/hooks/use-content-protection';
 import Main from '@/layouts/main';
+import { clearCoursePlayerProgress, useCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { getCompletedContents, getCourseCompletion } from '@/lib/utils';
 import Footer from '@/pages/course-player/layout/footer';
 import { CoursePlayerProps } from '@/types/page';
@@ -17,13 +18,18 @@ import QuizViewer from './partials/quiz-viewer';
 import SubscriptionAccessBanner from './partials/subscription-access-banner';
 
 const Index = (props: CoursePlayerProps) => {
-   const { type, watching, watchHistory } = props;
+   const { type, watching } = props;
+   const { watchHistory } = useCoursePlayerProgress();
    const [sidebarWidth, setSidebarWidth] = useState('calc(var(--spacing) * 100)');
 
    useContentProtection(true);
 
    const completed = getCompletedContents(watchHistory);
    const completion = getCourseCompletion(props.course, completed);
+
+   useEffect(() => {
+      return () => clearCoursePlayerProgress();
+   }, []);
 
    useEffect(() => {
       if (type === 'lesson' && watching && isVideoLesson(watching as SectionLesson)) {

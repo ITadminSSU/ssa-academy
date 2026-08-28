@@ -3,7 +3,7 @@ import { useSecureVideoStream, type SecureVideoPlayback } from '@/hooks/use-secu
 import { useVideoPlayerGuards } from '@/hooks/use-video-player-guards';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
    source: {
@@ -264,8 +264,8 @@ const VideoPlayer = ({
          <BunnyEmbedPlayer
             key={embedUrl}
             embedUrl={embedUrl}
-            onEnded={onEnded}
-            onWatchProgress={onWatchProgress}
+            onEnded={() => onEndedRef.current?.()}
+            onWatchProgress={(currentTime, duration) => onWatchProgressRef.current?.(currentTime, duration)}
          />
       );
    }
@@ -290,4 +290,4 @@ const VideoPlayer = ({
    );
 };
 
-export default VideoPlayer;
+export default memo(VideoPlayer);

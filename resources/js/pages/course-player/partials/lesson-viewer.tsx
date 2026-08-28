@@ -3,14 +3,14 @@ import { Card } from '@/components/ui/card';
 import ErrorBoundary from '@/components/error-boundary';
 import PlayerNavLink from '@/components/player-nav-link';
 import VideoPlayer from '@/components/video-player';
-import { applyCoursePlayerProgress } from '@/lib/apply-course-player-progress';
+import { applyCoursePlayerProgress, useCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { isExternalVideoLesson, isVideoLesson } from '@/lib/lesson';
 import { cn, getCompletedContents } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CheckCircle2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Renderer } from 'richtor';
 import 'richtor/styles';
 import DocumentViewer from './document-viewer';
@@ -25,7 +25,8 @@ interface LessonViewerProps {
 
 const LessonViewer = ({ lesson }: LessonViewerProps) => {
    const { props } = usePage<CoursePlayerProps>();
-   const { translate, watchHistory, lessonWatchProgress, subscriptionAccess } = props;
+   const { translate, subscriptionAccess } = props;
+   const { watchHistory, lessonWatchProgress } = useCoursePlayerProgress();
    const { frontend } = translate;
    const canMarkProgress = subscriptionAccess?.can_mark_progress ?? true;
    const progressReported = useRef(false);
@@ -50,13 +51,24 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
          }
 
          try {
-            const { data } = await axios.post(route('course.player.complete', { watch_history: watchHistory.id }), {
-               item_id: lesson.id,
-               item_type: 'lesson',
-               from_video_end: fromVideoEnd ? 1 : 0,
-            });
+            const { data } = await axios.post(
+               route('course.player.complete', { watch_history: watchHistory.id }),
+               {
+                  item_id: lesson.id,
+                  item_type: 'lesson',
+                  from_video_end: fromVideoEnd ? 1 : 0,
+               },
+               {
+                  headers: {
+                     Accept: 'application/json',
+                     'X-Requested-With': 'XMLHttpRequest',
+                  },
+               },
+            );
 
-            applyCoursePlayerProgress(data);
+            if (data?.watchHistory) {
+               applyCoursePlayerProgress(data);
+            }
          } catch {
             setHasVideoEnded(true);
          }
@@ -115,6 +127,31 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
       await markLessonComplete(true);
    }, [lesson, canMarkProgress, watchHistory.id, markLessonComplete]);
 
+   const handleVideoEndedRef = useRef(handleVideoEnded);
+   handleVideoEndedRef.current = handleVideoEnded;
+   const stableOnEnded = useCallback(() => {
+      void handleVideoEndedRef.current();
+   }, []);
+
+   const reportWatchProgressRef = useRef(reportWatchProgress);
+   reportWatchProgressRef.current = reportWatchProgress;
+   const stableOnWatchProgress = useCallback((currentTime: number, duration: number) => {
+      void reportWatchProgressRef.current(currentTime, duration);
+   }, []);
+
+   const videoSource = useMemo(
+      () => ({
+         type: 'video' as const,
+         sources: [
+            {
+               src: lesson?.lesson_src || '',
+               type: 'video/mp4' as const,
+            },
+         ],
+      }),
+      [lesson?.lesson_src],
+   );
+
    if (!lesson) {
       return (
          <Card className="min-h-[60vh] w-full overflow-hidden rounded-lg">
@@ -171,18 +208,10 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                   secureStream={Boolean(lesson.stream_protected)}
                   lessonId={lesson.id}
                   initialPlayback={lesson.video_playback ?? null}
-                  source={{
-                     type: 'video' as const,
-                     sources: [
-                        {
-                           src: lesson.lesson_src || '',
-                           type: 'video/mp4' as const,
-                        },
-                     ],
-                  }}
+                  source={videoSource}
                   translate={translate}
-                  onEnded={handleVideoEnded}
-                  onWatchProgress={reportWatchProgress}
+                  onEnded={stableOnEnded}
+                  onWatchProgress={stableOnWatchProgress}
                />
             </ErrorBoundary>
          )}

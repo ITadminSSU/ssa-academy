@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useSidebar } from '@/components/ui/sidebar';
 import useScreen from '@/hooks/use-screen';
+import { useCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { getCompletedContents, getCourseCompletion } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
@@ -16,7 +17,8 @@ const Navbar = () => {
    const { screen } = useScreen();
    const { open, toggleSidebar } = useSidebar();
    const { props } = usePage<CoursePlayerProps>();
-   const { course, watchHistory } = props;
+   const { course } = props;
+   const { watchHistory } = useCoursePlayerProgress();
 
    const completed = getCompletedContents(watchHistory);
    const completion = getCourseCompletion(course, completed);

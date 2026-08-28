@@ -9,33 +9,51 @@ interface BunnyEmbedPlayerProps {
    onWatchProgress?: (currentTime: number, duration: number) => void;
 }
 
+function iframeSrcFor(embedUrl: string): string {
+   return embedUrl.includes('playerjs=') ? embedUrl : `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}playerjs=true`;
+}
+
 const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchProgress }: BunnyEmbedPlayerProps) => {
-   const iframeRef = useRef<HTMLIFrameElement>(null);
+   const hostRef = useRef<HTMLDivElement>(null);
+   const onEndedRef = useRef(onEnded);
+   const onWatchProgressRef = useRef(onWatchProgress);
    const lastReportedSecond = useRef(-1);
    const hasEnded = useRef(false);
 
-   const iframeSrc = embedUrl.includes('playerjs=')
-      ? embedUrl
-      : `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}playerjs=true`;
+   onEndedRef.current = onEnded;
+   onWatchProgressRef.current = onWatchProgress;
+
+   const iframeSrc = iframeSrcFor(embedUrl);
 
    useEffect(() => {
       void preloadPlayerJs();
    }, []);
 
+   // React never owns the iframe node. Bunny/player.js mutate it; a React-managed
+   // iframe is what throws insertBefore and shows the lesson error pane.
    useEffect(() => {
+      const host = hostRef.current;
+
+      if (!host) {
+         return;
+      }
+
       hasEnded.current = false;
       lastReportedSecond.current = -1;
 
-      const iframe = iframeRef.current;
-      if (!iframe) {
-         return;
-      }
+      const iframe = document.createElement('iframe');
+      iframe.src = iframeSrc;
+      iframe.title = title;
+      iframe.className = 'absolute inset-0 h-full w-full border-0';
+      iframe.allow = 'accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;';
+      iframe.allowFullscreen = true;
+      host.replaceChildren(iframe);
 
       let player: PlayerJsInstance | null = null;
       let cancelled = false;
 
       const reportProgress = (currentTime: number, duration: number) => {
-         if (!onWatchProgress || duration <= 0) {
+         if (!onWatchProgressRef.current || duration <= 0) {
             return;
          }
 
@@ -45,7 +63,7 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
          }
 
          lastReportedSecond.current = second;
-         onWatchProgress(second, duration);
+         onWatchProgressRef.current(second, duration);
       };
 
       const handleEnded = (duration = 0) => {
@@ -55,11 +73,11 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
 
          hasEnded.current = true;
 
-         if (onWatchProgress && duration > 0) {
-            onWatchProgress(duration, duration);
+         if (onWatchProgressRef.current && duration > 0) {
+            onWatchProgressRef.current(duration, duration);
          }
 
-         onEnded?.();
+         onEndedRef.current?.();
       };
 
       const handleTimeUpdate = (currentTime: number, duration: number) => {
@@ -74,11 +92,11 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
          try {
             await preloadPlayerJs();
 
-            if (cancelled || !iframeRef.current || !window.playerjs?.Player) {
+            if (cancelled || !iframe.isConnected || !window.playerjs?.Player) {
                return;
             }
 
-            player = new window.playerjs.Player(iframeRef.current);
+            player = new window.playerjs.Player(iframe);
 
             player.on('ready', () => {
                if (cancelled || !player) {
@@ -142,25 +160,20 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
          window.removeEventListener('message', handleMessage);
 
          if (player) {
-            player.off('timeupdate');
-            player.off('ended');
-            player.off('ready');
+            try {
+               player.off('timeupdate');
+               player.off('ended');
+               player.off('ready');
+            } catch {
+               // player.js can throw if the iframe was already detached.
+            }
          }
-      };
-   }, [iframeSrc, onEnded, onWatchProgress]);
 
-   return (
-      <div className="bg-muted relative aspect-video w-full overflow-hidden rounded-lg">
-         <iframe
-            ref={iframeRef}
-            src={iframeSrc}
-            title={title}
-            className="absolute inset-0 h-full w-full border-0"
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-            allowFullScreen
-         />
-      </div>
-   );
+         host.replaceChildren();
+      };
+   }, [iframeSrc, title]);
+
+   return <div ref={hostRef} className="bg-muted relative aspect-video w-full overflow-hidden rounded-lg" />;
 };
 
 export default BunnyEmbedPlayer;

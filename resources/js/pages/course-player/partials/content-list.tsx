@@ -1,6 +1,7 @@
 import CurriculumSectionList from '@/components/curriculum-section-list';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { CoursePlayerProps } from '@/types/page';
 import { Link, router, usePage } from '@inertiajs/react';
 import Lesson from './lesson';
@@ -17,7 +18,8 @@ interface ContentListProps {
 
 const ContentList = ({ completedContents, courseCompletion }: ContentListProps) => {
    const { props } = usePage<CoursePlayerProps>();
-   const { course, watchHistory, translate, subscriptionAccess } = props;
+   const { course, translate, subscriptionAccess } = props;
+   const { watchHistory } = useCoursePlayerProgress();
    const { common, button } = translate;
    const canFinishCourse = subscriptionAccess?.can_finish_course ?? true;
 

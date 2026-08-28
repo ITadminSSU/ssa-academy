@@ -1,13 +1,14 @@
 import PlayerNavLink from '@/components/player-nav-link';
 import { Button } from '@/components/ui/button';
+import { useCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { cn, getCompletedContents } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const LessonControl = ({ className }: { className?: string }) => {
-   const { props } = usePage<CoursePlayerProps>();
-   const { watchHistory, subscriptionAccess } = props;
+   const { subscriptionAccess } = usePage<CoursePlayerProps>().props;
+   const { watchHistory } = useCoursePlayerProgress();
    const completed = getCompletedContents(watchHistory);
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';
 
