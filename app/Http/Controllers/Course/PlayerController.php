@@ -279,10 +279,14 @@ class PlayerController extends Controller
             abort(403);
         }
 
-        $course = $watch_history->course()->firstOrFail();
+        $course = $watch_history->course()
+            ->with(['sections.section_lessons', 'sections.section_quizzes'])
+            ->firstOrFail();
 
         if (!$this->subscriptionAccess->canMarkProgress($user, $course)) {
-            return back()->with('error', 'Your subscription is inactive. Resubscribe to mark lessons complete.');
+            return response()->json([
+                'message' => 'Your subscription is inactive. Resubscribe to mark lessons complete.',
+            ], 403);
         }
 
         $request->validate([
@@ -295,14 +299,18 @@ class PlayerController extends Controller
             (string) $watch_history->current_watching_id !== (string) $request->item_id
             || $watch_history->current_watching_type !== $request->item_type
         ) {
-            return back()->with('error', 'Can only mark the lesson you are currently viewing as complete.');
+            return response()->json([
+                'message' => 'Can only mark the lesson you are currently viewing as complete.',
+            ], 422);
         }
 
         if ($request->item_type === 'lesson') {
             $lesson = SectionLesson::find($request->item_id);
 
             if ($lesson && $lesson->requires_submission) {
-                return back()->with('error', 'Submit your completed activity and wait for trainer approval before continuing.');
+                return response()->json([
+                    'message' => 'Submit your completed activity and wait for trainer approval before continuing.',
+                ], 422);
             }
 
             if ($lesson && $this->lessonWatchProgress->isVideoLesson($lesson)) {
@@ -314,14 +322,30 @@ class PlayerController extends Controller
                 ) {
                     $this->lessonWatchProgress->recordFullProgress($watch_history, $lesson->id);
                 } elseif (!$this->lessonWatchProgress->hasWatchedFully($watch_history, $lesson)) {
-                    return back()->with('error', 'Watch the entire video before marking this lesson complete.');
+                    return response()->json([
+                        'message' => 'Watch the entire video before marking this lesson complete.',
+                    ], 422);
                 }
             }
         }
 
-        $this->coursePlay->markItemComplete($watch_history, $request->item_id, $request->item_type);
+        $watch_history = $this->coursePlay->markItemComplete($watch_history, $request->item_id, $request->item_type);
 
-        return back();
+        $watchHistory = $this->coursePlay->watchHistory(
+            $course,
+            (string) $watch_history->current_watching_id,
+            (string) $watch_history->current_watching_type,
+            (string) $user->id,
+        );
+        $completion = $this->coursePlay->calculateCompletion($course, $watchHistory);
+        $courseGates = $this->courseCompletionGateService->getGateStatus($course, $user->id, $completion, $watchHistory);
+        $lessonWatchProgress = $this->lessonWatchProgress->getLessonProgress($watchHistory, $request->item_id);
+
+        return response()->json([
+            'watchHistory' => $watchHistory,
+            'courseGates' => $courseGates,
+            'lessonWatchProgress' => $lessonWatchProgress,
+        ]);
     }
 
     public function finish_course(WatchHistory $watch_history)

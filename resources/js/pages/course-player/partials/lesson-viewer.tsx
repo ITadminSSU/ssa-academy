@@ -3,10 +3,11 @@ import { Card } from '@/components/ui/card';
 import ErrorBoundary from '@/components/error-boundary';
 import PlayerNavLink from '@/components/player-nav-link';
 import VideoPlayer from '@/components/video-player';
+import { applyCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { isExternalVideoLesson, isVideoLesson } from '@/lib/lesson';
 import { cn, getCompletedContents } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
-import { router, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CheckCircle2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -43,25 +44,22 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
    }, [lesson?.id]);
 
    const markLessonComplete = useCallback(
-      (fromVideoEnd = false) => {
+      async (fromVideoEnd = false) => {
          if (!lesson || !canMarkProgress) {
             return;
          }
 
-         router.post(
-            route('course.player.complete', { watch_history: watchHistory.id }),
-            {
+         try {
+            const { data } = await axios.post(route('course.player.complete', { watch_history: watchHistory.id }), {
                item_id: lesson.id,
                item_type: 'lesson',
                from_video_end: fromVideoEnd ? 1 : 0,
-            },
-            {
-               preserveScroll: true,
-               preserveState: true,
-               only: ['watchHistory', 'courseGates', 'lessonWatchProgress'],
-               onError: () => setHasVideoEnded(true),
-            },
-         );
+            });
+
+            applyCoursePlayerProgress(data);
+         } catch {
+            setHasVideoEnded(true);
+         }
       },
       [lesson, watchHistory.id, canMarkProgress],
    );
@@ -114,7 +112,7 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
          // from_video_end still records full progress on the server.
       }
 
-      markLessonComplete(true);
+      await markLessonComplete(true);
    }, [lesson, canMarkProgress, watchHistory.id, markLessonComplete]);
 
    if (!lesson) {
