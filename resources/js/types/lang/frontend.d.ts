@@ -169,6 +169,7 @@ interface FrontendLang {
    no_reviews_found: string;
    course_curriculum: string;
    there_is_no_lesson_added: string;
+   curriculum_enrolled_only: string;
    requirements: string;
    outcomes: string;
 

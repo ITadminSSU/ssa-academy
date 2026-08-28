@@ -256,6 +256,7 @@ return [
             'no_reviews_found' => 'No reviews found.',
             'course_curriculum' => 'Course curriculum',
             'there_is_no_lesson_added' => 'There is no lesson added',
+            'curriculum_enrolled_only' => 'Course content is available exclusively to enrolled students.',
             'requirements' => 'Requirements',
             'outcomes' => 'Outcomes',
             'view_details' => 'View Details',

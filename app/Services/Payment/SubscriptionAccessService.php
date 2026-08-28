@@ -74,6 +74,21 @@ class SubscriptionAccessService
         return $this->getAccessMode($user, $course, $enrollment) !== 'none';
     }
 
+    /**
+     * Public course-page curriculum (module/lesson titles). Same bar as player
+     * access: guests, reserved deposits, and canceled seats cannot see it.
+     * Active and completed_only (lapsed) enrollments, plus admins and this
+     * course's instructor, can.
+     */
+    public function canViewPublicCurriculum(?User $user, Course $course, ?CourseEnrollment $enrollment = null): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->canAccessPlayer($user, $course, $enrollment);
+    }
+
     public function canAccessItem(
         User $user,
         Course $course,

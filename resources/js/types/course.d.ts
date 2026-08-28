@@ -75,6 +75,7 @@ interface Course extends TableCommon {
    expiry_type?: 'lifetime' | 'limited_time';
    expiry_duration?: string;
    training_hours?: string | null;
+   duration_seconds?: number;
    description?: string;
    requirements?: CourseRequirement[];
    outcomes?: CourseOutcome[];

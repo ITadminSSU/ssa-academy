@@ -120,6 +120,29 @@ it('returns none when there is no enrollment', function () {
     expect($this->service->canAccessPlayer($user, $course, null))->toBeFalse();
 });
 
+it('hides public curriculum from guests reserved seats and other instructors', function () {
+    $course = makeCourse();
+    $student = makeUser();
+    $otherInstructor = makeUser(['role' => 'instructor', 'instructor_id' => 99]);
+    $courseInstructor = makeUser(['role' => 'instructor', 'instructor_id' => 10]);
+    $admin = makeUser(['role' => 'admin']);
+    $reserved = makeEnrollment(EnrollmentAccessStatus::RESERVED);
+    $canceled = makeEnrollment(EnrollmentAccessStatus::CANCELED);
+    $active = makeEnrollment(EnrollmentAccessStatus::ACTIVE);
+    $lapsed = makeEnrollment(EnrollmentAccessStatus::SUSPENDED);
+
+    expect($this->service->canViewPublicCurriculum(null, $course, null))->toBeFalse();
+    expect($this->service->canViewPublicCurriculum($student, $course, null))->toBeFalse();
+    expect($this->service->canViewPublicCurriculum($student, $course, $reserved))->toBeFalse();
+    expect($this->service->canViewPublicCurriculum($student, $course, $canceled))->toBeFalse();
+    expect($this->service->canViewPublicCurriculum($otherInstructor, $course, null))->toBeFalse();
+
+    expect($this->service->canViewPublicCurriculum($student, $course, $active))->toBeTrue();
+    expect($this->service->canViewPublicCurriculum($student, $course, $lapsed))->toBeTrue();
+    expect($this->service->canViewPublicCurriculum($courseInstructor, $course, null))->toBeTrue();
+    expect($this->service->canViewPublicCurriculum($admin, $course, null))->toBeTrue();
+});
+
 it('allows employees through linked exam gate without subscription', function () {
     $user = makeUser(['user_type' => LearnerUserType::EMPLOYEE]);
 

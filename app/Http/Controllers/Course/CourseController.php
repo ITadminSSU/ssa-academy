@@ -227,6 +227,8 @@ class CourseController extends Controller
             : null;
         $launchOffer = app(\App\Services\Payment\LaunchOfferService::class)
             ->toFrontendPayload($course, $enrollment);
+        $canViewCurriculum = $this->subscriptionAccess->canViewPublicCurriculum($user, $course, $enrollment);
+        $this->courseService->preparePublicCourseCurriculum($course, $canViewCurriculum);
 
         if ($course->exists()) {
             // Generate meta tags for SEO and social sharing
@@ -253,6 +255,7 @@ class CourseController extends Controller
                     'reviews' => $reviews,
                     'totalReviews' => $totalReviews,
                     'subscriptionAccess' => $subscriptionAccess,
+                    'canViewCurriculum' => $canViewCurriculum,
                     'launchOffer' => $launchOffer,
                     'launchNotifySubscribed' => $this->launchNotifications->isSubscribed(
                         $course,

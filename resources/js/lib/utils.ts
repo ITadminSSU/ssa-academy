@@ -91,6 +91,10 @@ const formatDurationSeconds = (totalSeconds: number, format: DurationFormat): st
 export const getCourseDuration = (course: Course, format: DurationFormat = 'hhmmss'): string => {
    const sections = course?.sections ?? [];
 
+   if (sections.length === 0 && typeof course?.duration_seconds === 'number') {
+      return formatDurationSeconds(Math.max(0, course.duration_seconds), format);
+   }
+
    const totalSeconds = sections.reduce((totalTime, section) => {
       const lessonSeconds = (section.section_lessons ?? []).reduce((sectionTime, lesson) => {
          return sectionTime + parseDurationToSeconds(lesson.duration);

@@ -371,6 +371,74 @@ class CourseService extends MediaService
       return $course;
    }
 
+   /**
+    * Keep a duration total for the public course page, then drop module and
+    * lesson lists when the viewer is not allowed to see the curriculum.
+    */
+   function preparePublicCourseCurriculum(Course $course, bool $canView): Course
+   {
+      if (!$course->relationLoaded('sections')) {
+         return $course;
+      }
+
+      $course->setAttribute('duration_seconds', $this->sumCurriculumDurationSeconds($course));
+
+      if (!$canView) {
+         $course->unsetRelation('sections');
+         $course->setRelation('sections', collect());
+      }
+
+      return $course;
+   }
+
+   function sumCurriculumDurationSeconds(Course $course): int
+   {
+      if (!$course->relationLoaded('sections')) {
+         return (int) ($course->duration_seconds ?? 0);
+      }
+
+      return (int) $course->sections->sum(function ($section) {
+         $lessonSeconds = ($section->section_lessons ?? collect())->sum(function ($lesson) {
+            return $this->durationToSeconds($lesson->duration ?? null);
+         });
+
+         $quizSeconds = ($section->section_quizzes ?? collect())->sum(function ($quiz) {
+            $fromClock = $this->durationToSeconds($quiz->duration ?? null);
+
+            if ($fromClock > 0) {
+               return $fromClock;
+            }
+
+            return ((int) ($quiz->hours ?? 0) * 3600)
+               + ((int) ($quiz->minutes ?? 0) * 60)
+               + (int) ($quiz->seconds ?? 0);
+         });
+
+         return $lessonSeconds + $quizSeconds;
+      });
+   }
+
+   private function durationToSeconds(?string $duration): int
+   {
+      $duration = trim((string) $duration);
+
+      if ($duration === '' || $duration === '00:00:00') {
+         return 0;
+      }
+
+      $parts = array_map('intval', explode(':', $duration));
+
+      if (count($parts) === 3) {
+         return ($parts[0] * 3600) + ($parts[1] * 60) + $parts[2];
+      }
+
+      if (count($parts) === 2) {
+         return ($parts[0] * 60) + $parts[1];
+      }
+
+      return max(0, (int) $duration);
+   }
+
    function lastSectionLessonSort(Course $course): array
    {
       $maxSectionSort = $course->sections->max('sort') ?? 0;
