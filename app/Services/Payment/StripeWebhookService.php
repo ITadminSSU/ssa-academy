@@ -5,7 +5,9 @@ namespace App\Services\Payment;
 use App\Models\Course\Course;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
+use App\Support\StripeCheckoutIds;
 use Illuminate\Support\Facades\Log;
+use Modules\PaymentGateways\Services\PaymentService;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
 
@@ -15,6 +17,7 @@ class StripeWebhookService
         private StripeCustomerService $stripeCustomer,
         private SubscriptionService $subscriptions,
         private LaunchOfferEnrollmentService $launchOfferEnrollment,
+        private PaymentService $payment,
     ) {}
 
     public function handle(string $payload, ?string $signatureHeader): void
@@ -57,7 +60,15 @@ class StripeWebhookService
 
     protected function handleCheckoutSessionCompleted(object $session): void
     {
-        if (($session->mode ?? null) !== 'subscription' || empty($session->subscription)) {
+        $mode = $session->mode ?? null;
+
+        if ($mode === 'payment') {
+            $this->enrollOneTimeFromCheckoutSession($session);
+
+            return;
+        }
+
+        if ($mode !== 'subscription' || empty($session->subscription)) {
             return;
         }
 
@@ -66,6 +77,62 @@ class StripeWebhookService
         $this->recordLaunchBalanceFromSession($session);
 
         $this->subscriptions->activateFromCheckoutSession($session);
+    }
+
+    public function enrollOneTimeFromCheckoutSession(object $session): bool
+    {
+        if (($session->mode ?? null) !== 'payment') {
+            return false;
+        }
+
+        if (($session->payment_status ?? null) !== 'paid') {
+            return false;
+        }
+
+        $offerMode = (string) data_get($session, 'metadata.launch_offer_mode', 'legacy_one_time');
+        if ($offerMode !== '' && $offerMode !== 'legacy_one_time') {
+            return false;
+        }
+
+        $transactionId = StripeCheckoutIds::transactionId($session);
+        $itemType = (string) (data_get($session, 'metadata.item_type') ?: 'course');
+        $itemId = (string) data_get($session, 'metadata.item_id', '');
+        $userId = (string) (data_get($session, 'metadata.user_id') ?: ($session->client_reference_id ?? ''));
+        $couponCode = data_get($session, 'metadata.coupon_code');
+
+        if ($transactionId === '' || $itemId === '' || $userId === '' || ! in_array($itemType, ['course', 'exam'], true)) {
+            Log::warning('Stripe one-time webhook is missing enrollment data', [
+                'session_id' => $session->id ?? null,
+                'transaction_id' => $transactionId !== '' ? $transactionId : null,
+                'user_id' => $userId !== '' ? $userId : null,
+                'item_type' => $itemType,
+                'item_id' => $itemId !== '' ? $itemId : null,
+            ]);
+
+            return false;
+        }
+
+        try {
+            $this->payment->coursesBuy(
+                'stripe',
+                $itemType,
+                $itemId,
+                $transactionId,
+                0.0,
+                ($session->amount_total ?? 0) / 100,
+                $couponCode ? (string) $couponCode : null,
+                $userId,
+            );
+        } catch (\Throwable $exception) {
+            Log::error('Stripe one-time webhook failed', [
+                'session_id' => $session->id ?? null,
+                'message' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+
+        return true;
     }
 
     protected function recordLaunchBalanceFromSession(object $session): void
@@ -103,7 +170,7 @@ class StripeWebhookService
                 $user,
                 $course,
                 'stripe',
-                (string) ($session->payment_intent ?: $session->subscription ?: $session->id),
+                StripeCheckoutIds::transactionId($session),
                 $chargedAmount,
                 $couponCode ? (string) $couponCode : null,
                 $couponDiscount,

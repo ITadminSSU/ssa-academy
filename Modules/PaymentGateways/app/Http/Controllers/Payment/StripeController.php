@@ -16,8 +16,10 @@ use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionService;
 use App\Services\SettingsService;
 use App\Support\PaymentVoucherCopy;
+use App\Support\StripeCheckoutIds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Modules\PaymentGateways\Services\PaymentService;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
@@ -138,7 +140,7 @@ class StripeController extends Controller
                 ],
             ],
             'mode' => 'payment',
-            'success_url' => route('payments.stripe.success'),
+            'success_url' => StripeCheckoutIds::successUrl(),
             'cancel_url' => route('payments.stripe.cancel'),
             'client_reference_id' => (string) $user->id,
             'metadata' => [
@@ -201,7 +203,7 @@ class StripeController extends Controller
                 ],
             ],
             'mode' => 'payment',
-            'success_url' => route('payments.stripe.success'),
+            'success_url' => StripeCheckoutIds::successUrl(),
             'cancel_url' => route('payments.stripe.cancel'),
             'client_reference_id' => (string) $user->id,
             'metadata' => [
@@ -282,7 +284,7 @@ class StripeController extends Controller
                     'quantity' => 1,
                 ],
             ],
-            'success_url' => route('payments.stripe.success'),
+            'success_url' => StripeCheckoutIds::successUrl(),
             'cancel_url' => route('payments.stripe.cancel'),
             'client_reference_id' => (string) $user->id,
             'metadata' => [
@@ -423,7 +425,7 @@ class StripeController extends Controller
                     'quantity' => 1,
                 ],
             ],
-            'success_url' => route('payments.stripe.success'),
+            'success_url' => StripeCheckoutIds::successUrl(),
             'cancel_url' => route('payments.stripe.cancel'),
             'client_reference_id' => (string) $user->id,
             'metadata' => [
@@ -480,7 +482,7 @@ class StripeController extends Controller
                     'quantity' => 1,
                 ],
             ],
-            'success_url' => route('payments.stripe.success'),
+            'success_url' => StripeCheckoutIds::successUrl(),
             'cancel_url' => route('payments.stripe.cancel'),
             'client_reference_id' => (string) $user->id,
             'metadata' => [
@@ -519,39 +521,67 @@ class StripeController extends Controller
     {
         $user = Auth::user();
         $temp = getTempStore($user->id);
+        $tempProps = is_array($temp?->properties) ? $temp->properties : [];
 
-        if (! $temp || empty($temp->properties['stripe_id'])) {
+        $stripe_id = StripeCheckoutIds::sessionIdFromRequest(
+            $request->query('session_id'),
+            $tempProps['stripe_id'] ?? null,
+        );
+
+        if ($stripe_id === '') {
             return redirect()
                 ->route('category.courses', ['category' => 'all'])
                 ->with('error', 'Payment session expired. Please try again.');
         }
 
-        $from = $temp->properties['from'];
-        $item_type = $temp->properties['item_type'];
-        $item_id = $temp->properties['item_id'];
-        $stripe_id = $temp->properties['stripe_id'];
-        $tax_amount = $temp->properties['tax_amount'];
-        $billing_model = $temp->properties['billing_model'] ?? CourseBillingModel::ONE_TIME->value;
-        $offerMode = $temp->properties['launch_offer_mode'] ?? 'legacy_one_time';
-
-        if (! in_array($item_type, ['course', 'exam'], true)) {
-            return redirect()->route('student.index', ['tab' => 'courses'])
-                ->with('error', 'Invalid item type');
-        }
+        $from = $tempProps['from'] ?? null;
+        $item_type = $tempProps['item_type'] ?? null;
+        $item_id = $tempProps['item_id'] ?? null;
+        $tax_amount = $tempProps['tax_amount'] ?? 0;
+        $billing_model = $tempProps['billing_model'] ?? null;
+        $offerMode = $tempProps['launch_offer_mode'] ?? null;
 
         try {
             Stripe::setApiKey($this->stripeSecret);
-            $order = Session::retrieve($stripe_id);
-            $coupon_code = $temp->properties['coupon_code']
+            $order = Session::retrieve($stripe_id, ['expand' => ['payment_intent']]);
+
+            $sessionUserId = (string) (data_get($order, 'metadata.user_id') ?: ($order->client_reference_id ?? ''));
+            if ($sessionUserId !== '' && (string) $user->id !== $sessionUserId) {
+                return redirect()
+                    ->route('category.courses', ['category' => 'all'])
+                    ->with('error', 'Payment session expired. Please try again.');
+            }
+
+            $item_type = $item_type ?: (string) (data_get($order, 'metadata.item_type') ?: 'course');
+            $item_id = $item_id ?: data_get($order, 'metadata.item_id');
+            $billing_model = $billing_model
+                ?: (data_get($order, 'metadata.billing_model') ?: CourseBillingModel::ONE_TIME->value);
+            $offerMode = $offerMode
+                ?: (data_get($order, 'metadata.launch_offer_mode') ?: 'legacy_one_time');
+            $from = $from ?: 'web';
+
+            if (! in_array($item_type, ['course', 'exam'], true) || empty($item_id)) {
+                return redirect()->route('student.index', ['tab' => 'courses'])
+                    ->with('error', 'Invalid item type');
+            }
+
+            $coupon_code = $tempProps['coupon_code']
                 ?? data_get($order, 'metadata.coupon_code')
                 ?? data_get($order, 'subscription_details.metadata.coupon_code')
                 ?? null;
-            $coupon_discount = (float) ($temp->properties['coupon_discount'] ?? 0);
-            $charged_amount = (float) ($temp->properties['charged_amount'] ?? 0);
+            $coupon_discount = (float) ($tempProps['coupon_discount'] ?? data_get($order, 'metadata.coupon_discount', 0));
+            $charged_amount = (float) ($tempProps['charged_amount'] ?? data_get($order, 'metadata.charged_amount', 0));
             $course = $item_type === 'course' ? Course::find($item_id) : null;
+            $transactionId = StripeCheckoutIds::transactionId($order);
 
             if ($offerMode === 'deposit' && $course) {
                 if ($order->payment_status !== 'paid') {
+                    return redirect()
+                        ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
+                        ->with('error', 'Payment was not completed. Please try again.');
+                }
+
+                if ($transactionId === '') {
                     return redirect()
                         ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
                         ->with('error', 'Payment was not completed. Please try again.');
@@ -561,7 +591,7 @@ class StripeController extends Controller
                     $user,
                     $course,
                     'stripe',
-                    (string) ($order->payment_intent ?: $order->id),
+                    $transactionId,
                     ($order->amount_total ?? 0) / 100,
                 );
 
@@ -579,11 +609,17 @@ class StripeController extends Controller
             }
 
             if ($offerMode === 'balance' && $course) {
+                if ($transactionId === '') {
+                    return redirect()
+                        ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
+                        ->with('error', 'Payment was not completed. Please try again.');
+                }
+
                 $this->launchOfferEnrollment->recordBalancePayment(
                     $user,
                     $course,
                     'stripe',
-                    (string) ($order->payment_intent ?: $order->subscription ?: $order->id),
+                    $transactionId,
                     $charged_amount > 0 ? $charged_amount : (($order->amount_total ?? 0) / 100),
                     $coupon_code,
                     $coupon_discount,
@@ -659,7 +695,15 @@ class StripeController extends Controller
                     ->with('error', 'Payment was not completed. Please try again.');
             }
 
+            if ($transactionId === '') {
+                return redirect()
+                    ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
+                    ->with('error', 'Payment was not completed. Please try again.');
+            }
+
             if ($course && $this->externalCheckout->hasActiveCourseAccess($user, $course)) {
+                $this->sendWelcomeEmailForCourse($user, $course);
+
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
                     ->with('success', 'You are already enrolled in this course.');
@@ -668,9 +712,9 @@ class StripeController extends Controller
             $this->payment->coursesBuy(
                 'stripe',
                 $item_type,
-                $item_id,
-                $order->payment_intent,
-                $tax_amount,
+                (string) $item_id,
+                $transactionId,
+                (float) $tax_amount,
                 ($order->amount_total / 100),
                 $coupon_code
             );
@@ -693,9 +737,22 @@ class StripeController extends Controller
                 ->route('student.index', ['tab' => 'courses'])
                 ->with('success', 'Congratulation! Your payment have completed');
         } catch (\Throwable $th) {
+            Log::error('Stripe checkout success failed', [
+                'user_id' => $user->id ?? null,
+                'stripe_id' => $stripe_id,
+                'message' => $th->getMessage(),
+                'exception' => $th,
+            ]);
+
+            if ($from && $item_type && $item_id) {
+                return redirect()
+                    ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
+                    ->with('error', 'Payment could not be completed. Please try again or contact support.');
+            }
+
             return redirect()
-                ->route('payments.index', ['from' => $from, 'item' => $item_type, 'id' => $item_id])
-                ->with('error', $th->getMessage());
+                ->route('category.courses', ['category' => 'all'])
+                ->with('error', 'Payment could not be completed. Please try again or contact support.');
         }
     }
 
