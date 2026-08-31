@@ -2,6 +2,7 @@
 
 namespace Modules\Exam\Services;
 
+use App\Support\XlsxSheetPath;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
@@ -77,7 +78,7 @@ class QuantityTakeoffXlsxParser
         try {
             $sharedStrings = $this->readSharedStrings($zip);
             $sheetPath = $this->resolveSheetPath($zip, $preferredSheet);
-            $sheetXml = $zip->getFromName($sheetPath);
+            $sheetXml = $this->readZipEntry($zip, $sheetPath);
 
             if ($sheetXml === false) {
                 throw new InvalidArgumentException('The answer key must include an "Estimator Notes" worksheet.');
@@ -315,7 +316,7 @@ PS1;
                 continue;
             }
 
-            $normalizedTarget = ltrim(str_replace('../', '', $target), '/');
+            $normalizedTarget = XlsxSheetPath::zipEntry($target);
 
             if ($fallbackPath === null) {
                 $fallbackPath = $normalizedTarget;
@@ -336,6 +337,25 @@ PS1;
         }
 
         return $sheetPath;
+    }
+
+    private function readZipEntry(\ZipArchive $zip, string $sheetPath): string|false
+    {
+        $candidates = [
+            $sheetPath,
+            XlsxSheetPath::zipEntry($sheetPath),
+            'xl/worksheets/sheet1.xml',
+        ];
+
+        foreach (array_unique($candidates) as $candidate) {
+            $xml = $zip->getFromName($candidate);
+
+            if ($xml !== false) {
+                return $xml;
+            }
+        }
+
+        return false;
     }
 
     /**

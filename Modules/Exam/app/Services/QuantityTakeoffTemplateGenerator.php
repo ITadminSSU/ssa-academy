@@ -2,6 +2,7 @@
 
 namespace Modules\Exam\Services;
 
+use App\Support\XlsxSheetPath;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -94,6 +95,10 @@ class QuantityTakeoffTemplateGenerator
             $sharedStrings = $this->readSharedStrings($zip);
             $sheetPath = $this->resolveSheetPath($zip, $sheetName);
             $sheetXml = $zip->getFromName($sheetPath);
+
+            if ($sheetXml === false) {
+                $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+            }
 
             if ($sheetXml === false) {
                 throw new RuntimeException('Could not read the Estimator Notes worksheet.');
@@ -219,7 +224,7 @@ class QuantityTakeoffTemplateGenerator
                 continue;
             }
 
-            $normalizedTarget = 'xl/' . ltrim(str_replace('../', '', $target), '/');
+            $normalizedTarget = XlsxSheetPath::zipEntry($target);
 
             if ($fallbackPath === null) {
                 $fallbackPath = $normalizedTarget;
