@@ -79,4 +79,39 @@ class UsExperienceAttempt extends Model
 
         return $payload;
     }
+
+    /**
+     * Trainer payload — file URLs stay off the wire; downloads go through authenticated routes.
+     *
+     * @return array<string, mixed>
+     */
+    public function toTrainerArray(bool $includeBreakdown = false): array
+    {
+        $payload = [
+            'id' => $this->id,
+            'attempt_number' => $this->attempt_number,
+            'status' => $this->status,
+            'marks_obtained' => $this->marks_obtained,
+            'lines_correct' => $this->lines_correct,
+            'lines_total' => $this->lines_total,
+            'lines_percent' => $this->lines_percent,
+            'submitted_at' => $this->submitted_at?->toIso8601String(),
+            'trainer_feedback' => $this->trainer_feedback,
+            'takeoff_pdf_name' => $this->takeoff_pdf_name,
+            'boq_xlsx_name' => $this->boq_xlsx_name,
+            'has_pdf' => filled($this->takeoff_pdf_url),
+            'has_excel' => filled($this->boq_xlsx_url),
+            'user' => $this->user ? [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+                'email' => $this->user->email,
+            ] : null,
+        ];
+
+        if ($includeBreakdown) {
+            $payload['grading_breakdown'] = $this->grading_breakdown;
+        }
+
+        return $payload;
+    }
 }

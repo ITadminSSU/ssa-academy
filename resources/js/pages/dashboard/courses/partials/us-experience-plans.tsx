@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CourseUpdateProps } from '../update';
 import { Link, router, usePage } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import UsExperiencePlanForm from './forms/us-experience-plan-form';
 import UsExperiencePlanEditor from './us-experience-plan-editor';
 
@@ -87,6 +87,7 @@ const UsExperiencePlans = () => {
                            <p className="font-medium">{plan.title}</p>
                            <p className="text-muted-foreground text-xs">
                               {plan.drawings_count ?? 0} drawing(s) · {plan.line_count ?? 0} key line(s)
+                              {plan.attempts_count != null ? ` · ${plan.attempts_count} attempt(s)` : ''}
                            </p>
                         </TableCell>
                         <TableCell>
@@ -104,6 +105,14 @@ const UsExperiencePlans = () => {
                         </TableCell>
                         <TableCell className="text-right">
                            <div className="flex justify-end gap-1">
+                              <Button type="button" size="icon" variant="ghost" asChild>
+                                 <Link
+                                    href={route('courses.us-experience.attempts.index', { course: course.id, plan: plan.id })}
+                                    title="Student attempts"
+                                 >
+                                    <ClipboardList className="h-4 w-4" />
+                                 </Link>
+                              </Button>
                               <Button type="button" size="icon" variant="ghost" asChild>
                                  <Link href={route('courses.edit', { course: course.id, tab: 'us-experience', plan: plan.id })}>
                                     <Pencil className="h-4 w-4" />

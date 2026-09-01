@@ -5,6 +5,7 @@ namespace App\Services\UsExperience;
 use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use InvalidArgumentException;
 use Modules\Exam\Services\QuantityTakeoffGradingService;
 use Modules\Exam\Services\QuantityTakeoffXlsxParser;
@@ -78,5 +79,38 @@ class UsExperienceAttemptService
             'status' => $passed ? UsExperienceAttempt::STATUS_PASSED : UsExperienceAttempt::STATUS_FAILED,
             'submitted_at' => now(),
         ]);
+    }
+
+    public function paginateForTrainer(UsExperiencePlan $plan, array $filters = []): LengthAwarePaginator
+    {
+        $search = trim((string) ($filters['search'] ?? ''));
+        $perPage = (int) ($filters['per_page'] ?? 20);
+        $perPage = $perPage > 0 ? min($perPage, 50) : 20;
+
+        return UsExperienceAttempt::query()
+            ->with(['user:id,name,email'])
+            ->where('us_experience_plan_id', $plan->id)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereHas('user', function ($user) use ($search) {
+                    $user->where(function ($inner) use ($search) {
+                        $inner->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('email', 'like', '%'.$search.'%');
+                    });
+                });
+            })
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (UsExperienceAttempt $attempt) => $attempt->toTrainerArray());
+    }
+
+    public function saveTrainerFeedback(UsExperienceAttempt $attempt, ?string $feedback): UsExperienceAttempt
+    {
+        $attempt->update([
+            'trainer_feedback' => filled($feedback) ? trim($feedback) : null,
+        ]);
+
+        return $attempt->fresh(['user']) ?? $attempt;
     }
 }

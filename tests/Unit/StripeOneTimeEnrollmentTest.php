@@ -83,6 +83,19 @@ it('does not enroll when no transaction id can be resolved', function () {
     expect($enrolled)->toBeFalse();
 });
 
+it('enrolls a one-time session when launch_offer_mode is omitted', function () {
+    $payment = Mockery::mock(PaymentService::class);
+    $payment->shouldReceive('coursesBuy')->once();
+
+    $enrolled = makeWebhookService($payment)->enrollOneTimeFromCheckoutSession(makePaidCheckoutSession([
+        'metadata' => [
+            'launch_offer_mode' => '',
+        ],
+    ]));
+
+    expect($enrolled)->toBeTrue();
+});
+
 it('does not enroll deposit checkout sessions as one-time purchases', function () {
     $payment = Mockery::mock(PaymentService::class);
     $payment->shouldNotReceive('coursesBuy');

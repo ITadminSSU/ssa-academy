@@ -14,6 +14,7 @@ use App\Support\CourseWelcomeEmailCopy;
 use App\Support\PaymentVoucherCopy;
 use App\Support\TransactionalMailSender;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\PaymentGateways\Models\PaymentHistory;
 use Modules\PaymentGateways\Services\PaymentService;
@@ -26,7 +27,38 @@ class CourseEnrollmentWelcomeMailService
         private PaymentService $paymentService,
     ) {}
 
+    public function sendForPaidCoursePurchase(int|string $userId, int|string $courseId, bool $force = false): bool
+    {
+        $enrollment = CourseEnrollment::query()
+            ->where('user_id', $userId)
+            ->where('course_id', $courseId)
+            ->with(['user', 'course.instructor.user', 'course.course_category'])
+            ->first();
+
+        if (! $enrollment) {
+            return false;
+        }
+
+        return $this->sendForEnrollment($enrollment, $force);
+    }
+
     public function sendForEnrollment(CourseEnrollment $enrollment, bool $force = false): bool
+    {
+        try {
+            return $this->sendForEnrollmentUnsafe($enrollment, $force);
+        } catch (\Throwable $exception) {
+            Log::warning('Course enrollment welcome email failed', [
+                'enrollment_id' => $enrollment->id ?? null,
+                'user_id' => $enrollment->user_id ?? null,
+                'course_id' => $enrollment->course_id ?? null,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function sendForEnrollmentUnsafe(CourseEnrollment $enrollment, bool $force = false): bool
     {
         $enrollment->loadMissing(['user', 'course.instructor.user', 'course.course_category']);
 

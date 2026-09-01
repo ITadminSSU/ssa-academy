@@ -79,6 +79,7 @@ class UsExperiencePlan extends Model
             'is_ready' => $this->isReady(),
             'drawings_count' => count($this->drawingsList()),
             'line_count' => count($this->answerKeyLines()),
+            'attempts_count' => (int) ($this->attempts_count ?? $this->attempts()->count()),
         ];
     }
 

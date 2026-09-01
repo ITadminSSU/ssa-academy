@@ -35,6 +35,7 @@ class UsExperiencePlanService
     {
         return UsExperiencePlan::query()
             ->where('course_id', $course->id)
+            ->withCount('attempts')
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()

@@ -153,3 +153,27 @@ it('unlocks plan 2 after plan 1 is passed and keeps scores visible without file 
     expect($payloads[1]['unlocked'])->toBeTrue();
     expect($payloads[1]['can_submit'])->toBeFalse();
 });
+
+it('hides stored file URLs from the trainer attempt payload', function () {
+    $attempt = new UsExperienceAttempt([
+        'attempt_number' => 2,
+        'status' => UsExperienceAttempt::STATUS_FAILED,
+        'takeoff_pdf_url' => 'https://example.test/secret.pdf',
+        'takeoff_pdf_name' => 'takeoff.pdf',
+        'boq_xlsx_url' => 'https://example.test/secret.xlsx',
+        'boq_xlsx_name' => 'boq.xlsx',
+        'trainer_feedback' => 'Check the asphalt SF.',
+        'lines_correct' => 8,
+        'lines_total' => 11,
+        'lines_percent' => 72.73,
+    ]);
+
+    $payload = $attempt->toTrainerArray();
+
+    expect($payload)->not->toHaveKey('takeoff_pdf_url')
+        ->and($payload)->not->toHaveKey('boq_xlsx_url')
+        ->and($payload['has_pdf'])->toBeTrue()
+        ->and($payload['has_excel'])->toBeTrue()
+        ->and($payload['takeoff_pdf_name'])->toBe('takeoff.pdf')
+        ->and($payload['trainer_feedback'])->toBe('Check the asphalt SF.');
+});

@@ -5,6 +5,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Course\CategoryChildController;
 use App\Http\Controllers\Course\UsExperiencePlanController;
+use App\Http\Controllers\Course\UsExperienceAttemptReviewController;
 use App\Http\Controllers\Course\CourseAssignmentController;
 use App\Http\Controllers\Course\CourseStripeSyncController;
 use App\Http\Controllers\Course\CourseCategoryController;
@@ -127,6 +128,12 @@ Route::prefix('dashboard/trainer')->group(function () {
       Route::post('{plan}/student-template', [UsExperiencePlanController::class, 'saveStudentTemplate'])->name('student-template');
       Route::post('{plan}/tutorial', [UsExperiencePlanController::class, 'saveTutorial'])->name('tutorial');
       Route::post('{plan}/tolerances', [UsExperiencePlanController::class, 'saveTolerances'])->name('tolerances');
+      Route::get('{plan}/attempts', [UsExperienceAttemptReviewController::class, 'index'])->name('attempts.index');
+      Route::get('{plan}/attempts/{attempt}', [UsExperienceAttemptReviewController::class, 'show'])->name('attempts.show');
+      Route::get('{plan}/attempts/{attempt}/download/{file}', [UsExperienceAttemptReviewController::class, 'download'])
+         ->whereIn('file', ['pdf', 'excel'])
+         ->name('attempts.download');
+      Route::put('{plan}/attempts/{attempt}/feedback', [UsExperienceAttemptReviewController::class, 'feedback'])->name('attempts.feedback');
    });
 
    // Route::post('assignment/submission/grade/{id}', [AssignmentSubmissionController::class, 'update'])->name('assignment.submission.grade');

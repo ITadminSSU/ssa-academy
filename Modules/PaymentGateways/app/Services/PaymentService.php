@@ -2,6 +2,7 @@
 
 namespace Modules\PaymentGateways\Services;
 
+use App\Enums\EnrollmentAccessStatus;
 use App\Enums\PaymentBillingType;
 use App\Enums\PaymentRefundStatus;
 use App\Enums\UserType;
@@ -12,6 +13,7 @@ use App\Models\Instructor;
 use App\Models\Subscription;
 use Modules\PaymentGateways\Models\PaymentHistory;
 use App\Services\Course\CourseEnrollmentService;
+use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use App\Services\Course\CourseService;
 use App\Services\Course\CourseCouponService;
 use Illuminate\Support\Facades\Auth;
@@ -95,6 +97,7 @@ class PaymentService
 
         if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
             $this->applyCouponToPayment($existing, $couponCode);
+            $this->sendWelcomeForOneTimeCoursePurchase($user_id, $item_type, $item_id);
 
             return;
         }
@@ -122,7 +125,8 @@ class PaymentService
                         'user_id' => $user_id,
                         'course_id' => $course->id,
                         'enrollment_type' => 'paid',
-                    ]);
+                        'access_status' => EnrollmentAccessStatus::ACTIVE->value,
+                    ], sendWelcome: false);
                 }
             }
 
@@ -181,6 +185,17 @@ class PaymentService
         if ($history) {
             $this->applyCouponToPayment($history, $couponCode);
         }
+
+        $this->sendWelcomeForOneTimeCoursePurchase($user_id, $item_type, $item_id);
+    }
+
+    private function sendWelcomeForOneTimeCoursePurchase(int|string $userId, string $itemType, string $itemId): void
+    {
+        if ($itemType !== 'course') {
+            return;
+        }
+
+        app(CourseEnrollmentWelcomeMailService::class)->sendForPaidCoursePurchase($userId, $itemId);
     }
 
     public function recordSubscriptionPayment(

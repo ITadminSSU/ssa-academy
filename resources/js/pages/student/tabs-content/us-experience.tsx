@@ -140,6 +140,13 @@ const UsExperience = () => {
                               </div>
                            )}
 
+                           {payload.can_see_scores && plan.latest_attempt?.trainer_feedback && (
+                              <div className="bg-muted mt-4 rounded-lg border p-4">
+                                 <p className="text-sm font-medium">Trainer feedback</p>
+                                 <p className="text-muted-foreground mt-1 whitespace-pre-wrap text-sm">{plan.latest_attempt.trainer_feedback}</p>
+                              </div>
+                           )}
+
                            {plan.tutorial_video && (
                               <div className="mt-3">
                                  <p className="mb-2 text-sm font-medium">Walkthrough</p>

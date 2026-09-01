@@ -9,6 +9,7 @@ use App\Models\Course\SectionQuiz;
 use App\Services\Course\CourseSectionService;
 use App\Services\MediaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
@@ -53,7 +54,7 @@ class CourseEnrollmentService extends MediaService
    }
 
 
-   function createCourseEnroll(array $data, bool $allowBeforeLaunch = false): CourseEnrollment
+   function createCourseEnroll(array $data, bool $allowBeforeLaunch = false, bool $sendWelcome = true): CourseEnrollment
    {
       $enrollment = DB::transaction(function () use ($data, $allowBeforeLaunch) {
          $courseId = $data['course_id'];
@@ -115,7 +116,18 @@ class CourseEnrollmentService extends MediaService
          return $enrollment;
       }, 5);
 
-      app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']) ?? $enrollment);
+      if ($sendWelcome) {
+         try {
+            app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']) ?? $enrollment);
+         } catch (\Throwable $exception) {
+            Log::warning('Course enrollment welcome email failed', [
+               'enrollment_id' => $enrollment->id ?? null,
+               'user_id' => $enrollment->user_id ?? ($data['user_id'] ?? null),
+               'course_id' => $enrollment->course_id ?? ($data['course_id'] ?? null),
+               'error' => $exception->getMessage(),
+            ]);
+         }
+      }
 
       return $enrollment;
    }

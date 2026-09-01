@@ -10,9 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { CourseUpdateProps } from '../update';
-import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, FileSpreadsheet, FileUp, PlayCircle, Settings, Trash2 } from 'lucide-react';
+import { router, useForm, usePage } from '@inertiajs/react';
+import { CheckCircle2, FileSpreadsheet, FileUp, PlayCircle, Settings, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import UsExperiencePlanWorkspaceHeader from './us-experience-plan-workspace-header';
 
 type UploadedFile = { file_url: string; file_name: string };
 
@@ -110,16 +111,11 @@ const UsExperiencePlanEditor = () => {
 
    return (
       <div className="space-y-6">
-         <div className="flex flex-wrap items-center justify-between gap-3">
-            <Button type="button" variant="ghost" asChild>
-               <Link href={route('courses.edit', { course: course.id, tab: 'us-experience' })}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  All plans
-               </Link>
-            </Button>
-            <div className="text-muted-foreground text-sm">
+         <div>
+            <UsExperiencePlanWorkspaceHeader courseId={course.id} plan={plan} current="setup" />
+            <p className="text-muted-foreground mt-2 text-sm">
                {plan.is_ready ? 'Ready for students when published.' : 'Needs PDF drawings, blank template, and an imported answer key.'}
-            </div>
+            </p>
          </div>
 
          <Card>

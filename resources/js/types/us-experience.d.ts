@@ -34,6 +34,7 @@ interface UsExperiencePlan {
    is_ready?: boolean;
    drawings_count?: number;
    line_count?: number;
+   attempts_count?: number;
 }
 
 interface UsExperienceAttemptSummary {
@@ -48,6 +49,8 @@ interface UsExperienceAttemptSummary {
    trainer_feedback?: string | null;
    takeoff_pdf_name?: string | null;
    boq_xlsx_name?: string | null;
+   has_pdf?: boolean;
+   has_excel?: boolean;
    grading_breakdown?: Array<{
       key: string;
       item: string;
