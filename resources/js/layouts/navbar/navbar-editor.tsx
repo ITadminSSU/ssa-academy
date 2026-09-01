@@ -155,7 +155,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                                  id="active"
                                  defaultChecked={item.active}
                                  onCheckedChange={(checked) => {
-                                    router.put(route('settings.navbar.items.update', {
+                                    router.put(route('settings.navbar.items.update', item.id), {
                                        ...(item as any),
                                        active: checked,
                                     });
@@ -273,7 +273,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                                  id="airplane-mode"
                                  checked={item.active}
                                  onCheckedChange={(checked) => {
-                                    router.put(route('settings.navbar.items.update', {
+                                    router.put(route('settings.navbar.items.update', item.id), {
                                        ...(item as any),
                                        active: checked,
                                     });
