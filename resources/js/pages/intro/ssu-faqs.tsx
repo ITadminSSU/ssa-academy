@@ -15,21 +15,21 @@ const faqs: FaqBlock[] = [
    {
       question: 'What is SmartSourcing USA Academy?',
       paragraphs: [
-         'SmartSourcing USA Academy is a construction-focused training platform designed to help aspiring and current Construction VAs and construction professionals develop practical skills for remote construction work.',
+         'SmartSourcing USA Academy is a construction-focused training platform designed to help aspiring and current construction VAs and construction professionals develop practical skills for remote construction work.',
          'The Academy focuses on U.S. construction workflows, industry tools, terminology, project documents, and practical training to help learners prepare for real-world remote construction opportunities.',
       ],
    },
    {
       question: 'Who is SmartSourcing USA Academy for?',
       paragraphs: [
-         'SmartSourcing USA Academy is for engineers, architects, estimators, quantity surveyors, construction professionals, students, fresh graduates, aspiring Construction VAs, and anyone interested in building practical skills for a remote construction career.',
+         'SmartSourcing USA Academy is for engineers, architects, estimators, quantity surveyors, construction professionals, students, fresh graduates, aspiring construction VAs, and anyone interested in building practical skills for a remote construction career.',
          'You do not need to have previous U.S. construction experience to start learning.',
       ],
    },
    {
-      question: 'Do I need to be an engineer to join SmartSourcing USA Academy?',
+      question: 'Do I need to be an engineer to enroll in SmartSourcing USA Academy?',
       paragraphs: [
-         'No. You do not need to be a licensed engineer to join.',
+         'No. You do not need to be a licensed engineer to enroll.',
          'SmartSourcing USA Academy is open to anyone who wants to develop construction-related skills and learn more about working remotely in the construction industry.',
          'Some courses may be easier to understand if you already have a basic construction background, but this is not a requirement for all programs.',
       ],
@@ -78,10 +78,10 @@ const faqs: FaqBlock[] = [
       ],
    },
    {
-      question: 'How much is SmartSourcing USA Academy training?',
+      question: 'How much do SMARTSOURCING USA Academy training courses cost?',
       paragraphs: [
-         'Course pricing may vary depending on the training program.',
-         'Complete information regarding course fees, inclusions, schedules, and enrollment options will be announced together with each specific Academy program.',
+         'Pricing vary depending on the training course.',
+         'Complete details, including the price, inclusions, schedule, and enrollment options will be provided when each course is officially announced.',
       ],
    },
    {
