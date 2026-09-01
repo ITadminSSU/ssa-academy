@@ -81,7 +81,7 @@ const UsExperience = () => {
          )}
 
          <p className="text-muted-foreground text-sm">
-            Download the PDF plans and blank Excel, fill the Quantity Summary, then submit your takeoff PDF and BOQ. Default variance
+            Download the PDF plans and blank Excel, fill the Quantity Summary, then submit your takeoff PDF and BOQ. Default tolerance
             is ±{payload.default_tolerance}. Pass a plan to unlock the next.
          </p>
 

@@ -194,7 +194,7 @@ const QuantityTakeoffAttempt = ({ attempt, lineItems, gradingRules, templateDown
                      <CardHeader>
                         <CardTitle>Grading rules</CardTitle>
                         <CardDescription>
-                           Quantities are graded with variance, not exact match. You need at least {gradingRules.pass_mark}% of line items
+                           Quantities are graded with tolerance, not exact match. You need at least {gradingRules.pass_mark}% of line items
                            correct to pass.
                         </CardDescription>
                      </CardHeader>
