@@ -155,7 +155,7 @@ const ExamAttemptReview = ({ attempt }: { attempt: ExamAttempt }) => {
 
                               {/* Render Question with Answer */}
                               <div className="mb-4">
-                                 <QuestionAnswerResult answer={answer} question={question} />
+                                 <QuestionAnswerResult answer={answer} question={question} viewer="trainer" />
                               </div>
 
                               {isQuantityTakeoff && question.question_type === 'quantity_takeoff' && answer.answer_data?.grading_breakdown && (

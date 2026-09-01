@@ -21,6 +21,7 @@ interface Props {
    linesCorrect?: number;
    linesTotal?: number;
    showTolerance?: boolean;
+   viewer?: 'student' | 'trainer';
    className?: string;
 }
 
@@ -32,11 +33,40 @@ const formatQty = (value?: number | null) => {
    return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
 };
 
-const QuantityTakeoffBreakdown = ({ breakdown, linesCorrect, linesTotal, showTolerance = true, className }: Props) => {
+const formatVariance = (submitted?: number | null, expected?: number | null) => {
+   if (submitted === null || submitted === undefined || Number.isNaN(submitted)) {
+      return '—';
+   }
+
+   if (expected === null || expected === undefined || Number.isNaN(expected) || expected === 0) {
+      return '—';
+   }
+
+   const percent = ((submitted - expected) / Math.abs(expected)) * 100;
+
+   if (Object.is(percent, -0) || percent === 0) {
+      return '0.00%';
+   }
+
+   const sign = percent > 0 ? '+' : '';
+
+   return `${sign}${percent.toFixed(2)}%`;
+};
+
+const QuantityTakeoffBreakdown = ({
+   breakdown,
+   linesCorrect,
+   linesTotal,
+   showTolerance = true,
+   viewer = 'student',
+   className,
+}: Props) => {
    const isLineCorrect = (line: QuantityTakeoffBreakdownLine) => line.is_correct ?? line.within_tolerance;
    const correct = linesCorrect ?? breakdown.filter((line) => isLineCorrect(line)).length;
    const total = linesTotal ?? breakdown.length;
    const linePercent = total > 0 ? ((correct / total) * 100).toFixed(1) : '0.0';
+   const isTrainer = viewer === 'trainer';
+   const showAllowedBand = isTrainer && showTolerance;
 
    return (
       <div className={cn('space-y-4', className)}>
@@ -63,10 +93,11 @@ const QuantityTakeoffBreakdown = ({ breakdown, linesCorrect, linesTotal, showTol
                   <tr className="text-left">
                      <th className="p-3">#</th>
                      <th className="p-3">Item</th>
-                     <th className="p-3">Expected</th>
+                     {isTrainer && <th className="p-3">Expected</th>}
                      <th className="p-3">Submitted</th>
                      <th className="p-3">Unit</th>
-                     {showTolerance && <th className="p-3">± Tolerance</th>}
+                     {showAllowedBand && <th className="p-3">± Tolerance</th>}
+                     <th className="p-3">Variance</th>
                      <th className="p-3">Result</th>
                   </tr>
                </thead>
@@ -75,51 +106,51 @@ const QuantityTakeoffBreakdown = ({ breakdown, linesCorrect, linesTotal, showTol
                      const lineCorrect = isLineCorrect(line);
 
                      return (
-                     <tr
-                        key={line.key}
-                        className={cn(
-                           'border-t align-top',
-                           lineCorrect ? 'bg-green-500/5' : 'bg-red-500/5',
-                        )}
-                     >
-                        <td className="p-3 text-muted-foreground">{index + 1}</td>
-                        <td className="max-w-md p-3 whitespace-normal">
-                           <div className="space-y-1">
-                              <span>{line.item}</span>
-                              {line.manual_override !== null && line.manual_override !== undefined && (
-                                 <Badge variant="outline" className="ml-0 border-amber-500 text-amber-700">
-                                    Trainer override
-                                 </Badge>
-                              )}
-                           </div>
-                        </td>
-                        <td className="p-3 font-medium">{formatQty(line.expected_qty)}</td>
-                        <td className={cn('p-3 font-medium', !lineCorrect && 'text-red-600')}>
-                           {formatQty(line.submitted_qty)}
-                        </td>
-                        <td className="p-3">
-                           <Badge variant="outline">{line.unit || '—'}</Badge>
-                        </td>
-                        {showTolerance && (
-                           <td className="p-3 text-muted-foreground">
-                              ± {formatQty(line.tolerance)}
-                              {line.tolerance_percent != null ? ` (${line.tolerance_percent}%)` : ''}
+                        <tr
+                           key={line.key}
+                           className={cn('border-t align-top', lineCorrect ? 'bg-green-500/5' : 'bg-red-500/5')}
+                        >
+                           <td className="p-3 text-muted-foreground">{index + 1}</td>
+                           <td className="max-w-md p-3 whitespace-normal">
+                              <div className="space-y-1">
+                                 <span>{line.item}</span>
+                                 {line.manual_override !== null && line.manual_override !== undefined && (
+                                    <Badge variant="outline" className="ml-0 border-amber-500 text-amber-700">
+                                       Trainer override
+                                    </Badge>
+                                 )}
+                              </div>
                            </td>
-                        )}
-                        <td className="p-3">
-                           {lineCorrect ? (
-                              <span className="inline-flex items-center gap-1 font-medium text-green-600">
-                                 <Check className="h-4 w-4" />
-                                 Correct
-                              </span>
-                           ) : (
-                              <span className="inline-flex items-center gap-1 font-medium text-red-600">
-                                 <X className="h-4 w-4" />
-                                 Incorrect
-                              </span>
+                           {isTrainer && <td className="p-3 font-medium">{formatQty(line.expected_qty)}</td>}
+                           <td className={cn('p-3 font-medium', !lineCorrect && 'text-red-600')}>
+                              {formatQty(line.submitted_qty)}
+                           </td>
+                           <td className="p-3">
+                              <Badge variant="outline">{line.unit || '—'}</Badge>
+                           </td>
+                           {showAllowedBand && (
+                              <td className="p-3 text-muted-foreground">
+                                 ± {formatQty(line.tolerance)}
+                                 {line.tolerance_percent != null ? ` (${line.tolerance_percent}%)` : ''}
+                              </td>
                            )}
-                        </td>
-                     </tr>
+                           <td className={cn('p-3 font-medium', !lineCorrect && 'text-red-600')}>
+                              {formatVariance(line.submitted_qty, line.expected_qty)}
+                           </td>
+                           <td className="p-3">
+                              {lineCorrect ? (
+                                 <span className="inline-flex items-center gap-1 font-medium text-green-600">
+                                    <Check className="h-4 w-4" />
+                                    Correct
+                                 </span>
+                              ) : (
+                                 <span className="inline-flex items-center gap-1 font-medium text-red-600">
+                                    <X className="h-4 w-4" />
+                                    Incorrect
+                                 </span>
+                              )}
+                           </td>
+                        </tr>
                      );
                   })}
                </tbody>

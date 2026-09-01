@@ -135,6 +135,7 @@ const UsExperience = () => {
                                     breakdown={plan.latest_attempt.grading_breakdown}
                                     linesCorrect={plan.latest_attempt.lines_correct ?? undefined}
                                     linesTotal={plan.latest_attempt.lines_total ?? undefined}
+                                    viewer="student"
                                  />
                               </div>
                            )}

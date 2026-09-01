@@ -5,7 +5,15 @@ interface AttemptAnswerWithQuestion extends ExamAttemptAnswer {
    exam_question: ExamQuestion;
 }
 
-const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; answer: AttemptAnswerWithQuestion }) => {
+const QuestionAnswerResult = ({
+   question,
+   answer,
+   viewer = 'student',
+}: {
+   question: ExamQuestion;
+   answer: AttemptAnswerWithQuestion;
+   viewer?: 'student' | 'trainer';
+}) => {
    const answerData = answer.answer_data;
 
    if (!answerData) {
@@ -312,6 +320,7 @@ const QuestionAnswerResult = ({ question, answer }: { question: ExamQuestion; an
                   breakdown={breakdown}
                   linesCorrect={linesCorrect}
                   linesTotal={linesTotal}
+                  viewer={viewer}
                />
                <div className="rounded-lg border bg-muted/40 p-4">
                   <p className="mb-2 text-sm font-semibold text-muted-foreground">Supporting work</p>

@@ -259,7 +259,7 @@ const ExamResult = () => {
 
                               {/* Render Question with Answer */}
                               <div className="mb-4">
-                                 <QuestionAnswerResult answer={answer} question={question} />
+                                 <QuestionAnswerResult answer={answer} question={question} viewer="student" />
                               </div>
                            </div>
                         </div>
