@@ -161,21 +161,16 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
                      <h2 className="font-display text-2xl font-bold md:text-3xl">Upskill. Certify. Grow.</h2>
 
                      <p className="text-muted-foreground leading-relaxed">
-
-                        We believe professional growth should be accessible, structured, and measurable. SMARTSOURCING USA ACADEMY
-
-                        brings together video-based instruction, practical assignments, and gated assessments so learners can build
-
-                        confidence — and prove it with credentials employers trust.
-
+                        We believe professional growth should be accessible, structured, and measurable. SMARTSOURCING USA
+                        Academy combines video-based learning, practical assessments, and opportunities to gain U.S. industry
+                        experience, helping professionals build relevant skills, strengthen their credentials, and become more
+                        U.S.-ready.
                      </p>
 
                      <p className="text-muted-foreground leading-relaxed">
-
-                        Whether you are advancing your own career or supporting a team&apos;s development, our platform is built to
-
-                        help you learn with purpose and finish with results.
-
+                        Whether you are advancing your own career or preparing for remote opportunities with U.S. companies,
+                        our platform is designed to help you learn with purpose, gain practical experience, and build a
+                        stronger professional profile.
                      </p>
 
                   </div>
@@ -192,7 +187,7 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
 
                      <h3 className="font-display mb-3 text-xl font-semibold">Who we serve</h3>
 
-                     <ul className="text-muted-foreground space-y-3 text-sm leading-relaxed">
+                     <ul className="text-muted-foreground list-disc space-y-3 pl-5 text-sm leading-relaxed">
 
                         <li>Professionals seeking industry-relevant skills and certification</li>
 

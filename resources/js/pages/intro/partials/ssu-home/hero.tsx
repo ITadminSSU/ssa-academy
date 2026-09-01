@@ -9,7 +9,7 @@ const defaultHero = {
    kicker: 'SMARTSOURCING USA ACADEMY',
    title: 'Upskill. Certify your skills. Scale with confidence.',
    description:
-      'Structured learning paths for professionals — video lessons, quizzes, and verified SSA certificates.',
+      'Structured learning paths for professionals with video lessons, practical assessments, U.S. industry experience, and verified SSA certificates.',
 };
 
 /** Dense original CAD-style building blueprint (hand-authored, not third-party). */
@@ -443,7 +443,7 @@ const Hero = () => {
                      {title}
                   </h1>
 
-                  <p className="mx-auto max-w-3xl text-[0.8rem] leading-snug text-sky-100/80 sm:text-sm md:text-[0.95rem] md:leading-relaxed">
+                  <p className="mx-auto max-w-5xl text-[0.8rem] leading-snug text-sky-100/80 sm:text-sm md:text-[0.95rem] md:leading-relaxed">
                      {description}
                   </p>
                </div>

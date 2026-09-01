@@ -15,7 +15,7 @@ class SsuHomeSections
                 'slug' => 'hero',
                 'title' => 'SMARTSOURCING USA ACADEMY',
                 'sub_title' => 'Upskill. Certify your skills. Scale with confidence.',
-                'description' => 'Structured learning paths for professionals — video lessons, quizzes, and verified SSA certificates.',
+                'description' => 'Structured learning paths for professionals with video lessons, practical assessments, U.S. industry experience, and verified SSA certificates.',
                 'thumbnail' => '/assets/images/ssu-about/about-hero.png',
                 'flags' => [
                     'title' => true,

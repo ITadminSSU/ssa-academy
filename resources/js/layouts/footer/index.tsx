@@ -18,8 +18,8 @@ const Index = () => {
    return (
       <div className="overflow-hidden bg-[color:var(--brand-grey)]">
          <div className="container space-y-9 pt-[60px] pb-5">
-            <div className="flex flex-col items-start gap-10 lg:flex-row lg:gap-16">
-               <div className="w-full space-y-5 lg:w-[min(320px,28%)] lg:shrink-0">
+            <div className="flex flex-col items-start gap-12 md:flex-row md:flex-wrap lg:flex-nowrap lg:justify-between">
+               <div className="w-max max-w-[280px] shrink-0 space-y-5">
                   <div>
                      <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
                         <AppLogo variant="footer" className="ssu-footer-logo" />
@@ -50,14 +50,13 @@ const Index = () => {
                   )}
                </div>
 
-               <div className="grid min-w-0 w-full grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-3">
-                  {listItems.map((section) => (
-                     <div key={section.id} className="relative min-w-0">
-                        <p className="mb-3 text-lg font-semibold">{section.title}</p>
-                        <ul className="text-muted-foreground flex flex-col gap-2 text-sm">
-                           {section.items
-                              ?.filter((item) => item.title?.trim())
-                              .map((item, itemIndex) =>
+               {listItems.map((section) => (
+                  <div key={section.id} className="relative w-max max-w-[260px] shrink-0">
+                     <p className="mb-3 text-lg font-semibold">{section.title}</p>
+                     <ul className="text-muted-foreground flex flex-col gap-2 text-sm">
+                        {section.items
+                           ?.filter((item) => item.title?.trim())
+                           .map((item, itemIndex) =>
                               section.slug === 'address' ? (
                                  <li key={`item-${itemIndex}`} className="break-words">
                                     {item.title.startsWith('Email:') ? (
@@ -80,24 +79,23 @@ const Index = () => {
                                  </li>
                               ),
                            )}
-                           {section.slug === 'address' && (
-                              <li className="mt-3 min-w-0 list-none">
-                                 <Link
-                                    href={route('fraud-training-tipline')}
-                                    className="group inline-flex max-w-full flex-col items-start rounded-lg transition-opacity hover:opacity-90"
-                                    aria-label="Fraud Training Tipline — click here to report a suspicious site"
-                                 >
-                                    <FraudTrainingTiplineMark variant="footer" />
-                                    <span className="mt-2 text-left text-xs font-medium text-[#8C2A23] group-hover:underline">
-                                       Click here to report a suspicious site
-                                    </span>
-                                 </Link>
-                              </li>
-                           )}
-                        </ul>
-                     </div>
-                  ))}
-               </div>
+                        {section.slug === 'address' && (
+                           <li className="mt-3 list-none">
+                              <Link
+                                 href={route('fraud-training-tipline')}
+                                 className="group inline-flex max-w-full flex-col items-start rounded-lg transition-opacity hover:opacity-90"
+                                 aria-label="Fraud Training Tipline — click here to report a suspicious site"
+                              >
+                                 <FraudTrainingTiplineMark variant="footer" />
+                                 <span className="mt-2 text-left text-xs font-medium text-[#8C2A23] group-hover:underline">
+                                    Click here to report a suspicious site
+                                 </span>
+                              </Link>
+                           </li>
+                        )}
+                     </ul>
+                  </div>
+               ))}
             </div>
 
             {paymentMethodsItem && (
