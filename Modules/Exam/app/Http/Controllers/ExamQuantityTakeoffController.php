@@ -59,7 +59,7 @@ class ExamQuantityTakeoffController extends Controller
             return back()->with('error', $exception->getMessage());
         }
 
-        return back()->with('success', 'Per-line tolerances saved.');
+        return back()->with('success', 'Per-line variances saved.');
     }
 
     public function saveStudentTemplate(SaveExamTakeoffStudentTemplateRequest $request, Exam $exam): RedirectResponse

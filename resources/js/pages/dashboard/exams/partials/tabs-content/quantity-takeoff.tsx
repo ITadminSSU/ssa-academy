@@ -384,10 +384,10 @@ const QuantityTakeoff = () => {
 
          <Card>
             <CardHeader>
-               <CardTitle>Parsed line items and tolerances</CardTitle>
+               <CardTitle>Parsed line items and variances</CardTitle>
                <CardDescription>
                   {lineItems.length > 0
-                     ? `${lineItems.length} graded quantity line(s) detected. Override tolerance per line if needed. ${defaultToleranceHint}`
+                     ? `${lineItems.length} graded quantity line(s) detected. Override variance per line if needed. ${defaultToleranceHint}`
                      : 'Import an answer key to preview the line items students will complete.'}
                </CardDescription>
             </CardHeader>
@@ -402,7 +402,7 @@ const QuantityTakeoff = () => {
                                  <TableHead>Item</TableHead>
                                  <TableHead>Quantity</TableHead>
                                  <TableHead>Unit</TableHead>
-                                 <TableHead>Custom ± tolerance</TableHead>
+                                 <TableHead>Custom ± variance</TableHead>
                               </TableRow>
                            </TableHeader>
                            <TableBody>
@@ -436,7 +436,7 @@ const QuantityTakeoff = () => {
                         </Table>
                      </div>
                      <LoadingButton type="button" loading={savingTolerances} onClick={handleSaveTolerances}>
-                        Save per-line tolerances
+                        Save per-line variances
                      </LoadingButton>
                   </>
                ) : (

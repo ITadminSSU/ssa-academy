@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ChatAttachmentType;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,6 +41,9 @@ class ChatMessage extends Model implements HasMedia
 
     protected function attachment(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => $value ? public_asset_url($value) : null);
+        return Attribute::make(
+            get: fn (?string $value) => $value ? S3CompatibleStorage::attributeGet($value) : null,
+            set: fn (?string $value) => $value ? S3CompatibleStorage::attributeSet($value) : null,
+        );
     }
 }

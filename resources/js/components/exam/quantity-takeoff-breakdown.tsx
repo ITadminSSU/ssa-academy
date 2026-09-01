@@ -65,7 +65,7 @@ const QuantityTakeoffBreakdown = ({ breakdown, linesCorrect, linesTotal, showTol
                      <th className="p-3">Expected</th>
                      <th className="p-3">Submitted</th>
                      <th className="p-3">Unit</th>
-                     {showTolerance && <th className="p-3">± Tolerance</th>}
+                     {showTolerance && <th className="p-3">± Variance</th>}
                      <th className="p-3">Result</th>
                   </tr>
                </thead>

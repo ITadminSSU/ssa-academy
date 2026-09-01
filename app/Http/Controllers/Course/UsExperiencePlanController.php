@@ -94,7 +94,7 @@ class UsExperiencePlanController extends Controller
 
         return back()->with(
             'success',
-            'Answer key validated and imported. '.$result['line_count'].' quantity line(s) are ready. Default tolerance is ±2; edit any line below if needed.'
+            'Answer key validated and imported. '.$result['line_count'].' quantity line(s) are ready. Default variance is ±2; edit any line below if needed.'
         );
     }
 
@@ -119,7 +119,7 @@ class UsExperiencePlanController extends Controller
         $this->assertPlan($course, $plan);
         $this->plans->saveLineTolerances($plan, $request->validated('tolerances'));
 
-        return back()->with('success', 'Per-line tolerances saved.');
+        return back()->with('success', 'Per-line variances saved.');
     }
 
     private function assertPlan(Course $course, UsExperiencePlan $plan): void

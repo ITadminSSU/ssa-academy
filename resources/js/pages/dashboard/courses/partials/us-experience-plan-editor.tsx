@@ -108,7 +108,7 @@ const UsExperiencePlanEditor = () => {
                   Plan settings
                </CardTitle>
                <CardDescription>
-                  Untimed practice. Pass mark and max attempts live here. Duration is not used. Default quantity tolerance is ±
+                  Untimed practice. Pass mark and max attempts live here. Duration is not used. Default quantity variance is ±
                   {usExperienceDefaultTolerance}.
                </CardDescription>
             </CardHeader>
@@ -387,7 +387,7 @@ const UsExperiencePlanEditor = () => {
 
          <Card>
             <CardHeader>
-               <CardTitle>Parsed line items and tolerances</CardTitle>
+               <CardTitle>Parsed line items and variances</CardTitle>
                <CardDescription>
                   {lineItems.length > 0
                      ? `${lineItems.length} graded quantity line(s) detected. Default is ±${usExperienceDefaultTolerance}. Leave Custom ± blank to keep the default, or type a number for that line only.`
@@ -405,7 +405,7 @@ const UsExperiencePlanEditor = () => {
                                  <TableHead>Item</TableHead>
                                  <TableHead>Quantity</TableHead>
                                  <TableHead>Unit</TableHead>
-                                 <TableHead>Custom ± tolerance</TableHead>
+                                 <TableHead>Custom ± variance</TableHead>
                               </TableRow>
                            </TableHeader>
                            <TableBody>
@@ -460,7 +460,7 @@ const UsExperiencePlanEditor = () => {
                            );
                         }}
                      >
-                        Save per-line tolerances
+                        Save per-line variances
                      </LoadingButton>
                   </>
                ) : (

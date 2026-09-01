@@ -81,8 +81,8 @@ const UsExperience = () => {
          )}
 
          <p className="text-muted-foreground text-sm">
-            Download the PDF plans and blank Excel, fill the Quantity Summary, then submit your takeoff PDF and BOQ. Default grading
-            band is ±{payload.default_tolerance}. Pass a plan to unlock the next.
+            Download the PDF plans and blank Excel, fill the Quantity Summary, then submit your takeoff PDF and BOQ. Default variance
+            is ±{payload.default_tolerance}. Pass a plan to unlock the next.
          </p>
 
          <Accordion type="multiple" defaultValue={groups.slice(0, 1).map((group, index) => `${group.name}-${index}`)} className="w-full">
