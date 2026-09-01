@@ -50,9 +50,9 @@ const FooterPreview = () => {
                   )}
                </div>
 
-               <div className="flex w-full flex-col justify-between gap-10 md:max-w-[640px] md:flex-row">
+               <div className="grid min-w-0 w-full grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-3">
                   {listItems.map((section) => (
-                     <div className="relative w-full">
+                     <div key={section.id} className="relative min-w-0">
                         <p className="mb-3 text-lg font-semibold">{section.title}</p>
                         <ul className="text-muted-foreground flex flex-col gap-2 text-sm">
                            {section.items?.map((item, itemIndex) =>

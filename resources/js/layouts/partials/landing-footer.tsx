@@ -27,11 +27,11 @@ const LandingFooter = () => {
                   <p className="mt-5 text-sm max-w-[300px]">{system.fields.description}</p>
                </div>
 
-               <div className="flex w-full flex-col justify-between gap-10 md:max-w-[640px] md:flex-row">
+               <div className="grid min-w-0 w-full grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-3 md:max-w-none">
                   {sections.map(
                      (section) =>
                         section.active && (
-                           <div className="relative w-full">
+                           <div key={section.slug ?? section.title} className="relative min-w-0">
                               <p className="mb-3 text-lg font-semibold">{section?.title}</p>
                               <ul className="flex flex-col gap-2 text-sm">
                                  {section?.properties.array.map((item, itemIndex) =>

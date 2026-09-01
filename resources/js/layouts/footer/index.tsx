@@ -18,8 +18,8 @@ const Index = () => {
    return (
       <div className="overflow-hidden bg-[color:var(--brand-grey)]">
          <div className="container space-y-9 pt-[60px] pb-5">
-            <div className="flex flex-col items-start justify-between gap-10 md:flex-row">
-               <div className="w-full space-y-5 md:max-w-[min(560px,42%)]">
+            <div className="flex flex-col items-start gap-10 lg:flex-row lg:gap-16">
+               <div className="w-full space-y-5 lg:w-[min(320px,28%)] lg:shrink-0">
                   <div>
                      <Link href={route('home')} className="ssu-logo-frame ssu-logo-frame--footer inline-flex">
                         <AppLogo variant="footer" className="ssu-footer-logo" />
@@ -50,16 +50,18 @@ const Index = () => {
                   )}
                </div>
 
-               <div className="flex w-full flex-col justify-between gap-10 md:max-w-[640px] md:flex-row">
+               <div className="grid min-w-0 w-full grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-3">
                   {listItems.map((section) => (
-                     <div key={section.id} className="relative w-full">
+                     <div key={section.id} className="relative min-w-0">
                         <p className="mb-3 text-lg font-semibold">{section.title}</p>
                         <ul className="text-muted-foreground flex flex-col gap-2 text-sm">
-                           {section.items?.map((item, itemIndex) =>
+                           {section.items
+                              ?.filter((item) => item.title?.trim())
+                              .map((item, itemIndex) =>
                               section.slug === 'address' ? (
-                                 <li key={`item-${itemIndex}`}>
+                                 <li key={`item-${itemIndex}`} className="break-words">
                                     {item.title.startsWith('Email:') ? (
-                                       <a href="mailto:training@smartsourcingusa.com" className="hover:text-foreground transition-colors">
+                                       <a href="mailto:training@smartsourcingusa.com" className="hover:text-foreground break-words transition-colors">
                                           {item.title}
                                        </a>
                                     ) : (
@@ -79,14 +81,14 @@ const Index = () => {
                               ),
                            )}
                            {section.slug === 'address' && (
-                              <li className="mt-4 list-none">
+                              <li className="mt-3 min-w-0 list-none">
                                  <Link
                                     href={route('fraud-training-tipline')}
-                                    className="group inline-flex flex-col items-center rounded-lg transition-opacity hover:opacity-90"
+                                    className="group inline-flex max-w-full flex-col items-start rounded-lg transition-opacity hover:opacity-90"
                                     aria-label="Fraud Training Tipline — click here to report a suspicious site"
                                  >
                                     <FraudTrainingTiplineMark variant="footer" />
-                                    <span className="mt-2 text-center text-xs font-medium text-[#8C2A23] group-hover:underline">
+                                    <span className="mt-2 text-left text-xs font-medium text-[#8C2A23] group-hover:underline">
                                        Click here to report a suspicious site
                                     </span>
                                  </Link>

@@ -9,7 +9,7 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
    const isFooter = variant === 'footer';
 
    return (
-      <div className={cn('flex items-center', isFooter ? 'gap-2.5' : 'mx-auto w-fit justify-center gap-4', className)}>
+      <div className={cn('flex items-center', isFooter ? 'max-w-full gap-2.5' : 'mx-auto w-fit justify-center gap-4', className)}>
          <div
             className={cn(
                'relative flex shrink-0 items-center justify-center rounded-2xl bg-[#01123A] text-white shadow-sm',
@@ -37,7 +37,7 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
                <p
                   className={cn(
                      'font-display w-full leading-none font-bold text-[#8C2A23] uppercase',
-                     isFooter ? 'text-[1.65rem] tracking-[0.2em]' : 'text-[2.1rem] tracking-[0.14em] sm:text-[2.65rem] sm:tracking-[0.16em]',
+                     isFooter ? 'text-[1.35rem] tracking-[0.12em]' : 'text-[2.1rem] tracking-[0.14em] sm:text-[2.65rem] sm:tracking-[0.16em]',
                   )}
                >
                   TIPLINE
