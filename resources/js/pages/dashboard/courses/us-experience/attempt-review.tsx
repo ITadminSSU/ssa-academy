@@ -92,7 +92,10 @@ const AttemptReview = ({ course, plan, attempt }: Props) => {
                   {attempt.status === 'passed' ? 'Passed' : 'Failed'}
                </Badge>
                <Button variant="outline" asChild>
-                  <Link href={route('courses.us-experience.attempts.index', { course: course.id, plan: plan.id })}>All attempts</Link>
+                  <Link href={route('courses.us-experience.attempts.index', { course: course.id, plan: plan.id })}>Plan attempts</Link>
+               </Button>
+               <Button variant="outline" asChild>
+                  <Link href={route('courses.us-experience.attempts.course', course.id)}>Course attempts</Link>
                </Button>
             </div>
          </div>

@@ -35,9 +35,36 @@ class UsExperienceAttemptReviewController extends Controller
                 'title' => $course->title,
             ],
             'plan' => $plan->toTrainerArray(),
-            'attempts' => $this->attempts->paginateForTrainer($plan, $request->all()),
+            'plans' => [],
+            'attempts' => $this->attempts->paginateForTrainer($course, $request->all(), $plan),
             'filters' => [
                 'search' => (string) $request->input('search', ''),
+                'plan_id' => (string) $plan->id,
+            ],
+        ]);
+    }
+
+    public function courseIndex(Request $request, Course $course): Response
+    {
+        $this->plans->authorizeCourseAccess($course, Auth::user());
+
+        $plans = UsExperiencePlan::query()
+            ->where('course_id', $course->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'title', 'group_name']);
+
+        return Inertia::render('dashboard/courses/us-experience/attempts', [
+            'course' => [
+                'id' => $course->id,
+                'title' => $course->title,
+            ],
+            'plan' => null,
+            'plans' => $plans,
+            'attempts' => $this->attempts->paginateForTrainer($course, $request->all()),
+            'filters' => [
+                'search' => (string) $request->input('search', ''),
+                'plan_id' => (string) $request->input('plan_id', ''),
             ],
         ]);
     }

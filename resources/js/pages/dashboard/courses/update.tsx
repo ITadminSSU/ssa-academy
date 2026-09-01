@@ -43,6 +43,7 @@ export interface CourseUpdateProps extends SharedData {
    usExperiencePlans?: UsExperiencePlan[];
    usExperiencePlan?: UsExperiencePlan | null;
    usExperienceDefaultTolerancePercent?: number;
+   hasUsExperiencePlans?: boolean;
 }
 
 const Update = (props: CourseUpdateProps) => {

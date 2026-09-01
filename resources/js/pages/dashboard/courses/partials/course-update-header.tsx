@@ -49,7 +49,7 @@ const CourseUpdateHeader = () => {
    const { translate, appTimezone } = props;
    const { dashboard, button, input, common, frontend } = translate;
    const user = props.auth.user;
-   const { course, watchHistory, approvalStatus, launchNotificationCount = 0 } = props;
+   const { course, watchHistory, approvalStatus, launchNotificationCount = 0, hasUsExperiencePlans = false } = props;
    const statuses = props.statuses.filter((status) => status !== course.status);
    const { approve_able, validation_messages, counts } = approvalStatus;
    const launchLabel = formatCourseLaunchDateTime(course);
@@ -241,6 +241,14 @@ const CourseUpdateHeader = () => {
          <Button asChild variant="outline">
             <Link href={route('student-progress.show', course.id)}>{button.view_progress ?? 'View Progress'}</Link>
          </Button>
+
+         {hasUsExperiencePlans ? (
+            <Button asChild variant="outline">
+               <Link href={route('courses.us-experience.attempts.course', course.id)}>
+                  {button.us_experience_attempts ?? 'US Experience Attempts'}
+               </Link>
+            </Button>
+         ) : null}
 
          {course.final_exam_id ? (
             <Button asChild variant="outline">

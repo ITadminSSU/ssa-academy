@@ -175,5 +175,19 @@ it('hides stored file URLs from the trainer attempt payload', function () {
         ->and($payload['has_pdf'])->toBeTrue()
         ->and($payload['has_excel'])->toBeTrue()
         ->and($payload['takeoff_pdf_name'])->toBe('takeoff.pdf')
-        ->and($payload['trainer_feedback'])->toBe('Check the asphalt SF.');
+        ->and($payload['trainer_feedback'])->toBe('Check the asphalt SF.')
+        ->and($payload['plan'])->toBeNull();
+
+    $plan = new UsExperiencePlan([
+        'title' => 'Test 3',
+        'group_name' => 'Skills',
+    ]);
+    $plan->id = 9;
+    $attempt->setRelation('plan', $plan);
+
+    expect($attempt->toTrainerArray()['plan'])->toMatchArray([
+        'id' => 9,
+        'title' => 'Test 3',
+        'group_name' => 'Skills',
+    ]);
 });

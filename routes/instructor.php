@@ -117,6 +117,9 @@ Route::prefix('dashboard/trainer')->group(function () {
       Route::delete('section/assignment/{id}', 'destroy')->name('assignment.delete');
    });
 
+   Route::get('courses/{course}/us-experience/attempts', [UsExperienceAttemptReviewController::class, 'courseIndex'])
+      ->name('courses.us-experience.attempts.course');
+
    Route::prefix('courses/{course}/us-experience/plans')->name('courses.us-experience.')->group(function () {
       Route::post('/', [UsExperiencePlanController::class, 'store'])->name('store');
       Route::put('{plan}', [UsExperiencePlanController::class, 'update'])->name('update');

@@ -2,6 +2,7 @@
 
 namespace App\Services\UsExperience;
 
+use App\Models\Course\Course;
 use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
 use App\Models\User;
@@ -81,15 +82,17 @@ class UsExperienceAttemptService
         ]);
     }
 
-    public function paginateForTrainer(UsExperiencePlan $plan, array $filters = []): LengthAwarePaginator
+    public function paginateForTrainer(Course $course, array $filters = [], ?UsExperiencePlan $plan = null): LengthAwarePaginator
     {
         $search = trim((string) ($filters['search'] ?? ''));
         $perPage = (int) ($filters['per_page'] ?? 20);
         $perPage = $perPage > 0 ? min($perPage, 50) : 20;
+        $planId = $plan?->id ?: (int) ($filters['plan_id'] ?? 0);
 
         return UsExperienceAttempt::query()
-            ->with(['user:id,name,email'])
-            ->where('us_experience_plan_id', $plan->id)
+            ->with(['user:id,name,email', 'plan:id,course_id,title,group_name'])
+            ->whereHas('plan', fn ($query) => $query->where('course_id', $course->id))
+            ->when($planId > 0, fn ($query) => $query->where('us_experience_plan_id', $planId))
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('user', function ($user) use ($search) {
                     $user->where(function ($inner) use ($search) {

@@ -371,6 +371,7 @@ class CourseController extends Controller
                 'usExperiencePlans' => $usExperiencePlans,
                 'usExperiencePlan' => $usExperiencePlan,
                 'usExperienceDefaultTolerancePercent' => (float) config('us_experience.default_tolerance_percent', 2),
+                'hasUsExperiencePlans' => $course->usExperiencePlans()->exists(),
             ]
         );
     }

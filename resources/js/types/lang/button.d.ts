@@ -216,6 +216,7 @@ interface ButtonLang {
    overview: string;
    curriculum: string;
    build_your_us_experience: string;
+   us_experience_attempts?: string;
    details: string;
    instructor: string;
    reviews: string;

@@ -106,6 +106,11 @@ class UsExperienceAttempt extends Model
                 'name' => $this->user->name,
                 'email' => $this->user->email,
             ] : null,
+            'plan' => ($this->relationLoaded('plan') && $this->plan) ? [
+                'id' => $this->plan->id,
+                'title' => $this->plan->title,
+                'group_name' => $this->plan->group_name,
+            ] : null,
         ];
 
         if ($includeBreakdown) {
