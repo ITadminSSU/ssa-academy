@@ -9,6 +9,7 @@ interface UsExperienceLineItem {
    unit: string;
    expected_qty: number;
    tolerance_override?: number | null;
+   tolerance_override_mode?: 'percent' | 'absolute' | null;
 }
 
 interface UsExperiencePlan {
@@ -56,6 +57,7 @@ interface UsExperienceAttemptSummary {
       within_tolerance: boolean;
       is_correct?: boolean;
       tolerance?: number;
+      tolerance_percent?: number | null;
    }> | null;
 }
 
@@ -82,7 +84,7 @@ interface UsExperienceStudentPayload {
    plans: UsExperienceStudentPlan[];
    can_use_files: boolean;
    can_see_scores: boolean;
-   default_tolerance: number;
+   default_tolerance_percent: number;
    pass_mark_hint: number;
 }
 

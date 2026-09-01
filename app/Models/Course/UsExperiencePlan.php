@@ -65,7 +65,7 @@ class UsExperiencePlan extends Model
     }
 
     /**
-     * @return array<int, array{key: string, item: string, unit: string, expected_qty: float, tolerance_override?: float|null}>
+     * @return array<int, array{key: string, item: string, unit: string, expected_qty: float, tolerance_override?: float|null, tolerance_override_mode?: string|null}>
      */
     public function answerKeyLines(): array
     {

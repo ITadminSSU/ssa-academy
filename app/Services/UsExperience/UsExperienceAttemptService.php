@@ -52,7 +52,7 @@ class UsExperienceAttemptService
             $lineItems,
             ['quantities' => $quantities],
             (float) config('us_experience.default_total_marks', 100),
-            (float) config('us_experience.default_tolerance', 2),
+            defaultPercentTolerance: (float) config('us_experience.default_tolerance_percent', 2),
         );
 
         $passed = $result['lines_percent'] >= (float) $plan->pass_mark;

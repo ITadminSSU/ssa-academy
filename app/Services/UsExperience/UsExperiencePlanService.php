@@ -169,11 +169,18 @@ class UsExperiencePlanService
         }
 
         $oldOverrides = collect($plan->line_items ?? [])
-            ->mapWithKeys(fn (array $line) => [$line['key'] => $line['tolerance_override'] ?? null]);
+            ->mapWithKeys(fn (array $line) => [$line['key'] => [
+                'tolerance_override' => $line['tolerance_override'] ?? null,
+                'tolerance_override_mode' => $line['tolerance_override_mode'] ?? null,
+            ]]);
 
         foreach ($lineItems as &$line) {
             if ($oldOverrides->has($line['key'])) {
-                $line['tolerance_override'] = $oldOverrides[$line['key']];
+                $line['tolerance_override'] = $oldOverrides[$line['key']]['tolerance_override'];
+                $mode = $oldOverrides[$line['key']]['tolerance_override_mode'];
+                if ($mode) {
+                    $line['tolerance_override_mode'] = $mode;
+                }
             }
         }
         unset($line);
@@ -212,7 +219,7 @@ class UsExperiencePlanService
     }
 
     /**
-     * @param array<int, array{key: string, tolerance_override?: float|null}> $tolerances
+     * @param array<int, array{key: string, tolerance_override?: float|null, tolerance_override_mode?: string|null}> $tolerances
      */
     public function saveLineTolerances(UsExperiencePlan $plan, array $tolerances): UsExperiencePlan
     {
@@ -224,8 +231,7 @@ class UsExperiencePlanService
                 continue;
             }
 
-            $override = $toleranceMap[$line['key']]['tolerance_override'] ?? null;
-            $line['tolerance_override'] = $override === null || $override === '' ? null : (float) $override;
+            $this->applyLineTolerance($line, $toleranceMap[$line['key']]);
         }
         unset($line);
 
@@ -317,5 +323,25 @@ class UsExperiencePlanService
         $usedNames[$name] = true;
 
         return $name;
+    }
+
+    /**
+     * @param array<string, mixed> $line
+     * @param array{tolerance_override?: float|null, tolerance_override_mode?: string|null} $incoming
+     */
+    private function applyLineTolerance(array &$line, array $incoming): void
+    {
+        $override = $incoming['tolerance_override'] ?? null;
+
+        if ($override === null || $override === '') {
+            $line['tolerance_override'] = null;
+            unset($line['tolerance_override_mode']);
+
+            return;
+        }
+
+        $mode = (string) ($incoming['tolerance_override_mode'] ?? 'percent');
+        $line['tolerance_override'] = (float) $override;
+        $line['tolerance_override_mode'] = in_array($mode, ['percent', 'absolute'], true) ? $mode : 'percent';
     }
 }

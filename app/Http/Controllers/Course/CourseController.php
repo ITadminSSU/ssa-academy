@@ -370,7 +370,7 @@ class CourseController extends Controller
                 'launchNotificationCount' => $this->launchNotifications->pendingCountForCourse($course),
                 'usExperiencePlans' => $usExperiencePlans,
                 'usExperiencePlan' => $usExperiencePlan,
-                'usExperienceDefaultTolerance' => (float) config('us_experience.default_tolerance', 2),
+                'usExperienceDefaultTolerancePercent' => (float) config('us_experience.default_tolerance_percent', 2),
             ]
         );
     }

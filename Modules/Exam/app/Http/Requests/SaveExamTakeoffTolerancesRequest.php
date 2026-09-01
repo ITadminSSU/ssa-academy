@@ -19,7 +19,8 @@ class SaveExamTakeoffTolerancesRequest extends FormRequest
         return [
             'tolerances' => 'required|array',
             'tolerances.*.key' => 'required|string',
-            'tolerances.*.tolerance_override' => 'nullable|numeric|min:0',
+            'tolerances.*.tolerance_override' => 'nullable|numeric|min:0|max:100',
+            'tolerances.*.tolerance_override_mode' => 'nullable|in:percent,absolute',
         ];
     }
 }

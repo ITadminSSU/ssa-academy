@@ -22,9 +22,31 @@ const fieldError = (errors: Record<string, unknown>, key: string): string | unde
    return Array.isArray(value) ? String(value[0]) : String(value);
 };
 
+const isPercentOverride = (line: UsExperienceLineItem) =>
+   line.tolerance_override != null && line.tolerance_override_mode === 'percent';
+
+const isLegacyAbsolute = (line: UsExperienceLineItem) =>
+   line.tolerance_override != null && line.tolerance_override_mode !== 'percent';
+
+const quantityBand = (expected: number, percent: number) => Math.abs(expected) * (percent / 100);
+
+const toleranceSavePayload = (line: UsExperienceLineItem, draft: string) => {
+   const trimmed = draft.trim();
+
+   if (trimmed) {
+      return { key: line.key, tolerance_override: Number(trimmed), tolerance_override_mode: 'percent' };
+   }
+
+   if (isLegacyAbsolute(line)) {
+      return { key: line.key, tolerance_override: line.tolerance_override, tolerance_override_mode: 'absolute' };
+   }
+
+   return { key: line.key, tolerance_override: null, tolerance_override_mode: null };
+};
+
 const UsExperiencePlanEditor = () => {
    const { props } = usePage<CourseUpdateProps>();
-   const { course, usExperiencePlan, usExperienceDefaultTolerance = 2 } = props;
+   const { course, usExperiencePlan, usExperienceDefaultTolerancePercent = 2 } = props;
    const pageErrors = (props.errors ?? {}) as Record<string, unknown>;
    const plan = usExperiencePlan;
 
@@ -63,8 +85,7 @@ const UsExperiencePlanEditor = () => {
       });
       const draft: Record<string, string> = {};
       (plan.line_items || []).forEach((line) => {
-         draft[line.key] =
-            line.tolerance_override !== null && line.tolerance_override !== undefined ? String(line.tolerance_override) : '';
+         draft[line.key] = isPercentOverride(line) ? String(line.tolerance_override) : '';
       });
       setToleranceDraft(draft);
    }, [plan?.id, plan?.parsed_at]);
@@ -108,8 +129,8 @@ const UsExperiencePlanEditor = () => {
                   Plan settings
                </CardTitle>
                <CardDescription>
-                  Untimed practice. Pass mark and max attempts live here. Duration is not used. Default quantity tolerance is ±
-                  {usExperienceDefaultTolerance}.
+                  Untimed practice. Pass mark and max attempts live here. Duration is not used. Default quantity tolerance is{' '}
+                  {usExperienceDefaultTolerancePercent}% of each line.
                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -390,7 +411,7 @@ const UsExperiencePlanEditor = () => {
                <CardTitle>Parsed line items and tolerances</CardTitle>
                <CardDescription>
                   {lineItems.length > 0
-                     ? `${lineItems.length} graded quantity line(s) detected. Default is ±${usExperienceDefaultTolerance}. Leave Custom ± blank to keep the default, or type a number for that line only.`
+                     ? `${lineItems.length} graded quantity line(s) detected. Default is ${usExperienceDefaultTolerancePercent}% of each quantity. Leave Custom ± blank to keep the default, or type a percent for that line only.`
                      : 'Import an answer key to preview the line items students will be graded on.'}
                </CardDescription>
             </CardHeader>
@@ -405,7 +426,7 @@ const UsExperiencePlanEditor = () => {
                                  <TableHead>Item</TableHead>
                                  <TableHead>Quantity</TableHead>
                                  <TableHead>Unit</TableHead>
-                                 <TableHead>Custom ± tolerance</TableHead>
+                                 <TableHead>Custom ± tolerance (%)</TableHead>
                               </TableRow>
                            </TableHeader>
                            <TableBody>
@@ -418,20 +439,30 @@ const UsExperiencePlanEditor = () => {
                                        <Badge variant="outline">{line.unit || '—'}</Badge>
                                     </TableCell>
                                     <TableCell>
-                                       <Input
-                                          type="number"
-                                          min="0"
-                                          step="0.01"
-                                          placeholder={`Default (±${usExperienceDefaultTolerance})`}
-                                          value={toleranceDraft[line.key] ?? ''}
-                                          onChange={(event) =>
-                                             setToleranceDraft((prev) => ({
-                                                ...prev,
-                                                [line.key]: event.target.value,
-                                             }))
-                                          }
-                                          className="w-36"
-                                       />
+                                       <div className="flex min-w-40 flex-col gap-1">
+                                          <Input
+                                             type="number"
+                                             min="0"
+                                             max="100"
+                                             step="0.01"
+                                             placeholder={`Default (${usExperienceDefaultTolerancePercent}%)`}
+                                             value={toleranceDraft[line.key] ?? ''}
+                                             onChange={(event) =>
+                                                setToleranceDraft((prev) => ({
+                                                   ...prev,
+                                                   [line.key]: event.target.value,
+                                                }))
+                                             }
+                                             className="w-36"
+                                          />
+                                          <span className="text-muted-foreground text-xs">
+                                             {toleranceDraft[line.key]?.trim() && !Number.isNaN(Number(toleranceDraft[line.key]))
+                                                ? `→ ±${quantityBand(line.expected_qty, Number(toleranceDraft[line.key])).toFixed(2)} ${line.unit || ''}`.trim()
+                                                : isLegacyAbsolute(line)
+                                                  ? `Current: ±${line.tolerance_override} ${line.unit || ''} (quantity). Enter a % to replace.`
+                                                  : `→ ±${quantityBand(line.expected_qty, usExperienceDefaultTolerancePercent).toFixed(2)} ${line.unit || ''}`.trim()}
+                                          </span>
+                                       </div>
                                     </TableCell>
                                  </TableRow>
                               ))}
@@ -446,12 +477,9 @@ const UsExperiencePlanEditor = () => {
                            router.post(
                               route('courses.us-experience.tolerances', { course: course.id, plan: plan.id }),
                               {
-                                 tolerances: lineItems.map((line) => ({
-                                    key: line.key,
-                                    tolerance_override: toleranceDraft[line.key]?.trim()
-                                       ? Number(toleranceDraft[line.key])
-                                       : null,
-                                 })),
+                                 tolerances: lineItems.map((line) =>
+                                    toleranceSavePayload(line, toleranceDraft[line.key] ?? ''),
+                                 ),
                               },
                               {
                                  preserveScroll: true,

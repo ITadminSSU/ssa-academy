@@ -35,7 +35,7 @@ class UsExperienceUnlockService
             'plans' => $this->studentPlanPayloads($ordered, $attempts, $canUseFiles, $canSeeScores),
             'can_use_files' => $canUseFiles,
             'can_see_scores' => $canSeeScores,
-            'default_tolerance' => (float) config('us_experience.default_tolerance', 2),
+            'default_tolerance_percent' => (float) config('us_experience.default_tolerance_percent', 2),
             'pass_mark_hint' => (int) config('us_experience.default_pass_mark', 85),
         ];
     }

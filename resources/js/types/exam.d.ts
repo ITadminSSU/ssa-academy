@@ -46,7 +46,7 @@ interface Exam extends TableCommon {
    takeoff_config?: {
       answer_key_file_url?: string;
       answer_key_file_name?: string;
-      line_items?: Array<{ key: string; item: string; unit: string; expected_qty?: number; tolerance_override?: number | null }>;
+      line_items?: Array<{ key: string; item: string; unit: string; expected_qty?: number; tolerance_override?: number | null; tolerance_override_mode?: 'percent' | 'absolute' | null }>;
       parsed_at?: string;
       tutorial_video_url?: string;
       tutorial_video_name?: string;
@@ -193,6 +193,7 @@ interface ExamAttemptAnswer extends TableCommon {
          auto_within_tolerance?: boolean;
          manual_override?: boolean | null;
          tolerance: number;
+         tolerance_percent?: number | null;
       }>;
       lines_correct?: number;
       lines_total?: number;

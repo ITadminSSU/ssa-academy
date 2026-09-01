@@ -17,11 +17,34 @@ type TakeoffLineItem = {
    unit: string;
    expected_qty: number;
    tolerance_override?: number | null;
+   tolerance_override_mode?: 'percent' | 'absolute' | null;
 };
 
 type UploadedFile = {
    file_url: string;
    file_name: string;
+};
+
+const isPercentOverride = (line: TakeoffLineItem) =>
+   line.tolerance_override != null && line.tolerance_override_mode === 'percent';
+
+const isLegacyAbsolute = (line: TakeoffLineItem) =>
+   line.tolerance_override != null && line.tolerance_override_mode !== 'percent';
+
+const quantityBand = (expected: number, percent: number) => Math.abs(expected) * (percent / 100);
+
+const toleranceSavePayload = (line: TakeoffLineItem, draft: string) => {
+   const trimmed = draft.trim();
+
+   if (trimmed) {
+      return { key: line.key, tolerance_override: Number(trimmed), tolerance_override_mode: 'percent' as const };
+   }
+
+   if (isLegacyAbsolute(line)) {
+      return { key: line.key, tolerance_override: line.tolerance_override, tolerance_override_mode: 'absolute' as const };
+   }
+
+   return { key: line.key, tolerance_override: null, tolerance_override_mode: null };
 };
 
 const fieldError = (errors: Record<string, unknown>, key: string): string | undefined => {
@@ -65,14 +88,13 @@ const QuantityTakeoff = () => {
       const draft: Record<string, string> = {};
 
       lineItems.forEach((line) => {
-         draft[line.key] =
-            line.tolerance_override !== null && line.tolerance_override !== undefined ? String(line.tolerance_override) : '';
+         draft[line.key] = isPercentOverride(line) ? String(line.tolerance_override) : '';
       });
 
       setToleranceDraft(draft);
    }, [lineItems]);
 
-   const defaultToleranceHint = useMemo(() => 'Leave blank to use the default rule (1% or unit floor).', []);
+   const defaultToleranceHint = useMemo(() => 'Leave blank to use the default rule (1% or unit floor). Custom values are percents.', []);
 
    const handleImportAnswerKey = () => {
       if (!pendingAnswerKey?.file_url) {
@@ -139,10 +161,7 @@ const QuantityTakeoff = () => {
       router.post(
          route('exams.takeoff.tolerances', exam.id),
          {
-            tolerances: lineItems.map((line) => ({
-               key: line.key,
-               tolerance_override: toleranceDraft[line.key]?.trim() ? Number(toleranceDraft[line.key]) : null,
-            })),
+            tolerances: lineItems.map((line) => toleranceSavePayload(line, toleranceDraft[line.key] ?? '')),
          },
          {
             preserveScroll: true,
@@ -402,7 +421,7 @@ const QuantityTakeoff = () => {
                                  <TableHead>Item</TableHead>
                                  <TableHead>Quantity</TableHead>
                                  <TableHead>Unit</TableHead>
-                                 <TableHead>Custom ± tolerance</TableHead>
+                                 <TableHead>Custom ± tolerance (%)</TableHead>
                               </TableRow>
                            </TableHeader>
                            <TableBody>
@@ -415,20 +434,30 @@ const QuantityTakeoff = () => {
                                        <Badge variant="outline">{line.unit || '—'}</Badge>
                                     </TableCell>
                                     <TableCell>
-                                       <Input
-                                          type="number"
-                                          min="0"
-                                          step="0.01"
-                                          placeholder="Default"
-                                          value={toleranceDraft[line.key] ?? ''}
-                                          onChange={(event) =>
-                                             setToleranceDraft((prev) => ({
-                                                ...prev,
-                                                [line.key]: event.target.value,
-                                             }))
-                                          }
-                                          className="w-28"
-                                       />
+                                       <div className="flex min-w-40 flex-col gap-1">
+                                          <Input
+                                             type="number"
+                                             min="0"
+                                             max="100"
+                                             step="0.01"
+                                             placeholder="Default (1% or floor)"
+                                             value={toleranceDraft[line.key] ?? ''}
+                                             onChange={(event) =>
+                                                setToleranceDraft((prev) => ({
+                                                   ...prev,
+                                                   [line.key]: event.target.value,
+                                                }))
+                                             }
+                                             className="w-36"
+                                          />
+                                          <span className="text-muted-foreground text-xs">
+                                             {toleranceDraft[line.key]?.trim() && !Number.isNaN(Number(toleranceDraft[line.key]))
+                                                ? `→ ±${quantityBand(line.expected_qty, Number(toleranceDraft[line.key])).toFixed(2)} ${line.unit || ''}`.trim()
+                                                : isLegacyAbsolute(line)
+                                                  ? `Current: ±${line.tolerance_override} ${line.unit || ''} (quantity). Enter a % to replace.`
+                                                  : 'Blank uses 1% or the unit floor.'}
+                                          </span>
+                                       </div>
                                     </TableCell>
                                  </TableRow>
                               ))}

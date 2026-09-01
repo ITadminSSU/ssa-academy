@@ -5,24 +5,45 @@ use App\Models\Course\UsExperiencePlan;
 use App\Services\UsExperience\UsExperienceUnlockService;
 use Modules\Exam\Services\QuantityTakeoffGradingService;
 
-it('uses ±2 as the default absolute band when no per-line override is set', function () {
+it('uses 2% of expected quantity as the US Experience default band', function () {
     $grader = new QuantityTakeoffGradingService();
     $key = [[
         'key' => 'item-a',
         'item' => 'Drywall',
         'unit' => 'SF',
-        'expected_qty' => 5,
+        'expected_qty' => 100,
     ]];
 
-    $pass = $grader->grade($key, ['quantities' => ['item-a' => 3]], 100, 2.0);
-    $fail = $grader->grade($key, ['quantities' => ['item-a' => 8]], 100, 2.0);
+    $pass = $grader->grade($key, ['quantities' => ['item-a' => 98]], 100, defaultPercentTolerance: 2.0);
+    $fail = $grader->grade($key, ['quantities' => ['item-a' => 97]], 100, defaultPercentTolerance: 2.0);
 
     expect($pass['lines_correct'])->toBe(1);
     expect($pass['grading_breakdown'][0]['tolerance'])->toBe(2.0);
+    expect($pass['grading_breakdown'][0]['tolerance_percent'])->toBe(2.0);
     expect($fail['lines_correct'])->toBe(0);
 });
 
-it('uses a trainer per-line override instead of the ±2 default', function () {
+it('uses a trainer percent override instead of the 2% default', function () {
+    $grader = new QuantityTakeoffGradingService();
+    $key = [[
+        'key' => 'item-a',
+        'item' => 'Drywall',
+        'unit' => 'SF',
+        'expected_qty' => 1000,
+        'tolerance_override' => 5,
+        'tolerance_override_mode' => 'percent',
+    ]];
+
+    $inside = $grader->grade($key, ['quantities' => ['item-a' => 1049]], 100, defaultPercentTolerance: 2.0);
+    $outside = $grader->grade($key, ['quantities' => ['item-a' => 1051]], 100, defaultPercentTolerance: 2.0);
+
+    expect($inside['lines_correct'])->toBe(1);
+    expect($inside['grading_breakdown'][0]['tolerance'])->toBe(50.0);
+    expect($inside['grading_breakdown'][0]['tolerance_percent'])->toBe(5.0);
+    expect($outside['lines_correct'])->toBe(0);
+});
+
+it('keeps a legacy absolute override until the trainer re-saves as a percent', function () {
     $grader = new QuantityTakeoffGradingService();
     $key = [[
         'key' => 'item-a',
@@ -32,15 +53,16 @@ it('uses a trainer per-line override instead of the ±2 default', function () {
         'tolerance_override' => 0.5,
     ]];
 
-    $inside = $grader->grade($key, ['quantities' => ['item-a' => 5.4]], 100, 2.0);
-    $outside = $grader->grade($key, ['quantities' => ['item-a' => 3]], 100, 2.0);
+    $inside = $grader->grade($key, ['quantities' => ['item-a' => 5.4]], 100, defaultPercentTolerance: 2.0);
+    $outside = $grader->grade($key, ['quantities' => ['item-a' => 3]], 100, defaultPercentTolerance: 2.0);
 
     expect($inside['lines_correct'])->toBe(1);
     expect($inside['grading_breakdown'][0]['tolerance'])->toBe(0.5);
+    expect($inside['grading_breakdown'][0]['tolerance_percent'])->toBeNull();
     expect($outside['lines_correct'])->toBe(0);
 });
 
-it('does not apply exam unit floors when an absolute default tolerance is provided', function () {
+it('does not apply exam unit floors when a percent default is provided', function () {
     $grader = new QuantityTakeoffGradingService();
     $key = [[
         'key' => 'item-a',
@@ -49,11 +71,25 @@ it('does not apply exam unit floors when an absolute default tolerance is provid
         'expected_qty' => 100,
     ]];
 
-    // Exam floors would allow ±50 SF. Plan default ±2 must fail 90.
-    $result = $grader->grade($key, ['quantities' => ['item-a' => 90]], 100, 2.0);
+    $result = $grader->grade($key, ['quantities' => ['item-a' => 90]], 100, defaultPercentTolerance: 2.0);
 
     expect($result['lines_correct'])->toBe(0);
     expect($result['grading_breakdown'][0]['tolerance'])->toBe(2.0);
+});
+
+it('uses 1% or the unit floor for exam lines with no override', function () {
+    $grader = new QuantityTakeoffGradingService();
+    $key = [[
+        'key' => 'item-a',
+        'item' => 'Area',
+        'unit' => 'SF',
+        'expected_qty' => 100,
+    ]];
+
+    $result = $grader->grade($key, ['quantities' => ['item-a' => 60]], 100);
+
+    expect($result['lines_correct'])->toBe(1);
+    expect($result['grading_breakdown'][0]['tolerance'])->toBe(50.0);
 });
 
 it('unlocks the next plan only after the previous plan is passed', function () {

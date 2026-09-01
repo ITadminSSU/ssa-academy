@@ -203,6 +203,7 @@ const QuantityTakeoffAttempt = ({ attempt, lineItems, gradingRules, templateDown
                         <p>Linear (LF): within {gradingRules.tolerance_percent}% or {gradingRules.unit_floors.LF}, whichever is larger</p>
                         <p>Each (EA): within ±{gradingRules.unit_floors.EA}</p>
                         <p>Other units: within {gradingRules.tolerance_percent}% or ±{gradingRules.unit_floors.default}</p>
+                        <p>Custom per-line percents replace this rule for that line only.</p>
                      </CardContent>
                      {templateDownloadUrl && (
                         <CardContent className="border-t pt-4">

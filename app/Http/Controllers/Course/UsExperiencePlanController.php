@@ -94,7 +94,7 @@ class UsExperiencePlanController extends Controller
 
         return back()->with(
             'success',
-            'Answer key validated and imported. '.$result['line_count'].' quantity line(s) are ready. Default tolerance is ±2; edit any line below if needed.'
+            'Answer key validated and imported. '.$result['line_count'].' quantity line(s) are ready. Default tolerance is 2%; edit any line below if needed.'
         );
     }
 

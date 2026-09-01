@@ -13,6 +13,7 @@ export interface QuantityTakeoffBreakdownLine {
    auto_within_tolerance?: boolean;
    manual_override?: boolean | null;
    tolerance?: number;
+   tolerance_percent?: number | null;
 }
 
 interface Props {
@@ -99,7 +100,12 @@ const QuantityTakeoffBreakdown = ({ breakdown, linesCorrect, linesTotal, showTol
                         <td className="p-3">
                            <Badge variant="outline">{line.unit || '—'}</Badge>
                         </td>
-                        {showTolerance && <td className="p-3 text-muted-foreground">± {formatQty(line.tolerance)}</td>}
+                        {showTolerance && (
+                           <td className="p-3 text-muted-foreground">
+                              ± {formatQty(line.tolerance)}
+                              {line.tolerance_percent != null ? ` (${line.tolerance_percent}%)` : ''}
+                           </td>
+                        )}
                         <td className="p-3">
                            {lineCorrect ? (
                               <span className="inline-flex items-center gap-1 font-medium text-green-600">

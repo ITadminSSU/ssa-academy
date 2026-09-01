@@ -29,11 +29,18 @@ class ExamQuantityTakeoffService
         $lineItems = $this->parser->parse($filePath);
         $existingConfig = $exam->takeoff_config ?? [];
         $oldOverrides = collect($existingConfig['line_items'] ?? [])
-            ->mapWithKeys(fn (array $line) => [$line['key'] => $line['tolerance_override'] ?? null]);
+            ->mapWithKeys(fn (array $line) => [$line['key'] => [
+                'tolerance_override' => $line['tolerance_override'] ?? null,
+                'tolerance_override_mode' => $line['tolerance_override_mode'] ?? null,
+            ]]);
 
         foreach ($lineItems as &$line) {
             if ($oldOverrides->has($line['key'])) {
-                $line['tolerance_override'] = $oldOverrides[$line['key']];
+                $line['tolerance_override'] = $oldOverrides[$line['key']]['tolerance_override'];
+                $mode = $oldOverrides[$line['key']]['tolerance_override_mode'];
+                if ($mode) {
+                    $line['tolerance_override_mode'] = $mode;
+                }
             }
         }
         unset($line);
@@ -156,7 +163,7 @@ class ExamQuantityTakeoffService
     }
 
     /**
-     * @param array<int, array{key: string, tolerance_override?: float|null}> $tolerances
+     * @param array<int, array{key: string, tolerance_override?: float|null, tolerance_override_mode?: string|null}> $tolerances
      */
     public function saveLineTolerances(Exam $exam, array $tolerances): Exam
     {
@@ -174,7 +181,15 @@ class ExamQuantityTakeoffService
             }
 
             $override = $toleranceMap[$line['key']]['tolerance_override'] ?? null;
-            $line['tolerance_override'] = $override === null || $override === '' ? null : (float) $override;
+            $mode = (string) ($toleranceMap[$line['key']]['tolerance_override_mode'] ?? 'percent');
+
+            if ($override === null || $override === '') {
+                $line['tolerance_override'] = null;
+                unset($line['tolerance_override_mode']);
+            } else {
+                $line['tolerance_override'] = (float) $override;
+                $line['tolerance_override_mode'] = in_array($mode, ['percent', 'absolute'], true) ? $mode : 'percent';
+            }
         }
         unset($line);
 
