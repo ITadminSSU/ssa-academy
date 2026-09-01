@@ -27,6 +27,14 @@ const faqs: FaqBlock[] = [
       ],
    },
    {
+      question: 'What makes SMARTSOURCING USA Academy unique?',
+      paragraphs: [
+         'SmartSourcing USA Academy focuses on practical construction training for people who want to build skills relevant to remote and U.S.-based construction workflows.',
+         'Instead of focusing only on theory or software tutorials, the Academy aims to help learners understand how construction professionals work with plans, specifications, takeoffs, estimating processes, terminology, project documents, industry tools, and remote workflows.',
+         'The goal is to help learners build practical skills, confidence, and industry familiarity that they can apply as they prepare for real-world construction opportunities.',
+      ],
+   },
+   {
       question: 'Do I need to be an engineer to enroll in SmartSourcing USA Academy?',
       paragraphs: [
          'No. You do not need to be a licensed engineer to enroll.',
@@ -85,12 +93,9 @@ const faqs: FaqBlock[] = [
       ],
    },
    {
-      question: 'Does completing SmartSourcing USA Academy guarantee a job?',
+      question: 'Does completing SMARTSOURCING USA Academy courses guarantee a job?',
       paragraphs: [
-         'No. Completing SmartSourcing USA Academy does not guarantee employment or placement with SmartSourcing USA or any of its clients.',
-         'The Academy is designed to help learners develop practical skills, strengthen their construction knowledge, and better prepare themselves for remote construction opportunities.',
-         'We encourage every learner to take the training seriously, do their best, and demonstrate what they can do. Strong performance and the skills developed through the Academy may help learners become better prepared and potentially be considered for future opportunities with SmartSourcing USA when suitable roles become available.',
-         'Any employment opportunity will still depend on factors such as qualifications, skills, experience, performance, client requirements, available positions, and the applicable hiring or selection process.',
+         'Any engagement opportunity will still depend on factors such as required qualifications, skills, experience, interview performance, client requirements, available positions, and the applicable hiring or selection process.',
       ],
    },
    {
@@ -125,14 +130,6 @@ const faqs: FaqBlock[] = [
          'Academy announcements',
          'Construction learning resources',
          'Future Academy activities',
-      ],
-   },
-   {
-      question: 'What makes SmartSourcing USA Academy different?',
-      paragraphs: [
-         'SmartSourcing USA Academy focuses on practical construction training for people who want to build skills relevant to remote and U.S.-based construction workflows.',
-         'Instead of focusing only on theory or software tutorials, the Academy aims to help learners understand how construction professionals work with plans, specifications, takeoffs, estimating processes, terminology, project documents, industry tools, and remote workflows.',
-         'The goal is to help learners build practical skills, confidence, and industry familiarity that they can apply as they prepare for real-world construction opportunities.',
       ],
    },
 ];
