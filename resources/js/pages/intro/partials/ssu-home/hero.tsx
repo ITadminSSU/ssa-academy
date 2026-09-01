@@ -9,7 +9,7 @@ const defaultHero = {
    kicker: 'SMARTSOURCING USA ACADEMY',
    title: 'Upskill. Certify your skills. Scale with confidence.',
    description:
-      'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
+      'Structured learning paths for professionals — video lessons, quizzes, and verified SSA certificates.',
 };
 
 /** Dense original CAD-style building blueprint (hand-authored, not third-party). */

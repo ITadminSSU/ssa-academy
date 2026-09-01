@@ -19,7 +19,7 @@ const defaultPillars = [
       icon: 'book-open',
       title: 'Structured Learning Paths',
       description:
-         'Step-by-step courses with video lessons, assignments, and quizzes — designed to build skills you can apply on the job.',
+         'Step-by-step courses with video lessons and quizzes — designed to build skills you can apply on the job.',
    },
    {
       icon: 'clock',
@@ -29,7 +29,7 @@ const defaultPillars = [
    {
       icon: 'badge-check',
       title: 'Verified Certification',
-      description: 'Complete every lesson, assignment, and quiz to earn SSU-verified credentials with unique reference numbers.',
+      description: 'Complete every lesson and quiz to earn SSA-verified credentials with unique reference numbers.',
    },
 ];
 

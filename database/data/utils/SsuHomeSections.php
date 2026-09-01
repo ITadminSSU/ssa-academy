@@ -15,7 +15,7 @@ class SsuHomeSections
                 'slug' => 'hero',
                 'title' => 'SMARTSOURCING USA ACADEMY',
                 'sub_title' => 'Upskill. Certify your skills. Scale with confidence.',
-                'description' => 'Structured learning paths for professionals — video lessons, assignments, quizzes, and verified SSU certificates.',
+                'description' => 'Structured learning paths for professionals — video lessons, quizzes, and verified SSA certificates.',
                 'thumbnail' => '/assets/images/ssu-about/about-hero.png',
                 'flags' => [
                     'title' => true,
@@ -44,7 +44,7 @@ class SsuHomeSections
                         [
                             'icon' => 'book-open',
                             'title' => 'Structured Learning Paths',
-                            'description' => 'Step-by-step courses with video lessons, assignments, and quizzes — designed to build skills you can apply on the job.',
+                            'description' => 'Step-by-step courses with video lessons and quizzes — designed to build skills you can apply on the job.',
                         ],
                         [
                             'icon' => 'clock',
@@ -54,7 +54,7 @@ class SsuHomeSections
                         [
                             'icon' => 'badge-check',
                             'title' => 'Verified Certification',
-                            'description' => 'Complete every lesson, assignment, and quiz to earn SSU-verified credentials with unique reference numbers.',
+                            'description' => 'Complete every lesson and quiz to earn SSA-verified credentials with unique reference numbers.',
                         ],
                     ],
                 ],

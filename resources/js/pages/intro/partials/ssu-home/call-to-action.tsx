@@ -16,7 +16,8 @@ const CallToAction = () => {
 
 
 
-   const kicker = ctaSection?.sub_title || 'Join SMARTSOURCING USA ACADEMY Today';
+   const rawKicker = ctaSection?.sub_title || 'Join SMARTSOURCING USA ACADEMY Today';
+   const kicker = rawKicker.replace(/SSU\s+ACADEMY/gi, 'SMARTSOURCING USA ACADEMY');
 
    const title = ctaSection?.title || 'Ready to start learning?';
 

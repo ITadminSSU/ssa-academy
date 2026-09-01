@@ -87,16 +87,14 @@ const FooterEditor = ({ footer }: { footer: Footer }) => {
       e.preventDefault();
 
       if (editingItem) {
-         // Update existing item
-         put(`/dashboard/settings/footer-items/${editingItem.id}`, {
+         put(route('settings.footer.items.update', editingItem.id), {
             onSuccess: () => {
                setIsFormOpen(false);
                router.reload({ only: ['footer'] });
             },
          });
       } else {
-         // Create new item
-         post(`/dashboard/settings/footer/${footer.id}/items`, {
+         post(route('settings.footer.items.store', footer.id), {
             onSuccess: () => {
                setIsFormOpen(false);
                router.reload({ only: ['footer'] });
@@ -212,7 +210,7 @@ const FooterEditor = ({ footer }: { footer: Footer }) => {
                                  id="active"
                                  defaultChecked={item.active}
                                  onCheckedChange={(checked) => {
-                                    router.put(`/dashboard/settings/navbar-items/${item.id}`, {
+                                    router.put(route('settings.footer.items.update', item.id), {
                                        ...(item as any),
                                        active: checked,
                                     });
@@ -373,7 +371,7 @@ const FooterEditor = ({ footer }: { footer: Footer }) => {
                                     id="active"
                                     checked={item.active}
                                     onCheckedChange={(checked) => {
-                                       router.put(`/dashboard/settings/footer-items/${item.id}`, {
+                                       router.put(route('settings.footer.items.update', item.id), {
                                           ...(item as any),
                                           active: checked,
                                        });

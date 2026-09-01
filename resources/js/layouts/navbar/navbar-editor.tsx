@@ -75,16 +75,14 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
       e.preventDefault();
 
       if (editingItem) {
-         // Update existing item
-         put(`/dashboard/settings/navbar-items/${editingItem.id}`, {
+         put(route('settings.navbar.items.update', editingItem.id), {
             onSuccess: () => {
                setIsFormOpen(false);
                router.reload({ only: ['navbar'] });
             },
          });
       } else {
-         // Create new item
-         post(`/dashboard/settings/navbar/${navbar.id}/items`, {
+         post(route('settings.navbar.items.store', navbar.id), {
             onSuccess: () => {
                setIsFormOpen(false);
                router.reload({ only: ['navbar'] });
@@ -157,7 +155,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                                  id="active"
                                  defaultChecked={item.active}
                                  onCheckedChange={(checked) => {
-                                    router.put(`/dashboard/settings/navbar-items/${item.id}`, {
+                                    router.put(route('settings.navbar.items.update', {
                                        ...(item as any),
                                        active: checked,
                                     });
@@ -275,7 +273,7 @@ const NavbarEditor = ({ navbar }: { navbar: Navbar }) => {
                                  id="airplane-mode"
                                  checked={item.active}
                                  onCheckedChange={(checked) => {
-                                    router.put(`/dashboard/settings/navbar-items/${item.id}`, {
+                                    router.put(route('settings.navbar.items.update', {
                                        ...(item as any),
                                        active: checked,
                                     });
