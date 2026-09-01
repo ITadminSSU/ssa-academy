@@ -17,19 +17,22 @@ interface Props extends SharedData {
    page: Page;
 }
 
+const protectedInnerSlugs = ['about-us', 'our-team', 'careers'];
+
 const Update = ({ page }: Props) => {
    const { props } = usePage<SharedData>();
    const { translate } = props;
    const { settings, input, common, button } = translate;
+   const isProtectedPage = protectedInnerSlugs.includes(page.slug);
 
    const { data, setData, put, errors, processing } = useForm({
       name: page.name,
       slug: page.slug,
       title: page.title,
-      description: page.description,
-      meta_description: page.meta_description,
-      meta_keywords: page.meta_keywords,
-      active: page.active,
+      description: page.description ?? '',
+      meta_description: page.meta_description ?? '',
+      meta_keywords: page.meta_keywords ?? '',
+      active: isProtectedPage ? true : page.active,
    });
 
    // Handle form submission
@@ -109,20 +112,26 @@ const Update = ({ page }: Props) => {
 
                   <div>
                      <Label>{common.active}</Label>
-                     <RadioGroup
-                        defaultValue={data.active ? 'on' : 'off'}
-                        className="flex items-center space-x-4 pt-2 pb-1"
-                        onValueChange={(value) => setData('active', value == 'on' ? true : false)}
-                     >
-                        <div className="flex items-center space-x-2">
-                           <RadioGroupItem className="cursor-pointer" id="off" value="off" />
-                           <Label htmlFor="off">{common.off}</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                           <RadioGroupItem className="cursor-pointer" id="on" value="on" />
-                           <Label htmlFor="on">{common.on}</Label>
-                        </div>
-                     </RadioGroup>
+                     {isProtectedPage ? (
+                        <p className="text-muted-foreground pt-2 text-sm">
+                           This page stays published so the public Our Team / About Us / Careers links keep working.
+                        </p>
+                     ) : (
+                        <RadioGroup
+                           value={data.active ? 'on' : 'off'}
+                           className="flex items-center space-x-4 pt-2 pb-1"
+                           onValueChange={(value) => setData('active', value == 'on' ? true : false)}
+                        >
+                           <div className="flex items-center space-x-2">
+                              <RadioGroupItem className="cursor-pointer" id="off" value="off" />
+                              <Label htmlFor="off">{common.off}</Label>
+                           </div>
+                           <div className="flex items-center space-x-2">
+                              <RadioGroupItem className="cursor-pointer" id="on" value="on" />
+                              <Label htmlFor="on">{common.on}</Label>
+                           </div>
+                        </RadioGroup>
+                     )}
                      <InputError message={errors.active} />
                   </div>
 

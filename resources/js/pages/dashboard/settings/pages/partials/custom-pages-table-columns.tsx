@@ -40,7 +40,9 @@ const TableColumn = (translate: LanguageTranslations): ColumnDef<Page>[] => {
          header: () => <div className="px-3 text-center">{table.action}</div>,
          cell: ({ row }) => {
             const page = row.original;
-            const url = window.location.origin + '/' + page.slug;
+            const publicPath = page.slug === 'our-team' ? '/about-us' : `/${page.slug}`;
+            const url = window.location.origin + publicPath;
+            const previewHref = page.slug === 'our-team' ? route('about') : route('inner.page', page.slug);
 
             return (
                <Popover>
@@ -80,7 +82,7 @@ const TableColumn = (translate: LanguageTranslations): ColumnDef<Page>[] => {
                      </Button>
 
                      <Button size="sm" variant="ghost" className="bg-muted hover:!bg-muted-foreground/10">
-                        <a target="_blank" href={route('inner.page', page.slug)}>
+                        <a target="_blank" href={previewHref}>
                            {table.preview_page}
                         </a>
                      </Button>

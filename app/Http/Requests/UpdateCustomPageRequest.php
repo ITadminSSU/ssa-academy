@@ -25,7 +25,7 @@ class UpdateCustomPageRequest extends FormRequest
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:pages,slug,' . request()->route('id'),
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'meta_description' => 'nullable|string|max:1000',
             'meta_keywords' => 'nullable|string|max:255',
             'active' => 'required|boolean',

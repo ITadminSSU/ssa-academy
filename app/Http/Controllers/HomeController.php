@@ -117,6 +117,10 @@ class HomeController extends Controller
          return redirect()->away('https://smartsourcingusa.com/contact');
       }
 
+      if ($request->slug === 'our-team') {
+         return redirect()->route('about');
+      }
+
       $innerPages = Page::where('type', 'inner_page')
          ->where('active', true)
          ->select(['slug'])

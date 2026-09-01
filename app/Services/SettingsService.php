@@ -220,6 +220,9 @@ class SettingsService extends MediaService
     public function customPagesCreate(array $data)
     {
         return DB::transaction(function () use ($data) {
+            $data['type'] = $data['type'] ?? 'inner_page';
+            $data['description'] = $data['description'] ?? '';
+
             return Page::create($data);
         }, 5);
     }
@@ -227,14 +230,31 @@ class SettingsService extends MediaService
     public function customPagesUpdate(array $data, string $id)
     {
         return DB::transaction(function () use ($data, $id) {
-            return Page::find($id)->update($data);
+            $page = Page::findOrFail($id);
+
+            if ($page->isProtectedInnerPage()) {
+                $data['slug'] = $page->slug;
+                $data['active'] = true;
+            }
+
+            $data['description'] = $data['description'] ?? '';
+
+            return $page->update($data);
         }, 5);
     }
 
     public function customPagesDestroy(string $id)
     {
         return DB::transaction(function () use ($id) {
-            return Page::find($id)->delete();
+            $page = Page::findOrFail($id);
+
+            if ($page->isProtectedInnerPage()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'page' => 'This page is required by the site and cannot be deleted.',
+                ]);
+            }
+
+            return $page->delete();
         }, 5);
     }
 

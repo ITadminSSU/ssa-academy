@@ -11,6 +11,13 @@ class Page extends Model
     use HasFactory;
 
     /**
+     * Inner pages that the public site and footer still depend on.
+     *
+     * @var list<string>
+     */
+    public const PROTECTED_INNER_SLUGS = ['about-us', 'our-team', 'careers'];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -18,6 +25,7 @@ class Page extends Model
     protected $fillable = [
         'name',
         'slug',
+        'type',
         'title',
         'banner',
         'favicon',
@@ -37,5 +45,10 @@ class Page extends Model
     public function sections(): HasMany
     {
         return $this->hasMany(PageSection::class, 'page_id');
+    }
+
+    public function isProtectedInnerPage(): bool
+    {
+        return in_array($this->slug, self::PROTECTED_INNER_SLUGS, true);
     }
 }

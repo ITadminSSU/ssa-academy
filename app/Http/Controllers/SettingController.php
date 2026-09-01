@@ -180,6 +180,10 @@ class SettingController extends Controller
     {
         $page = Page::find($id);
 
+        if (! $page) {
+            return redirect()->route('settings.pages')->with('error', 'That page was not found. It may have been deleted.');
+        }
+
         return Inertia::render('dashboard/settings/pages/update', compact('page'));
     }
 

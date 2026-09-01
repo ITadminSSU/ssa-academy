@@ -44,7 +44,7 @@ class NavbarSeeder extends Seeder
                 'type' => 'url',
                 'slug' => 'our-team',
                 'title' => 'Our Team',
-                'value' => '/our-team',
+                'value' => '/about-us',
             ],
             [
                 'type' => 'url',

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('about-us', [HomeController::class, 'about'])->name('about');
+Route::redirect('our-team', '/about-us', 301);
 Route::get('faqs', [HomeController::class, 'faqs'])->name('faqs');
 
 Route::get('fraud-training-tipline', [FraudTrainingTiplineController::class, 'show'])->name('fraud-training-tipline');
