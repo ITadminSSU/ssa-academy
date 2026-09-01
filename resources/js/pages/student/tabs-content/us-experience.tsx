@@ -102,7 +102,7 @@ const UsExperience = () => {
                                  <p className="text-muted-foreground mt-1 text-sm">
                                     Attempts {plan.attempts_used}/{plan.max_attempts}
                                     {payload.can_see_scores && plan.accuracy != null ? ` · Accuracy ${plan.accuracy}%` : ''}
-                                    {` · Pass ${plan.pass_mark}%`}
+                                    {` · Passing Score: ${plan.pass_mark}%`}
                                  </p>
                               </div>
                               <div className="flex flex-wrap gap-2">
