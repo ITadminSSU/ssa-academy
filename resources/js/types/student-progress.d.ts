@@ -30,6 +30,18 @@ interface CourseStudentExamProgress {
    attempts: number;
 }
 
+interface CourseStudentUsExperienceProgress {
+   plan_id: number;
+   title: string;
+   group_name?: string | null;
+   attempts_used: number;
+   max_attempts: number;
+   best_percent: number | null;
+   is_passed: boolean;
+   status: 'not_started' | 'ongoing' | 'passed' | 'failed';
+   latest_attempt_id: number | null;
+}
+
 interface CourseStudentProgressRow {
    enrollment: CourseEnrollment;
    completion: CourseCompletion;
@@ -37,6 +49,7 @@ interface CourseStudentProgressRow {
    assignments: CourseStudentAssignmentProgress[];
    quizzes: CourseStudentQuizProgress[];
    exams: CourseStudentExamProgress[];
+   us_experience?: CourseStudentUsExperienceProgress[];
    best_quiz_percent: number | null;
    overall_score_percent: number | null;
 }

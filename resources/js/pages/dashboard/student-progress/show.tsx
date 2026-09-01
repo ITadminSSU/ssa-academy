@@ -41,6 +41,28 @@ const StatusBadge = ({ passed, label }: { passed: boolean | null | undefined; la
    return <Badge variant={passed ? 'default' : 'destructive'}>{passed ? 'Passed' : 'Failed'}</Badge>;
 };
 
+const UsExperienceStatusBadge = ({
+   status,
+   translate,
+}: {
+   status: CourseStudentUsExperienceProgress['status'];
+   translate: LanguageTranslations;
+}) => {
+   if (status === 'passed') {
+      return <Badge>{translate.dashboard.passed_label}</Badge>;
+   }
+
+   if (status === 'failed') {
+      return <Badge variant="destructive">Failed</Badge>;
+   }
+
+   if (status === 'ongoing') {
+      return <Badge variant="secondary">{translate.dashboard.in_progress}</Badge>;
+   }
+
+   return <Badge variant="outline">Not started</Badge>;
+};
+
 const AssignmentStatusBadge = ({ status }: { status: string }) => {
    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       graded: 'default',
@@ -63,19 +85,22 @@ const AssignmentStatusBadge = ({ status }: { status: string }) => {
 
 const StudentRow = ({
    row,
+   courseId,
    translate,
    expanded,
    onToggle,
 }: {
    row: CourseStudentProgressRow;
+   courseId: number;
    translate: LanguageTranslations;
    expanded: boolean;
    onToggle: () => void;
 }) => {
-   const { dashboard } = translate;
+   const { dashboard, button } = translate;
    const user = row.enrollment.user;
    const passedQuizzes = row.quizzes.filter((q) => q.is_passed).length;
    const submittedAssignments = row.assignments.filter((a) => a.submitted).length;
+   const usExperience = row.us_experience ?? [];
 
    return (
       <>
@@ -220,6 +245,56 @@ const StudentRow = ({
                         )}
                      </div>
                   </div>
+
+                  {usExperience.length > 0 && (
+                     <div className="mt-4">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                           <p className="text-sm font-semibold">{button.build_your_us_experience ?? 'Build Your US Experience'}</p>
+                           <Button asChild size="sm" variant="outline">
+                              <Link
+                                 href={route('courses.us-experience.attempts.course', {
+                                    course: courseId,
+                                    search: user.email,
+                                 })}
+                              >
+                                 View all attempts
+                              </Link>
+                           </Button>
+                        </div>
+                        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                           {usExperience.map((plan) => (
+                              <li key={plan.plan_id} className="rounded-md border bg-background p-2 text-sm">
+                                 <p className="font-medium">{plan.title}</p>
+                                 {plan.group_name && (
+                                    <p className="text-muted-foreground text-xs">{plan.group_name}</p>
+                                 )}
+                                 <div className="mt-1 flex flex-wrap items-center gap-2">
+                                    <UsExperienceStatusBadge status={plan.status} translate={translate} />
+                                    {plan.best_percent !== null && (
+                                       <span>{formatPercent(plan.best_percent, dashboard.no_score_yet)}</span>
+                                    )}
+                                    <span className="text-muted-foreground text-xs">
+                                       {plan.attempts_used}/{plan.max_attempts} {dashboard.attempts}
+                                    </span>
+                                 </div>
+                                 <div className="mt-2">
+                                    <Button asChild size="sm" variant="ghost" className="h-auto px-0">
+                                       <Link
+                                          href={route('courses.us-experience.attempts.index', {
+                                             course: courseId,
+                                             plan: plan.plan_id,
+                                             search: user.email,
+                                          })}
+                                       >
+                                          View attempts
+                                       </Link>
+                                    </Button>
+                                 </div>
+                              </li>
+                           ))}
+                        </ul>
+                     </div>
+                  )}
                </TableCell>
             </TableRow>
          )}
@@ -331,6 +406,7 @@ const Show = ({ course, students, enrollments, summary, sort_by, translate }: Pr
                         <StudentRow
                            key={row.enrollment.id}
                            row={row}
+                           courseId={course.id}
                            translate={translate}
                            expanded={expandedId === row.enrollment.id}
                            onToggle={() => setExpandedId((current) => (current === row.enrollment.id ? null : row.enrollment.id))}

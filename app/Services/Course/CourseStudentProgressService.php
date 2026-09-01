@@ -9,10 +9,13 @@ use App\Models\Course\LessonActivitySubmission;
 use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
+use App\Models\Course\UsExperienceAttempt;
+use App\Models\Course\UsExperiencePlan;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Modules\Exam\Models\Exam;
 use Modules\Exam\Models\ExamAttempt;
 
@@ -164,6 +167,7 @@ class CourseStudentProgressService
             ->groupBy('user_id');
 
         $examAttempts = $this->getStandaloneExamAttempts($course, $userIds);
+        $usExperience = $this->getUsExperienceProgress($course, $userIds);
 
         $students = $allEnrollments->map(function (CourseEnrollment $enrollment) use (
             $course,
@@ -171,6 +175,7 @@ class CourseStudentProgressService
             $quizSubmissions,
             $assignmentSubmissions,
             $examAttempts,
+            $usExperience,
             $quizzes,
             $assignments,
         ) {
@@ -185,6 +190,9 @@ class CourseStudentProgressService
             $assignmentProgress = $this->mapAssignmentProgress($assignments, $assignmentSubmissions->get($userId, collect()));
             $quizProgress = $this->mapQuizProgress($quizzes, $quizSubmissions->get($userId, collect()));
             $scores = $this->calculateStudentScores($assignmentProgress, $quizProgress);
+            $userUsExperienceAttempts = $usExperience['attemptsByUserPlan']->get($userId)
+                ?? $usExperience['attemptsByUserPlan']->get((string) $userId)
+                ?? collect();
 
             return [
                 'enrollment' => $enrollment,
@@ -193,6 +201,10 @@ class CourseStudentProgressService
                 'assignments' => $assignmentProgress,
                 'quizzes' => $quizProgress,
                 'exams' => $examAttempts->get($userId, collect())->values()->all(),
+                'us_experience' => $this->mapUsExperienceProgress(
+                    $usExperience['plans'],
+                    $userUsExperienceAttempts,
+                ),
                 'best_quiz_percent' => $scores['best_quiz_percent'],
                 'overall_score_percent' => $scores['overall_score_percent'],
             ];
@@ -462,6 +474,86 @@ class CourseStudentProgressService
                 'marks_obtained' => $isGraded && $latest->marks_obtained !== null
                     ? (float) $latest->marks_obtained
                     : null,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Ready US Experience plans plus one attempt query for the current roster page.
+     * Practice scores stay off overall_score_percent and certificate gates.
+     *
+     * @return array{plans: Collection<int, UsExperiencePlan>, attemptsByUserPlan: Collection<int|string, Collection<int|string, Collection<int, UsExperienceAttempt>>>}
+     */
+    private function getUsExperienceProgress(Course $course, array $userIds): array
+    {
+        $plans = UsExperiencePlan::query()
+            ->where('course_id', $course->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (UsExperiencePlan $plan) => $plan->isReady())
+            ->values();
+
+        if ($plans->isEmpty() || $userIds === []) {
+            return [
+                'plans' => $plans,
+                'attemptsByUserPlan' => collect(),
+            ];
+        }
+
+        $attemptsByUserPlan = UsExperienceAttempt::query()
+            ->whereIn('us_experience_plan_id', $plans->pluck('id'))
+            ->whereIn('user_id', $userIds)
+            ->orderByDesc('attempt_number')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn ($rows) => $rows->groupBy('us_experience_plan_id'));
+
+        return [
+            'plans' => $plans,
+            'attemptsByUserPlan' => $attemptsByUserPlan,
+        ];
+    }
+
+    /**
+     * @param Collection<int, UsExperiencePlan> $plans
+     * @param Collection<int|string, Collection<int, UsExperienceAttempt>> $attemptsByPlan
+     * @return list<array<string, mixed>>
+     */
+    private function mapUsExperienceProgress($plans, $attemptsByPlan): array
+    {
+        return $plans->map(function (UsExperiencePlan $plan) use ($attemptsByPlan) {
+            $planAttempts = collect(
+                $attemptsByPlan->get($plan->id)
+                    ?? $attemptsByPlan->get((string) $plan->id)
+                    ?? []
+            );
+            $passed = $planAttempts->contains(fn (UsExperienceAttempt $attempt) => $attempt->isPassed());
+            $attemptsUsed = $planAttempts->count();
+            $exhausted = !$passed && $attemptsUsed >= (int) $plan->max_attempts;
+            $bestPercent = $planAttempts->max('lines_percent');
+            $latest = $planAttempts->sortByDesc('id')->first();
+
+            if ($passed) {
+                $status = 'passed';
+            } elseif ($attemptsUsed === 0) {
+                $status = 'not_started';
+            } elseif ($exhausted) {
+                $status = 'failed';
+            } else {
+                $status = 'ongoing';
+            }
+
+            return [
+                'plan_id' => $plan->id,
+                'title' => $plan->title,
+                'group_name' => $plan->group_name,
+                'attempts_used' => $attemptsUsed,
+                'max_attempts' => (int) $plan->max_attempts,
+                'best_percent' => $bestPercent !== null ? round((float) $bestPercent, 1) : null,
+                'is_passed' => $passed,
+                'status' => $status,
+                'latest_attempt_id' => $latest?->id,
             ];
         })->values()->all();
     }

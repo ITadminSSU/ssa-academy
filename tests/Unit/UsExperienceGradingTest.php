@@ -191,3 +191,64 @@ it('hides stored file URLs from the trainer attempt payload', function () {
         'group_name' => 'Skills',
     ]);
 });
+
+it('summarises US Experience plans for the tracking dashboard expand row', function () {
+    $service = app(\App\Services\Course\CourseStudentProgressService::class);
+    $method = new ReflectionMethod($service, 'mapUsExperienceProgress');
+
+    $ready = new UsExperiencePlan([
+        'title' => 'Test 3',
+        'group_name' => 'Skills',
+        'max_attempts' => 2,
+        'pass_mark' => 85,
+    ]);
+    $ready->id = 3;
+
+    $untouched = new UsExperiencePlan([
+        'title' => 'Test 4',
+        'group_name' => 'Skills',
+        'max_attempts' => 10,
+        'pass_mark' => 85,
+    ]);
+    $untouched->id = 4;
+
+    $failed = new UsExperienceAttempt([
+        'attempt_number' => 1,
+        'status' => UsExperienceAttempt::STATUS_FAILED,
+        'lines_percent' => 40,
+    ]);
+    $failed->id = 11;
+    $passed = new UsExperienceAttempt([
+        'attempt_number' => 2,
+        'status' => UsExperienceAttempt::STATUS_PASSED,
+        'lines_percent' => 91.4,
+    ]);
+    $passed->id = 12;
+
+    $rows = $method->invoke(
+        $service,
+        collect([$ready, $untouched]),
+        collect([
+            3 => collect([$failed, $passed]),
+        ]),
+    );
+
+    expect($rows[0])->toMatchArray([
+        'plan_id' => 3,
+        'title' => 'Test 3',
+        'status' => 'passed',
+        'is_passed' => true,
+        'attempts_used' => 2,
+        'max_attempts' => 2,
+        'best_percent' => 91.4,
+        'latest_attempt_id' => 12,
+    ]);
+    expect($rows[1])->toMatchArray([
+        'plan_id' => 4,
+        'status' => 'not_started',
+        'is_passed' => false,
+        'attempts_used' => 0,
+        'best_percent' => null,
+        'latest_attempt_id' => null,
+    ]);
+});
