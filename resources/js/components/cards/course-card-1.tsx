@@ -148,8 +148,8 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
             </CardContent>
 
             <CardFooter className="mt-auto flex flex-col items-stretch gap-2 border-t border-border/60 p-5 pt-4">
-               <div className="flex items-center justify-between gap-3">
-                  <div className="ssu-course-card__price capitalize">
+               <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+                  <div className="ssu-course-card__price flex min-w-0 items-baseline gap-1.5 whitespace-nowrap capitalize">
                      {course.pricing_type === 'free' ? (
                         common.free
                      ) : isLaunchPreRegister ? (
@@ -159,7 +159,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                               {formatOfferAmount(launchOffer.listPrice)}
                            </span>
                            {launchOffer.depositAmount > 0 ? (
-                              <span className="text-muted-foreground ml-2 text-xs font-medium normal-case">
+                              <span className="text-muted-foreground text-xs font-medium normal-case">
                                  Pre-register for {symbol}
                                  {formatOfferAmount(launchOffer.depositAmount)}
                               </span>
@@ -223,10 +223,10 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      )}
                   </div>
 
-                  <Button asChild size="sm" className="rounded-full px-4">
+                  <Button asChild size="sm" className="h-7 shrink-0 rounded-full px-3 text-xs">
                      <Link href={detailsUrl}>
                         {showPreviewCta ? (button.preview_course ?? 'Preview Course') : button.learn_more}
-                        <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                        <ArrowRight className="ml-1 h-3 w-3" />
                      </Link>
                   </Button>
                </div>
