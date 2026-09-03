@@ -93,6 +93,12 @@ const faqs: FaqBlock[] = [
       ],
    },
    {
+      question: 'After enrolling in a course, do I need to purchase each module/lesson separately?',
+      paragraphs: [
+         'No. Each training course per trade has a one-time enrollment fee that gives you access to all modules and lessons included in your chosen course. Your access does not expire, so you can learn at your own pace and revisit the lessons whenever you need to.',
+      ],
+   },
+   {
       question: 'Does completing SMARTSOURCING USA Academy courses guarantee a job?',
       paragraphs: [
          'Any engagement opportunity will still depend on factors such as required qualifications, skills, experience, interview performance, client requirements, available positions, and the applicable hiring or selection process.',
