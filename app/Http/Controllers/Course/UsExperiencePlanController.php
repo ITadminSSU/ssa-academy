@@ -23,6 +23,7 @@ class UsExperiencePlanController extends Controller
     public function store(StoreUsExperiencePlanRequest $request, Course $course): RedirectResponse
     {
         $this->plans->authorizeCourseAccess($course, Auth::user());
+        $this->plans->assertFeatureEnabled($course);
         $plan = $this->plans->create($course, $request->validated());
 
         return redirect()

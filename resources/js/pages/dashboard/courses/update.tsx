@@ -44,10 +44,11 @@ export interface CourseUpdateProps extends SharedData {
    usExperiencePlan?: UsExperiencePlan | null;
    usExperienceDefaultTolerancePercent?: number;
    hasUsExperiencePlans?: boolean;
+   showUsExperience?: boolean;
 }
 
 const Update = (props: CourseUpdateProps) => {
-   const { tab, course, translate } = props;
+   const { tab, course, translate, showUsExperience = false } = props;
    const { button } = translate;
 
    const tabs = [
@@ -107,7 +108,7 @@ const Update = (props: CourseUpdateProps) => {
          Icon: FlaskConical,
          Component: SEO,
       },
-   ];
+   ].filter((item) => item.slug !== 'us-experience' || showUsExperience);
 
    return (
       <section className="space-y-8">

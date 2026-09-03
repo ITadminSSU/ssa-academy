@@ -16,6 +16,7 @@ use App\Services\Course\CourseWishlistService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\StudentService;
 use App\Services\UsExperience\UsExperienceUnlockService;
+use App\Support\CourseWelcomeEmailCopy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -115,12 +116,21 @@ class StudentController extends Controller
             return redirect()->route('student.course.show', ['id' => $id, 'tab' => 'modules']);
         }
 
-        if ($tab === 'assignments') {
-            return redirect()->route('student.course.show', ['id' => $id, 'tab' => 'us-experience']);
-        }
-
         $user = Auth::user();
         $course = $this->studentService->getEnrolledCourse($id, $user);
+        $course->loadMissing('course_category');
+        $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
+
+        if ($tab === 'assignments') {
+            return redirect()->route('student.course.show', [
+                'id' => $id,
+                'tab' => $showUsExperience ? 'us-experience' : 'modules',
+            ]);
+        }
+
+        if ($tab === 'us-experience' && ! $showUsExperience) {
+            return redirect()->route('student.course.show', ['id' => $id, 'tab' => 'modules']);
+        }
 
         $enrollment = \App\Models\Course\CourseEnrollment::query()
             ->where('user_id', $user->id)
@@ -172,7 +182,8 @@ class StudentController extends Controller
             'courseGates' => $courseGates,
             'certificate' => $certificate,
             'subscriptionAccess' => $subscriptionAccess,
-            'usExperience' => $tab === 'us-experience'
+            'showUsExperience' => $showUsExperience,
+            'usExperience' => $tab === 'us-experience' && $showUsExperience
                 ? $this->usExperienceUnlock->studentOverview($course, $user)
                 : null,
         ]);

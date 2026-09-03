@@ -29,6 +29,7 @@ class UsExperienceStudentController extends Controller
     {
         $user = Auth::user();
         $course = $this->enrolledCourse($plan);
+        $this->plans->assertFeatureEnabled($course);
         $canUseFiles = $this->subscriptionAccess->getAccessMode($user, $course) === 'full';
         $ordered = $this->unlock->orderedReadyPlans($course);
         $this->unlock->assertCanDownload($plan, $ordered, $user, $canUseFiles);
@@ -50,6 +51,7 @@ class UsExperienceStudentController extends Controller
     {
         $user = Auth::user();
         $course = $this->enrolledCourse($plan);
+        $this->plans->assertFeatureEnabled($course);
         $canUseFiles = $this->subscriptionAccess->getAccessMode($user, $course) === 'full';
         $ordered = $this->unlock->orderedReadyPlans($course);
         $this->unlock->assertCanSubmit($plan, $ordered, $user, $canUseFiles);

@@ -28,6 +28,11 @@ class UsExperiencePlanService
         abort(403);
     }
 
+    public function assertFeatureEnabled(Course $course): void
+    {
+        abort_unless(\App\Support\CourseWelcomeEmailCopy::showsUsExperience($course), 404);
+    }
+
     /**
      * @return list<array<string, mixed>>
      */

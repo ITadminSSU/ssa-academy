@@ -13,6 +13,7 @@ use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
+use App\Support\CourseWelcomeEmailCopy;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -486,6 +487,13 @@ class CourseStudentProgressService
      */
     private function getUsExperienceProgress(Course $course, array $userIds): array
     {
+        if (! CourseWelcomeEmailCopy::showsUsExperience($course)) {
+            return [
+                'plans' => collect(),
+                'attemptsByUserPlan' => collect(),
+            ];
+        }
+
         $plans = UsExperiencePlan::query()
             ->where('course_id', $course->id)
             ->orderBy('sort_order')

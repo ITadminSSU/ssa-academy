@@ -26,9 +26,10 @@ export interface CourseDetailsProps extends SharedData {
    launchOffer?: Record<string, unknown> | null;
    launchNotifySubscribed?: boolean;
    usExperiencePreview?: UsExperiencePublicGroup[];
+   showUsExperience?: boolean;
 }
 
-const Show = ({ course, system, translate }: CourseDetailsProps & { translate: any }) => {
+const Show = ({ course, system, translate, showUsExperience = false }: CourseDetailsProps & { translate: any }) => {
    const { button, frontend } = translate;
 
    const tabs = [
@@ -63,6 +64,10 @@ const Show = ({ course, system, translate }: CourseDetailsProps & { translate: a
          Component: <CourseReviews />,
       },
    ].filter((tab) => {
+      if (tab.value === 'us-experience') {
+         return showUsExperience;
+      }
+
       if (tab.value === 'instructor') {
          return system.sub_type === 'collaborative' ? true : false;
       }

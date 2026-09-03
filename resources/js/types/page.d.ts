@@ -152,6 +152,7 @@ export interface StudentCourseProps extends SharedData {
    zoomConfig?: ZoomConfigFields;
    subscriptionAccess?: SubscriptionAccess;
    usExperience?: UsExperienceStudentPayload | null;
+   showUsExperience?: boolean;
 }
 
 export interface StudentExamProps extends SharedData {

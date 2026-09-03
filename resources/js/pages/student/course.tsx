@@ -16,7 +16,7 @@ import UsExperience from './tabs-content/us-experience';
 import SubscriptionAccessBanner from '@/pages/course-player/partials/subscription-access-banner';
 
 const Course = (props: StudentCourseProps) => {
-   const { tab, course, watchHistory, completion, subscriptionAccess } = props;
+   const { tab, course, watchHistory, completion, subscriptionAccess, showUsExperience = false } = props;
    const canMessage = subscriptionAccess?.mode !== 'none';
 
    const tabs = [
@@ -40,14 +40,14 @@ const Course = (props: StudentCourseProps) => {
          value: 'certificate',
          label: 'Certificate',
       },
-   ];
+   ].filter((item) => item.value !== 'us-experience' || showUsExperience);
 
    const renderContent = () => {
       switch (tab) {
          case 'modules':
             return <CourseModules />;
          case 'us-experience':
-            return <UsExperience />;
+            return showUsExperience ? <UsExperience /> : <></>;
          case 'quizzes':
             return <CourseQuizzes />;
          case 'resources':

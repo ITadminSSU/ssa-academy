@@ -30,6 +30,7 @@ use App\Services\Payment\CourseStripeSyncService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\UsExperience\UsExperiencePlanService;
+use App\Support\CourseWelcomeEmailCopy;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -233,6 +234,8 @@ class CourseController extends Controller
         $this->courseService->preparePublicCourseCurriculum($course, $canViewCurriculum);
 
         if ($course->exists()) {
+            $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
+
             // Generate meta tags for SEO and social sharing
             $system = app('system_settings');
             $siteName = \App\Support\Branding::resolveSiteName($system->fields['name'] ?? null);
@@ -264,7 +267,10 @@ class CourseController extends Controller
                         $user,
                         $user?->email,
                     ),
-                    'usExperiencePreview' => $this->usExperiencePlans->publicTease($course),
+                    'usExperiencePreview' => $showUsExperience
+                        ? $this->usExperiencePlans->publicTease($course)
+                        : [],
+                    'showUsExperience' => $showUsExperience,
                 ]
             )->withViewData([
                 'metaTitle' => $pageTitle,
@@ -300,6 +306,11 @@ class CourseController extends Controller
         $course = $this->courseService->getUserCourseById($id, $user);
         if ($course) {
             app(\App\Services\Course\LessonDurationSyncService::class)->syncCourse($course);
+        }
+        $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
+
+        if (($tab === 'us-experience' || $request->plan) && ! $showUsExperience) {
+            return redirect()->route('courses.edit', ['course' => $course->id, 'tab' => 'curriculum']);
         }
         $watchHistory = $this->coursePlayerService->getWatchHistory($course->id, $user->id);
         $approvalStatus = $this->courseService->validateCourseForApproval($course);
@@ -371,7 +382,8 @@ class CourseController extends Controller
                 'usExperiencePlans' => $usExperiencePlans,
                 'usExperiencePlan' => $usExperiencePlan,
                 'usExperienceDefaultTolerancePercent' => (float) config('us_experience.default_tolerance_percent', 2),
-                'hasUsExperiencePlans' => $course->usExperiencePlans()->exists(),
+                'hasUsExperiencePlans' => $showUsExperience && $course->usExperiencePlans()->exists(),
+                'showUsExperience' => $showUsExperience,
             ]
         );
     }

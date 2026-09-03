@@ -56,4 +56,11 @@ class CourseWelcomeEmailCopy
 
         return self::VARIANT_PROFESSIONAL;
     }
+
+    public static function showsUsExperience(?Course $course): bool
+    {
+        $course?->loadMissing('course_category');
+
+        return self::resolveVariant($course) === self::VARIANT_ESTIMATING;
+    }
 }
