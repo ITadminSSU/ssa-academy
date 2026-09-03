@@ -7,6 +7,8 @@ Route::prefix('messages')->name('messages.')->group(function () {
     Route::get('/', [ChatController::class, 'index'])->name('index');
     Route::get('unread', [ChatController::class, 'unread'])->name('unread');
     Route::post('presence', [ChatController::class, 'presence'])->name('presence');
+    Route::get('students', [ChatController::class, 'students'])->name('students');
+    Route::post('academy', [ChatController::class, 'openAcademy'])->name('academy');
     Route::get('course/{course}/dm', [ChatController::class, 'openDirect'])->name('dm');
     Route::get('course/{course}/group', [ChatController::class, 'openGroup'])->name('group');
     Route::get('{conversation}', [ChatController::class, 'show'])->name('show');

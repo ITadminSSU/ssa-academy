@@ -12,7 +12,7 @@ import DashboardLayout from '@/layouts/dashboard/layout';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { BellOff, FileText, Pin, Search, Trash2, X } from 'lucide-react';
+import { BellOff, FileText, Pin, Plus, Search, Trash2, X } from 'lucide-react';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type ActiveConversation = ConversationListItem & {
@@ -34,6 +34,7 @@ type Filters = {
 type Props = SharedData & {
    conversations: ConversationListItem[];
    activeConversation: ActiveConversation | null;
+   canStartAcademyChat?: boolean;
    filters?: Filters;
 };
 
@@ -41,6 +42,7 @@ const INBOX_FILTERS = [
    { value: '', label: 'All' },
    { value: 'unread', label: 'Unread' },
    { value: 'direct', label: 'Direct' },
+   { value: 'academy', label: 'Academy' },
    { value: 'group', label: 'Class' },
 ] as const;
 
@@ -165,12 +167,117 @@ function MessageBubble({
    );
 }
 
+type StudentOption = { id: number; name: string; email: string };
+
+function AcademyComposer() {
+   const [open, setOpen] = useState(false);
+   const [query, setQuery] = useState('');
+   const [students, setStudents] = useState<StudentOption[]>([]);
+   const [loading, setLoading] = useState(false);
+   const [startingId, setStartingId] = useState<number | null>(null);
+
+   useEffect(() => {
+      const needle = query.trim();
+      if (!open || needle.length < 2) {
+         setStudents([]);
+         return;
+      }
+
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => {
+         setLoading(true);
+         void fetch(`${route('messages.students')}?q=${encodeURIComponent(needle)}`, {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+            signal: controller.signal,
+         })
+            .then(async (response) => {
+               if (!response.ok) {
+                  return;
+               }
+               const data = (await response.json()) as { students?: StudentOption[] };
+               setStudents(data.students ?? []);
+            })
+            .finally(() => setLoading(false));
+      }, 250);
+
+      return () => {
+         controller.abort();
+         window.clearTimeout(timer);
+      };
+   }, [open, query]);
+
+   const startChat = (student: StudentOption) => {
+      setStartingId(student.id);
+      router.post(
+         route('messages.academy'),
+         { student_id: student.id },
+         {
+            preserveScroll: true,
+            onFinish: () => setStartingId(null),
+         },
+      );
+   };
+
+   return (
+      <div className="mt-3">
+         {open ? (
+            <div className="space-y-2">
+               <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium">Message a student</p>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => setOpen(false)}>
+                     <X className="h-4 w-4" />
+                  </Button>
+               </div>
+               <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search name or email…"
+                  className="h-9"
+                  autoFocus
+               />
+               <div className="max-h-48 overflow-y-auto rounded-md border border-border/60">
+                  {query.trim().length < 2 ? (
+                     <p className="px-3 py-2 text-xs text-muted-foreground">Type at least 2 characters.</p>
+                  ) : loading ? (
+                     <p className="px-3 py-2 text-xs text-muted-foreground">Searching…</p>
+                  ) : students.length === 0 ? (
+                     <p className="px-3 py-2 text-xs text-muted-foreground">No students match that search.</p>
+                  ) : (
+                     students.map((student) => (
+                        <button
+                           key={student.id}
+                           type="button"
+                           disabled={startingId === student.id}
+                           className="block w-full border-b border-border/40 px-3 py-2 text-left last:border-b-0 hover:bg-muted/40"
+                           onClick={() => startChat(student)}
+                        >
+                           <p className="truncate text-sm font-medium">{student.name}</p>
+                           <p className="truncate text-xs text-muted-foreground">{student.email}</p>
+                        </button>
+                     ))
+                  )}
+               </div>
+            </div>
+         ) : (
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setOpen(true)}>
+               <Plus className="mr-1 h-4 w-4" />
+               New message
+            </Button>
+         )}
+      </div>
+   );
+}
+
 export default function MessagesIndex() {
    const pageProps = usePage<Props>().props;
    const conversations = pageProps.conversations ?? [];
    const activeConversation = pageProps.activeConversation ?? null;
+   const canStartAcademyChat = Boolean(pageProps.canStartAcademyChat);
    const { auth, filters = {} } = pageProps;
    const isLearner = auth.user?.role === 'student';
+   const isAdmin = auth.user?.role === 'admin';
+   const inboxFilters = isAdmin ? INBOX_FILTERS : INBOX_FILTERS.filter((item) => item.value !== 'academy');
    const [inboxQuery, setInboxQuery] = useState(filters.q ?? '');
    const [threadQuery, setThreadQuery] = useState(filters.mq ?? '');
    const [liveMessages, setLiveMessages] = useState<ChatMessageItem[]>(activeConversation?.messages ?? []);
@@ -345,7 +452,9 @@ export default function MessagesIndex() {
          <div className="mb-4">
             <h1 className="text-2xl font-semibold text-[#01123A]">Messages</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-               Private messages with your instructor and class discussions for enrolled courses.
+               {isAdmin
+                  ? 'Private Academy messages with any student, plus course and class chats.'
+                  : 'Private messages with your instructor, class discussions, and Academy support.'}
             </p>
          </div>
 
@@ -368,7 +477,7 @@ export default function MessagesIndex() {
                      </Button>
                   </form>
                   <div className="mt-2 flex flex-wrap gap-1">
-                     {INBOX_FILTERS.map((item) => (
+                     {inboxFilters.map((item) => (
                         <Button
                            key={item.value || 'all'}
                            type="button"
@@ -381,6 +490,7 @@ export default function MessagesIndex() {
                         </Button>
                      ))}
                   </div>
+                  {canStartAcademyChat ? <AcademyComposer /> : null}
                </div>
                <div className="max-h-[520px] overflow-y-auto">
                   {mergedConversations.length === 0 ? (
@@ -441,7 +551,11 @@ export default function MessagesIndex() {
                            <div>
                               <p className="font-medium text-[#01123A]">{activeConversation.label}</p>
                               <p className="text-xs text-muted-foreground">
-                                 {activeConversation.type === 'group' ? 'Class chat' : 'Private message'} · {activeConversation.course_title}
+                                 {activeConversation.type === 'group'
+                                    ? `Class chat · ${activeConversation.course_title ?? 'Course'}`
+                                    : activeConversation.type === 'academy'
+                                      ? 'Private message with Academy'
+                                      : `Private message · ${activeConversation.course_title ?? 'Course'}`}
                               </p>
                            </div>
                            <div className="flex flex-wrap gap-2">
@@ -557,7 +671,9 @@ export default function MessagesIndex() {
                      ) : (
                         <div className="border-t border-border/60 px-4 py-3 text-sm text-muted-foreground">
                            {activeConversation.is_resolved
-                              ? 'This conversation is resolved. You cannot send new messages until your instructor reopens it.'
+                              ? activeConversation.type === 'academy'
+                                 ? 'This conversation is resolved. You cannot send new messages until Academy reopens it.'
+                                 : 'This conversation is resolved. You cannot send new messages until your instructor reopens it.'
                               : 'You cannot send messages in this conversation right now. Course access may have ended.'}
                         </div>
                      )}

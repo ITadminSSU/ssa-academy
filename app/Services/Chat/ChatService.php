@@ -129,6 +129,59 @@ class ChatService
         return $this->ensureDirectConversation($user, $course);
     }
 
+    public function searchStudentsForAcademy(User $actor, string $query): array
+    {
+        abort_unless($this->access->isAdmin($actor), 403);
+
+        $needle = trim($query);
+        if (mb_strlen($needle) < 2) {
+            return [];
+        }
+
+        return User::query()
+            ->where('role', 'student')
+            ->where('id', '!=', $actor->id)
+            ->where(function ($builder) use ($needle) {
+                $builder->where('name', 'LIKE', '%'.$needle.'%')
+                    ->orWhere('email', 'LIKE', '%'.$needle.'%');
+            })
+            ->orderBy('name')
+            ->limit(12)
+            ->get(['id', 'name', 'email'])
+            ->map(fn (User $student) => [
+                'id' => $student->id,
+                'name' => $student->name,
+                'email' => $student->email,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function openAcademy(User $actor, User $student): ChatConversation
+    {
+        abort_unless($this->access->canMessageStudentAsAcademy($actor, $student), 403);
+
+        $conversation = ChatConversation::query()->firstOrCreate(
+            [
+                'type' => ChatConversationType::Academy,
+                'student_user_id' => $student->id,
+            ],
+            [
+                'course_id' => null,
+                'title' => 'Academy',
+                'academy_key' => 'student:'.$student->id,
+            ],
+        );
+
+        if (blank($conversation->academy_key)) {
+            $conversation->forceFill(['academy_key' => 'student:'.$student->id])->save();
+        }
+
+        $this->upsertParticipant($conversation, $actor, ChatParticipantRole::Admin, true);
+
+        return $conversation;
+    }
+
     public function openGroup(User $user, Course $course): ChatConversation
     {
         abort_unless($this->access->canAccessCourseMessaging($user, $course), 403);
@@ -202,7 +255,12 @@ class ChatService
         if ($filter === 'unread') {
             $filtered = $filtered->where('unread', true);
         } elseif ($filter === 'direct') {
-            $filtered = $filtered->where('type', ChatConversationType::Direct->value);
+            $filtered = $filtered->whereIn('type', [
+                ChatConversationType::Direct->value,
+                ChatConversationType::Academy->value,
+            ]);
+        } elseif ($filter === 'academy') {
+            $filtered = $filtered->where('type', ChatConversationType::Academy->value);
         } elseif ($filter === 'group') {
             $filtered = $filtered->where('type', ChatConversationType::Group->value);
         }
@@ -239,6 +297,24 @@ class ChatService
 
     public function canSend(User $user, ChatConversation $conversation): bool
     {
+        if ($conversation->isAcademy()) {
+            if ($this->access->isAdmin($user)) {
+                return true;
+            }
+
+            $participant = ChatParticipant::query()
+                ->where('chat_conversation_id', $conversation->id)
+                ->where('user_id', $user->id)
+                ->where('is_active', true)
+                ->first();
+
+            if (! $participant || $user->role !== 'student') {
+                return false;
+            }
+
+            return ! ($conversation->isResolved());
+        }
+
         if ($this->access->isAdmin($user)) {
             return true;
         }
@@ -318,6 +394,11 @@ class ChatService
 
         $this->markRead($conversation, $viewer);
 
+        if ($conversation->isAcademy() && $this->access->isAdmin($viewer)) {
+            $this->upsertParticipant($conversation, $viewer, ChatParticipantRole::Admin, true);
+            $this->markRead($conversation, $viewer);
+        }
+
         $participant = ChatParticipant::query()
             ->where('chat_conversation_id', $conversation->id)
             ->where('user_id', $viewer->id)
@@ -330,7 +411,10 @@ class ChatService
             'messages' => $messages,
             'can_send' => $this->canSend($viewer, $conversation),
             'can_moderate' => $canModerate,
-            'can_resolve' => $canModerate && $conversation->type === ChatConversationType::Direct,
+            'can_resolve' => $canModerate && in_array($conversation->type, [
+                ChatConversationType::Direct,
+                ChatConversationType::Academy,
+            ], true),
             'can_pin' => $canModerate && $conversation->type === ChatConversationType::Group,
             'is_muted' => (bool) ($participant?->is_muted),
             'pinned_message' => $conversation->pinnedMessage
@@ -351,9 +435,21 @@ class ChatService
             abort(422, 'Please enter a message or attach a file.');
         }
 
+        if ($conversation->isAcademy()) {
+            $this->upsertParticipant(
+                $conversation,
+                $sender,
+                $this->access->isAdmin($sender) ? ChatParticipantRole::Admin : ChatParticipantRole::Student,
+                true,
+            );
+            if ($conversation->student) {
+                $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
+            }
+        }
+
         return DB::transaction(function () use ($sender, $conversation, $body, $attachment) {
             if (
-                $conversation->type === ChatConversationType::Direct
+                in_array($conversation->type, [ChatConversationType::Direct, ChatConversationType::Academy], true)
                 && $conversation->isResolved()
                 && $this->canModerate($sender, $conversation)
             ) {
@@ -391,7 +487,11 @@ class ChatService
     public function resolveConversation(User $user, ChatConversation $conversation): void
     {
         abort_unless($this->canModerate($user, $conversation), 403);
-        abort_unless($conversation->type === ChatConversationType::Direct, 422, 'Only direct messages can be resolved.');
+        abort_unless(
+            in_array($conversation->type, [ChatConversationType::Direct, ChatConversationType::Academy], true),
+            422,
+            'Only direct messages can be resolved.',
+        );
 
         $conversation->update([
             'resolved_at' => now(),
@@ -402,7 +502,11 @@ class ChatService
     public function reopenConversation(User $user, ChatConversation $conversation): void
     {
         abort_unless($this->canModerate($user, $conversation), 403);
-        abort_unless($conversation->type === ChatConversationType::Direct, 422, 'Only direct messages can be reopened.');
+        abort_unless(
+            in_array($conversation->type, [ChatConversationType::Direct, ChatConversationType::Academy], true),
+            422,
+            'Only direct messages can be reopened.',
+        );
 
         $conversation->update([
             'resolved_at' => null,
@@ -600,9 +704,11 @@ class ChatService
             ->with('user')
             ->get();
 
-        $label = $conversation->type === ChatConversationType::Group
-            ? ($conversation->title ?? 'Class chat')
-            : ($conversation->student?->name ?? 'Direct message');
+        $label = match ($conversation->type) {
+            ChatConversationType::Group => $conversation->title ?? 'Class chat',
+            ChatConversationType::Academy => 'Academy',
+            default => $conversation->student?->name ?? 'Direct message',
+        };
 
         foreach ($recipients as $participantRow) {
             $recipient = $participantRow->user;
@@ -655,6 +761,14 @@ class ChatService
     private function ensureNotifyParticipants(ChatConversation $conversation): void
     {
         $conversation->loadMissing(['course.instructor.user', 'student']);
+
+        if ($conversation->isAcademy()) {
+            if ($conversation->student) {
+                $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
+            }
+
+            return;
+        }
 
         if ($conversation->type === ChatConversationType::Direct) {
             if ($conversation->student) {
@@ -763,6 +877,12 @@ class ChatService
             ? ($conversation->title ?? 'Class chat')
             : ($conversation->student?->name ?? 'Direct message');
 
+        if ($conversation->isAcademy()) {
+            $label = $this->access->isAdmin($viewer)
+                ? ($conversation->student?->name ?? 'Student')
+                : 'Academy';
+        }
+
         if ($conversation->type === ChatConversationType::Direct && $conversation->course && $this->access->isCourseInstructor($viewer, $conversation->course)) {
             $label = $conversation->student?->name ?? 'Student';
         }
@@ -775,7 +895,7 @@ class ChatService
             'id' => $conversation->id,
             'type' => $conversation->type->value,
             'course_id' => $conversation->course_id,
-            'course_title' => $conversation->course?->title,
+            'course_title' => $conversation->isAcademy() ? 'Academy' : $conversation->course?->title,
             'label' => $label,
             'last_message_at' => optional($conversation->last_message_at)?->toIso8601String(),
             'preview' => $latest?->body ?: $this->attachmentPreview($latest),

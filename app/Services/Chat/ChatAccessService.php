@@ -44,6 +44,13 @@ class ChatAccessService
         return $user->role === 'admin';
     }
 
+    public function canMessageStudentAsAcademy(User $actor, User $student): bool
+    {
+        return $this->isAdmin($actor)
+            && $student->role === 'student'
+            && (int) $actor->id !== (int) $student->id;
+    }
+
     public function canModerate(User $user, ?Course $course): bool
     {
         if (! $course) {

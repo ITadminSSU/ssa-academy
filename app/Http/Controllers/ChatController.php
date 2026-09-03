@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\OpenAcademyChatRequest;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\Course\Course;
@@ -33,6 +34,7 @@ class ChatController extends Controller
         return Inertia::render('messages/index', [
             'conversations' => $conversations,
             'activeConversation' => $active,
+            'canStartAcademyChat' => $request->user()?->role === 'admin',
             'filters' => [
                 'q' => $request->query('q'),
                 'filter' => $request->query('filter'),
@@ -56,6 +58,7 @@ class ChatController extends Controller
                 $request->user(),
                 $request->query('mq'),
             ),
+            'canStartAcademyChat' => $request->user()?->role === 'admin',
             'filters' => [
                 'q' => $request->query('q'),
                 'filter' => $request->query('filter'),
@@ -179,6 +182,25 @@ class ChatController extends Controller
         $this->chat->deleteMessage($request->user(), $conversation, $message);
 
         return back();
+    }
+
+    public function students(Request $request)
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        return response()->json([
+            'students' => $this->chat->searchStudentsForAcademy(
+                $request->user(),
+                (string) $request->query('q', ''),
+            ),
+        ]);
+    }
+
+    public function openAcademy(OpenAcademyChatRequest $request)
+    {
+        $conversation = $this->chat->openAcademy($request->user(), $request->student());
+
+        return redirect()->route('messages.show', $conversation);
     }
 
     public function openDirect(Request $request, Course $course)

@@ -21,7 +21,9 @@ class ChatMessageMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $course = $this->conversation->course?->title ?? 'Course';
+        $course = $this->conversation->isAcademy()
+            ? 'Academy'
+            : ($this->conversation->course?->title ?? 'Course');
         $siteName = (string) config('app.name');
 
         return new Envelope(

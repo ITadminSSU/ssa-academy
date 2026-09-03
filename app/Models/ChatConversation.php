@@ -14,6 +14,7 @@ class ChatConversation extends Model
         'type',
         'course_id',
         'student_user_id',
+        'academy_key',
         'title',
         'last_message_at',
         'resolved_at',
@@ -60,5 +61,10 @@ class ChatConversation extends Model
     public function isResolved(): bool
     {
         return $this->resolved_at !== null;
+    }
+
+    public function isAcademy(): bool
+    {
+        return $this->type === ChatConversationType::Academy;
     }
 }

@@ -3,7 +3,7 @@
 
 You have a new message on {{ $siteName }}.
 
-**Course:** {{ $conversation->course?->title }}  
+**{{ $conversation->isAcademy() ? 'Academy' : 'Course' }}:** {{ $conversation->isAcademy() ? 'Academy support' : $conversation->course?->title }}  
 **From:** {{ $message->sender?->name ?? 'Someone' }}
 
 @if($message->body)

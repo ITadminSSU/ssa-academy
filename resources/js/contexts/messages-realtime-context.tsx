@@ -5,8 +5,8 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 
 type ConversationListItem = {
    id: number;
-   type: 'direct' | 'group';
-   course_id: number;
+   type: 'direct' | 'group' | 'academy';
+   course_id: number | null;
    course_title?: string | null;
    label: string;
    last_message_at?: string | null;
