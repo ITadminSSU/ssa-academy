@@ -178,6 +178,7 @@ class ChatService
         }
 
         $this->upsertParticipant($conversation, $actor, ChatParticipantRole::Admin, true);
+        $this->syncAcademyParticipants($conversation);
 
         return $conversation;
     }
@@ -436,15 +437,13 @@ class ChatService
         }
 
         if ($conversation->isAcademy()) {
+            $this->syncAcademyParticipants($conversation);
             $this->upsertParticipant(
                 $conversation,
                 $sender,
                 $this->access->isAdmin($sender) ? ChatParticipantRole::Admin : ChatParticipantRole::Student,
                 true,
             );
-            if ($conversation->student) {
-                $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
-            }
         }
 
         $message = DB::transaction(function () use ($sender, $conversation, $body, $attachment) {
@@ -836,15 +835,7 @@ class ChatService
         $conversation->loadMissing(['course.instructor.user', 'student']);
 
         if ($conversation->isAcademy()) {
-            if ($conversation->student) {
-                $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
-            }
-
-            User::query()
-                ->where('role', 'admin')
-                ->each(function (User $admin) use ($conversation) {
-                    $this->upsertParticipant($conversation, $admin, ChatParticipantRole::Admin, true);
-                });
+            $this->syncAcademyParticipants($conversation);
 
             return;
         }
@@ -866,6 +857,26 @@ class ChatService
         if ($instructorUser) {
             $this->upsertParticipant($conversation, $instructorUser, ChatParticipantRole::Instructor, true);
         }
+    }
+
+    private function syncAcademyParticipants(ChatConversation $conversation): void
+    {
+        if (! $conversation->isAcademy()) {
+            return;
+        }
+
+        $conversation->loadMissing('student');
+
+        if ($conversation->student) {
+            $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
+        }
+
+        User::query()
+            ->where('role', 'admin')
+            ->orderBy('id')
+            ->each(function (User $admin) use ($conversation) {
+                $this->upsertParticipant($conversation, $admin, ChatParticipantRole::Admin, true);
+            });
     }
 
     private function markRead(ChatConversation $conversation, User $user): void

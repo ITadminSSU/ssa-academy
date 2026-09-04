@@ -4,15 +4,11 @@ namespace App\Notifications;
 
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 
-class ChatMessageNotification extends Notification implements ShouldQueue
+class ChatMessageNotification extends Notification
 {
-    use Queueable;
-
     public function __construct(
         private ChatConversation $conversation,
         private ChatMessage $message,

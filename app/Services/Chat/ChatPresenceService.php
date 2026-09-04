@@ -25,17 +25,7 @@ class ChatPresenceService
 
     public function shouldSendEmail(User $user, int $conversationId): bool
     {
-        $presence = Cache::get($this->cacheKey($user->id));
-
-        if (! is_array($presence)) {
-            return true;
-        }
-
-        if (! ($presence['visible'] ?? false)) {
-            return true;
-        }
-
-        return false;
+        return ! $this->isViewingConversation($user, $conversationId);
     }
 
     public function isViewingConversation(User $user, int $conversationId): bool

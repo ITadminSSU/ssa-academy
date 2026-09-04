@@ -51,7 +51,7 @@
       @foreach ($bodyParagraphs as $paragraph)
          <tr>
             <td style="padding: 0 28px 14px; font-size: 15px; color: #2c2824;">
-               {{ $paragraph }}
+               {!! \App\Support\CourseWelcomeEmailCopy::toHtml($paragraph) !!}
             </td>
          </tr>
       @endforeach

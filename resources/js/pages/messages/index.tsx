@@ -287,8 +287,11 @@ export default function MessagesIndex() {
    liveMessagesRef.current = liveMessages;
 
    useEffect(() => {
-      realtime?.setActiveConversationId(activeConversation?.id ?? null);
-   }, [activeConversation?.id, realtime]);
+      const setActiveConversationId = realtime?.setActiveConversationId;
+      setActiveConversationId?.(activeConversation?.id ?? null);
+
+      return () => setActiveConversationId?.(null);
+   }, [activeConversation?.id, realtime?.setActiveConversationId]);
 
    useEffect(() => {
       setLiveMessages(activeConversation?.messages ?? []);
