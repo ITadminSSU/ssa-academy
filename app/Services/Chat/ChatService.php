@@ -447,7 +447,7 @@ class ChatService
             }
         }
 
-        return DB::transaction(function () use ($sender, $conversation, $body, $attachment) {
+        $message = DB::transaction(function () use ($sender, $conversation, $body, $attachment) {
             if (
                 in_array($conversation->type, [ChatConversationType::Direct, ChatConversationType::Academy], true)
                 && $conversation->isResolved()
@@ -478,10 +478,27 @@ class ChatService
             $conversation->update(['last_message_at' => now()]);
 
             $this->markRead($conversation, $sender);
-            $this->notifyParticipants($sender, $conversation, $message->fresh(['sender']));
 
             return $message->fresh(['sender:id,name,photo,role']);
         });
+
+        $senderId = $sender->id;
+        $conversationId = $conversation->id;
+        $messageId = $message->id;
+
+        dispatch(function () use ($senderId, $conversationId, $messageId) {
+            $sender = User::query()->find($senderId);
+            $conversation = ChatConversation::query()->find($conversationId);
+            $delivered = ChatMessage::query()->with('sender')->find($messageId);
+
+            if (! $sender || ! $conversation || ! $delivered) {
+                return;
+            }
+
+            app(ChatService::class)->notifyParticipants($sender, $conversation, $delivered);
+        })->afterResponse();
+
+        return $message;
     }
 
     public function resolveConversation(User $user, ChatConversation $conversation): void
@@ -723,7 +740,7 @@ class ChatService
         }
     }
 
-    private function notifyParticipants(User $sender, ChatConversation $conversation, ChatMessage $message): void
+    public function notifyParticipants(User $sender, ChatConversation $conversation, ChatMessage $message): void
     {
         $this->ensureNotifyParticipants($conversation);
 

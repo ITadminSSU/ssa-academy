@@ -17,7 +17,10 @@ return [
                 'scheme' => env('REVERB_SERVER_SCHEME', env('REVERB_SCHEME', 'http')),
                 'useTLS' => env('REVERB_SERVER_SCHEME', env('REVERB_SCHEME', 'http')) === 'https',
             ],
-            'client_options' => [],
+            'client_options' => [
+                'timeout' => 1,
+                'connect_timeout' => 0.5,
+            ],
             'client' => [
                 'host' => env('REVERB_HOST', 'localhost'),
                 'port' => ((int) env('REVERB_PORT', 443)) ?: 443,

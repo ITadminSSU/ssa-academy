@@ -369,7 +369,15 @@ export default function MessagesIndex() {
                      }
                   });
 
-                  return next;
+                  return next.filter((item) => {
+                     if (item.id > 0) {
+                        return true;
+                     }
+
+                     return !incoming.some(
+                        (message) => message.is_mine && (message.body || '') === (item.body || ''),
+                     );
+                  });
                });
             }
 
@@ -425,7 +433,6 @@ export default function MessagesIndex() {
       body: '',
       attachment: null,
    });
-   const [sending, setSending] = useState(false);
    const [fileKey, setFileKey] = useState(0);
 
    const applyInboxFilters = (next: Partial<Filters>) => {
@@ -452,38 +459,73 @@ export default function MessagesIndex() {
       applyInboxFilters({ mq: threadQuery.trim() || null });
    };
 
-   const submit = async (e: FormEvent) => {
+   const submit = (e: FormEvent) => {
       e.preventDefault();
-      if (!activeConversation || sending) {
+      if (!activeConversation) {
          return;
       }
 
-      if (!data.body.trim() && !data.attachment) {
+      const body = data.body.trim();
+      const attachment = data.attachment;
+      if (!body && !attachment) {
          return;
       }
 
       clearErrors();
-      setSending(true);
+
+      const tempId = -Date.now();
+      const pending: ChatMessageItem = {
+         id: tempId,
+         body: body || null,
+         attachment: attachment ? URL.createObjectURL(attachment) : null,
+         attachment_name: attachment?.name ?? null,
+         attachment_type: attachment
+            ? attachment.type.startsWith('video/')
+               ? 'video'
+               : attachment.type === 'application/pdf'
+                 ? 'pdf'
+                 : 'image'
+            : null,
+         created_at: new Date().toISOString(),
+         is_mine: true,
+         can_delete: false,
+         sender: {
+            id: auth.user?.id,
+            name: auth.user?.name,
+            photo: auth.user?.photo ?? null,
+            role: auth.user?.role,
+         },
+      };
+
+      setLiveMessages((current) => [...current, pending]);
+      realtime?.mergeInboxPreview({
+         ...activeConversation,
+         last_message_at: pending.created_at,
+         preview: pending.body || pending.attachment_name || 'Attachment',
+         preview_sender: auth.user?.name,
+         unread: false,
+      });
 
       const formData = new FormData();
-      if (data.body.trim()) {
-         formData.append('body', data.body.trim());
+      if (body) {
+         formData.append('body', body);
       }
-      if (data.attachment) {
-         formData.append('attachment', data.attachment);
+      if (attachment) {
+         formData.append('attachment', attachment);
       }
 
-      try {
-         const response = await fetch(route('messages.store', activeConversation.id), {
-            method: 'POST',
-            headers: {
-               Accept: 'application/json',
-               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
-            },
-            credentials: 'same-origin',
-            body: formData,
-         });
+      reset('body', 'attachment');
+      setFileKey((current) => current + 1);
 
+      void fetch(route('messages.store', activeConversation.id), {
+         method: 'POST',
+         headers: {
+            Accept: 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+         },
+         credentials: 'same-origin',
+         body: formData,
+      }).then(async (response) => {
          const payload = (await response.json().catch(() => null)) as
             | {
                  message?: ChatMessageItem;
@@ -492,6 +534,8 @@ export default function MessagesIndex() {
             | null;
 
          if (!response.ok) {
+            setLiveMessages((current) => current.filter((item) => item.id !== tempId));
+            setData({ body, attachment });
             const fieldErrors = payload?.errors ?? {};
             Object.entries(fieldErrors).forEach(([field, messages]) => {
                if (messages[0]) {
@@ -501,35 +545,33 @@ export default function MessagesIndex() {
             return;
          }
 
-         if (payload?.message) {
-            const sent: ChatMessageItem = {
-               ...payload.message,
-               is_mine: true,
-               can_delete: payload.message.can_delete ?? true,
-            };
-
-            setLiveMessages((current) => {
-               if (current.some((item) => item.id === sent.id)) {
-                  return current;
-               }
-
-               return [...current, sent];
-            });
-
-            realtime?.mergeInboxPreview({
-               ...activeConversation,
-               last_message_at: sent.created_at ?? new Date().toISOString(),
-               preview: sent.body || sent.attachment_name || 'Attachment',
-               preview_sender: auth.user?.name,
-               unread: false,
-            });
+         if (!payload?.message) {
+            return;
          }
 
-         reset('body', 'attachment');
-         setFileKey((current) => current + 1);
-      } finally {
-         setSending(false);
-      }
+         const sent: ChatMessageItem = {
+            ...payload.message,
+            is_mine: true,
+            can_delete: payload.message.can_delete ?? true,
+         };
+
+         setLiveMessages((current) => {
+            const withoutPending = current.filter((item) => item.id !== tempId);
+            if (withoutPending.some((item) => item.id === sent.id)) {
+               return withoutPending;
+            }
+
+            return [...withoutPending, sent];
+         });
+
+         realtime?.mergeInboxPreview({
+            ...activeConversation,
+            last_message_at: sent.created_at ?? pending.created_at,
+            preview: sent.body || sent.attachment_name || 'Attachment',
+            preview_sender: auth.user?.name,
+            unread: false,
+         });
+      });
    };
 
    const threadAction = (name: 'resolve' | 'reopen' | 'mute') => {
@@ -788,9 +830,7 @@ export default function MessagesIndex() {
                               />
                               <InputError message={errors.attachment} />
                               <p className="text-xs text-muted-foreground">Images, videos (50MB), or PDFs · Enter to send</p>
-                              <Button type="submit" disabled={sending}>
-                                 {sending ? 'Sending…' : 'Send'}
-                              </Button>
+                              <Button type="submit">Send</Button>
                            </div>
                         </form>
                      ) : (
