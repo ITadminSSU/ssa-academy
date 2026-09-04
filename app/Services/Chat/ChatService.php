@@ -593,6 +593,16 @@ class ChatService
     /**
      * @return array<string, mixed>
      */
+    public function messageForViewer(ChatMessage $message, User $viewer, ChatConversation $conversation): array
+    {
+        $message->loadMissing('sender:id,name,photo,role');
+
+        return $this->formatMessage($message, $viewer, $conversation);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function messageBroadcastPayload(
         ChatMessage $message,
         ChatConversation $conversation,
@@ -741,19 +751,33 @@ class ChatService
                 filter_var($recipient->email, FILTER_VALIDATE_EMAIL)
                 && $this->presence->shouldSendEmail($recipient, $conversation->id)
             ) {
-                try {
-                    $this->mailSender->send(
-                        $recipient,
-                        new ChatMessageMail($conversation, $message),
-                        'chat_new_message'
-                    );
-                } catch (\Throwable $e) {
-                    Log::warning('chat_new_message notify failed', [
-                        'recipient_id' => $recipient->id,
-                        'conversation_id' => $conversation->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                $recipientId = $recipient->id;
+                $conversationId = $conversation->id;
+                $messageId = $message->id;
+
+                dispatch(function () use ($recipientId, $conversationId, $messageId) {
+                    $recipient = User::query()->find($recipientId);
+                    $conversation = ChatConversation::query()->find($conversationId);
+                    $mailMessage = ChatMessage::query()->with('sender')->find($messageId);
+
+                    if (! $recipient || ! $conversation || ! $mailMessage) {
+                        return;
+                    }
+
+                    try {
+                        app(TransactionalMailSender::class)->send(
+                            $recipient,
+                            new ChatMessageMail($conversation, $mailMessage),
+                            'chat_new_message'
+                        );
+                    } catch (\Throwable $e) {
+                        Log::warning('chat_new_message notify failed', [
+                            'recipient_id' => $recipientId,
+                            'conversation_id' => $conversationId,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                })->afterResponse();
             }
         }
     }

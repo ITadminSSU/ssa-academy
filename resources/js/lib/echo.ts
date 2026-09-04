@@ -24,13 +24,16 @@ export function createEcho(config: ReverbConfig): Echo | null {
 
    window.Pusher = Pusher;
 
+   const secure = config.scheme === 'https';
+   const port = secure && (!config.port || config.port === 80) ? 443 : config.port;
+
    const echo = new Echo({
       broadcaster: 'reverb',
       key: config.key,
       wsHost: config.host,
-      wsPort: config.port,
-      wssPort: config.port,
-      forceTLS: config.scheme === 'https',
+      wsPort: port,
+      wssPort: port,
+      forceTLS: secure,
       enabledTransports: ['ws', 'wss'],
       authEndpoint: config.authEndpoint,
       auth: {

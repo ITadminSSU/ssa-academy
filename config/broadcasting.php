@@ -18,6 +18,11 @@ return [
                 'useTLS' => env('REVERB_SERVER_SCHEME', env('REVERB_SCHEME', 'http')) === 'https',
             ],
             'client_options' => [],
+            'client' => [
+                'host' => env('REVERB_HOST', 'localhost'),
+                'port' => ((int) env('REVERB_PORT', 443)) ?: 443,
+                'scheme' => env('REVERB_SCHEME', 'https'),
+            ],
         ],
 
         'pusher' => [

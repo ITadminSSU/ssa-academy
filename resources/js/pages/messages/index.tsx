@@ -362,13 +362,15 @@ export default function MessagesIndex() {
       });
    }, [conversations, realtime]);
 
-   const { data, setData, post, processing, errors, reset } = useForm<{
+   const { data, setData, errors, reset, setError, clearErrors } = useForm<{
       body: string;
       attachment: File | null;
    }>({
       body: '',
       attachment: null,
    });
+   const [sending, setSending] = useState(false);
+   const [fileKey, setFileKey] = useState(0);
 
    const applyInboxFilters = (next: Partial<Filters>) => {
       const merged = { ...filters, ...next };
@@ -394,24 +396,84 @@ export default function MessagesIndex() {
       applyInboxFilters({ mq: threadQuery.trim() || null });
    };
 
-   const submit = (e: FormEvent) => {
+   const submit = async (e: FormEvent) => {
       e.preventDefault();
-      if (!activeConversation) return;
+      if (!activeConversation || sending) {
+         return;
+      }
 
-      const params = new URLSearchParams();
-      if (filters.q) params.set('q', filters.q);
-      if (filters.filter) params.set('filter', filters.filter);
-      if (filters.mq) params.set('mq', filters.mq);
-      const query = params.toString();
-      const url = query
-         ? `${route('messages.store', activeConversation.id)}?${query}`
-         : route('messages.store', activeConversation.id);
+      if (!data.body.trim() && !data.attachment) {
+         return;
+      }
 
-      post(url, {
-         forceFormData: true,
-         onSuccess: () => reset('body', 'attachment'),
-         preserveScroll: true,
-      });
+      clearErrors();
+      setSending(true);
+
+      const formData = new FormData();
+      if (data.body.trim()) {
+         formData.append('body', data.body.trim());
+      }
+      if (data.attachment) {
+         formData.append('attachment', data.attachment);
+      }
+
+      try {
+         const response = await fetch(route('messages.store', activeConversation.id), {
+            method: 'POST',
+            headers: {
+               Accept: 'application/json',
+               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+            },
+            credentials: 'same-origin',
+            body: formData,
+         });
+
+         const payload = (await response.json().catch(() => null)) as
+            | {
+                 message?: ChatMessageItem;
+                 errors?: Record<string, string[]>;
+              }
+            | null;
+
+         if (!response.ok) {
+            const fieldErrors = payload?.errors ?? {};
+            Object.entries(fieldErrors).forEach(([field, messages]) => {
+               if (messages[0]) {
+                  setError(field as 'body' | 'attachment', messages[0]);
+               }
+            });
+            return;
+         }
+
+         if (payload?.message) {
+            const sent: ChatMessageItem = {
+               ...payload.message,
+               is_mine: true,
+               can_delete: payload.message.can_delete ?? true,
+            };
+
+            setLiveMessages((current) => {
+               if (current.some((item) => item.id === sent.id)) {
+                  return current;
+               }
+
+               return [...current, sent];
+            });
+
+            realtime?.mergeInboxPreview({
+               ...activeConversation,
+               last_message_at: sent.created_at ?? new Date().toISOString(),
+               preview: sent.body || sent.attachment_name || 'Attachment',
+               preview_sender: auth.user?.name,
+               unread: false,
+            });
+         }
+
+         reset('body', 'attachment');
+         setFileKey((current) => current + 1);
+      } finally {
+         setSending(false);
+      }
    };
 
    const threadAction = (name: 'resolve' | 'reopen' | 'mute') => {
@@ -652,19 +714,26 @@ export default function MessagesIndex() {
                               placeholder="Write a message…"
                               value={data.body}
                               onChange={(e) => setData('body', e.target.value)}
+                              onKeyDown={(e) => {
+                                 if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    e.currentTarget.form?.requestSubmit();
+                                 }
+                              }}
                            />
                            <InputError message={errors.body} />
                            <div className="mt-2 flex flex-wrap items-center gap-2">
                               <Input
+                                 key={fileKey}
                                  type="file"
                                  accept="image/*,video/mp4,video/webm,video/quicktime,application/pdf"
                                  className="max-w-xs"
                                  onChange={(e) => setData('attachment', e.target.files?.[0] ?? null)}
                               />
                               <InputError message={errors.attachment} />
-                              <p className="text-xs text-muted-foreground">Images, videos (50MB), or PDFs</p>
-                              <Button type="submit" disabled={processing}>
-                                 {processing ? 'Sending…' : 'Send'}
+                              <p className="text-xs text-muted-foreground">Images, videos (50MB), or PDFs · Enter to send</p>
+                              <Button type="submit" disabled={sending}>
+                                 {sending ? 'Sending…' : 'Send'}
                               </Button>
                            </div>
                         </form>

@@ -81,12 +81,18 @@ class ChatController extends Controller
             ],
         ]);
 
-        $this->chat->sendMessage(
+        $message = $this->chat->sendMessage(
             $request->user(),
             $conversation,
             $data['body'] ?? null,
             $request->file('attachment'),
         );
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $this->chat->messageForViewer($message, $request->user(), $conversation),
+            ]);
+        }
 
         return back();
     }
