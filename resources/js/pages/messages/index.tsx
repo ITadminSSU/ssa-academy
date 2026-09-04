@@ -606,10 +606,14 @@ export default function MessagesIndex() {
    };
 
    return (
-      <DashboardLayout variant={isLearner ? 'learner' : 'admin'} headTitle="Messages">
+      <DashboardLayout
+         variant={isLearner ? 'learner' : 'admin'}
+         headTitle="Messages"
+         lockViewport
+      >
          <Head title="Messages" />
 
-         <div className="mb-4">
+         <div className="mb-3 shrink-0">
             <h1 className="text-2xl font-semibold text-[#01123A]">Messages</h1>
             <p className="mt-1 text-sm text-muted-foreground">
                {isAdmin
@@ -618,9 +622,9 @@ export default function MessagesIndex() {
             </p>
          </div>
 
-         <div className="grid min-h-[560px] overflow-hidden rounded-xl border border-border/70 bg-white lg:grid-cols-[320px_minmax(0,1fr)]">
-            <aside className="border-b border-border/70 lg:border-r lg:border-b-0">
-               <div className="border-b border-border/60 px-4 py-3">
+         <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-xl border border-border/70 bg-white lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-none">
+            <aside className="flex max-h-[38vh] min-h-0 flex-col border-b border-border/70 lg:max-h-none lg:border-r lg:border-b-0">
+               <div className="shrink-0 border-b border-border/60 px-4 py-3">
                   <p className="text-sm font-medium">Inbox</p>
                   <form onSubmit={submitInboxSearch} className="mt-2 flex gap-2">
                      <div className="relative flex-1">
@@ -652,7 +656,7 @@ export default function MessagesIndex() {
                   </div>
                   {canStartAcademyChat ? <AcademyComposer /> : null}
                </div>
-               <div className="max-h-[520px] overflow-y-auto">
+               <div className="min-h-0 flex-1 overflow-y-auto">
                   {mergedConversations.length === 0 ? (
                      <p className="px-4 py-8 text-sm text-muted-foreground">
                         No conversations match your filters yet.
@@ -699,14 +703,14 @@ export default function MessagesIndex() {
                </div>
             </aside>
 
-            <section className="flex min-h-[420px] flex-col">
+            <section className="flex min-h-0 flex-col">
                {!activeConversation ? (
                   <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
                      Select a conversation to start messaging.
                   </div>
                ) : (
                   <>
-                     <div className="border-b border-border/60 px-4 py-3">
+                     <div className="shrink-0 border-b border-border/60 px-4 py-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                            <div>
                               <p className="font-medium text-[#01123A]">{activeConversation.label}</p>
@@ -777,7 +781,7 @@ export default function MessagesIndex() {
                      </div>
 
                      {activeConversation.pinned_message && (
-                        <div className="border-b border-border/60 bg-amber-50 px-4 py-3">
+                        <div className="max-h-40 shrink-0 overflow-y-auto border-b border-border/60 bg-amber-50 px-4 py-3">
                            <p className="mb-2 flex items-center gap-1 text-xs font-medium text-amber-900">
                               <Pin className="h-3 w-3" /> Pinned message
                            </p>
@@ -785,7 +789,7 @@ export default function MessagesIndex() {
                         </div>
                      )}
 
-                     <div ref={threadRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+                     <div ref={threadRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
                         {liveMessages.length === 0 ? (
                            <p className="text-sm text-muted-foreground">
                               {filters.mq ? 'No messages match your search.' : 'No messages yet.'}
@@ -806,9 +810,10 @@ export default function MessagesIndex() {
                      </div>
 
                      {activeConversation.can_send ? (
-                        <form onSubmit={submit} className="border-t border-border/60 px-4 py-3" encType="multipart/form-data">
+                        <form onSubmit={submit} className="shrink-0 border-t border-border/60 bg-white px-4 py-3" encType="multipart/form-data">
                            <Textarea
                               rows={3}
+                              className="max-h-28 resize-none"
                               placeholder="Write a message…"
                               value={data.body}
                               onChange={(e) => setData('body', e.target.value)}
@@ -834,7 +839,7 @@ export default function MessagesIndex() {
                            </div>
                         </form>
                      ) : (
-                        <div className="border-t border-border/60 px-4 py-3 text-sm text-muted-foreground">
+                        <div className="shrink-0 border-t border-border/60 px-4 py-3 text-sm text-muted-foreground">
                            {activeConversation.is_resolved
                               ? activeConversation.type === 'academy'
                                  ? 'This conversation is resolved. You cannot send new messages until Academy reopens it.'
