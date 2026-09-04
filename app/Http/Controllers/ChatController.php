@@ -129,6 +129,28 @@ class ChatController extends Controller
     {
         return response()->json([
             'messages_unread_count' => $this->chat->unreadCount($request->user()),
+            'previews' => $this->chat->unreadPreviews($request->user()),
+        ]);
+    }
+
+    public function sync(Request $request, ChatConversation $conversation)
+    {
+        abort_unless($this->chat->canView($request->user(), $conversation), 403);
+
+        $messages = $this->chat->messagesAfter(
+            $conversation,
+            $request->user(),
+            $request->integer('after'),
+        );
+
+        if ($messages !== []) {
+            $this->chat->markConversationRead($conversation, $request->user());
+        }
+
+        return response()->json([
+            'messages' => $messages,
+            'inbox_preview' => $this->chat->inboxPreviewFor($conversation, $request->user()),
+            'messages_unread_count' => $this->chat->unreadCount($request->user()),
         ]);
     }
 

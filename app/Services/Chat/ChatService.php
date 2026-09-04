@@ -591,6 +591,22 @@ class ChatService
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    public function messagesAfter(ChatConversation $conversation, User $viewer, int $afterId): array
+    {
+        return ChatMessage::query()
+            ->where('chat_conversation_id', $conversation->id)
+            ->where('id', '>', $afterId)
+            ->with('sender:id,name,photo,role')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (ChatMessage $message) => $this->formatMessage($message, $viewer, $conversation))
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function messageForViewer(ChatMessage $message, User $viewer, ChatConversation $conversation): array
@@ -628,10 +644,6 @@ class ChatService
 
     public function unreadCount(User $user): int
     {
-        if ($this->access->isAdmin($user)) {
-            return 0;
-        }
-
         $latestMessageIds = ChatMessage::query()
             ->selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
@@ -654,6 +666,26 @@ class ChatService
                     ->where('chat_messages.user_id', $user->id);
             })
             ->count();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function unreadPreviews(User $user): array
+    {
+        return ChatParticipant::query()
+            ->where('user_id', $user->id)
+            ->where('is_active', true)
+            ->with([
+                'conversation.course.instructor.user',
+                'conversation.student:id,name',
+                'conversation.messages' => fn ($q) => $q->latest('id')->limit(1)->with('sender:id,name'),
+            ])
+            ->get()
+            ->map(fn (ChatParticipant $participant) => $this->formatConversationListItem($participant, $user))
+            ->filter(fn (?array $item) => is_array($item) && ($item['unread'] ?? false))
+            ->values()
+            ->all();
     }
 
     private function detectAttachmentType(UploadedFile $file): ChatAttachmentType
@@ -790,6 +822,12 @@ class ChatService
             if ($conversation->student) {
                 $this->upsertParticipant($conversation, $conversation->student, ChatParticipantRole::Student, true);
             }
+
+            User::query()
+                ->where('role', 'admin')
+                ->each(function (User $admin) use ($conversation) {
+                    $this->upsertParticipant($conversation, $admin, ChatParticipantRole::Admin, true);
+                });
 
             return;
         }

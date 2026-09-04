@@ -11,6 +11,7 @@ Route::prefix('messages')->name('messages.')->group(function () {
     Route::post('academy', [ChatController::class, 'openAcademy'])->name('academy');
     Route::get('course/{course}/dm', [ChatController::class, 'openDirect'])->name('dm');
     Route::get('course/{course}/group', [ChatController::class, 'openGroup'])->name('group');
+    Route::get('{conversation}/sync', [ChatController::class, 'sync'])->name('sync');
     Route::get('{conversation}', [ChatController::class, 'show'])->name('show');
     Route::post('{conversation}/read', [ChatController::class, 'read'])->name('read');
     Route::post('{conversation}', [ChatController::class, 'store'])->name('store');

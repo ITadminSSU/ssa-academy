@@ -54,7 +54,7 @@ type MessagesRealtimeContextValue = {
 
 const MessagesRealtimeContext = createContext<MessagesRealtimeContextValue | null>(null);
 
-const POLL_INTERVAL_MS = 45_000;
+const POLL_INTERVAL_MS = 8_000;
 const PRESENCE_INTERVAL_MS = 30_000;
 
 async function postPresence(conversationId: number | null, visible: boolean) {
@@ -73,19 +73,25 @@ async function postPresence(conversationId: number | null, visible: boolean) {
    });
 }
 
-async function fetchUnreadCount(): Promise<number> {
+async function fetchUnreadPulse(): Promise<{ count: number; previews: ConversationListItem[] }> {
    const response = await fetch(route('messages.unread'), {
       headers: { Accept: 'application/json' },
       credentials: 'same-origin',
    });
 
    if (!response.ok) {
-      return 0;
+      return { count: 0, previews: [] };
    }
 
-   const data = (await response.json()) as { messages_unread_count?: number };
+   const data = (await response.json()) as {
+      messages_unread_count?: number;
+      previews?: ConversationListItem[];
+   };
 
-   return data.messages_unread_count ?? 0;
+   return {
+      count: data.messages_unread_count ?? 0,
+      previews: data.previews ?? [],
+   };
 }
 
 export function MessagesRealtimeProvider({
@@ -215,19 +221,22 @@ export function MessagesRealtimeProvider({
    }, [activeConversationId, userId]);
 
    useEffect(() => {
-      if (!userId || echoConnected) {
+      if (!userId) {
          return;
       }
 
       const poll = () => {
-         void fetchUnreadCount().then(setMessagesUnreadCount);
+         void fetchUnreadPulse().then(({ count, previews }) => {
+            setMessagesUnreadCount(count);
+            previews.forEach((preview) => mergeInboxPreview(preview));
+         });
       };
 
       poll();
       const pollTimer = window.setInterval(poll, POLL_INTERVAL_MS);
 
       return () => window.clearInterval(pollTimer);
-   }, [echoConnected, userId]);
+   }, [mergeInboxPreview, userId]);
 
    const value = useMemo(
       () => ({

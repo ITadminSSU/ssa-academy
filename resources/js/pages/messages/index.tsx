@@ -282,7 +282,9 @@ export default function MessagesIndex() {
    const [threadQuery, setThreadQuery] = useState(filters.mq ?? '');
    const [liveMessages, setLiveMessages] = useState<ChatMessageItem[]>(activeConversation?.messages ?? []);
    const threadRef = useRef<HTMLDivElement>(null);
+   const liveMessagesRef = useRef(liveMessages);
    const realtime = useMessagesRealtime();
+   liveMessagesRef.current = liveMessages;
 
    useEffect(() => {
       realtime?.setActiveConversationId(activeConversation?.id ?? null);
@@ -331,6 +333,60 @@ export default function MessagesIndex() {
          });
       });
    }, [activeConversation?.id, auth.user?.id, realtime]);
+
+   useEffect(() => {
+      if (!activeConversation?.id) {
+         return;
+      }
+
+      const conversationId = activeConversation.id;
+
+      const pollThread = () => {
+         const afterId = Math.max(0, ...liveMessagesRef.current.map((message) => message.id), 0);
+
+         void fetch(`${route('messages.sync', conversationId)}?after=${afterId}`, {
+            headers: { Accept: 'application/json' },
+            credentials: 'same-origin',
+         }).then(async (response) => {
+            if (!response.ok) {
+               return;
+            }
+
+            const data = (await response.json()) as {
+               messages?: ChatMessageItem[];
+               inbox_preview?: ConversationListItem;
+               messages_unread_count?: number;
+            };
+
+            if (data.messages?.length) {
+               setLiveMessages((current) => {
+                  const incoming = data.messages ?? [];
+                  const next = [...current];
+
+                  incoming.forEach((message) => {
+                     if (!next.some((item) => item.id === message.id)) {
+                        next.push(message);
+                     }
+                  });
+
+                  return next;
+               });
+            }
+
+            if (data.inbox_preview) {
+               realtime?.mergeInboxPreview(data.inbox_preview);
+            }
+
+            if (typeof data.messages_unread_count === 'number') {
+               realtime?.setMessagesUnreadCount(data.messages_unread_count);
+            }
+         });
+      };
+
+      const timer = window.setInterval(pollThread, 3000);
+
+      return () => window.clearInterval(timer);
+   }, [activeConversation?.id, realtime]);
 
    useEffect(() => {
       const node = threadRef.current;
