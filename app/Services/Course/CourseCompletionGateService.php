@@ -25,6 +25,7 @@ class CourseCompletionGateService
      * 2. Quiz phase — all quizzes passed. Classic course assignments are not a gate.
      * 3. Certification — auto-issued when quizzes complete (or all lessons if there are no quizzes).
      * Practice plans (Build Your US Experience) never block the certificate.
+     * The US Experience tab stays locked until the same lesson/quiz bar is met.
      */
     public function getGateStatus(Course $course, int $userId, ?array $completion = null, ?WatchHistory $watchHistory = null): array
     {
@@ -80,8 +81,34 @@ class CourseCompletionGateService
             'quizzes_unlocked' => $quizzesUnlocked,
             'all_quizzes_passed' => $allQuizzesPassed,
             'certificate_unlocked' => $certificateUnlocked,
+            'us_experience_unlocked' => $certificateUnlocked,
             'pending_assignments_count' => $pendingAssignments,
         ];
+    }
+
+    public function canAccessUsExperience(Course $course, int $userId, ?WatchHistory $watchHistory = null): bool
+    {
+        return $this->getGateStatus($course, $userId, null, $watchHistory)['us_experience_unlocked'];
+    }
+
+    /**
+     * @param  array<string, mixed>  $gates
+     */
+    public function usExperienceLockMessage(array $gates): ?string
+    {
+        if ($gates['us_experience_unlocked'] ?? $gates['certificate_unlocked'] ?? false) {
+            return null;
+        }
+
+        if ($gates['has_quizzes'] ?? false) {
+            if (! ($gates['videos_completed'] ?? false)) {
+                return 'Finish all video lessons and pass all quizzes before you can access Build Your US Experience.';
+            }
+
+            return 'Pass all course quizzes before you can access Build Your US Experience.';
+        }
+
+        return 'Finish all course lessons before you can access Build Your US Experience.';
     }
 
     public function canAccessAssignmentTab(Course $course, int $userId, ?WatchHistory $watchHistory = null): bool

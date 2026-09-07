@@ -54,11 +54,28 @@ const groupPlans = (plans: UsExperienceStudentPlan[]) => {
 };
 
 const UsExperience = () => {
-   const { usExperience, subscriptionAccess } = usePage<StudentCourseProps>().props;
+   const { usExperience, subscriptionAccess, courseGates } = usePage<StudentCourseProps>().props;
    const payload = usExperience;
+   const courseComplete = payload?.course_complete ?? courseGates?.us_experience_unlocked ?? courseGates?.certificate_unlocked ?? false;
    const plans = payload?.plans ?? [];
    const groups = groupPlans(plans);
    const lapsed = subscriptionAccess?.mode === 'completed_only';
+
+   if (!courseComplete) {
+      const lockMessage =
+         payload?.lock_message
+         || (courseGates?.has_quizzes
+            ? 'Finish all video lessons and pass all quizzes before you can access this tab.'
+            : 'Finish all course lessons before you can access this tab.');
+
+      return (
+         <Alert>
+            <Lock className="h-4 w-4" />
+            <AlertTitle>Finish the course first</AlertTitle>
+            <AlertDescription>{lockMessage}</AlertDescription>
+         </Alert>
+      );
+   }
 
    if (!payload || plans.length === 0) {
       return (

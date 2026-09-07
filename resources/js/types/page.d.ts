@@ -131,6 +131,7 @@ export interface CourseGates {
    quizzes_unlocked: boolean;
    all_quizzes_passed: boolean;
    certificate_unlocked: boolean;
+   us_experience_unlocked: boolean;
    pending_assignments_count: number;
 }
 

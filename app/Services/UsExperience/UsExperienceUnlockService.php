@@ -5,6 +5,7 @@ namespace App\Services\UsExperience;
 use App\Models\Course\Course;
 use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
+use App\Services\Course\CourseCompletionGateService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -13,10 +14,29 @@ class UsExperienceUnlockService
 {
     public function __construct(
         private SubscriptionAccessService $subscriptionAccess,
+        private CourseCompletionGateService $courseGates,
     ) {}
 
     public function studentOverview(Course $course, User $user): array
     {
+        $gates = $this->courseGates->getGateStatus($course, $user->id);
+        $courseComplete = (bool) $gates['us_experience_unlocked'];
+        $defaults = [
+            'default_tolerance_percent' => (float) config('us_experience.default_tolerance_percent', 2),
+            'pass_mark_hint' => (int) config('us_experience.default_pass_mark', 85),
+            'course_complete' => $courseComplete,
+            'lock_message' => $this->courseGates->usExperienceLockMessage($gates),
+        ];
+
+        if (! $courseComplete) {
+            return [
+                'plans' => [],
+                'can_use_files' => false,
+                'can_see_scores' => false,
+                ...$defaults,
+            ];
+        }
+
         $ordered = $this->orderedReadyPlans($course);
         $planIds = $ordered->pluck('id');
         $attempts = $planIds->isEmpty()
@@ -35,8 +55,7 @@ class UsExperienceUnlockService
             'plans' => $this->studentPlanPayloads($ordered, $attempts, $canUseFiles, $canSeeScores),
             'can_use_files' => $canUseFiles,
             'can_see_scores' => $canSeeScores,
-            'default_tolerance_percent' => (float) config('us_experience.default_tolerance_percent', 2),
-            'pass_mark_hint' => (int) config('us_experience.default_pass_mark', 85),
+            ...$defaults,
         ];
     }
 
@@ -148,8 +167,10 @@ class UsExperienceUnlockService
             ->exists();
     }
 
-    public function assertCanDownload(UsExperiencePlan $plan, Collection $orderedPlans, User $user, bool $canUseFiles): void
+    public function assertCanDownload(UsExperiencePlan $plan, Collection $orderedPlans, User $user, bool $canUseFiles, Course $course): void
     {
+        $this->assertCourseCurriculumComplete($course, $user);
+
         if (!$canUseFiles) {
             abort(403, 'Resubscribe to download plan files.');
         }
@@ -157,8 +178,10 @@ class UsExperienceUnlockService
         $this->assertUnlocked($plan, $orderedPlans, $user);
     }
 
-    public function assertCanSubmit(UsExperiencePlan $plan, Collection $orderedPlans, User $user, bool $canUseFiles): void
+    public function assertCanSubmit(UsExperiencePlan $plan, Collection $orderedPlans, User $user, bool $canUseFiles, Course $course): void
     {
+        $this->assertCourseCurriculumComplete($course, $user);
+
         if (!$canUseFiles) {
             abort(403, 'Resubscribe to submit plan work.');
         }
@@ -176,6 +199,13 @@ class UsExperienceUnlockService
 
         if ($attempts->count() >= (int) $plan->max_attempts) {
             abort(422, 'No attempts remaining for this plan.');
+        }
+    }
+
+    public function assertCourseCurriculumComplete(Course $course, User $user): void
+    {
+        if (! $this->courseGates->canAccessUsExperience($course, $user->id)) {
+            abort(403, 'Finish all lessons and quizzes before accessing Build Your US Experience.');
         }
     }
 

@@ -89,6 +89,8 @@ interface UsExperienceStudentPayload {
    can_see_scores: boolean;
    default_tolerance_percent: number;
    pass_mark_hint: number;
+   course_complete: boolean;
+   lock_message?: string | null;
 }
 
 interface UsExperiencePublicGroup {

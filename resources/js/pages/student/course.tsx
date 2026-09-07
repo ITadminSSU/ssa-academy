@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudentCourseProps } from '@/types/page';
 import { Head, Link } from '@inertiajs/react';
+import { Lock } from 'lucide-react';
 import { ReactNode } from 'react';
 import Layout from './partials/layout';
 import CourseCertificate from './tabs-content/course-certificate';
@@ -16,8 +17,9 @@ import UsExperience from './tabs-content/us-experience';
 import SubscriptionAccessBanner from '@/pages/course-player/partials/subscription-access-banner';
 
 const Course = (props: StudentCourseProps) => {
-   const { tab, course, watchHistory, completion, subscriptionAccess, showUsExperience = false } = props;
+   const { tab, course, watchHistory, completion, subscriptionAccess, showUsExperience = false, courseGates } = props;
    const canMessage = subscriptionAccess?.mode !== 'none';
+   const usExperienceLocked = showUsExperience && !(courseGates?.us_experience_unlocked ?? courseGates?.certificate_unlocked);
 
    const tabs = [
       {
@@ -87,7 +89,12 @@ const Course = (props: StudentCourseProps) => {
                                     tab: value,
                                  })}
                               >
-                                 <span>{label}</span>
+                                 <span className="inline-flex items-center gap-2">
+                                    {value === 'us-experience' && usExperienceLocked ? (
+                                       <Lock className="h-3.5 w-3.5 shrink-0" />
+                                    ) : null}
+                                    {label}
+                                 </span>
                               </Link>
                            </TabsTrigger>
                         );

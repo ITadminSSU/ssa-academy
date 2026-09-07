@@ -32,7 +32,7 @@ class UsExperienceStudentController extends Controller
         $this->plans->assertFeatureEnabled($course);
         $canUseFiles = $this->subscriptionAccess->getAccessMode($user, $course) === 'full';
         $ordered = $this->unlock->orderedReadyPlans($course);
-        $this->unlock->assertCanDownload($plan, $ordered, $user, $canUseFiles);
+        $this->unlock->assertCanDownload($plan, $ordered, $user, $canUseFiles, $course);
 
         try {
             $pack = $this->plans->buildStudentPack($plan);
@@ -54,7 +54,7 @@ class UsExperienceStudentController extends Controller
         $this->plans->assertFeatureEnabled($course);
         $canUseFiles = $this->subscriptionAccess->getAccessMode($user, $course) === 'full';
         $ordered = $this->unlock->orderedReadyPlans($course);
-        $this->unlock->assertCanSubmit($plan, $ordered, $user, $canUseFiles);
+        $this->unlock->assertCanSubmit($plan, $ordered, $user, $canUseFiles, $course);
 
         try {
             $attempt = $this->attempts->submit(
