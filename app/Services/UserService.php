@@ -206,6 +206,8 @@ class UserService
                 'Role',
                 'Learner Type',
                 'Professional Type',
+                'Referrer',
+                'Referrer Is SSU Employee',
                 'Registered At',
                 'CV On File',
                 'ID On File',
@@ -224,6 +226,8 @@ class UserService
                     $this->exportRoleLabel($user->role),
                     $this->exportLearnerTypeLabel($user),
                     $professionalType,
+                    trim((string) $user->referred_by),
+                    $this->exportReferrerEmployeeLabel($user),
                     $user->created_at?->format('Y-m-d H:i:s') ?? '',
                     $user->getFirstMedia('cv_resume') ? 'Yes' : 'No',
                     $user->getFirstMedia('id_document') ? 'Yes' : 'No',
@@ -254,6 +258,23 @@ class UserService
         }
 
         return $user->user_type === LearnerUserType::EMPLOYEE ? 'Internal employee' : 'External learner';
+    }
+
+    private function exportReferrerEmployeeLabel(User $user): string
+    {
+        if (! trim((string) $user->referred_by)) {
+            return '';
+        }
+
+        if ($user->referrer_is_employee === true) {
+            return 'Yes';
+        }
+
+        if ($user->referrer_is_employee === false) {
+            return 'No';
+        }
+
+        return '';
     }
 
     /**
