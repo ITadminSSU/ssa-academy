@@ -117,11 +117,6 @@ class ChatController extends Controller
             (bool) $data['visible'],
         );
 
-        if ($conversationId && $data['visible']) {
-            $conversation = ChatConversation::query()->findOrFail($conversationId);
-            $this->chat->markConversationRead($conversation, $request->user());
-        }
-
         return response()->json(['ok' => true]);
     }
 

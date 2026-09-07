@@ -660,6 +660,12 @@ class ChatService
 
     public function unreadCount(User $user): int
     {
+        return $this->participantUnreadCount($user)
+            + ($this->access->isAdmin($user) ? $this->untrackedAcademyUnreadCount($user) : 0);
+    }
+
+    private function participantUnreadCount(User $user): int
+    {
         $latestMessageIds = ChatMessage::query()
             ->selectRaw('MAX(id) as id')
             ->whereNull('deleted_at')
@@ -680,6 +686,28 @@ class ChatService
                     ->join('chat_messages', 'chat_messages.id', '=', 'latest_message_ids.id')
                     ->whereColumn('chat_messages.chat_conversation_id', 'chat_conversations.id')
                     ->where('chat_messages.user_id', $user->id);
+            })
+            ->count();
+    }
+
+    private function untrackedAcademyUnreadCount(User $user): int
+    {
+        return ChatConversation::query()
+            ->where('type', ChatConversationType::Academy)
+            ->whereNotNull('last_message_at')
+            ->whereDoesntHave('participants', fn ($query) => $query->where('user_id', $user->id))
+            ->whereExists(function ($query) use ($user) {
+                $query->select(DB::raw(1))
+                    ->from('chat_messages as latest_messages')
+                    ->whereColumn('latest_messages.chat_conversation_id', 'chat_conversations.id')
+                    ->whereNull('latest_messages.deleted_at')
+                    ->where('latest_messages.user_id', '!=', $user->id)
+                    ->whereRaw('latest_messages.id = (
+                        select max(inner_messages.id)
+                        from chat_messages as inner_messages
+                        where inner_messages.chat_conversation_id = chat_conversations.id
+                        and inner_messages.deleted_at is null
+                    )');
             })
             ->count();
     }
@@ -959,9 +987,12 @@ class ChatService
             ->where('user_id', $viewer->id)
             ->first();
 
-        $unread = $participant && $latest
-            && (int) $latest->user_id !== (int) $viewer->id
-            && ($participant->last_read_at === null || $latest->created_at->gt($participant->last_read_at));
+        $fromOther = $latest && (int) $latest->user_id !== (int) $viewer->id;
+        $unread = $fromOther && (
+            $participant
+                ? ($participant->last_read_at === null || $latest->created_at->gt($participant->last_read_at))
+                : ($conversation->isAcademy() && $this->access->isAdmin($viewer))
+        );
 
         $label = $conversation->type === ChatConversationType::Group
             ? ($conversation->title ?? 'Class chat')
