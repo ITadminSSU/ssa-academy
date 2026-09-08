@@ -90,15 +90,15 @@ const QuantityTakeoffBreakdown = ({
          <div className="overflow-x-auto rounded-lg border">
             <table className="w-full border-collapse text-sm">
                <thead className="bg-muted/60">
-                  <tr className="text-left">
-                     <th className="p-3">#</th>
-                     <th className="p-3">Item</th>
-                     {isTrainer && <th className="p-3">Expected</th>}
-                     <th className="p-3">Submitted</th>
-                     <th className="p-3">Unit</th>
-                     {showAllowedBand && <th className="p-3">± Tolerance</th>}
-                     <th className="p-3">Variance</th>
-                     <th className="p-3">Result</th>
+                  <tr>
+                     <th className="p-3 text-left">#</th>
+                     <th className="p-3 text-left">Item</th>
+                     {isTrainer && <th className="p-3 text-right whitespace-nowrap">Expected</th>}
+                     <th className="p-3 text-right whitespace-nowrap">Submitted</th>
+                     <th className="p-3 text-left">Unit</th>
+                     {showAllowedBand && <th className="p-3 text-right whitespace-nowrap">± Tolerance</th>}
+                     <th className="p-3 text-right whitespace-nowrap">Variance</th>
+                     <th className="p-3 text-left whitespace-nowrap">Result</th>
                   </tr>
                </thead>
                <tbody>
@@ -108,10 +108,10 @@ const QuantityTakeoffBreakdown = ({
                      return (
                         <tr
                            key={line.key}
-                           className={cn('border-t align-top', lineCorrect ? 'bg-green-500/5' : 'bg-red-500/5')}
+                           className={cn('border-t align-middle', lineCorrect ? 'bg-green-500/5' : 'bg-red-500/5')}
                         >
-                           <td className="p-3 text-muted-foreground">{index + 1}</td>
-                           <td className="max-w-md p-3 whitespace-normal">
+                           <td className="p-3 text-left text-muted-foreground">{index + 1}</td>
+                           <td className="max-w-md p-3 text-left whitespace-normal">
                               <div className="space-y-1">
                                  <span>{line.item}</span>
                                  {line.manual_override !== null && line.manual_override !== undefined && (
@@ -121,31 +121,35 @@ const QuantityTakeoffBreakdown = ({
                                  )}
                               </div>
                            </td>
-                           {isTrainer && <td className="p-3 font-medium">{formatQty(line.expected_qty)}</td>}
-                           <td className={cn('p-3 font-medium', !lineCorrect && 'text-red-600')}>
+                           {isTrainer && (
+                              <td className="p-3 text-right font-medium tabular-nums whitespace-nowrap">
+                                 {formatQty(line.expected_qty)}
+                              </td>
+                           )}
+                           <td className={cn('p-3 text-right font-medium tabular-nums whitespace-nowrap', !lineCorrect && 'text-red-600')}>
                               {formatQty(line.submitted_qty)}
                            </td>
-                           <td className="p-3">
+                           <td className="p-3 text-left">
                               <Badge variant="outline">{line.unit || '—'}</Badge>
                            </td>
                            {showAllowedBand && (
-                              <td className="p-3 text-muted-foreground">
+                              <td className="p-3 text-right tabular-nums whitespace-nowrap text-muted-foreground">
                                  ± {formatQty(line.tolerance)}
                                  {line.tolerance_percent != null ? ` (${line.tolerance_percent}%)` : ''}
                               </td>
                            )}
-                           <td className={cn('p-3 font-medium', !lineCorrect && 'text-red-600')}>
+                           <td className={cn('p-3 text-right font-medium tabular-nums whitespace-nowrap', !lineCorrect && 'text-red-600')}>
                               {formatVariance(line.submitted_qty, line.expected_qty)}
                            </td>
-                           <td className="p-3">
+                           <td className="p-3 text-left whitespace-nowrap">
                               {lineCorrect ? (
                                  <span className="inline-flex items-center gap-1 font-medium text-green-600">
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-4 w-4 shrink-0" />
                                     Correct
                                  </span>
                               ) : (
                                  <span className="inline-flex items-center gap-1 font-medium text-red-600">
-                                    <X className="h-4 w-4" />
+                                    <X className="h-4 w-4 shrink-0" />
                                     Incorrect
                                  </span>
                               )}
