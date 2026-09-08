@@ -83,8 +83,7 @@ const CoursePreview = () => {
                            {offer.listPrice}
                         </span>
                         <span className="text-muted-foreground ml-2 text-base font-medium normal-case">
-                           Pre-register for {symbol}
-                           {offer.depositAmount}
+                           course price
                         </span>
                      </>
                   )

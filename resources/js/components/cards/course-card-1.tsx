@@ -147,11 +147,11 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
             </CardContent>
 
             <CardFooter className="mt-auto flex flex-col items-stretch gap-2 border-t border-border/60 p-5 pt-4">
-               <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+               <div className="flex items-center justify-between gap-x-3">
                   <div
                      className={cn(
-                        'ssu-course-card__price flex min-w-0 gap-1.5 capitalize',
-                        catalogPromo ? 'items-start whitespace-normal' : 'items-baseline whitespace-nowrap',
+                        'ssu-course-card__price flex min-w-0 gap-1.5',
+                        catalogPromo ? 'items-start whitespace-normal' : 'items-baseline',
                      )}
                   >
                      {course.pricing_type === 'free' ? (
@@ -170,18 +170,11 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                               </span>
                            </div>
                         ) : (
-                           <>
-                              <span>
-                                 {symbol}
-                                 {formatOfferAmount(launchOffer.listPrice)}
-                              </span>
-                              {launchOffer.depositAmount > 0 ? (
-                                 <span className="text-muted-foreground text-xs font-medium normal-case">
-                                    Pre-register for {symbol}
-                                    {formatOfferAmount(launchOffer.depositAmount)}
-                                 </span>
-                              ) : null}
-                           </>
+                           <span className="normal-case">
+                              {symbol}
+                              {formatOfferAmount(launchOffer.listPrice)}{' '}
+                              <span className="text-muted-foreground text-xs font-medium">course price</span>
+                           </span>
                         )
                      ) : isLaunchFullPrice ? (
                         catalogPromo ? (
@@ -255,7 +248,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      )}
                   </div>
 
-                  <Button asChild size="sm" className="h-7 shrink-0 rounded-full px-3 text-xs">
+                  <Button asChild size="sm" className="ml-auto h-7 shrink-0 rounded-full px-3 text-xs">
                      <Link href={detailsUrl}>
                         {showPreviewCta ? (button.preview_course ?? 'Preview Course') : button.learn_more}
                         <ArrowRight className="ml-1 h-3 w-3" />
