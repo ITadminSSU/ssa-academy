@@ -211,6 +211,7 @@ class LaunchOfferService
             'can_pre_register' => $phase === 'pre_register' && ! $reserved && ! ($enrollment?->hasFullAccess() ?? false),
             'can_pay_balance' => (bool) $balanceOpen,
             'can_full_enroll' => $phase === 'full_price' && ! ($enrollment?->hasFullAccess() ?? false) && ! $reserved,
+            'catalog_promo' => app(\App\Services\Course\CourseCouponService::class)->catalogPromoFor($course),
         ];
     }
 }

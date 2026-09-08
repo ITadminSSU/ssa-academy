@@ -442,6 +442,11 @@ const Pricing = () => {
                                                    value={String(data.launch_balance_amount)}
                                                    onChange={(e) => setData('launch_balance_amount', e.target.value)}
                                                 />
+                                                <p className="text-muted-foreground mt-1 text-xs">
+                                                   No-code remaining amount. Keep this at the full launch balance. A catalog
+                                                   coupon is advertised from Coupons → Show on catalog card; the card will
+                                                   compute the coupon remaining. Do not lower this to the coupon price.
+                                                </p>
                                                 <InputError message={errors.launch_balance_amount} />
                                              </div>
                                              <div>
@@ -551,6 +556,10 @@ const Pricing = () => {
                                                 value={String(data.launch_balance_amount)}
                                                 onChange={(e) => setData('launch_balance_amount', e.target.value)}
                                              />
+                                             <p className="text-muted-foreground mt-1 text-xs">
+                                                No-code remaining amount. Advertise a coupon from Coupons → Show on catalog
+                                                card instead of lowering this to the coupon price.
+                                             </p>
                                              <InputError message={errors.launch_balance_amount} />
                                           </div>
                                           <div>

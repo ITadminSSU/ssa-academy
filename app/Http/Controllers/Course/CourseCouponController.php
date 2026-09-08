@@ -40,7 +40,8 @@ class CourseCouponController extends Controller
       $payload['course_id'] = $payload['course_id'] ?? null;
       $payload['created_by'] = $request->user()->id;
 
-      CourseCoupon::create($payload);
+      $coupon = CourseCoupon::create($payload);
+      $this->courseCoupon->makeCatalogExclusive($coupon);
 
       return redirect()
          ->route('course-coupons.index')
@@ -53,6 +54,7 @@ class CourseCouponController extends Controller
    public function update(CourseCouponRequest $request, CourseCoupon $coupon)
    {
       $coupon->update($this->normalizeCouponPayload($request->validated()));
+      $this->courseCoupon->makeCatalogExclusive($coupon->fresh() ?? $coupon);
 
       return redirect()
          ->route('course-coupons.index')
@@ -335,6 +337,12 @@ class CourseCouponController extends Controller
       } else {
          $payload['usage_type'] = 'unlimited';
          $payload['usage_limit'] = null;
+      }
+
+      $payload['show_on_catalog'] = (bool) ($payload['show_on_catalog'] ?? false);
+
+      if (empty($payload['course_id'])) {
+         $payload['show_on_catalog'] = false;
       }
 
       return $payload;

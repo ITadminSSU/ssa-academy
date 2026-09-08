@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\Instructor;
 use App\Notifications\InstructorApprovalNotification;
+use App\Services\Course\CourseCouponService;
 use App\Services\MediaService;
 use App\Support\Database\SsuAcademyTableRegistry;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,7 +43,7 @@ class InstructorService extends MediaService
 
    function getInstructorProfile(string $id): Instructor
    {
-      return Instructor::where('id', $id)
+      $instructor = Instructor::where('id', $id)
          ->with([
             'user',
             'courses' => function ($query) {
@@ -60,6 +61,12 @@ class InstructorService extends MediaService
          ->withCount(['courses', 'exams'])
          ->tap(fn ($query) => $this->applyInstructorAggregateSelects($query, 'total_exam_students_count'))
          ->first();
+
+      if ($instructor?->relationLoaded('courses')) {
+         app(CourseCouponService::class)->appendCatalogPromos($instructor->courses);
+      }
+
+      return $instructor;
    }
 
    function getInstructorWithStatistics(string $id): Instructor

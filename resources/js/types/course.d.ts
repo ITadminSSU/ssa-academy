@@ -27,6 +27,19 @@ interface CourseCategoryChild extends TableCommon {
    course_category_id: number;
 }
 
+interface CatalogPromo {
+   advertised: boolean;
+   list_price: number;
+   deposit_amount: number;
+   balance_amount: number;
+   balance_with_coupon: number;
+   total_with_coupon: number;
+   full_upfront_price: number;
+   full_upfront_with_coupon: number;
+   subscription_price: number;
+   window_end?: string | null;
+}
+
 // courses.ts
 interface Course extends TableCommon {
    title: string;
@@ -55,6 +68,7 @@ interface Course extends TableCommon {
    launch_balance_grace_days?: number | null;
    launch_subscription_trial_ends_at?: string | null;
    launch_full_upfront_price?: number | null;
+   catalog_promo?: CatalogPromo | null;
    stripe_product_id?: string | null;
    stripe_price_id?: string | null;
    audience: 'internal' | 'public' | 'both';
@@ -357,6 +371,7 @@ interface CourseCoupon extends TableCommon {
    usage_limit?: number;
    used_count: number;
    is_active: boolean;
+   show_on_catalog?: boolean;
    course_id: number;
    course: Course;
 }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Instructor;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCategory;
+use App\Services\Course\CourseCouponService;
 use App\Support\Database\SsuAcademyTableRegistry;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -178,6 +179,8 @@ class PageSectionService extends MediaService
          return $course;
       });
 
+      app(CourseCouponService::class)->appendCatalogPromos($paginator);
+
       return $paginator;
    }
 
@@ -244,14 +247,18 @@ class PageSectionService extends MediaService
 
       $order = array_flip($courseIds);
 
-      return $courses
+      $sorted = $courses
          ->sortBy(fn (Course $course) => $order[$course->id] ?? PHP_INT_MAX)
          ->values();
+
+      app(CourseCouponService::class)->appendCatalogPromos($sorted);
+
+      return $sorted;
    }
 
    public function getFeaturedCatalogCourses(int $limit = 6)
    {
-      return Course::query()
+      $courses = Course::query()
          ->with([
             'sections' => function ($query) {
                $query->select('id', 'course_id')
@@ -280,11 +287,15 @@ class PageSectionService extends MediaService
 
             return $course;
          });
+
+      app(CourseCouponService::class)->appendCatalogPromos($courses);
+
+      return $courses;
    }
 
    public function getNewCourses(array $courseIds, int $limit = 8)
    {
-      return Course::query()
+      $courses = Course::query()
          ->whereIn('id', $courseIds)
          ->with([
             'sections' => function ($query) {
@@ -315,6 +326,10 @@ class PageSectionService extends MediaService
             $course->reviews_count = $course->reviews()->count();
             return $course;
          });
+
+      app(CourseCouponService::class)->appendCatalogPromos($courses);
+
+      return $courses;
    }
 
    public function getFirstInstructor(): ?Instructor

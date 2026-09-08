@@ -276,10 +276,16 @@ class CourseService extends MediaService
          ->orderBy('created_at', 'desc');
 
       if ($paginate) {
-         return $courses->paginate($page);
+         $result = $courses->paginate($page);
+         app(CourseCouponService::class)->appendCatalogPromos($result);
+
+         return $result;
       }
 
-      return $courses->get();
+      $result = $courses->get();
+      app(CourseCouponService::class)->appendCatalogPromos($result);
+
+      return $result;
    }
 
    function getUserCourseById(string $id, User $user): ?Course
@@ -367,6 +373,10 @@ class CourseService extends MediaService
                   });
             },
          ])->first();
+
+      if ($course) {
+         app(CourseCouponService::class)->appendCatalogPromos($course);
+      }
 
       return $course;
    }

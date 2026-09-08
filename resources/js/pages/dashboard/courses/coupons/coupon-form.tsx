@@ -36,6 +36,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
       valid_to: formatDatetimeLocal(coupon?.valid_to),
       usage_limit: coupon?.usage_limit ?? '',
       is_active: coupon?.is_active ?? true,
+      show_on_catalog: coupon?.show_on_catalog ?? false,
    });
 
    transform((form) => ({
@@ -84,6 +85,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
             valid_to: formatDatetimeLocal(coupon.valid_to),
             usage_limit: coupon.usage_limit ?? '',
             is_active: coupon.is_active ?? true,
+            show_on_catalog: coupon.show_on_catalog ?? false,
          });
       } else if (!open) {
          reset();
@@ -154,7 +156,13 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                         <Select
                            name="course_id"
                            value={data.course_id?.toString() || 'global'}
-                           onValueChange={(value) => setData('course_id', value === 'global' ? '' : parseInt(value))}
+                           onValueChange={(value) => {
+                              const courseId = value === 'global' ? '' : parseInt(value);
+                              setData('course_id', courseId);
+                              if (!courseId) {
+                                 setData('show_on_catalog', false);
+                              }
+                           }}
                         >
                            <SelectTrigger>
                               <SelectValue placeholder="All Courses (global coupon)" />
@@ -218,6 +226,23 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                      <div className="flex items-center justify-between">
                         <Label htmlFor="is_active">Active</Label>
                         <Switch id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked)} />
+                     </div>
+
+                     <div className="col-span-2 flex items-start justify-between gap-4 rounded-md border p-3">
+                        <div>
+                           <Label htmlFor="show_on_catalog">Show on catalog card</Label>
+                           <p className="text-muted-foreground mt-1 text-xs">
+                              Crosses out list price and shows remaining with this coupon. Does not change charged prices.
+                              Students still enter the code at checkout. Coupons never apply to the deposit. Pick a course
+                              first. Only one coupon per course can be advertised.
+                           </p>
+                        </div>
+                        <Switch
+                           id="show_on_catalog"
+                           checked={Boolean(data.show_on_catalog) && Boolean(data.course_id)}
+                           disabled={!data.course_id}
+                           onCheckedChange={(checked) => setData('show_on_catalog', checked)}
+                        />
                      </div>
                   </div>
                </div>

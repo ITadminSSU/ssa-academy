@@ -25,6 +25,7 @@ class CourseCoupon extends Model
         'usage_limit',
         'used_count',
         'is_active',
+        'show_on_catalog',
     ];
 
     protected $casts = [
@@ -34,6 +35,7 @@ class CourseCoupon extends Model
         'usage_limit' => 'integer',
         'used_count' => 'integer',
         'is_active' => 'boolean',
+        'show_on_catalog' => 'boolean',
     ];
 
     public function course(): BelongsTo

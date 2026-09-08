@@ -34,6 +34,34 @@ export interface LaunchOfferView {
 
    balanceDeadlineAt?: string | null;
 
+   catalogPromo: CatalogPromo | null;
+
+}
+
+
+
+export interface CatalogPromo {
+
+   advertised: boolean;
+
+   list_price: number;
+
+   deposit_amount: number;
+
+   balance_amount: number;
+
+   balance_with_coupon: number;
+
+   total_with_coupon: number;
+
+   full_upfront_price: number;
+
+   full_upfront_with_coupon: number;
+
+   subscription_price: number;
+
+   window_end?: string | null;
+
 }
 
 
@@ -43,6 +71,50 @@ const toNumber = (value: unknown, fallback = 0): number => {
    const n = Number(value);
 
    return Number.isFinite(n) ? n : fallback;
+
+};
+
+
+
+const resolveCatalogPromo = (course: Course, serverPayload?: Record<string, unknown> | null): CatalogPromo | null => {
+
+   const raw = (serverPayload?.catalog_promo as CatalogPromo | null | undefined) ?? course.catalog_promo ?? null;
+
+   if (!raw || raw.advertised === false) {
+
+      return null;
+
+   }
+
+   if (toNumber(raw.balance_with_coupon, toNumber(raw.balance_amount)) >= toNumber(raw.balance_amount) - 0.009) {
+
+      return null;
+
+   }
+
+   return {
+
+      advertised: true,
+
+      list_price: toNumber(raw.list_price),
+
+      deposit_amount: toNumber(raw.deposit_amount),
+
+      balance_amount: toNumber(raw.balance_amount),
+
+      balance_with_coupon: toNumber(raw.balance_with_coupon),
+
+      total_with_coupon: toNumber(raw.total_with_coupon),
+
+      full_upfront_price: toNumber(raw.full_upfront_price),
+
+      full_upfront_with_coupon: toNumber(raw.full_upfront_with_coupon),
+
+      subscription_price: toNumber(raw.subscription_price),
+
+      window_end: raw.window_end ?? null,
+
+   };
 
 };
 
@@ -222,6 +294,8 @@ export const getLaunchOfferView = (
 
          depositNonRefundable: true,
 
+         catalogPromo: resolveCatalogPromo(course, serverPayload),
+
       };
 
    }
@@ -355,6 +429,8 @@ export const getLaunchOfferView = (
 
       balanceDeadlineAt,
 
+      catalogPromo: resolveCatalogPromo(course, serverPayload),
+
    };
 
 };
@@ -396,6 +472,36 @@ export const formatLaunchOfferDateTime = (value?: string | null): string | null 
       minute: '2-digit',
 
    });
+
+};
+
+
+
+export const formatOfferAmount = (amount: number): string =>
+
+   Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+
+
+
+export const formatCatalogPromoDeadline = (value?: string | null): string | null => {
+
+   if (!value) {
+
+      return null;
+
+   }
+
+   const date = new Date(value);
+
+   if (Number.isNaN(date.getTime())) {
+
+      return null;
+
+   }
+
+   const label = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+   return `until ${label} only`;
 
 };
 

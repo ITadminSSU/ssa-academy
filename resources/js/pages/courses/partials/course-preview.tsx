@@ -3,7 +3,7 @@ import SubscriptionBillingNotice from '@/components/subscription-billing-notice'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
-import { getLaunchOfferView } from '@/lib/launch-offer';
+import { formatCatalogPromoDeadline, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
@@ -21,6 +21,9 @@ const CoursePreview = () => {
    const isSubscription = isSubscriptionCourse(course);
    const isUpfrontSubscription = isUpfrontSubscriptionCourse(course);
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
+   const catalogPromo = offer.catalogPromo;
+   const promoDeadline = formatCatalogPromoDeadline(catalogPromo?.window_end);
+   const symbol = currency?.symbol ?? '$';
 
    return (
       <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
@@ -61,27 +64,55 @@ const CoursePreview = () => {
                {course.pricing_type === 'free' ? (
                   course.pricing_type
                ) : offer.enabled && offer.phase === 'pre_register' ? (
-                  <>
-                     <span className="font-semibold">
-                        {currency?.symbol}
-                        {offer.listPrice}
-                     </span>
-                     <span className="text-muted-foreground ml-2 text-base font-medium normal-case">
-                        Pre-register for {currency?.symbol}
-                        {offer.depositAmount}
-                     </span>
-                  </>
+                  catalogPromo ? (
+                     <>
+                        <span className="text-muted-foreground text-xl font-medium line-through">
+                           {symbol}
+                           {formatOfferAmount(catalogPromo.list_price)} course price
+                        </span>
+                        <span className="mt-1 block">
+                           {symbol}
+                           {formatOfferAmount(catalogPromo.total_with_coupon)}{' '}
+                           <span className="text-muted-foreground text-base font-medium normal-case">with coupon</span>
+                        </span>
+                     </>
+                  ) : (
+                     <>
+                        <span className="font-semibold">
+                           {symbol}
+                           {offer.listPrice}
+                        </span>
+                        <span className="text-muted-foreground ml-2 text-base font-medium normal-case">
+                           Pre-register for {symbol}
+                           {offer.depositAmount}
+                        </span>
+                     </>
+                  )
                ) : offer.enabled && offer.phase === 'full_price' ? (
-                  <>
-                     <span className="font-semibold">
-                        {currency?.symbol}
-                        {offer.fullUpfrontPrice}
-                     </span>
-                     <span className="text-muted-foreground ml-2 text-base font-medium">
-                        + {currency?.symbol}
-                        {offer.subscriptionPrice}/mo
-                     </span>
-                  </>
+                  catalogPromo ? (
+                     <>
+                        <span className="text-muted-foreground text-xl font-medium line-through">
+                           {symbol}
+                           {formatOfferAmount(catalogPromo.full_upfront_price)}
+                        </span>
+                        <span className="mt-1 block">
+                           {symbol}
+                           {formatOfferAmount(catalogPromo.full_upfront_with_coupon)}{' '}
+                           <span className="text-muted-foreground text-base font-medium normal-case">with coupon</span>
+                        </span>
+                     </>
+                  ) : (
+                     <>
+                        <span className="font-semibold">
+                           {symbol}
+                           {offer.fullUpfrontPrice}
+                        </span>
+                        <span className="text-muted-foreground ml-2 text-base font-medium">
+                           + {symbol}
+                           {offer.subscriptionPrice}/mo
+                        </span>
+                     </>
+                  )
                ) : isUpfrontSubscription ? (
                   <>
                      <span className="font-semibold">
@@ -124,17 +155,28 @@ const CoursePreview = () => {
 
             {offer.enabled && offer.phase === 'pre_register' ? (
                <div className="text-muted-foreground space-y-3 text-sm leading-relaxed">
+                  {catalogPromo ? (
+                     <p>
+                        {symbol}
+                        {formatOfferAmount(catalogPromo.deposit_amount)} to pre-register · {symbol}
+                        {formatOfferAmount(catalogPromo.balance_amount)} at launch or {symbol}
+                        {formatOfferAmount(catalogPromo.balance_with_coupon)} using coupons · {symbol}
+                        {formatOfferAmount(catalogPromo.subscription_price)} monthly subscription. Enter code at
+                        checkout{promoDeadline ? ` ${promoDeadline}` : ''}. Coupons do not apply to the deposit.
+                     </p>
+                  ) : (
+                     <p>
+                        Reserve your seat for {symbol}
+                        {offer.depositAmount} today, then pay {symbol}
+                        {offer.balanceAmount} on launch day (or within the 5-day grace period) for full access and one month of
+                        Project Plans Subscription for FREE, starting from the day you pay the balance. After that free month,
+                        the subscription is {symbol}
+                        {offer.subscriptionPrice}/month. If you miss the grace deadline, the free month is cancelled and you
+                        can only enroll later at the full upfront price. Cancel project plans subscription anytime.
+                     </p>
+                  )}
                   <p>
-                     Reserve your seat for {currency?.symbol}
-                     {offer.depositAmount} today, then pay {currency?.symbol}
-                     {offer.balanceAmount} on launch day (or within the 5-day grace period) for full access and one month of
-                     Project Plans Subscription for FREE, starting from the day you pay the balance. After that free month,
-                     the subscription is {currency?.symbol}
-                     {offer.subscriptionPrice}/month. If you miss the grace deadline, the free month is cancelled and you
-                     can only enroll later at the full upfront price. Cancel project plans subscription anytime.
-                  </p>
-                  <p>
-                     Please note: The {currency?.symbol}
+                     Please note: The {symbol}
                      {offer.depositAmount} deposit is non-refundable.
                   </p>
                   <p>

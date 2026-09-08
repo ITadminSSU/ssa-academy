@@ -3,7 +3,7 @@ import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
-import { getLaunchOfferView } from '@/lib/launch-offer';
+import { formatCatalogPromoDeadline, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -16,9 +16,6 @@ interface Props {
    className?: string;
    wishlists?: CourseWishlist[];
 }
-
-const formatOfferAmount = (amount: number): string =>
-   Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
 
 const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props) => {
    const { props } = usePage<SharedData>();
@@ -38,6 +35,8 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const launchOffer = getLaunchOfferView(course);
    const isLaunchPreRegister = launchOffer.enabled && launchOffer.phase === 'pre_register';
    const isLaunchFullPrice = launchOffer.enabled && launchOffer.phase === 'full_price';
+   const catalogPromo = launchOffer.catalogPromo;
+   const promoDeadline = formatCatalogPromoDeadline(catalogPromo?.window_end);
    const symbol = currency?.symbol ?? '$';
 
    const handleWishlist = () => {
@@ -149,33 +148,66 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
 
             <CardFooter className="mt-auto flex flex-col items-stretch gap-2 border-t border-border/60 p-5 pt-4">
                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-                  <div className="ssu-course-card__price flex min-w-0 items-baseline gap-1.5 whitespace-nowrap capitalize">
+                  <div
+                     className={cn(
+                        'ssu-course-card__price flex min-w-0 gap-1.5 capitalize',
+                        catalogPromo ? 'items-start whitespace-normal' : 'items-baseline whitespace-nowrap',
+                     )}
+                  >
                      {course.pricing_type === 'free' ? (
                         common.free
                      ) : isLaunchPreRegister ? (
-                        <>
-                           <span>
-                              {symbol}
-                              {formatOfferAmount(launchOffer.listPrice)}
-                           </span>
-                           {launchOffer.depositAmount > 0 ? (
-                              <span className="text-muted-foreground text-xs font-medium normal-case">
-                                 Pre-register for {symbol}
-                                 {formatOfferAmount(launchOffer.depositAmount)}
+                        catalogPromo ? (
+                           <div className="flex min-w-0 flex-col gap-0.5 normal-case">
+                              <span className="text-muted-foreground text-sm font-medium line-through">
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.list_price)} course price
                               </span>
-                           ) : null}
-                        </>
+                              <span>
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.total_with_coupon)}{' '}
+                                 <span className="text-muted-foreground text-xs font-medium">with coupon</span>
+                              </span>
+                           </div>
+                        ) : (
+                           <>
+                              <span>
+                                 {symbol}
+                                 {formatOfferAmount(launchOffer.listPrice)}
+                              </span>
+                              {launchOffer.depositAmount > 0 ? (
+                                 <span className="text-muted-foreground text-xs font-medium normal-case">
+                                    Pre-register for {symbol}
+                                    {formatOfferAmount(launchOffer.depositAmount)}
+                                 </span>
+                              ) : null}
+                           </>
+                        )
                      ) : isLaunchFullPrice ? (
-                        <>
-                           <span>
-                              {symbol}
-                              {formatOfferAmount(launchOffer.fullUpfrontPrice)}
-                           </span>
-                           <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
-                              +{symbol}
-                              {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
-                           </span>
-                        </>
+                        catalogPromo ? (
+                           <div className="flex min-w-0 flex-col gap-0.5 normal-case">
+                              <span className="text-muted-foreground text-sm font-medium line-through">
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.full_upfront_price)}
+                              </span>
+                              <span>
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.full_upfront_with_coupon)}{' '}
+                                 <span className="text-muted-foreground text-xs font-medium">with coupon</span>
+                              </span>
+                           </div>
+                        ) : (
+                           <>
+                              <span>
+                                 {symbol}
+                                 {formatOfferAmount(launchOffer.fullUpfrontPrice)}
+                              </span>
+                              <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
+                                 +{symbol}
+                                 {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
+                              </span>
+                           </>
+                        )
                      ) : isUpfrontSubscription ? (
                         <>
                            <span>
@@ -232,17 +264,47 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                </div>
 
                {isLaunchPreRegister ? (
-                  <p className="text-muted-foreground text-xs leading-snug normal-case">
-                     Reserve seat now {symbol}
-                     {formatOfferAmount(launchOffer.depositAmount)} · {symbol}
-                     {formatOfferAmount(launchOffer.balanceAmount)} at launch · then {symbol}
-                     {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
-                  </p>
+                  <div className="space-y-1">
+                     {catalogPromo ? (
+                        <p className="text-muted-foreground text-xs leading-snug normal-case">
+                           Enter code at checkout{promoDeadline ? ` · ${promoDeadline}` : ''}
+                        </p>
+                     ) : null}
+                     <p className="text-muted-foreground text-xs leading-snug normal-case">
+                        {symbol}
+                        {formatOfferAmount(catalogPromo?.deposit_amount ?? launchOffer.depositAmount)} to pre-register
+                        {' · '}
+                        {symbol}
+                        {formatOfferAmount(catalogPromo?.balance_amount ?? launchOffer.balanceAmount)} at launch
+                        {catalogPromo ? (
+                           <>
+                              {' '}
+                              or {symbol}
+                              {formatOfferAmount(catalogPromo.balance_with_coupon)} using coupons
+                           </>
+                        ) : null}
+                        {' · '}
+                        {symbol}
+                        {formatOfferAmount(catalogPromo?.subscription_price ?? launchOffer.subscriptionPrice)} monthly
+                        subscription
+                     </p>
+                  </div>
                ) : isLaunchFullPrice ? (
                   <p className="text-muted-foreground text-xs leading-snug normal-case">
-                     Pay {symbol}
-                     {formatOfferAmount(launchOffer.fullUpfrontPrice)} for full access · then {symbol}
-                     {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
+                     {catalogPromo ? (
+                        <>
+                           Pay {symbol}
+                           {formatOfferAmount(catalogPromo.full_upfront_price)} or {symbol}
+                           {formatOfferAmount(catalogPromo.full_upfront_with_coupon)} using coupons · then {symbol}
+                           {formatOfferAmount(catalogPromo.subscription_price)}/mo
+                        </>
+                     ) : (
+                        <>
+                           Pay {symbol}
+                           {formatOfferAmount(launchOffer.fullUpfrontPrice)} for full access · then {symbol}
+                           {formatOfferAmount(launchOffer.subscriptionPrice)}/mo
+                        </>
+                     )}
                   </p>
                ) : isSubscription ? (
                   <SubscriptionBillingNotice course={course} variant="compact" />

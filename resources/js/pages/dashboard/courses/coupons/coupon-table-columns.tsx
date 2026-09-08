@@ -75,7 +75,14 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
          header: 'Course',
          cell: ({ row }) =>
             row.original.course ? (
-               <span className="font-medium">{row.original.course.title}</span>
+               <div className="flex flex-col gap-1">
+                  <span className="font-medium">{row.original.course.title}</span>
+                  {row.original.show_on_catalog ? (
+                     <Badge variant="secondary" className="w-fit">
+                        On catalog card
+                     </Badge>
+                  ) : null}
+               </div>
             ) : (
                <span className="text-primary font-medium">Global Coupon</span>
             ),

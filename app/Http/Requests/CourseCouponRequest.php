@@ -24,6 +24,7 @@ class CourseCouponRequest extends FormRequest
          'valid_to' => 'nullable|date|after:valid_from',
          'usage_limit' => 'nullable|integer|min:1',
          'is_active' => 'boolean',
+         'show_on_catalog' => 'boolean',
       ];
    }
 
