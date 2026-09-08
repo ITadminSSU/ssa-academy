@@ -23,7 +23,9 @@ type YearsAnswer = 'under_1' | '1_to_3' | '3_plus' | null;
 
 interface PathStep {
    connector?: 'and_or';
-   items: LearningPathLink[];
+   items?: LearningPathLink[];
+   left?: LearningPathLink[];
+   right?: LearningPathLink[];
 }
 
 interface Props {
@@ -50,16 +52,30 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
 
    if (experience === 'yes' && years === 'under_1') {
       return [
-         { connector: 'and_or', items: [links.fundamentals, links.advanced] },
+         { items: [links.fundamentals] },
+         { items: [links.advanced] },
          { items: [links.estimating] },
          { items: [links.us_experience] },
       ];
    }
 
-   if (experience === 'yes' && (years === '1_to_3' || years === '3_plus')) {
+   if (experience === 'yes' && years === '1_to_3') {
       return [
-         { connector: 'and_or', items: [links.advanced, links.estimating] },
-         { items: [links.us_experience] },
+         {
+            connector: 'and_or',
+            left: [links.fundamentals],
+            right: [links.advanced, links.estimating, links.us_experience],
+         },
+      ];
+   }
+
+   if (experience === 'yes' && years === '3_plus') {
+      return [
+         {
+            connector: 'and_or',
+            left: [links.advanced],
+            right: [links.estimating, links.us_experience],
+         },
       ];
    }
 
@@ -118,7 +134,7 @@ const LearningPathGuide = ({ learningPath }: Props) => {
                }
             }}
          >
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                <DialogHeader>
                   <DialogTitle>Find your starting path</DialogTitle>
                   <DialogDescription>
@@ -163,25 +179,42 @@ const LearningPathGuide = ({ learningPath }: Props) => {
                   {showPath ? (
                      <div className="space-y-3">
                         <p className="text-muted-foreground text-center text-sm">Your recommended path. Click a course to open it.</p>
-                        {path.map((step, index) => (
-                           <div key={index} className="space-y-2">
-                              {step.connector === 'and_or' && step.items.length > 1 ? (
-                                 <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                                    <div className="min-w-0 flex-1">
-                                       <PathItem item={step.items[0]} />
+                        {path.map((step, index) => {
+                           const left = step.left ?? (step.items?.length ? [step.items[0]] : []);
+                           const right = step.right ?? step.items?.slice(1) ?? [];
+                           const stacked = step.items ?? [];
+
+                           if (step.connector === 'and_or' && (left.length > 0 || right.length > 0)) {
+                              return (
+                                 <div
+                                    key={index}
+                                    className="grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.2fr)]"
+                                 >
+                                    <div className="flex flex-col justify-center gap-2">
+                                       {left.map((item) => (
+                                          <PathItem key={item.label} item={item} />
+                                       ))}
                                     </div>
-                                    <span className="bg-[color:var(--brand-red)] shrink-0 self-center rounded-md px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
+                                    <span className="bg-[color:var(--brand-red)] shrink-0 self-center justify-self-center rounded-md px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
                                        and / or
                                     </span>
-                                    <div className="min-w-0 flex-1">
-                                       <PathItem item={step.items[1]} />
+                                    <div className="flex flex-col gap-2">
+                                       {right.map((item) => (
+                                          <PathItem key={item.label} item={item} />
+                                       ))}
                                     </div>
                                  </div>
-                              ) : (
-                                 step.items.map((item) => <PathItem key={item.label} item={item} />)
-                              )}
-                           </div>
-                        ))}
+                              );
+                           }
+
+                           return (
+                              <div key={index} className="space-y-2">
+                                 {stacked.map((item) => (
+                                    <PathItem key={item.label} item={item} />
+                                 ))}
+                              </div>
+                           );
+                        })}
                      </div>
                   ) : null}
                </div>
