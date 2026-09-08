@@ -7,8 +7,9 @@ import { useState } from 'react';
 
 export interface LearningPathLink {
    label: string;
-   url: string;
+   url?: string;
    note?: string;
+   clickable?: boolean;
 }
 
 export interface LearningPathPayload {
@@ -64,8 +65,10 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
          {
             connector: 'and_or',
             left: [links.fundamentals],
-            right: [links.advanced, links.estimating, links.us_experience],
+            right: [links.advanced],
          },
+         { items: [links.estimating] },
+         { items: [links.us_experience] },
       ];
    }
 
@@ -74,28 +77,47 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
          {
             connector: 'and_or',
             left: [links.advanced],
-            right: [links.estimating, links.us_experience],
+            right: [links.estimating],
          },
+         { items: [links.us_experience] },
       ];
    }
 
    return [];
 };
 
-const PathItem = ({ item }: { item: LearningPathLink }) => (
-   <Link
-      href={item.url}
-      className="bg-primary text-primary-foreground flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide uppercase shadow-sm transition hover:bg-primary-dark"
-   >
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500 text-white">
-         <Check className="h-3.5 w-3.5" />
-      </span>
-      <span className="min-w-0">
-         <span className="block leading-snug">{item.label}</span>
-         {item.note ? <span className="mt-1 block text-[11px] font-normal normal-case tracking-normal text-primary-foreground/80">{item.note}</span> : null}
-      </span>
-   </Link>
-);
+const PathItem = ({ item }: { item: LearningPathLink }) => {
+   const clickable = item.clickable !== false && Boolean(item.url);
+   const className = cn(
+      'bg-primary text-primary-foreground flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide uppercase shadow-sm',
+      clickable ? 'transition hover:bg-primary-dark' : 'cursor-default',
+   );
+   const inner = (
+      <>
+         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500 text-white">
+            <Check className="h-3.5 w-3.5" />
+         </span>
+         <span className="min-w-0">
+            <span className="block leading-snug">{item.label}</span>
+            {item.note ? (
+               <span className="mt-1 block text-[11px] font-normal normal-case tracking-normal text-primary-foreground/80">
+                  {item.note}
+               </span>
+            ) : null}
+         </span>
+      </>
+   );
+
+   if (!clickable) {
+      return <div className={className}>{inner}</div>;
+   }
+
+   return (
+      <Link href={item.url as string} className={className}>
+         {inner}
+      </Link>
+   );
+};
 
 const LearningPathGuide = ({ learningPath }: Props) => {
    const [open, setOpen] = useState(false);
@@ -188,7 +210,7 @@ const LearningPathGuide = ({ learningPath }: Props) => {
                               return (
                                  <div
                                     key={index}
-                                    className="grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.2fr)]"
+                                    className="grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
                                  >
                                     <div className="flex flex-col justify-center gap-2">
                                        {left.map((item) => (

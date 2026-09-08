@@ -83,7 +83,7 @@ export interface StudentDashboardProps extends SharedData {
       fundamentals: { label: string; url: string };
       advanced: { label: string; url: string };
       estimating: { label: string; url: string };
-      us_experience: { label: string; url: string; note?: string };
+      us_experience: { label: string; url: string; note?: string; clickable?: boolean };
    } | null;
    hasVerifiedEmail: boolean;
    subscriptions?: UserSubscriptionSummary[];

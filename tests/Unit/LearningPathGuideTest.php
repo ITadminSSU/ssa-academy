@@ -19,3 +19,13 @@ it('picks the first catalog course whose title contains all needles', function (
     expect($guide->firstMatchingCourse(collect([$advanced, $fundamentals]), ['planswift', 'fundamental'])->title)
         ->toBe('PlanSwift Fundamentals');
 });
+
+it('prefers the estimating browse slug over estimating-course', function () {
+    $guide = new LearningPathGuide();
+    $categories = collect([
+        (object) ['slug' => 'estimating-course', 'title' => 'Estimating Course'],
+        (object) ['slug' => 'estimating', 'title' => 'Estimating'],
+    ]);
+
+    expect($guide->resolveCategorySlug(['estimating', 'estimating-course'], $categories))->toBe('estimating');
+});

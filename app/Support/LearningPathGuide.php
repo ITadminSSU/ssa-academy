@@ -16,16 +16,20 @@ class LearningPathGuide
      *     fundamentals: array{label: string, url: string},
      *     advanced: array{label: string, url: string},
      *     estimating: array{label: string, url: string},
-     *     us_experience: array{label: string, url: string, note: string}
+     *     us_experience: array{label: string, url: string, note: string, clickable: bool}
      * }
      */
     public function payload(?User $user = null): array
     {
         $softwareSlug = (string) config('learning_path.software_category_slug', 'software-training');
-        $estimatingSlug = (string) config('learning_path.estimating_category_slug', 'estimating-course');
+        $estimatingSlug = (string) config('learning_path.estimating_category_slug', 'estimating');
 
-        $softwareBrowse = $this->browseUrl($softwareSlug);
-        $estimatingBrowse = $this->browseUrl($estimatingSlug);
+        $softwareBrowse = $this->categoryBrowseUrl([$softwareSlug, 'software-training']);
+        $estimatingBrowse = $this->categoryBrowseUrl([
+            $estimatingSlug,
+            'estimating',
+            'estimating-course',
+        ]);
 
         $courses = Course::query()
             ->listedInCatalog()
@@ -37,10 +41,6 @@ class LearningPathGuide
             ?? $this->firstMatchingCourse($courses, ['plan swift', 'fundamental']);
         $advanced = $this->firstMatchingCourse($courses, ['planswift', 'advanced'])
             ?? $this->firstMatchingCourse($courses, ['plan swift', 'advanced']);
-
-        $estimatingCourse = $courses->first(function (Course $course) {
-            return CourseWelcomeEmailCopy::showsUsExperience($course);
-        });
 
         return [
             'fundamentals' => [
@@ -56,9 +56,10 @@ class LearningPathGuide
                 'url' => $estimatingBrowse,
             ],
             'us_experience' => [
-                'label' => 'Build Your US Experience',
-                'url' => $estimatingCourse ? $this->courseUrl($estimatingCourse) : $estimatingBrowse,
-                'note' => 'This is a tab on Estimating courses. It unlocks after you finish the lessons and quizzes.',
+                'label' => 'Build Your U.S. Experience',
+                'url' => '',
+                'clickable' => false,
+                'note' => 'This is a tab on Estimating courses. Enroll in a course first. It unlocks after you finish the lessons and quizzes.',
             ],
         ];
     }
@@ -93,12 +94,52 @@ class LearningPathGuide
         return route('course.details', ['slug' => $course->slug, 'id' => $course->id]);
     }
 
-    private function browseUrl(string $categorySlug): string
+    /**
+     * @param  list<string>  $candidateSlugs
+     */
+    private function categoryBrowseUrl(array $candidateSlugs): string
     {
-        $exists = CourseCategory::query()->where('slug', $categorySlug)->exists();
-
         return route('student.category.courses', [
-            'category' => $exists ? $categorySlug : 'all',
+            'category' => $this->resolveCategorySlug($candidateSlugs) ?? 'all',
         ]);
+    }
+
+    /**
+     * Prefer the first matching catalog slug so /dashboard/browse/estimating wins over estimating-course.
+     *
+     * @param  list<string>  $candidateSlugs
+     */
+    public function resolveCategorySlug(array $candidateSlugs, mixed $categories = null): ?string
+    {
+        $candidateSlugs = array_values(array_unique(array_filter($candidateSlugs)));
+
+        if ($candidateSlugs === []) {
+            return null;
+        }
+
+        $categories = $categories instanceof Collection
+            ? $categories
+            : CourseCategory::query()->whereIn('slug', $candidateSlugs)->get(['id', 'slug', 'title']);
+
+        foreach ($candidateSlugs as $slug) {
+            $match = $categories->first(fn ($category) => ($category->slug ?? null) === $slug);
+
+            if ($match) {
+                return $match->slug;
+            }
+        }
+
+        $estimating = $categories->first(function ($category) {
+            $slug = strtolower((string) ($category->slug ?? ''));
+            $title = strtolower((string) ($category->title ?? ''));
+
+            if (str_contains($slug, 'software') || str_contains($title, 'software')) {
+                return false;
+            }
+
+            return str_contains($slug, 'estimating') || str_contains($title, 'estimating');
+        });
+
+        return $estimating?->slug;
     }
 }
