@@ -139,10 +139,10 @@ const LearningPathGuide = ({ learningPath }: Props) => {
             <Button
                type="button"
                variant="brand"
-               className="h-12 min-w-[240px] px-8 text-base font-semibold"
+               className="h-12 min-w-[260px] px-8 text-base font-semibold shadow-md sm:h-14 sm:min-w-[320px] sm:px-10 sm:text-lg"
                onClick={() => setOpen(true)}
             >
-               <Compass className="h-4 w-4" />
+               <Compass className="h-5 w-5" />
                Don't know where to start?
             </Button>
          </div>
