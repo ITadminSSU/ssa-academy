@@ -8,6 +8,7 @@ use App\Enums\CoursePricingType;
 use App\Enums\ExpiryLimitType;
 use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCourseRequest extends FormRequest
 {
@@ -105,6 +106,13 @@ class UpdateCourseRequest extends FormRequest
             'launch_full_upfront_price' => $launchOfferEnabled && $this->filled('launch_full_upfront_price')
                 ? (float) $this->input('launch_full_upfront_price')
                 : null,
+            'catalog_coupon_promo' => $launchOfferEnabled
+                && filter_var($this->input('catalog_coupon_promo'), FILTER_VALIDATE_BOOLEAN),
+            'catalog_coupon_off_remaining' => $launchOfferEnabled
+                && filter_var($this->input('catalog_coupon_promo'), FILTER_VALIDATE_BOOLEAN)
+                && $this->filled('catalog_coupon_off_remaining')
+                    ? (float) $this->input('catalog_coupon_off_remaining')
+                    : null,
         ]);
     }
 
@@ -222,6 +230,14 @@ class UpdateCourseRequest extends FormRequest
             'launch_balance_grace_days' => 'nullable|integer|min:1|max:30',
             'launch_subscription_trial_ends_at' => 'nullable|date',
             'launch_full_upfront_price' => 'nullable|numeric|min:1|required_if:launch_offer_enabled,true',
+            'catalog_coupon_promo' => 'boolean',
+            'catalog_coupon_off_remaining' => [
+                'nullable',
+                'numeric',
+                'min:0.01',
+                'lte:launch_balance_amount',
+                Rule::requiredIf(fn () => (bool) $this->boolean('catalog_coupon_promo')),
+            ],
         ];
     }
 

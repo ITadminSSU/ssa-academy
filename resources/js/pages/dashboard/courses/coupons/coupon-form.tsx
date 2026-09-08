@@ -230,11 +230,11 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
 
                      <div className="col-span-2 flex items-start justify-between gap-4 rounded-md border p-3">
                         <div>
-                           <Label htmlFor="show_on_catalog">Show on catalog card</Label>
+                           <Label htmlFor="show_on_catalog">Fallback: show on catalog card</Label>
                            <p className="text-muted-foreground mt-1 text-xs">
-                              Crosses out list price and shows remaining with this coupon. Does not change charged prices.
-                              Students still enter the code at checkout. Coupons never apply to the deposit. Pick a course
-                              first. Only one coupon per course can be advertised.
+                              Use Pricing → Show coupon price on catalog card instead. This switch is only a fallback if
+                              that display promo is off. Does not change charged prices. Students still enter the code at
+                              checkout. Coupons never apply to the deposit.
                            </p>
                         </div>
                         <Switch

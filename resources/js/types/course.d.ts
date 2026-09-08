@@ -68,6 +68,8 @@ interface Course extends TableCommon {
    launch_balance_grace_days?: number | null;
    launch_subscription_trial_ends_at?: string | null;
    launch_full_upfront_price?: number | null;
+   catalog_coupon_promo?: boolean;
+   catalog_coupon_off_remaining?: number | null;
    catalog_promo?: CatalogPromo | null;
    stripe_product_id?: string | null;
    stripe_price_id?: string | null;

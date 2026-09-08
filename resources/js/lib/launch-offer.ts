@@ -477,13 +477,7 @@ export const formatLaunchOfferDateTime = (value?: string | null): string | null 
 
 
 
-export const formatOfferAmount = (amount: number): string =>
-
-   Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
-
-
-
-export const formatCatalogPromoDeadline = (value?: string | null): string | null => {
+export const formatCatalogPromoDate = (value?: string | null): string | null => {
 
    if (!value) {
 
@@ -499,9 +493,23 @@ export const formatCatalogPromoDeadline = (value?: string | null): string | null
 
    }
 
-   const label = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 
-   return `until ${label} only`;
+};
+
+
+
+export const formatOfferAmount = (amount: number): string =>
+
+   Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+
+
+
+export const formatCatalogPromoDeadline = (value?: string | null): string | null => {
+
+   const label = formatCatalogPromoDate(value);
+
+   return label ? `until ${label} only` : null;
 
 };
 

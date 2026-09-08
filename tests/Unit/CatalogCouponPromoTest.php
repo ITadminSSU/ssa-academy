@@ -21,6 +21,16 @@ it('takes a catalog coupon off remaining, not the deposit', function () {
     expect($totalWithCoupon)->toBe(70.0);
 });
 
+it('builds catalog display amounts from a pricing remaining discount', function () {
+    $service = app(CourseCouponService::class);
+    $amounts = $service->amountsForFixedOffRemaining(20, 79, 99, 29);
+
+    expect($amounts['discount_amount'])->toBe(29.0);
+    expect($amounts['balance_with_coupon'])->toBe(50.0);
+    expect($amounts['total_with_coupon'])->toBe(70.0);
+    expect($amounts['full_upfront_with_coupon'])->toBe(70.0);
+});
+
 it('caps a catalog coupon so remaining cannot go below zero', function () {
     $service = app(CourseCouponService::class);
     $coupon = new CourseCoupon([

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import courseDurations from '@/data/course-durations';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { toDateTimeLocalValue } from '@/lib/course-launch';
@@ -57,6 +58,112 @@ const timezoneHint = (timezone?: string) => {
    }
 
    return timezone.replace(/_/g, ' ');
+};
+
+const catalogPromoPreview = (
+   deposit: string | number,
+   remaining: string | number,
+   off: string | number,
+   full: string | number,
+) => {
+   const depositAmount = Number(deposit) || 0;
+   const remainingAmount = Number(remaining) || 0;
+   const offAmount = Number(off) || 0;
+   const fullAmount = Number(full) || 0;
+   const remainingWith = Math.max(0, Math.round((remainingAmount - offAmount) * 100) / 100);
+
+   return {
+      deposit: depositAmount,
+      remaining: remainingAmount,
+      off: offAmount,
+      full: fullAmount,
+      remainingWith,
+      totalWith: Math.round((depositAmount + remainingWith) * 100) / 100,
+   };
+};
+
+const formatLocalDateLabel = (value?: string) => {
+   if (!value) {
+      return null;
+   }
+
+   const date = new Date(value);
+
+   if (Number.isNaN(date.getTime())) {
+      return null;
+   }
+
+   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+};
+
+const CatalogCouponPromoFields = ({
+   data,
+   setData,
+   errors,
+}: {
+   data: {
+      catalog_coupon_promo: boolean;
+      catalog_coupon_off_remaining: string | number;
+      launch_deposit_amount: string | number;
+      launch_balance_amount: string | number;
+      launch_full_upfront_price: string | number;
+      launch_offer_ends_at: string;
+   };
+   setData: (key: string, value: unknown) => void;
+   errors: Record<string, string | undefined>;
+}) => {
+   const preview = catalogPromoPreview(
+      data.launch_deposit_amount,
+      data.launch_balance_amount,
+      data.catalog_coupon_off_remaining,
+      data.launch_full_upfront_price,
+   );
+   const windowLabel = formatLocalDateLabel(data.launch_offer_ends_at);
+
+   return (
+      <div className="sm:col-span-2 space-y-3 rounded-md border bg-muted/20 p-3">
+         <div className="flex items-start justify-between gap-4">
+            <div>
+               <Label htmlFor="catalog_coupon_promo">Show coupon price on catalog card</Label>
+               <p className="text-muted-foreground mt-1 text-xs">
+                  Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from
+                  Coupons. Never taken off the deposit. After pre-register end, the card shows the full upfront price.
+               </p>
+            </div>
+            <Switch
+               id="catalog_coupon_promo"
+               checked={Boolean(data.catalog_coupon_promo)}
+               onCheckedChange={(checked) => setData('catalog_coupon_promo', checked)}
+            />
+         </div>
+         <InputError message={errors.catalog_coupon_promo} />
+
+         {data.catalog_coupon_promo ? (
+            <>
+               <div>
+                  <Label>Amount off remaining (display)</Label>
+                  <Input
+                     type="number"
+                     min="0.01"
+                     step="0.01"
+                     value={String(data.catalog_coupon_off_remaining ?? '')}
+                     onChange={(e) => setData('catalog_coupon_off_remaining', e.target.value)}
+                  />
+                  <p className="text-muted-foreground mt-1 text-xs">
+                     Taken off remaining only. Keep remaining at the no-code amount. Create the actual codes under Coupons.
+                  </p>
+                  <InputError message={errors.catalog_coupon_off_remaining} />
+               </div>
+               {preview.off > 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                     Card preview: ${preview.totalWith} with coupon (${preview.deposit} + ${preview.remainingWith} remaining).
+                     No-code remaining stays ${preview.remaining}. After {windowLabel ?? 'pre-register end'}: ${preview.full}.
+                  </p>
+               ) : null}
+            </>
+         ) : null}
+      </div>
+   );
 };
 
 const Pricing = () => {
@@ -124,6 +231,8 @@ const Pricing = () => {
       launch_subscription_trial_ends_at:
          toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) || '2026-10-15T23:59',
       launch_full_upfront_price: course.launch_full_upfront_price ?? '75',
+      catalog_coupon_promo: Boolean(course.catalog_coupon_promo),
+      catalog_coupon_off_remaining: course.catalog_coupon_off_remaining ?? '29',
    });
 
    useEffect(() => {
@@ -167,6 +276,9 @@ const Pricing = () => {
          launch_balance_amount: launchEnabled ? Number(form.launch_balance_amount) : null,
          launch_balance_grace_days: launchEnabled ? Number(form.launch_balance_grace_days || 5) : 5,
          launch_full_upfront_price: launchEnabled ? Number(form.launch_full_upfront_price) : null,
+         catalog_coupon_promo: launchEnabled && Boolean(form.catalog_coupon_promo),
+         catalog_coupon_off_remaining:
+            launchEnabled && Boolean(form.catalog_coupon_promo) ? Number(form.catalog_coupon_off_remaining) : null,
          launch_offer_starts_at: launchEnabled ? form.launch_offer_starts_at : null,
          launch_offer_ends_at: launchEnabled ? form.launch_offer_ends_at : null,
          launch_subscription_trial_ends_at: launchEnabled ? form.launch_subscription_trial_ends_at : null,
@@ -443,12 +555,13 @@ const Pricing = () => {
                                                    onChange={(e) => setData('launch_balance_amount', e.target.value)}
                                                 />
                                                 <p className="text-muted-foreground mt-1 text-xs">
-                                                   No-code remaining amount. Keep this at the full launch balance. A catalog
-                                                   coupon is advertised from Coupons → Show on catalog card; the card will
-                                                   compute the coupon remaining. Do not lower this to the coupon price.
+                                                   No-code remaining amount. Keep this at the full launch balance (for example
+                                                   $79). The catalog coupon amount below is display only. Do not lower this to
+                                                   the coupon price.
                                                 </p>
                                                 <InputError message={errors.launch_balance_amount} />
                                              </div>
+                                             <CatalogCouponPromoFields data={data} setData={setData} errors={errors} />
                                              <div>
                                                 <Label>Grace days after launch</Label>
                                                 <Input
@@ -476,7 +589,8 @@ const Pricing = () => {
                                                 <p className="text-muted-foreground mt-1 text-xs">
                                                    Price for new enrollments after pre-reg ends, and for students who miss the
                                                    balance grace deadline. Charged today with the first month of Project Plans
-                                                   (no free month). Monthly billing continues after that. Coupons allowed.
+                                                   (no free month). Monthly billing continues after that. Coupons allowed. The
+                                                   catalog card uses this as the price after pre-register end.
                                                 </p>
                                                 <InputError message={errors.launch_full_upfront_price} />
                                              </div>
@@ -557,11 +671,12 @@ const Pricing = () => {
                                                 onChange={(e) => setData('launch_balance_amount', e.target.value)}
                                              />
                                              <p className="text-muted-foreground mt-1 text-xs">
-                                                No-code remaining amount. Advertise a coupon from Coupons → Show on catalog
-                                                card instead of lowering this to the coupon price.
+                                                No-code remaining amount. Advertise a coupon from Pricing below instead of
+                                                lowering this to the coupon price.
                                              </p>
                                              <InputError message={errors.launch_balance_amount} />
                                           </div>
+                                          <CatalogCouponPromoFields data={data} setData={setData} errors={errors} />
                                           <div>
                                              <Label>Grace days after launch</Label>
                                              <Input

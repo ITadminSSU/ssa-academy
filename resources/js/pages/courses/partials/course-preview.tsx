@@ -3,7 +3,7 @@ import SubscriptionBillingNotice from '@/components/subscription-billing-notice'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
-import { formatCatalogPromoDeadline, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
+import { formatCatalogPromoDate, formatCatalogPromoDeadline, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
@@ -22,7 +22,10 @@ const CoursePreview = () => {
    const isUpfrontSubscription = isUpfrontSubscriptionCourse(course);
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
    const catalogPromo = offer.catalogPromo;
-   const promoDeadline = formatCatalogPromoDeadline(catalogPromo?.window_end);
+   const promoWindowEnd = catalogPromo?.window_end ?? course.launch_offer_ends_at;
+   const promoDeadline = formatCatalogPromoDeadline(promoWindowEnd);
+   const promoWindowDate = formatCatalogPromoDate(promoWindowEnd);
+   const thenFullPrice = formatOfferAmount(catalogPromo?.full_upfront_price ?? offer.fullUpfrontPrice);
    const symbol = currency?.symbol ?? '$';
 
    return (
@@ -158,10 +161,11 @@ const CoursePreview = () => {
                      <p>
                         {symbol}
                         {formatOfferAmount(catalogPromo.deposit_amount)} to pre-register · {symbol}
-                        {formatOfferAmount(catalogPromo.balance_amount)} at launch or {symbol}
+                        {formatOfferAmount(catalogPromo.balance_amount)} at launch day or {symbol}
                         {formatOfferAmount(catalogPromo.balance_with_coupon)} using coupons · {symbol}
                         {formatOfferAmount(catalogPromo.subscription_price)} monthly subscription. Enter code at
-                        checkout{promoDeadline ? ` ${promoDeadline}` : ''}. Coupons do not apply to the deposit.
+                        checkout{promoDeadline ? ` ${promoDeadline}` : ''}, then {symbol}
+                        {thenFullPrice}. Coupons do not apply to the deposit.
                      </p>
                   ) : (
                      <p>
@@ -171,7 +175,8 @@ const CoursePreview = () => {
                         Project Plans Subscription for FREE, starting from the day you pay the balance. After that free month,
                         the subscription is {symbol}
                         {offer.subscriptionPrice}/month. If you miss the grace deadline, the free month is cancelled and you
-                        can only enroll later at the full upfront price. Cancel project plans subscription anytime.
+                        can only enroll later at the full upfront price of {symbol}
+                        {thenFullPrice} after {promoWindowDate ?? 'the pre-register window'}. Cancel project plans subscription anytime.
                      </p>
                   )}
                   <p>

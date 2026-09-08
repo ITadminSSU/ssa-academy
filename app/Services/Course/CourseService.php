@@ -15,6 +15,7 @@ use App\Support\Database\SsuAcademyTableRegistry;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -89,7 +90,7 @@ class CourseService extends MediaService
             break;
 
          case 'pricing':
-            $course->forceFill([
+            $pricing = [
                'pricing_type' => $data['pricing_type'],
                'billing_model' => $data['billing_model'] ?? 'one_time',
                'price' => $data['price'] ?? null,
@@ -108,7 +109,14 @@ class CourseService extends MediaService
                'launch_balance_grace_days' => $data['launch_balance_grace_days'] ?? 5,
                'launch_subscription_trial_ends_at' => $data['launch_subscription_trial_ends_at'] ?? null,
                'launch_full_upfront_price' => $data['launch_full_upfront_price'] ?? null,
-            ])->save();
+            ];
+
+            if (Schema::hasColumn('courses', 'catalog_coupon_promo')) {
+               $pricing['catalog_coupon_promo'] = (bool) ($data['catalog_coupon_promo'] ?? false);
+               $pricing['catalog_coupon_off_remaining'] = $data['catalog_coupon_off_remaining'] ?? null;
+            }
+
+            $course->forceFill($pricing)->save();
 
             $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);
             break;

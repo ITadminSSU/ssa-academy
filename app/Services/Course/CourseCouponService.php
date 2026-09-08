@@ -185,6 +185,35 @@ class CourseCouponService
    }
 
    /**
+    * Display-only remaining discount for the catalog card. Never applied at checkout.
+    *
+    * @return array{
+    *     balance_with_coupon: float,
+    *     total_with_coupon: float,
+    *     full_upfront_with_coupon: float,
+    *     discount_amount: float
+    * }
+    */
+   public function amountsForFixedOffRemaining(float $deposit, float $balance, float $fullUpfront, float $off): array
+   {
+      $deposit = round(max(0, $deposit), 2);
+      $balance = round(max(0, $balance), 2);
+      $fullUpfront = round(max(0, $fullUpfront), 2);
+      $off = round(max(0, $off), 2);
+
+      $balanceDiscount = min($off, $balance);
+      $upfrontDiscount = min($off, $fullUpfront);
+      $balanceWithCoupon = round(max(0, $balance - $balanceDiscount), 2);
+
+      return [
+         'balance_with_coupon' => $balanceWithCoupon,
+         'total_with_coupon' => round($deposit + $balanceWithCoupon, 2),
+         'full_upfront_with_coupon' => round(max(0, $fullUpfront - $upfrontDiscount), 2),
+         'discount_amount' => $balanceDiscount,
+      ];
+   }
+
+   /**
     * Coupon applies to remaining / full payment, never the deposit.
     *
     * @return array{
@@ -205,13 +234,7 @@ class CourseCouponService
    {
       $launchOffer = app(LaunchOfferService::class);
 
-      if (! $launchOffer->isConfigured($course)) {
-         return null;
-      }
-
-      $coupon ??= $this->featuredCatalogCouponFor($course);
-
-      if (! $coupon) {
+      if (! $launchOffer->isConfigured($course) || $launchOffer->isFullPricePeriod($course)) {
          return null;
       }
 
@@ -219,13 +242,33 @@ class CourseCouponService
       $balance = $launchOffer->balanceAmount($course);
       $list = $launchOffer->listPrice($course);
       $fullUpfront = $launchOffer->fullUpfrontPrice($course);
-      $balanceDiscount = $this->discountForAmount($coupon, $balance);
-      $upfrontDiscount = $this->discountForAmount($coupon, $fullUpfront);
-      $balanceWithCoupon = round(max(0, $balance - $balanceDiscount), 2);
-      $totalWithCoupon = round($deposit + $balanceWithCoupon, 2);
-      $fullUpfrontWithCoupon = round(max(0, $fullUpfront - $upfrontDiscount), 2);
 
-      if ($balanceWithCoupon >= $balance - 0.009 && $fullUpfrontWithCoupon >= $fullUpfront - 0.009) {
+      if ($this->pricingCatalogPromoEnabled($course)) {
+         $amounts = $this->amountsForFixedOffRemaining(
+            $deposit,
+            $balance,
+            $fullUpfront,
+            (float) $course->catalog_coupon_off_remaining,
+         );
+      } else {
+         $coupon ??= $this->featuredCatalogCouponFor($course);
+
+         if (! $coupon) {
+            return null;
+         }
+
+         $balanceDiscount = $this->discountForAmount($coupon, $balance);
+         $upfrontDiscount = $this->discountForAmount($coupon, $fullUpfront);
+         $balanceWithCoupon = round(max(0, $balance - $balanceDiscount), 2);
+         $amounts = [
+            'balance_with_coupon' => $balanceWithCoupon,
+            'total_with_coupon' => round($deposit + $balanceWithCoupon, 2),
+            'full_upfront_with_coupon' => round(max(0, $fullUpfront - $upfrontDiscount), 2),
+            'discount_amount' => $balanceDiscount,
+         ];
+      }
+
+      if ($amounts['balance_with_coupon'] >= $balance - 0.009 && $amounts['full_upfront_with_coupon'] >= $fullUpfront - 0.009) {
          return null;
       }
 
@@ -234,12 +277,12 @@ class CourseCouponService
          'list_price' => round($list, 2),
          'deposit_amount' => round($deposit, 2),
          'balance_amount' => round($balance, 2),
-         'balance_with_coupon' => $balanceWithCoupon,
-         'total_with_coupon' => $totalWithCoupon,
+         'balance_with_coupon' => $amounts['balance_with_coupon'],
+         'total_with_coupon' => $amounts['total_with_coupon'],
          'full_upfront_price' => round($fullUpfront, 2),
-         'full_upfront_with_coupon' => $fullUpfrontWithCoupon,
+         'full_upfront_with_coupon' => $amounts['full_upfront_with_coupon'],
          'subscription_price' => round($launchOffer->subscriptionPrice($course), 2),
-         'discount_amount' => $balanceDiscount,
+         'discount_amount' => $amounts['discount_amount'],
          'window_end' => $launchOffer->windowEnd($course)->toIso8601String(),
       ];
    }
@@ -274,35 +317,43 @@ class CourseCouponService
    {
       $collection = $this->coursesCollection($courses);
 
-      if ($collection->isEmpty() || ! $this->catalogColumnExists()) {
+      if ($collection->isEmpty()) {
          return;
       }
 
-      $ids = $collection->pluck('id')->filter()->values();
+      $couponsByCourse = collect();
 
-      if ($ids->isEmpty()) {
-         return;
+      if ($this->catalogColumnExists()) {
+         $ids = $collection->pluck('id')->filter()->values();
+
+         if ($ids->isNotEmpty()) {
+            $couponsByCourse = CourseCoupon::query()
+               ->isValid()
+               ->where('show_on_catalog', true)
+               ->whereIn('course_id', $ids)
+               ->get()
+               ->groupBy(fn (CourseCoupon $coupon) => (int) $coupon->course_id);
+         }
       }
 
-      $coupons = CourseCoupon::query()
-         ->isValid()
-         ->where('show_on_catalog', true)
-         ->whereIn('course_id', $ids)
-         ->get()
-         ->groupBy(fn (CourseCoupon $coupon) => (int) $coupon->course_id);
+      $launchOffer = app(LaunchOfferService::class);
 
       foreach ($collection as $course) {
          if (! $course instanceof Course) {
             continue;
          }
 
-         $courseCoupons = $coupons->get((int) $course->id) ?? collect();
-         $balance = app(LaunchOfferService::class)->isConfigured($course)
-            ? app(LaunchOfferService::class)->balanceAmount($course)
-            : (float) ($course->price ?? 0);
-         $featured = $courseCoupons
-            ->sortByDesc(fn (CourseCoupon $coupon) => $this->discountForAmount($coupon, $balance))
-            ->first();
+         $featured = null;
+
+         if (! $this->pricingCatalogPromoEnabled($course)) {
+            $courseCoupons = $couponsByCourse->get((int) $course->id) ?? collect();
+            $balance = $launchOffer->isConfigured($course)
+               ? $launchOffer->balanceAmount($course)
+               : (float) ($course->price ?? 0);
+            $featured = $courseCoupons
+               ->sortByDesc(fn (CourseCoupon $coupon) => $this->discountForAmount($coupon, $balance))
+               ->first();
+         }
 
          $course->setAttribute('catalog_promo', $this->catalogPromoFor($course, $featured));
       }
@@ -318,6 +369,16 @@ class CourseCouponService
          ->where('course_id', $coupon->course_id)
          ->where('id', '!=', $coupon->id)
          ->update(['show_on_catalog' => false]);
+   }
+
+   private function pricingCatalogPromoEnabled(Course $course): bool
+   {
+      if (! Schema::hasTable('courses') || ! Schema::hasColumn('courses', 'catalog_coupon_promo')) {
+         return false;
+      }
+
+      return (bool) $course->catalog_coupon_promo
+         && (float) ($course->catalog_coupon_off_remaining ?? 0) > 0;
    }
 
    private function catalogColumnExists(): bool
