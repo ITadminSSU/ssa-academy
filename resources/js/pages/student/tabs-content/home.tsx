@@ -1,5 +1,6 @@
 import ButtonGradientPrimary from '@/components/button-gradient-primary';
 import DashboardWelcomeOverlay from '@/components/dashboard-welcome-overlay';
+import LearningPathGuide from '@/components/learning-path-guide';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { enrollmentBlocksPlayerAccess, enrollmentCourseDetailsUrl } from '@/lib/enrollment-access';
@@ -24,6 +25,7 @@ const Home = () => {
       recentActivity = [],
       isFirstDashboardVisit = false,
       dashboardWelcomeOverlay = null,
+      learningPath = null,
       auth,
    } = usePage<StudentDashboardProps>().props;
 
@@ -202,6 +204,10 @@ const Home = () => {
                </CardContent>
             </Card>
          </div>
+
+         {courseEnrollments.length === 0 && learningPath ? (
+            <LearningPathGuide learningPath={learningPath} />
+         ) : null}
       </div>
    );
 };

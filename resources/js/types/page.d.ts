@@ -79,6 +79,12 @@ export interface StudentDashboardProps extends SharedData {
       autoplay_muted?: boolean;
       show_frequency?: 'until_dismissed' | 'every_home_visit';
    } | null;
+   learningPath?: {
+      fundamentals: { label: string; url: string };
+      advanced: { label: string; url: string };
+      estimating: { label: string; url: string };
+      us_experience: { label: string; url: string; note?: string };
+   } | null;
    hasVerifiedEmail: boolean;
    subscriptions?: UserSubscriptionSummary[];
    canManageBilling?: boolean;

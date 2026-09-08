@@ -82,6 +82,9 @@ class StudentService extends MediaService
             $props['recentActivity'] = $this->getLearnerActivity($user);
             $props['isFirstDashboardVisit'] = $this->markFirstDashboardVisit($user);
             $props['dashboardWelcomeOverlay'] = $this->dashboardWelcomeOverlayPayload($user);
+            $props['learningPath'] = $enrollments->isEmpty()
+               ? app(\App\Support\LearningPathGuide::class)->payload($user)
+               : null;
             break;
 
          case 'courses':
