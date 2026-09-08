@@ -3,7 +3,7 @@ import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
-import { formatCatalogPromoDate, formatCatalogPromoDeadline, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
+import { formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -36,10 +36,6 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const isLaunchPreRegister = launchOffer.enabled && launchOffer.phase === 'pre_register';
    const isLaunchFullPrice = launchOffer.enabled && launchOffer.phase === 'full_price';
    const catalogPromo = launchOffer.catalogPromo;
-   const promoWindowEnd = catalogPromo?.window_end ?? course.launch_offer_ends_at;
-   const promoDeadline = formatCatalogPromoDeadline(promoWindowEnd);
-   const promoWindowDate = formatCatalogPromoDate(promoWindowEnd);
-   const thenFullPrice = formatOfferAmount(catalogPromo?.full_upfront_price ?? launchOffer.fullUpfrontPrice);
    const symbol = currency?.symbol ?? '$';
 
    const handleWishlist = () => {
@@ -264,13 +260,6 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      {catalogPromo ? (
                         <p className="text-muted-foreground text-xs leading-snug normal-case">
                            Enter code at checkout
-                           {promoDeadline ? ` · ${promoDeadline}` : ''}
-                           {`, then ${symbol}${thenFullPrice}`}
-                        </p>
-                     ) : promoWindowDate ? (
-                        <p className="text-muted-foreground text-xs leading-snug normal-case">
-                           After {promoWindowDate}: {symbol}
-                           {thenFullPrice}
                         </p>
                      ) : null}
                      <p className="text-muted-foreground text-xs leading-snug normal-case">

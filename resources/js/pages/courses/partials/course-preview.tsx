@@ -3,7 +3,7 @@ import SubscriptionBillingNotice from '@/components/subscription-billing-notice'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
-import { formatCatalogPromoDate, formatCatalogPromoDeadline, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
+import { formatCatalogPromoDate, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
 import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
@@ -23,7 +23,6 @@ const CoursePreview = () => {
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
    const catalogPromo = offer.catalogPromo;
    const promoWindowEnd = catalogPromo?.window_end ?? course.launch_offer_ends_at;
-   const promoDeadline = formatCatalogPromoDeadline(promoWindowEnd);
    const promoWindowDate = formatCatalogPromoDate(promoWindowEnd);
    const thenFullPrice = formatOfferAmount(catalogPromo?.full_upfront_price ?? offer.fullUpfrontPrice);
    const symbol = currency?.symbol ?? '$';
@@ -164,8 +163,7 @@ const CoursePreview = () => {
                         {formatOfferAmount(catalogPromo.balance_amount)} at launch day or {symbol}
                         {formatOfferAmount(catalogPromo.balance_with_coupon)} using coupons · {symbol}
                         {formatOfferAmount(catalogPromo.subscription_price)} monthly subscription. Enter code at
-                        checkout{promoDeadline ? ` ${promoDeadline}` : ''}, then {symbol}
-                        {thenFullPrice}. Coupons do not apply to the deposit.
+                        checkout. Coupons do not apply to the deposit.
                      </p>
                   ) : (
                      <p>
