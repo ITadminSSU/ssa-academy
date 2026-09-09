@@ -25,17 +25,14 @@ const QuizIcon = ({ quiz }: { quiz: SectionQuiz }) => {
 
 const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
    const { props } = usePage<CoursePlayerProps>();
-   const { watchHistory, courseGates, subscriptionAccess } = props;
+   const { watchHistory, subscriptionAccess } = props;
 
    const dripContent = true;
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';
-   const quizzesUnlocked = courseGates?.quizzes_unlocked ?? true;
    const isCompleted = completed.some((item) => item.type === 'quiz' && item.id == quiz.id);
    const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && watchHistory.current_watching_id == quiz.id;
    const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
-   const canAccess = subscriptionLocked
-      ? isCompleted
-      : isCompleted || (quizzesUnlocked && (isCurrentLesson || isNext));
+   const canAccess = subscriptionLocked ? isCompleted : isCompleted || isCurrentLesson || isNext;
 
    if (variant === 'simple') {
       const meta = quiz.duration ? `Quiz · ${quiz.duration}` : 'Quiz';
@@ -59,9 +56,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
          return (
             <div className="text-muted-foreground px-4 py-3">
                {content}
-               {!quizzesUnlocked && !isCompleted ? (
-                  <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Trainer approval required</p>
-               ) : subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
+               {subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Resubscribe to unlock</p>
                ) : null}
             </div>
@@ -86,21 +81,9 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
       );
    }
 
-   if (!quizzesUnlocked && !isCompleted) {
-      return (
-         <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
-            <div className="flex items-center gap-3 py-1 text-muted-foreground">
-               <Lock className="h-4 w-4" />
-               <QuizIcon quiz={quiz} />
-            </div>
-            <span className="text-muted-foreground text-xs">Trainer approval required</span>
-         </div>
-      );
-   }
-
    return !dripContent ? (
       <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
-         {quizzesUnlocked ? (
+         {canAccess ? (
             <PlayerNavLink
                className={cn(
                   'flex cursor-pointer items-center gap-3 py-1',

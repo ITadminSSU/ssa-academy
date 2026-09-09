@@ -122,4 +122,19 @@ class CurriculumController extends Controller
 
         return back()->with('success', 'Lessons sorted successfully');
     }
+
+    public function curriculum_sort(Request $request)
+    {
+        $request->validate([
+            'sortedData' => 'required|array',
+            'sortedData.*.id' => 'required',
+            'sortedData.*.sort' => 'required|integer',
+            'sortedData.*.item_type' => 'required|in:lesson,quiz',
+            'sortedData.*.item_id' => 'required',
+        ]);
+
+        $this->sectionService->sortSectionCurriculum($request->sortedData);
+
+        return back()->with('success', 'Curriculum sorted successfully');
+    }
 }

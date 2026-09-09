@@ -1,3 +1,4 @@
+import { mergeCurriculumItems } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
 
@@ -41,17 +42,23 @@ const CurriculumSectionList = ({
                   Section {sectionIndex + 1} — {section.title}
                </p>
 
-               {includeLessons &&
-                  section.section_lessons?.map((lesson) => {
-                     itemNumber += 1;
-                     return renderLesson?.(lesson, itemNumber);
-                  })}
+               {mergeCurriculumItems(section).map((item) => {
+                  if (item.kind === 'lesson') {
+                     if (!includeLessons) {
+                        return null;
+                     }
 
-               {includeQuizzes &&
-                  section.section_quizzes?.map((quiz) => {
                      itemNumber += 1;
-                     return renderQuiz?.(quiz, itemNumber);
-                  })}
+                     return renderLesson?.(item.lesson, itemNumber);
+                  }
+
+                  if (!includeQuizzes) {
+                     return null;
+                  }
+
+                  itemNumber += 1;
+                  return renderQuiz?.(item.quiz, itemNumber);
+               })}
 
                {includeLessons &&
                   includeQuizzes &&

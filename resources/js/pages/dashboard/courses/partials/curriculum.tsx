@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { mergeCurriculumItems, toSortableCurriculumItems } from '@/lib/curriculum-items';
 import { router, usePage } from '@inertiajs/react';
 import { ChevronDown, FolderOpen, ListOrdered, Pencil, Trash2 } from 'lucide-react';
 import { CourseUpdateProps } from '../update';
@@ -87,25 +88,28 @@ const Curriculum = () => {
                                  />
 
                                  <DataSortModal
-                                    title={dashboard.sort_items}
-                                    data={section.section_lessons}
+                                    title={dashboard.sort_items ?? 'Sort lessons and quizzes'}
+                                    data={toSortableCurriculumItems(section)}
                                     handler={
                                        <Button variant="ghost" className="bg-muted hover:bg-muted-foreground/10 h-8 w-full">
-                                          <span>Sort Lessons</span>
+                                          <span>Sort lessons & quizzes</span>
                                        </Button>
                                     }
                                     onOrderChange={(newOrder) => {
                                        router.post(
-                                          route('lesson.sort'),
+                                          route('curriculum.sort'),
                                           {
                                              sortedData: newOrder,
                                           },
                                           { preserveScroll: true },
                                        );
                                     }}
-                                    renderContent={(lesson) => (
+                                    renderContent={(item) => (
                                        <Card className="w-full px-4 py-3">
-                                          <p>{lesson.title}</p>
+                                          <p>
+                                             {item.item_type === 'quiz' ? 'Quiz · ' : ''}
+                                             {item.title}
+                                          </p>
                                        </Card>
                                     )}
                                  />
@@ -150,94 +154,121 @@ const Curriculum = () => {
                   </AccordionTrigger>
 
                   <AccordionContent className="space-y-4 p-4">
-                     {section.section_lessons.length > 0 ? (
-                        section.section_lessons.map((lesson: SectionLesson) => (
-                           <div key={lesson.id} className="group border-border flex w-full items-center justify-between rounded-md border px-4 py-3">
-                              <p>{lesson.title}</p>
-
-                              <div className="invisible flex items-center gap-2 group-hover:visible">
-                                 <ResourceModal
-                                    lesson={lesson}
-                                    title="Lesson Resources"
-                                    handler={
-                                       <Button variant="secondary" className="h-7 px-2">
-                                          <FolderOpen className="h-3 w-3" /> <span>Resource</span>
-                                       </Button>
-                                    }
-                                 />
-
-                                 <LessonForm
-                                    lesson={lesson}
-                                    sectionId={section.id}
-                                    title={dashboard.update_lesson}
-                                    handler={
-                                       <Button size="icon" variant="secondary" className="h-7 w-7">
-                                          <Pencil className="h-3 w-3" />
-                                       </Button>
-                                    }
-                                 />
-
-                                 <DeleteByInertia
-                                    routePath={route('lesson.delete', {
-                                       id: lesson.id,
-                                    })}
-                                    actionComponent={
-                                       <Button size="icon" variant="secondary" className="text-destructive h-7 w-7">
-                                          <Trash2 className="h-3 w-3" />
-                                       </Button>
-                                    }
-                                 />
-                              </div>
-                           </div>
-                        ))
-                     ) : (
-                        <div className="text-muted-foreground py-4 text-center text-sm">No lessons found in this section.</div>
-                     )}
-
-                     {section.section_quizzes.map((quiz: SectionQuiz) => (
-                        <div key={quiz.id} className="group border-border flex w-full items-center justify-between rounded-md border px-4 py-3">
-                           <p>{quiz.title}</p>
-
-                           <div className="invisible flex items-center gap-2 group-hover:visible">
-                              <QuestionQuestions
-                                 quiz={quiz}
-                                 title={button.quiz_questions}
-                                 handler={
-                                    <Button size="icon" variant="secondary" className="h-7 w-7">
-                                       <ListOrdered className="h-3 w-3" />
-                                    </Button>
-                                 }
-                              />
-
-                              <DeleteByInertia
-                                 routePath={route('quiz.delete', {
-                                    id: quiz.id,
-                                 })}
-                                 actionComponent={
-                                    <Button size="icon" variant="secondary" className="text-destructive h-7 w-7">
-                                       <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                 }
-                              />
-
-                              <QuizForm
-                                 quiz={quiz}
-                                 title={dashboard.update_quiz}
-                                 sectionId={section.id}
-                                 handler={
-                                    <Button size="icon" variant="secondary" className="h-7 w-7">
-                                       <Pencil className="h-3 w-3" />
-                                    </Button>
-                                 }
-                              />
-                           </div>
-                        </div>
-                     ))}
+                     <SectionCurriculumItems section={section} dashboard={dashboard} button={button} />
                   </AccordionContent>
                </AccordionItem>
             ))}
          </Accordion>
       </Card>
+   );
+};
+
+const SectionCurriculumItems = ({
+   section,
+   dashboard,
+   button,
+}: {
+   section: CourseSection;
+   dashboard: any;
+   button: any;
+}) => {
+   const items = mergeCurriculumItems(section);
+
+   if (items.length === 0) {
+      return <div className="text-muted-foreground py-4 text-center text-sm">No lessons or quizzes in this section.</div>;
+   }
+
+   return (
+      <>
+         {items.map((item) =>
+            item.kind === 'lesson' ? (
+               <div
+                  key={`lesson-${item.lesson.id}`}
+                  className="group border-border flex w-full items-center justify-between rounded-md border px-4 py-3"
+               >
+                  <p>{item.lesson.title}</p>
+
+                  <div className="invisible flex items-center gap-2 group-hover:visible">
+                     <ResourceModal
+                        lesson={item.lesson}
+                        title="Lesson Resources"
+                        handler={
+                           <Button variant="secondary" className="h-7 px-2">
+                              <FolderOpen className="h-3 w-3" /> <span>Resource</span>
+                           </Button>
+                        }
+                     />
+
+                     <LessonForm
+                        lesson={item.lesson}
+                        sectionId={section.id}
+                        title={dashboard.update_lesson}
+                        handler={
+                           <Button size="icon" variant="secondary" className="h-7 w-7">
+                              <Pencil className="h-3 w-3" />
+                           </Button>
+                        }
+                     />
+
+                     <DeleteByInertia
+                        routePath={route('lesson.delete', {
+                           id: item.lesson.id,
+                        })}
+                        actionComponent={
+                           <Button size="icon" variant="secondary" className="text-destructive h-7 w-7">
+                              <Trash2 className="h-3 w-3" />
+                           </Button>
+                        }
+                     />
+                  </div>
+               </div>
+            ) : (
+               <div
+                  key={`quiz-${item.quiz.id}`}
+                  className="group border-border flex w-full items-center justify-between rounded-md border px-4 py-3"
+               >
+                  <p>
+                     <span className="text-muted-foreground mr-2 text-xs font-semibold uppercase">Quiz</span>
+                     {item.quiz.title}
+                  </p>
+
+                  <div className="invisible flex items-center gap-2 group-hover:visible">
+                     <QuestionQuestions
+                        quiz={item.quiz}
+                        title={button.quiz_questions}
+                        handler={
+                           <Button size="icon" variant="secondary" className="h-7 w-7">
+                              <ListOrdered className="h-3 w-3" />
+                           </Button>
+                        }
+                     />
+
+                     <DeleteByInertia
+                        routePath={route('quiz.delete', {
+                           id: item.quiz.id,
+                        })}
+                        actionComponent={
+                           <Button size="icon" variant="secondary" className="text-destructive h-7 w-7">
+                              <Trash2 className="h-3 w-3" />
+                           </Button>
+                        }
+                     />
+
+                     <QuizForm
+                        quiz={item.quiz}
+                        title={dashboard.update_quiz}
+                        sectionId={section.id}
+                        handler={
+                           <Button size="icon" variant="secondary" className="h-7 w-7">
+                              <Pencil className="h-3 w-3" />
+                           </Button>
+                        }
+                     />
+                  </div>
+               </div>
+            ),
+         )}
+      </>
    );
 };
 

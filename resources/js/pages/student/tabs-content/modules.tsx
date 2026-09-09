@@ -1,4 +1,5 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { mergeCurriculumItems } from '@/lib/curriculum-items';
 import { getCompletedContents } from '@/lib/utils';
 import { StudentCourseProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
@@ -15,22 +16,23 @@ const Modules = () => {
       <>
          {modules.length > 0 ? (
             <Accordion type="single" collapsible className="space-y-4" defaultValue={modules[0].id as string}>
-               {modules.map((section, ind) => (
+               {modules.map((section, ind) => {
+                  const items = mergeCurriculumItems(section);
+
+                  return (
                   <AccordionItem key={section.id} value={section.id as string} className="overflow-hidden rounded-lg border">
                      <AccordionTrigger className="[&[data-state=open]]:!bg-muted px-4 py-3 text-base hover:no-underline">
                         {ind + 1}. {section.title}
                      </AccordionTrigger>
                      <AccordionContent className="space-y-2 p-2">
-                        {section.section_lessons.length > 0 ? (
-                           <>
-                              {section.section_lessons.map((lesson) => (
-                                 <Lesson key={lesson.id} lesson={lesson} completed={completed} />
-                              ))}
-
-                              {section.section_quizzes.map((quiz) => (
-                                 <Quiz key={quiz.id} quiz={quiz} completed={completed} />
-                              ))}
-                           </>
+                        {items.length > 0 ? (
+                           items.map((item) =>
+                              item.kind === 'lesson' ? (
+                                 <Lesson key={`lesson-${item.lesson.id}`} lesson={item.lesson} completed={completed} />
+                              ) : (
+                                 <Quiz key={`quiz-${item.quiz.id}`} quiz={item.quiz} completed={completed} />
+                              ),
+                           )
                         ) : (
                            <div className="px-4 py-3 text-center">
                               <p>There is no lesson added</p>
@@ -38,7 +40,8 @@ const Modules = () => {
                         )}
                      </AccordionContent>
                   </AccordionItem>
-               ))}
+                  );
+               })}
             </Accordion>
          ) : (
             <div className="p-6 text-center">

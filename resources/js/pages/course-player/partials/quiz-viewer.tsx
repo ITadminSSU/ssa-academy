@@ -1,6 +1,5 @@
 import LoadingButton from '@/components/loading-button';
 import Tabs from '@/components/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,7 +12,6 @@ import { useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Renderer } from 'richtor';
 import 'richtor/styles';
-import { Lock } from 'lucide-react';
 import LessonControl from './lesson-control';
 
 type QuizAnswer = {
@@ -26,21 +24,10 @@ interface QuizViewerProps {
 }
 
 const QuizViewer = ({ quiz }: QuizViewerProps) => {
-   const { auth, translate, courseGates, subscriptionAccess } = usePage<CoursePlayerProps>().props;
+   const { auth, translate, subscriptionAccess } = usePage<CoursePlayerProps>().props;
    const { frontend } = translate;
    const canMarkProgress = subscriptionAccess?.can_mark_progress ?? true;
 
-   if (courseGates && !courseGates.quizzes_unlocked) {
-      return (
-         <Card className="min-h-[60vh] w-full p-6">
-            <Alert>
-               <Lock className="h-4 w-4" />
-               <AlertTitle>Quiz locked</AlertTitle>
-               <AlertDescription>Complete all video lessons before taking this quiz.</AlertDescription>
-            </Alert>
-         </Card>
-      );
-   }
    const [finished, setFinished] = useState(false);
    const [currentTab, setCurrentTab] = useState('summary');
    const submissions = quiz.quiz_submissions;

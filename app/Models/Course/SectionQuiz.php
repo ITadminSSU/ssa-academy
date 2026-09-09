@@ -11,6 +11,7 @@ class SectionQuiz extends Model
 
     protected $fillable = [
         'title',
+        'sort',
         'duration',
         'hours',
         'minutes',

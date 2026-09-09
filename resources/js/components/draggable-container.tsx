@@ -51,9 +51,9 @@ const DraggableContainer = <T extends DraggableItem>({
             const baseSort = items[0].sort;
 
             elements.forEach((element, index) => {
-                const id = parseInt(element.getAttribute('data-item_id') || '');
+                const id = element.getAttribute('data-item_id') || '';
                 if (id) {
-                    const originalItem = items.find((item) => item.id === id);
+                    const originalItem = items.find((item) => String(item.id) === String(id));
                     if (originalItem) {
                         updatedItems.push({
                             ...originalItem,

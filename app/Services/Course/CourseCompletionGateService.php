@@ -11,6 +11,7 @@ use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
 use App\Services\Payment\SubscriptionAccessService;
+use App\Support\CurriculumSequence;
 
 class CourseCompletionGateService
 {
@@ -149,7 +150,17 @@ class CourseCompletionGateService
             }
         }
 
-        return $this->getGateStatus($course, $userId, null, $watchHistory)['quizzes_unlocked'];
+        if (!$quizId) {
+            return $this->getGateStatus($course, $userId, null, $watchHistory)['quizzes_unlocked'];
+        }
+
+        $course->loadMissing(['sections.section_lessons', 'sections.section_quizzes']);
+
+        if (!$watchHistory) {
+            return $this->isFirstCurriculumItem($course, $quizId, 'quiz');
+        }
+
+        return $this->canAccessOrderedCurriculumItem($course, $userId, $quizId, 'quiz', $watchHistory);
     }
 
     public function canAccessCertificate(Course $course, int $userId, ?array $completion = null): bool
@@ -184,30 +195,10 @@ class CourseCompletionGateService
         }
 
         if (!$watchHistory) {
-            return $this->isFirstLesson($course, $lessonId);
+            return $this->isFirstCurriculumItem($course, $lessonId, 'lesson');
         }
 
-        $allItems = $this->getOrderedCurriculumItems($course);
-        $targetIndex = $allItems->search(
-            fn ($item) => $item['type'] === 'lesson' && (string) $item['id'] === (string) $lessonId
-        );
-
-        if ($targetIndex === false) {
-            return false;
-        }
-
-        if ($targetIndex === 0) {
-            return true;
-        }
-
-        for ($i = 0; $i < $targetIndex; $i++) {
-            $item = $allItems[$i];
-            if (!$this->isCurriculumItemComplete($watchHistory, $item, $userId)) {
-                return false;
-            }
-        }
-
-        return true;
+        return $this->canAccessOrderedCurriculumItem($course, $userId, $lessonId, 'lesson', $watchHistory);
     }
 
     public function isAssignmentSubmissionAllowed(CourseAssignment $assignment, int $userId): bool
@@ -368,25 +359,12 @@ class CourseCompletionGateService
 
     private function getOrderedCurriculumItems(Course $course)
     {
-        $items = collect();
-
-        foreach ($course->sections as $section) {
-            foreach ($section->section_lessons->sortBy('lesson_number') as $lesson) {
-                $items->push([
-                    'id' => $lesson->id,
-                    'type' => 'lesson',
-                ]);
-            }
-
-            foreach ($section->section_quizzes as $quiz) {
-                $items->push([
-                    'id' => $quiz->id,
-                    'type' => 'quiz',
-                ]);
-            }
-        }
-
-        return $items->values();
+        return CurriculumSequence::flattenCourse($course)
+            ->map(fn (array $item) => [
+                'id' => $item['id'],
+                'type' => $item['type'],
+            ])
+            ->values();
     }
 
     private function isCurriculumItemComplete(WatchHistory $watchHistory, array $item, int $userId): bool
@@ -418,18 +396,43 @@ class CourseCompletionGateService
         return false;
     }
 
-    private function getOrderedLessons(Course $course)
-    {
-        return $course->sections
-            ->flatMap(fn ($section) => $section->section_lessons->sortBy('lesson_number'))
-            ->values();
+    private function canAccessOrderedCurriculumItem(
+        Course $course,
+        int $userId,
+        int|string $itemId,
+        string $type,
+        WatchHistory $watchHistory,
+    ): bool {
+        $allItems = $this->getOrderedCurriculumItems($course);
+        $targetIndex = $allItems->search(
+            fn ($item) => $item['type'] === $type && (string) $item['id'] === (string) $itemId
+        );
+
+        if ($targetIndex === false) {
+            return false;
+        }
+
+        if ($targetIndex === 0) {
+            return true;
+        }
+
+        for ($i = 0; $i < $targetIndex; $i++) {
+            $item = $allItems[$i];
+            if (!$this->isCurriculumItemComplete($watchHistory, $item, $userId)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    private function isFirstLesson(Course $course, int|string $lessonId): bool
+    private function isFirstCurriculumItem(Course $course, int|string $itemId, string $type): bool
     {
-        $first = $this->getOrderedLessons($course)->first();
+        $first = CurriculumSequence::flattenCourse($course)->first();
 
-        return $first && (string) $first->id === (string) $lessonId;
+        return $first
+            && (string) $first['id'] === (string) $itemId
+            && $first['type'] === $type;
     }
 
     private function isLessonComplete(WatchHistory $watchHistory, $lesson): bool

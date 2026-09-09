@@ -134,7 +134,7 @@ class PlayerController extends Controller
                     ? 'This quiz is locked. Resubscribe to continue learning.'
                     : ($subscriptionAccess['mode'] === 'completed_only'
                         ? 'This quiz is locked.'
-                        : 'Complete all video lessons before taking quizzes.');
+                        : 'Complete the previous item before continuing.');
 
                 return redirect()
                     ->route('student.course.show', ['id' => $course->id, 'tab' => 'quizzes'])

@@ -13,6 +13,7 @@ use App\Services\MediaService;
 use App\Services\Course\CoursePlayerService;
 use App\Services\LocalFileUploadService;
 use App\Services\S3MultipartUploadService;
+use App\Support\CurriculumSequence;
 
 class CourseSectionService extends MediaService
 {
@@ -50,6 +51,8 @@ class CourseSectionService extends MediaService
 
    function createSectionLesson(array $data, string $user_id): SectionLesson
    {
+      $data['sort'] = CurriculumSequence::nextSort((int) $data['course_section_id']);
+
       $lesson = SectionLesson::create($data);
 
       $this->lessonHandler($lesson, $data);
@@ -237,6 +240,24 @@ class CourseSectionService extends MediaService
          SectionLesson::where('id', $value['id'])->update([
             'sort' => $value['sort']
          ]);
+      }
+
+      return true;
+   }
+
+   function sortSectionCurriculum(array $sortedData): bool
+   {
+      foreach ($sortedData as $index => $value) {
+         $sort = (int) ($value['sort'] ?? ($index + 1));
+         $type = $value['item_type'] ?? $value['type'] ?? 'lesson';
+         $id = $value['item_id'] ?? $value['id'];
+
+         if ($type === 'quiz') {
+            SectionQuiz::where('id', $id)->update(['sort' => $sort]);
+            continue;
+         }
+
+         SectionLesson::where('id', $id)->update(['sort' => $sort]);
       }
 
       return true;

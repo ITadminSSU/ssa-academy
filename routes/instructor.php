@@ -108,6 +108,7 @@ Route::prefix('dashboard/trainer')->group(function () {
       Route::put('lesson/{id}', 'lesson_update')->name('lesson.update');
       Route::delete('lesson/{id}', 'lesson_delete')->name('lesson.delete');
       Route::post('lesson/sort', 'lesson_sort')->name('lesson.sort');
+      Route::post('curriculum/sort', 'curriculum_sort')->name('curriculum.sort');
    });
 
    // assignment route

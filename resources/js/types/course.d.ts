@@ -230,6 +230,7 @@ interface AssignmentSubmission extends TableCommon {
 // section_quizzes.ts
 interface SectionQuiz extends TableCommon {
    title: string;
+   sort?: number;
    duration: string; // represents SQL TIME format 'HH:MM:SS'
    hours: number;
    minutes: number;

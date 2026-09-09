@@ -9,6 +9,7 @@ use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
+use App\Support\CurriculumSequence;
 use Illuminate\Support\Facades\Auth;
 
 class CoursePlayerService
@@ -70,31 +71,14 @@ class CoursePlayerService
       $allItems = [];
       $globalOrder = 0;
 
-      foreach ($course->sections as $sectionIndex => $section) {
-         // Add lessons first (maintaining their lesson_number order within section)
-         $sectionLessons = $section->section_lessons->sortBy('lesson_number');
-         foreach ($sectionLessons as $lesson) {
-            $allItems[] = [
-               'id' => $lesson->id,
-               'type' => 'lesson',
-               'section' => $section,
-               'section_index' => $sectionIndex,
-               'lesson_number' => $lesson->lesson_number,
-               'global_order' => $globalOrder++
-            ];
-         }
-
-         // Add quizzes after all lessons in the section
-         foreach ($section->section_quizzes as $quiz) {
-            $allItems[] = [
-               'id' => $quiz->id,
-               'type' => 'quiz',
-               'section' => $section,
-               'section_index' => $sectionIndex,
-               'lesson_number' => 999999, // High number to put after lessons
-               'global_order' => $globalOrder++
-            ];
-         }
+      foreach (CurriculumSequence::flattenCourse($course) as $item) {
+         $allItems[] = [
+            'id' => $item['id'],
+            'type' => $item['type'],
+            'section' => $item['section'],
+            'section_index' => $item['section_index'],
+            'global_order' => $globalOrder++,
+         ];
       }
 
       // Items are already in the correct order due to global_order, no sorting needed

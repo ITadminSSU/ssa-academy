@@ -6,6 +6,7 @@ use App\Models\Course\QuestionAnswer;
 use App\Models\Course\QuizQuestion;
 use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionQuiz;
+use App\Support\CurriculumSequence;
 
 class SectionQuizService extends CourseSectionService
 {
@@ -17,6 +18,7 @@ class SectionQuizService extends CourseSectionService
 
       $quiz = SectionQuiz::create([
          ...$data,
+         'sort' => CurriculumSequence::nextSort((int) $data['course_section_id']),
          'duration' => sprintf('%02d:%02d:%02d', (int) $hours, (int) $minutes, (int) $seconds),
       ]);
 
@@ -32,6 +34,7 @@ class SectionQuizService extends CourseSectionService
       $seconds = $data['seconds'] ?? 0;
 
       $quiz = SectionQuiz::findOrFail($id);
+      unset($data['sort']);
       $quiz->update([
          ...$data,
          'duration' => sprintf('%02d:%02d:%02d', (int) $hours, (int) $minutes, (int) $seconds),
