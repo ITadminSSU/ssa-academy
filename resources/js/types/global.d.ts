@@ -43,6 +43,7 @@ export interface SharedData {
    branding: Branding;
    features: PlatformFeatures;
    bunnyStream?: { enabled: boolean; library_id?: string; cdn_hostname?: string };
+   crisp?: { websiteId: string };
    customize: boolean;
    navbar: Navbar;
    footer: Footer;

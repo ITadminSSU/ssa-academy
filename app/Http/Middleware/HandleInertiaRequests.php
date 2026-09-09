@@ -159,6 +159,9 @@ class HandleInertiaRequests extends Middleware
             'cartCount' => $cartCount,
             'appTimezone' => config('app.timezone'),
             'bunnyStream' => fn(): array => $this->bunnyStreamPayload(),
+            'crisp' => [
+                'websiteId' => (string) config('services.crisp.website_id', ''),
+            ],
             'translate' => [
                 'auth' => trans('auth'),
                 'button' => trans('button'),

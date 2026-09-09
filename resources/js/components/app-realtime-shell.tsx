@@ -1,3 +1,4 @@
+import CrispChat from '@/components/crisp-chat';
 import { MessagesRealtimeProvider } from '@/contexts/messages-realtime-context';
 import { ReverbConfig } from '@/lib/echo';
 import { SharedData } from '@/types/global';
@@ -9,17 +10,23 @@ export default function AppRealtimeShell({ children }: { children: ReactNode }) 
    const userId = auth.user?.id ?? null;
    const messagingRole = ['student', 'instructor', 'admin'].includes(auth.user?.role ?? '');
 
-   if (!userId || !messagingRole) {
-      return <>{children}</>;
-   }
+   const content =
+      !userId || !messagingRole ? (
+         children
+      ) : (
+         <MessagesRealtimeProvider
+            reverb={reverb as ReverbConfig | undefined}
+            userId={userId}
+            initialUnreadCount={auth.messagesUnreadCount ?? 0}
+         >
+            {children}
+         </MessagesRealtimeProvider>
+      );
 
    return (
-      <MessagesRealtimeProvider
-         reverb={reverb as ReverbConfig | undefined}
-         userId={userId}
-         initialUnreadCount={auth.messagesUnreadCount ?? 0}
-      >
-         {children}
-      </MessagesRealtimeProvider>
+      <>
+         <CrispChat />
+         {content}
+      </>
    );
 }
