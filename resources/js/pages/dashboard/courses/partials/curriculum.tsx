@@ -35,6 +35,7 @@ const Curriculum = () => {
             <DataSortModal
                title={button.sort}
                data={props.course.sections}
+               translate={translate}
                handler={
                   <Button variant="ghost" className="bg-muted hover:bg-muted-foreground/10">
                      {button.sort_section}
@@ -90,6 +91,7 @@ const Curriculum = () => {
                                  <DataSortModal
                                     title={dashboard.sort_items ?? 'Sort lessons and quizzes'}
                                     data={toSortableCurriculumItems(section)}
+                                    translate={translate}
                                     handler={
                                        <Button variant="ghost" className="bg-muted hover:bg-muted-foreground/10 h-8 w-full">
                                           <span>Sort lessons & quizzes</span>
