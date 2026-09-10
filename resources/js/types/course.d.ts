@@ -257,6 +257,12 @@ interface QuizQuestion extends TableCommon {
    sort: number;
    section_quiz_id: number;
    answers: QuestionAnswer[];
+   takeoff?: {
+      pdf_url?: string | null;
+      pdf_name?: string | null;
+      line_count?: number;
+      ready?: boolean;
+   };
 }
 
 // question_answers.ts

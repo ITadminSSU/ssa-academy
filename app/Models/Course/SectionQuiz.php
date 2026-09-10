@@ -46,4 +46,18 @@ class SectionQuiz extends Model
     {
         return $this->hasMany(QuizSubmission::class);
     }
+
+    public function isTakeoffQuiz(): bool
+    {
+        $this->loadMissing('quiz_questions');
+
+        return $this->quiz_questions->contains(fn (QuizQuestion $question) => $question->isTakeoff());
+    }
+
+    public function takeoffQuestion(): ?QuizQuestion
+    {
+        $this->loadMissing('quiz_questions');
+
+        return $this->quiz_questions->first(fn (QuizQuestion $question) => $question->isTakeoff());
+    }
 }

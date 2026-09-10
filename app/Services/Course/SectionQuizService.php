@@ -50,7 +50,13 @@ class SectionQuizService extends CourseSectionService
 
    public function quizSubmission(array $data): QuizSubmission|bool
    {
-      $quiz = SectionQuiz::findOrFail($data['section_quiz_id']);
+      $quiz = SectionQuiz::with('quiz_questions')->findOrFail($data['section_quiz_id']);
+
+      if ($quiz->isTakeoffQuiz()) {
+         throw \Illuminate\Validation\ValidationException::withMessages([
+            'answers' => 'Submit this takeoff quiz with your PDF and Excel files.',
+         ]);
+      }
 
       $submission = QuizSubmission::where('user_id', $data['user_id'])
          ->where('section_quiz_id', $quiz->id)
@@ -81,6 +87,10 @@ class SectionQuizService extends CourseSectionService
       foreach ($data['answers'] as $answer) {
          $question = QuizQuestion::findOrFail($answer['question_id']);
 
+         if ($question->isTakeoff()) {
+            continue;
+         }
+
          // Compare submitted answer with correct answer
          $isCorrect = $this->checkAnswer($question, $answer['answer']);
 
@@ -98,7 +108,7 @@ class SectionQuizService extends CourseSectionService
       }
 
       // Calculate and update score
-      $score = ($correctAnswers / $totalQuestions) * $quiz->total_mark;
+      $score = $totalQuestions > 0 ? ($correctAnswers / $totalQuestions) * $quiz->total_mark : 0;
 
       // Update submission with final results
       $submission->update([
@@ -118,6 +128,10 @@ class SectionQuizService extends CourseSectionService
    {
       $correctAnswer = json_decode($question->answer, true);
       $submittedAnswer = is_array($submittedAnswer) ? $submittedAnswer : [$submittedAnswer];
+
+      if (! is_array($correctAnswer)) {
+         return false;
+      }
 
       // Sort both arrays to ensure order doesn't matter
       sort($correctAnswer);

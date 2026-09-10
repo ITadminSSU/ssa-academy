@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CoursePlayerProps } from '@/types/page';
+import QuantityTakeoffBreakdown from '@/components/exam/quantity-takeoff-breakdown';
 import { usePage } from '@inertiajs/react';
 import { Award, CheckCircle2, Eye, Target, XCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -123,6 +124,22 @@ const QuizResultDialog = ({ quiz, submission }: Props) => {
                         const correctAnswers = parseJSON(question.answer);
                         const options = parseJSON(question.options);
 
+                        const isTakeoff = question.type === 'quantity_takeoff';
+                        const takeoffPayload = (() => {
+                           if (!isTakeoff || !question.answers?.[0]?.answers) {
+                              return null;
+                           }
+                           const raw = question.answers[0].answers;
+                           if (typeof raw === 'string') {
+                              try {
+                                 return JSON.parse(raw);
+                              } catch {
+                                 return null;
+                              }
+                           }
+                           return raw;
+                        })();
+
                         return (
                            <Card key={question.id} className={isCorrect ? 'border-l-green-500' : 'border-l-red-500'}>
                               <CardContent className="p-4">
@@ -139,6 +156,21 @@ const QuizResultDialog = ({ quiz, submission }: Props) => {
                                        {isCorrect ? 'Correct' : 'Wrong'}
                                     </Badge>
                                  </div>
+
+                                 {isTakeoff ? (
+                                    <div className="mt-2">
+                                       {takeoffPayload?.grading_breakdown ? (
+                                          <QuantityTakeoffBreakdown
+                                             breakdown={takeoffPayload.grading_breakdown}
+                                             linesCorrect={takeoffPayload.lines_correct}
+                                             linesTotal={takeoffPayload.lines_total}
+                                             viewer="student"
+                                          />
+                                       ) : (
+                                          <p className="text-muted-foreground text-sm">Quantity takeoff submission.</p>
+                                       )}
+                                    </div>
+                                 ) : null}
 
                                  {/* Options for single/multiple choice */}
                                  {(question.type === 'single' || question.type === 'multiple') && (

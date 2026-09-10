@@ -15,8 +15,9 @@ import { nanoid } from 'nanoid';
 import { useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
+import QuizTakeoffFields, { UploadedFile } from './quiz-takeoff-fields';
 
-type QuestionType = 'single' | 'multiple' | 'boolean';
+type QuestionType = 'single' | 'multiple' | 'boolean' | 'quantity_takeoff';
 
 interface DraftQuestion {
    key: string;
@@ -24,6 +25,8 @@ interface DraftQuestion {
    type: QuestionType;
    options: string[];
    answer: string[];
+   pdf: UploadedFile | null;
+   answerKey: UploadedFile | null;
 }
 
 interface Props {
@@ -31,18 +34,23 @@ interface Props {
    handler: React.ReactNode;
 }
 
-const getQuestionTypes = (translate: any) => [
+const getQuestionTypes = (translate: any, allowTakeoff: boolean) => [
    { value: 'single', label: translate.dashboard.single_choice },
    { value: 'multiple', label: translate.dashboard.multiple_choice },
    { value: 'boolean', label: translate.dashboard.true_false },
+   ...(allowTakeoff
+      ? [{ value: 'quantity_takeoff', label: translate.dashboard.quantity_takeoff ?? 'Quantity Takeoff' }]
+      : []),
 ];
 
 const createDraftQuestion = (type: QuestionType = 'single'): DraftQuestion => ({
    key: nanoid(),
-   title: '',
+   title: type === 'quantity_takeoff' ? 'Quantity takeoff' : '',
    type,
    options: [],
    answer: type === 'boolean' ? ['True'] : [],
+   pdf: null,
+   answerKey: null,
 });
 
 const QuestionBuilder = ({ quiz, handler }: Props) => {
@@ -52,17 +60,24 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
    const { translate, errors } = props as SharedData & { errors?: Record<string, string> };
    const { dashboard, input, frontend, button } = translate;
 
-   const questionTypes = getQuestionTypes(translate);
+   const savedQuestions = quiz.quiz_questions ?? [];
+   const savedCount = savedQuestions.length;
+   const savedIsTakeoff = savedQuestions.some((question) => question.type === 'quantity_takeoff');
+   const allowTakeoff = savedCount === 0 && !savedIsTakeoff;
+
+   const questionTypes = getQuestionTypes(translate, allowTakeoff);
 
    const [questions, setQuestions] = useState<DraftQuestion[]>([createDraftQuestion()]);
-
-   const savedCount = quiz.quiz_questions?.length ?? 0;
+   const isTakeoffDraft = questions.some((question) => question.type === 'quantity_takeoff');
 
    const updateQuestion = (key: string, patch: Partial<DraftQuestion>) => {
       setQuestions((prev) => prev.map((q) => (q.key === key ? { ...q, ...patch } : q)));
    };
 
    const addQuestion = () => {
+      if (isTakeoffDraft) {
+         return;
+      }
       setQuestions((prev) => [...prev, createDraftQuestion()]);
    };
 
@@ -85,10 +100,27 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
    };
 
    const handleTypeChange = (key: string, type: QuestionType) => {
+      if (type === 'quantity_takeoff') {
+         const current = questions.find((question) => question.key === key);
+         setQuestions([
+            {
+               ...(current ?? createDraftQuestion('quantity_takeoff')),
+               key: current?.key ?? nanoid(),
+               type: 'quantity_takeoff',
+               title: current?.title || 'Quantity takeoff',
+               options: [],
+               answer: [],
+            },
+         ]);
+         return;
+      }
+
       updateQuestion(key, {
          type,
          answer: type === 'boolean' ? ['True'] : [],
          options: type === 'boolean' ? [] : [],
+         pdf: null,
+         answerKey: null,
       });
    };
 
@@ -102,7 +134,18 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
 
       const payload = {
          section_quiz_id: quiz.id,
-         questions: questions.map(({ title, type, options, answer }) => ({ title, type, options, answer })),
+         questions: questions.map(({ title, type, options, answer, pdf, answerKey }) =>
+            type === 'quantity_takeoff'
+               ? {
+                    title: title || 'Quantity takeoff',
+                    type,
+                    pdf_url: pdf?.file_url,
+                    pdf_name: pdf?.file_name,
+                    answer_key_url: answerKey?.file_url,
+                    answer_key_name: answerKey?.file_name,
+                 }
+               : { title, type, options, answer },
+         ),
       };
 
       setSubmitting(true);
@@ -138,6 +181,7 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
                   <DialogTitle>Add Questions — {quiz.title}</DialogTitle>
                   <p className="text-muted-foreground text-sm">
                      Compose all questions in one window, then save once. {savedCount > 0 ? `${savedCount} already saved.` : ''}
+                     {savedIsTakeoff ? ' This quiz is already a quantity takeoff.' : ''}
                   </p>
                </DialogHeader>
 
@@ -154,7 +198,7 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
                                  size="icon"
                                  variant="ghost"
                                  className="h-7 w-7"
-                                 disabled={index === 0}
+                                 disabled={index === 0 || isTakeoffDraft}
                                  onClick={() => moveQuestion(index, -1)}
                                  title="Move up"
                               >
@@ -165,7 +209,7 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
                                  size="icon"
                                  variant="ghost"
                                  className="h-7 w-7"
-                                 disabled={index === questions.length - 1}
+                                 disabled={index === questions.length - 1 || isTakeoffDraft}
                                  onClick={() => moveQuestion(index, 1)}
                                  title="Move down"
                               >
@@ -203,85 +247,106 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
 
                         <div>
                            <Label>{dashboard.question_title}</Label>
-                           <Editor
-                              ssr={true}
-                              output="html"
-                              placeholder={{
-                                 paragraph: 'Type your question here...',
-                                 imageCaption: 'Type caption for image (optional)',
-                              }}
-                              contentMinHeight={120}
-                              contentMaxHeight={320}
-                              initialContent={question.title}
-                              onContentChange={(value) => updateQuestion(question.key, { title: value as string })}
-                           />
+                           {question.type === 'quantity_takeoff' ? (
+                              <Input
+                                 value={question.title}
+                                 onChange={(e) => updateQuestion(question.key, { title: e.target.value })}
+                                 placeholder="Quantity takeoff"
+                              />
+                           ) : (
+                              <Editor
+                                 ssr={true}
+                                 output="html"
+                                 placeholder={{
+                                    paragraph: 'Type your question here...',
+                                    imageCaption: 'Type caption for image (optional)',
+                                 }}
+                                 contentMinHeight={120}
+                                 contentMaxHeight={320}
+                                 initialContent={question.title}
+                                 onContentChange={(value) => updateQuestion(question.key, { title: value as string })}
+                              />
+                           )}
                            <InputError message={errorFor(index, 'title')} />
                         </div>
 
-                        {question.type !== 'boolean' && (
+                        {question.type === 'quantity_takeoff' ? (
+                           <QuizTakeoffFields
+                              pdf={question.pdf}
+                              answerKey={question.answerKey}
+                              onPdfChange={(pdf) => updateQuestion(question.key, { pdf })}
+                              onAnswerKeyChange={(answerKey) => updateQuestion(question.key, { answerKey })}
+                              pdfError={errorFor(index, 'pdf_url')}
+                              answerKeyError={errorFor(index, 'answer_key_url')}
+                           />
+                        ) : (
                            <>
-                              <div>
-                                 <Label>{input.options}</Label>
-                                 <TagInput
-                                    defaultTags={question.options}
-                                    placeholder={input.question_options_placeholder}
-                                    onChange={(values: any) => updateQuestion(question.key, { options: values })}
-                                 />
-                                 <InputError message={errorFor(index, 'options')} />
-                              </div>
+                              {question.type !== 'boolean' && (
+                                 <>
+                                    <div>
+                                       <Label>{input.options}</Label>
+                                       <TagInput
+                                          defaultTags={question.options}
+                                          placeholder={input.question_options_placeholder}
+                                          onChange={(values: any) => updateQuestion(question.key, { options: values })}
+                                       />
+                                       <InputError message={errorFor(index, 'options')} />
+                                    </div>
 
-                              {question.type === 'multiple' ? (
+                                    {question.type === 'multiple' ? (
+                                       <div>
+                                          <Label>{input.answer}</Label>
+                                          <TagInput
+                                             defaultTags={question.answer}
+                                             whitelist={question.options}
+                                             enforceWhitelist
+                                             placeholder={input.answer_options_placeholder}
+                                             onChange={(values) => updateQuestion(question.key, { answer: values })}
+                                          />
+                                          <InputError message={errorFor(index, 'answer')} />
+                                       </div>
+                                    ) : (
+                                       <div>
+                                          <Label>{input.answer}</Label>
+                                          <Input
+                                             type="text"
+                                             value={question.answer[0] ?? ''}
+                                             placeholder={input.answer_placeholder}
+                                             onChange={(e) => updateQuestion(question.key, { answer: [e.target.value] })}
+                                          />
+                                          <InputError message={errorFor(index, 'answer')} />
+                                       </div>
+                                    )}
+                                 </>
+                              )}
+
+                              {question.type === 'boolean' && (
                                  <div>
                                     <Label>{input.answer}</Label>
-                                    <TagInput
-                                       defaultTags={question.answer}
-                                       whitelist={question.options}
-                                       enforceWhitelist
-                                       placeholder={input.answer_options_placeholder}
-                                       onChange={(values) => updateQuestion(question.key, { answer: values })}
-                                    />
-                                    <InputError message={errorFor(index, 'answer')} />
-                                 </div>
-                              ) : (
-                                 <div>
-                                    <Label>{input.answer}</Label>
-                                    <Input
-                                       type="text"
-                                       value={question.answer[0] ?? ''}
-                                       placeholder={input.answer_placeholder}
-                                       onChange={(e) => updateQuestion(question.key, { answer: [e.target.value] })}
-                                    />
+                                    <Tabs
+                                       value={question.answer[0] ?? 'True'}
+                                       onValueChange={(value) => updateQuestion(question.key, { answer: [value] })}
+                                    >
+                                       <TabsList className="w-full">
+                                          <TabsTrigger value="True" className="w-full">
+                                             {frontend.true}
+                                          </TabsTrigger>
+                                          <TabsTrigger value="False" className="w-full">
+                                             {frontend.false}
+                                          </TabsTrigger>
+                                       </TabsList>
+                                    </Tabs>
                                     <InputError message={errorFor(index, 'answer')} />
                                  </div>
                               )}
                            </>
                         )}
-
-                        {question.type === 'boolean' && (
-                           <div>
-                              <Label>{input.answer}</Label>
-                              <Tabs
-                                 value={question.answer[0] ?? 'True'}
-                                 onValueChange={(value) => updateQuestion(question.key, { answer: [value] })}
-                              >
-                                 <TabsList className="w-full">
-                                 <TabsTrigger value="True" className="w-full">
-                                    {frontend.true}
-                                 </TabsTrigger>
-                                 <TabsTrigger value="False" className="w-full">
-                                    {frontend.false}
-                                 </TabsTrigger>
-                                 </TabsList>
-                              </Tabs>
-                              <InputError message={errorFor(index, 'answer')} />
-                           </div>
-                        )}
                      </div>
                   ))}
 
-                  <Button type="button" variant="outline" className="w-full" onClick={addQuestion}>
+                  <Button type="button" variant="outline" className="w-full" onClick={addQuestion} disabled={isTakeoffDraft}>
                      <Plus className="mr-2 h-4 w-4" />
-                     Add Another Question
+                     {isTakeoffDraft ? 'Quantity takeoff quizzes can only have one question' : 'Add Another Question'}
                   </Button>
 
                   <DialogFooter className="gap-2 pt-2">

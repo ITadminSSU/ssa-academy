@@ -24,6 +24,7 @@ const QuestionQuestions = ({ title, handler, quiz }: Props) => {
    const { props } = usePage<SharedData>();
    const { translate } = props;
    const { button, dashboard, frontend } = translate;
+   const isTakeoffQuiz = (quiz.quiz_questions ?? []).some((question) => question.type === 'quantity_takeoff');
 
    return (
       <Dialog open={open} onOpenChange={setOpen}>
@@ -37,15 +38,22 @@ const QuestionQuestions = ({ title, handler, quiz }: Props) => {
 
                <div className="space-y-7">
                   <div className="flex items-center gap-4">
-                     <QuestionBuilder
-                        quiz={quiz}
-                        handler={
-                           <Button className="h-8 text-xs">
-                              <Plus className="mr-1 h-3.5 w-3.5" />
-                              {button.add_question}
-                           </Button>
-                        }
-                     />
+                     {isTakeoffQuiz ? (
+                        <Button className="h-8 text-xs" disabled>
+                           <Plus className="mr-1 h-3.5 w-3.5" />
+                           Takeoff quiz (one question)
+                        </Button>
+                     ) : (
+                        <QuestionBuilder
+                           quiz={quiz}
+                           handler={
+                              <Button className="h-8 text-xs">
+                                 <Plus className="mr-1 h-3.5 w-3.5" />
+                                 {button.add_question}
+                              </Button>
+                           }
+                        />
+                     )}
 
                      <DataSortModal
                         title={button.sort}
@@ -84,6 +92,9 @@ const QuestionQuestions = ({ title, handler, quiz }: Props) => {
                               className="group border-border flex w-full items-center justify-between rounded-md border px-4 py-3"
                            >
                               <Renderer value={question.title} />
+                              {question.type === 'quantity_takeoff' ? (
+                                 <p className="text-muted-foreground mt-1 text-xs">Quantity takeoff</p>
+                              ) : null}
 
                               <div className="invisible flex items-center gap-2 group-hover:visible">
                                  <DeleteByInertia

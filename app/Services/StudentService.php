@@ -523,7 +523,14 @@ class StudentService extends MediaService
             }
          ])
          ->whereHas('section_quizzes')
-         ->get();
+         ->get()
+         ->each(function (CourseSection $section) {
+            foreach ($section->section_quizzes as $quiz) {
+               foreach ($quiz->quiz_questions as $question) {
+                  $question->hideTakeoffAnswerKey();
+               }
+            }
+         });
    }
 
    public function getCourseLessonResources(string $course_id)

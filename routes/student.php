@@ -57,6 +57,10 @@ Route::post('projects/{project}/submit', [\App\Http\Controllers\ProjectSubmissio
 Route::resource('course-wishlists', CourseWishlistController::class)->only(['store', 'destroy']);
 
 Route::resource('quiz-submissions', QuizSubmissionController::class)->only(['store']);
+Route::middleware('auth')->group(function () {
+    Route::post('quiz-submissions/takeoff', [QuizSubmissionController::class, 'submitTakeoff'])->name('quiz-submissions.takeoff');
+    Route::get('quiz-submissions/{quiz}/takeoff-pack', [QuizSubmissionController::class, 'downloadTakeoffPack'])->name('quiz.takeoff.pack');
+});
 
 // lesson resource route
 Route::middleware('auth')->group(function () {

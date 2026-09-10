@@ -249,6 +249,7 @@ interface DashboardLang {
    single_choice: string;
    multiple_choice: string;
    true_false: string;
+   quantity_takeoff?: string;
    select_question_type: string;
    question_title: string;
    question_options: string;
@@ -410,6 +411,7 @@ interface DashboardLang {
    single_choice: string;
    multiple_choice: string;
    true_false: string;
+   quantity_takeoff?: string;
    select_question_type: string;
    question_options: string;
    correct_answer: string;
@@ -480,6 +482,7 @@ interface DashboardLang {
    question_title: string;
    single_choice: string;
    true_false: string;
+   quantity_takeoff?: string;
 
    // Lesson Form
    lesson_title: string;

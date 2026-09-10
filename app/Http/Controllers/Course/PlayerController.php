@@ -14,6 +14,7 @@ use App\Services\Course\CourseService;
 use App\Services\Course\CourseSectionService;
 use App\Services\Course\LessonWatchProgressService;
 use App\Services\Course\ProtectedMediaService;
+use App\Services\Course\QuizTakeoffService;
 use App\Services\Course\VideoPlaybackTokenService;
 use App\Services\LiveClass\ZoomLiveService;
 use App\Services\Payment\SubscriptionAccessService;
@@ -36,6 +37,7 @@ class PlayerController extends Controller
         protected CourseFinalExamService $courseFinalExamService,
         protected SubscriptionAccessService $subscriptionAccess,
         protected VideoPlaybackTokenService $playbackTokens,
+        protected QuizTakeoffService $quizTakeoff,
     ) {}
 
     public function index(Request $request)
@@ -186,6 +188,11 @@ class PlayerController extends Controller
                 return redirect()
                     ->route('student.course.show', ['id' => $course->id, 'tab' => 'modules'])
                     ->with('error', 'Lesson not found.');
+            }
+
+            if ($type === 'quiz' && $watching instanceof \App\Models\Course\SectionQuiz) {
+                $this->quizTakeoff->sanitizeQuizForPlayer($watching);
+                $this->quizTakeoff->sanitizeCourseForPlayer($course);
             }
 
             if ($type === 'lesson' && $watching instanceof SectionLesson) {

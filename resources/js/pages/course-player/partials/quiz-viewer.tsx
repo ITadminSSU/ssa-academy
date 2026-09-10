@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { Renderer } from 'richtor';
 import 'richtor/styles';
 import LessonControl from './lesson-control';
+import TakeoffQuizViewer from './takeoff-quiz-viewer';
 
 type QuizAnswer = {
    question_id: string;
@@ -156,6 +157,10 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
       // Start from first question
       setCurrentTab(quiz.quiz_questions[0].id.toString());
    };
+
+   if (quiz.quiz_questions.some((question) => question.type === 'quantity_takeoff')) {
+      return <TakeoffQuizViewer quiz={quiz} />;
+   }
 
    return (
       <Card className="group relative h-full max-h-[80vh] w-full overflow-y-auto rounded-lg">

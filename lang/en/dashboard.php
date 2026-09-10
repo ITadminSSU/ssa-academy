@@ -312,6 +312,7 @@ return [
     'single_choice' => 'Single Choice',
     'multiple_choice' => 'Multiple Choice',
     'true_false' => 'True or False',
+    'quantity_takeoff' => 'Quantity Takeoff',
     'select_question_type' => 'Select question type',
     'question_title' => 'Question Title',
     'question_options' => 'Question Options',
@@ -502,6 +503,7 @@ return [
     'single_choice' => 'Single Choice',
     'multiple_choice' => 'Multiple Choice',
     'true_false' => 'True or False',
+    'quantity_takeoff' => 'Quantity Takeoff',
     'select_question_type' => 'Select question type',
     'question_options' => 'Question Options',
     'correct_answer' => 'Correct Answer',
@@ -570,6 +572,7 @@ return [
     'question_title' => 'Question Title',
     'single_choice' => 'Single Choice',
     'true_false' => 'True or False',
+    'quantity_takeoff' => 'Quantity Takeoff',
 
     // Lesson Form
     'lesson_title' => 'Lesson Title',
