@@ -357,7 +357,7 @@ return [
             'question_type' => 'Question Type',
             'single_choice' => 'Single Choice',
             'multiple_choice' => 'Multiple Choice',
-            'true_false' => 'True of False',
+            'true_false' => 'True or False',
             'select_question_type' => 'Select question type',
             'question_title' => 'Question Title',
             'question_options' => 'Question Options',
@@ -592,7 +592,7 @@ return [
         'properties' => [
             'single_choice' => 'Single Choice',
             'multiple_choice' => 'Multiple Choice',
-            'true_false' => 'True of False',
+            'true_false' => 'True or False',
             'select_question_type' => 'Select question type',
             'question_options' => 'Question Options',
             'correct_answer' => 'Correct Answer',
@@ -704,7 +704,7 @@ return [
             'question_type' => 'Question Type',
             'question_title' => 'Question Title',
             'single_choice' => 'Single Choice',
-            'true_false' => 'True of False',
+            'true_false' => 'True or False',
         ]
     ],
 
