@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 
+import QuizTakeoffEditor from './quiz-takeoff-editor';
 import QuizTakeoffFields, { UploadedFile } from './quiz-takeoff-fields';
 
 const getQuestionTypes = (translate: any, allowTakeoff: boolean) => [
@@ -43,10 +44,12 @@ const parseJsonValue = (value: any) => {
    return value ?? [];
 };
 
-const takeoffFilesFromQuestion = (question?: QuizQuestion): { pdf: UploadedFile | null; answerKey: UploadedFile | null } => {
+const takeoffFilesFromQuestion = (
+   question?: QuizQuestion,
+): { pdf: UploadedFile | null; answerKey: UploadedFile | null; tolerancePercent: number } => {
    const options = parseJsonValue(question?.options);
    if (!options || Array.isArray(options)) {
-      return { pdf: null, answerKey: null };
+      return { pdf: null, answerKey: null, tolerancePercent: 2 };
    }
 
    return {
@@ -54,6 +57,7 @@ const takeoffFilesFromQuestion = (question?: QuizQuestion): { pdf: UploadedFile 
       answerKey: options.answer_key_file_url
          ? { file_url: options.answer_key_file_url, file_name: options.answer_key_file_name || 'answer-key.xlsx' }
          : null,
+      tolerancePercent: Number(options.tolerance_percent ?? 2),
    };
 };
 
@@ -89,6 +93,7 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
       pdf_name: initialFiles.pdf?.file_name || '',
       answer_key_url: initialFiles.answerKey?.file_url || '',
       answer_key_name: initialFiles.answerKey?.file_name || '',
+      tolerance_percent: initialFiles.tolerancePercent,
    });
 
    const restoreSavedValues = () => {
@@ -106,6 +111,7 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
          pdf_name: files.pdf?.file_name || '',
          answer_key_url: files.answerKey?.file_url || '',
          answer_key_name: files.answerKey?.file_name || '',
+         tolerance_percent: files.tolerancePercent,
       };
       setDefaults(fresh);
       setData(fresh);
@@ -124,18 +130,27 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
 
       transform((form) =>
          form.type === 'quantity_takeoff'
-            ? {
-                 ...form,
-                 pdf_url: pdf?.file_url || form.pdf_url,
-                 pdf_name: pdf?.file_name || form.pdf_name,
-                 answer_key_url: answerKey?.file_url || form.answer_key_url,
-                 answer_key_name: answerKey?.file_name || form.answer_key_name,
-              }
+            ? question
+               ? {
+                    ...form,
+                    pdf_url: '',
+                    pdf_name: '',
+                    answer_key_url: '',
+                    answer_key_name: '',
+                 }
+               : {
+                    ...form,
+                    pdf_url: pdf?.file_url || form.pdf_url,
+                    pdf_name: pdf?.file_name || form.pdf_name,
+                    answer_key_url: answerKey?.file_url || form.answer_key_url,
+                    answer_key_name: answerKey?.file_name || form.answer_key_name,
+                 }
             : form,
       );
 
       if (question) {
          put(route('quiz.question.update', { id: question.id }), {
+            preserveScroll: true,
             onSuccess: () => setOpen(false),
          });
       } else {
@@ -152,7 +167,7 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
       <Dialog open={open} onOpenChange={handleOpenChange}>
          <DialogTrigger>{handler}</DialogTrigger>
 
-         <DialogContent className="p-0">
+         <DialogContent className={data.type === 'quantity_takeoff' ? 'p-0 sm:max-w-4xl' : 'p-0'}>
             <ScrollArea className="max-h-[90vh] p-6">
                <DialogHeader className="mb-6">
                   <DialogTitle>{title}</DialogTitle>
@@ -213,14 +228,40 @@ const QuestionForm = ({ title, handler, quiz, question }: Props) => {
                   </div>
 
                   {data.type === 'quantity_takeoff' ? (
-                     <QuizTakeoffFields
-                        pdf={pdf}
-                        answerKey={answerKey}
-                        onPdfChange={setPdf}
-                        onAnswerKeyChange={setAnswerKey}
-                        pdfError={errors.pdf_url}
-                        answerKeyError={errors.answer_key_url}
-                     />
+                     question ? (
+                        <>
+                           <div className="space-y-2">
+                              <Label htmlFor="takeoff-tolerance">Default quantity tolerance (%)</Label>
+                              <Input
+                                 id="takeoff-tolerance"
+                                 type="number"
+                                 min={0}
+                                 max={100}
+                                 step={0.1}
+                                 value={data.tolerance_percent}
+                                 onChange={(event) => setData('tolerance_percent', Number(event.target.value))}
+                              />
+                              <p className="text-muted-foreground text-xs">
+                                 Used for every line unless you set a custom percent below. Example: 2% on 100 SF allows 98–102
+                                 SF.
+                              </p>
+                              <InputError message={errors.tolerance_percent} />
+                           </div>
+                           <QuizTakeoffEditor question={question} defaultTolerancePercent={Number(data.tolerance_percent ?? 2)} />
+                        </>
+                     ) : (
+                        <QuizTakeoffFields
+                           pdf={pdf}
+                           answerKey={answerKey}
+                           tolerancePercent={Number(data.tolerance_percent ?? 2)}
+                           onPdfChange={setPdf}
+                           onAnswerKeyChange={setAnswerKey}
+                           onToleranceChange={(value) => setData('tolerance_percent', value)}
+                           pdfError={errors.pdf_url}
+                           answerKeyError={errors.answer_key_url}
+                           toleranceError={errors.tolerance_percent}
+                        />
+                     )
                   ) : (
                      <>
                         {data.type !== 'boolean' && (

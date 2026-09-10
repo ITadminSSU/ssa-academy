@@ -260,8 +260,11 @@ interface QuizQuestion extends TableCommon {
    takeoff?: {
       pdf_url?: string | null;
       pdf_name?: string | null;
+      drawings?: { file_name: string }[];
       line_count?: number;
       ready?: boolean;
+      tolerance_percent?: number;
+      tutorial_video?: { url: string; name: string } | null;
    };
 }
 

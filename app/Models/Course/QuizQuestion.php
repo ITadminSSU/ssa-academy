@@ -54,6 +54,31 @@ class QuizQuestion extends Model
     }
 
     /**
+     * @return list<array{file_url: string, file_name: string}>
+     */
+    public function takeoffDrawings(): array
+    {
+        $options = $this->decodedOptions();
+        $drawings = $options['drawings'] ?? null;
+
+        if (is_array($drawings)) {
+            return array_values(array_filter(
+                $drawings,
+                fn ($drawing) => is_array($drawing) && filled($drawing['file_url'] ?? null)
+            ));
+        }
+
+        if (filled($options['pdf_url'] ?? null)) {
+            return [[
+                'file_url' => (string) $options['pdf_url'],
+                'file_name' => (string) ($options['pdf_name'] ?? 'plans.pdf'),
+            ]];
+        }
+
+        return [];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function takeoffLineItems(): array
@@ -61,6 +86,13 @@ class QuizQuestion extends Model
         $items = $this->decodedOptions()['line_items'] ?? [];
 
         return is_array($items) ? array_values($items) : [];
+    }
+
+    public function takeoffTolerancePercent(): float
+    {
+        $percent = $this->decodedOptions()['tolerance_percent'] ?? config('us_experience.default_tolerance_percent', 2);
+
+        return min(100, max(0, (float) $percent));
     }
 
     public function hideTakeoffAnswerKey(): void
@@ -71,16 +103,31 @@ class QuizQuestion extends Model
 
         $options = $this->decodedOptions();
         $lineItems = $options['line_items'] ?? [];
+        $drawings = $this->takeoffDrawings();
+        $first = $drawings[0] ?? null;
+        $hasAttempt = $this->relationLoaded('answers') && $this->answers->isNotEmpty();
 
         $this->setAttribute('takeoff', [
-            'pdf_url' => $options['pdf_url'] ?? null,
-            'pdf_name' => $options['pdf_name'] ?? null,
+            'pdf_url' => $first['file_url'] ?? null,
+            'pdf_name' => $first['file_name'] ?? null,
+            'drawings' => array_map(
+                fn (array $drawing) => ['file_name' => $drawing['file_name'] ?? 'plans.pdf'],
+                $drawings
+            ),
             'line_count' => is_array($lineItems) ? count($lineItems) : 0,
-            'ready' => filled($options['pdf_url'] ?? null) && is_array($lineItems) && $lineItems !== [],
+            'ready' => $drawings !== [] && is_array($lineItems) && $lineItems !== [],
+            'tolerance_percent' => $this->takeoffTolerancePercent(),
+            'tutorial_video' => ($hasAttempt && filled($options['tutorial_video_url'] ?? null))
+                ? [
+                    'url' => $options['tutorial_video_url'],
+                    'name' => $options['tutorial_video_name'] ?? 'Walkthrough video',
+                ]
+                : null,
         ]);
         $this->setAttribute('options', json_encode([
-            'pdf_url' => $options['pdf_url'] ?? null,
-            'pdf_name' => $options['pdf_name'] ?? null,
+            'pdf_url' => $first['file_url'] ?? null,
+            'pdf_name' => $first['file_name'] ?? null,
+            'tolerance_percent' => $this->takeoffTolerancePercent(),
         ]));
         $this->setAttribute('answer', json_encode([]));
     }

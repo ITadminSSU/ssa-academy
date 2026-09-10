@@ -36,7 +36,13 @@ class CoursePlayerService
             },
          ])->find($lesson_id) :
          SectionQuiz::with([
-            'quiz_questions',
+            'quiz_questions' => function ($questions) use ($user) {
+               $questions->with(['answers' => function ($answers) use ($user) {
+                  $answers->when($user, function ($query) use ($user) {
+                     $query->where('user_id', $user->id)->latest()->limit(1);
+                  });
+               }]);
+            },
             'quiz_submissions' => function ($query) use ($user) {
                $query->where('user_id', $user->id);
             }

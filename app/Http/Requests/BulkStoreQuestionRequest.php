@@ -25,6 +25,7 @@ class BulkStoreQuestionRequest extends FormRequest
             'questions.*.pdf_name' => 'required_if:questions.*.type,quantity_takeoff|nullable|string|max:255',
             'questions.*.answer_key_url' => 'required_if:questions.*.type,quantity_takeoff|nullable|string|max:2048',
             'questions.*.answer_key_name' => 'required_if:questions.*.type,quantity_takeoff|nullable|string|max:255',
+            'questions.*.tolerance_percent' => 'nullable|numeric|min:0|max:100',
         ];
     }
 

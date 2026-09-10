@@ -29,6 +29,7 @@ class StoreQuestionRequest extends FormRequest
             'pdf_name' => $isTakeoff ? 'required|string|max:255' : 'nullable',
             'answer_key_url' => $isTakeoff ? 'required|string|max:2048' : 'nullable',
             'answer_key_name' => $isTakeoff ? 'required|string|max:255' : 'nullable',
+            'tolerance_percent' => $isTakeoff ? 'nullable|numeric|min:0|max:100' : 'nullable',
         ];
     }
 }

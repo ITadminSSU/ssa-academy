@@ -65,6 +65,13 @@ class QuizTakeoffService
         $this->assertQuestionMix($existing, $incomingTypes);
     }
 
+    public function assertTakeoff(QuizQuestion $question): void
+    {
+        if (! $question->isTakeoff()) {
+            abort(404);
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
@@ -72,21 +79,33 @@ class QuizTakeoffService
     public function prepareQuestionPayload(array $data, ?QuizQuestion $existing = null): array
     {
         $existingOptions = $existing?->decodedOptions() ?? [];
-        $pdfUrl = $data['pdf_url'] ?? $existingOptions['pdf_url'] ?? null;
-        $pdfName = $data['pdf_name'] ?? $existingOptions['pdf_name'] ?? null;
-        $answerKeyUrl = $data['answer_key_url'] ?? $existingOptions['answer_key_file_url'] ?? null;
-        $answerKeyName = $data['answer_key_name'] ?? $existingOptions['answer_key_file_name'] ?? null;
+        $drawings = $this->drawingsFromOptions($existingOptions);
+        $incomingPdfUrl = filled($data['pdf_url'] ?? null) ? $data['pdf_url'] : null;
+        $incomingPdfName = $data['pdf_name'] ?? 'plans.pdf';
 
-        if (! $pdfUrl || ! $pdfName) {
+        if ($incomingPdfUrl && ! $this->drawingExists($drawings, $incomingPdfUrl)) {
+            $drawings[] = [
+                'file_url' => $incomingPdfUrl,
+                'file_name' => $incomingPdfName,
+            ];
+        }
+
+        if ($drawings === []) {
             throw ValidationException::withMessages([
                 'pdf_url' => 'Upload the takeoff PDF plans.',
             ]);
         }
 
+        $answerKeyUrl = filled($data['answer_key_url'] ?? null)
+            ? $data['answer_key_url']
+            : ($existingOptions['answer_key_file_url'] ?? null);
+        $answerKeyName = filled($data['answer_key_name'] ?? null)
+            ? $data['answer_key_name']
+            : ($existingOptions['answer_key_file_name'] ?? null);
         $lineItems = $existingOptions['line_items'] ?? [];
 
         if ($answerKeyUrl && $answerKeyUrl !== ($existingOptions['answer_key_file_url'] ?? null)) {
-            $lineItems = $this->parseAnswerKey($answerKeyUrl);
+            $lineItems = $this->mergeLineOverrides($this->parseAnswerKey($answerKeyUrl), $lineItems);
         }
 
         if ($lineItems === []) {
@@ -95,20 +114,119 @@ class QuizTakeoffService
             ]);
         }
 
+        $tolerance = $data['tolerance_percent'] ?? $existingOptions['tolerance_percent'] ?? config('us_experience.default_tolerance_percent', 2);
+        $tolerance = min(100, max(0, (float) $tolerance));
+        $first = $drawings[0];
+
         $data['title'] = filled($data['title'] ?? null) ? $data['title'] : 'Quantity takeoff';
-        $data['options'] = [
-            'pdf_url' => $pdfUrl,
-            'pdf_name' => $pdfName,
+        $data['options'] = array_merge($existingOptions, [
+            'drawings' => $drawings,
+            'pdf_url' => $first['file_url'],
+            'pdf_name' => $first['file_name'],
             'answer_key_file_url' => $answerKeyUrl,
             'answer_key_file_name' => $answerKeyName,
             'line_items' => $lineItems,
-            'parsed_at' => now()->toIso8601String(),
-        ];
+            'tolerance_percent' => $tolerance,
+            'parsed_at' => $existingOptions['parsed_at'] ?? now()->toIso8601String(),
+        ]);
+
+        if ($answerKeyUrl && $answerKeyUrl !== ($existingOptions['answer_key_file_url'] ?? null)) {
+            $data['options']['parsed_at'] = now()->toIso8601String();
+        }
+
         $data['answer'] = [];
 
-        unset($data['pdf_url'], $data['pdf_name'], $data['answer_key_url'], $data['answer_key_name']);
+        unset($data['pdf_url'], $data['pdf_name'], $data['answer_key_url'], $data['answer_key_name'], $data['tolerance_percent']);
 
         return $data;
+    }
+
+    public function addDrawing(QuizQuestion $question, string $fileUrl, string $fileName): QuizQuestion
+    {
+        $this->assertTakeoff($question);
+        $drawings = $this->drawingsFromOptions($question->decodedOptions());
+
+        if (! $this->drawingExists($drawings, $fileUrl)) {
+            $drawings[] = [
+                'file_url' => $fileUrl,
+                'file_name' => $fileName,
+            ];
+        }
+
+        return $this->persistOptions($question, ['drawings' => $drawings]);
+    }
+
+    public function removeDrawing(QuizQuestion $question, string $fileUrl): QuizQuestion
+    {
+        $this->assertTakeoff($question);
+        $drawings = array_values(array_filter(
+            $this->drawingsFromOptions($question->decodedOptions()),
+            fn (array $drawing) => ($drawing['file_url'] ?? '') !== $fileUrl
+        ));
+
+        return $this->persistOptions($question, ['drawings' => $drawings]);
+    }
+
+    /**
+     * @return array{line_items: list<array<string, mixed>>, line_count: int}
+     */
+    public function importAnswerKey(QuizQuestion $question, string $fileUrl, string $fileName): array
+    {
+        $this->assertTakeoff($question);
+
+        try {
+            $lineItems = $this->mergeLineOverrides(
+                $this->parseAnswerKey($fileUrl),
+                $question->takeoffLineItems(),
+            );
+        } catch (ValidationException $exception) {
+            throw new InvalidArgumentException(
+                collect($exception->errors())->flatten()->first() ?: 'Could not import the answer key.'
+            );
+        }
+
+        $this->persistOptions($question, [
+            'answer_key_file_url' => $fileUrl,
+            'answer_key_file_name' => $fileName,
+            'line_items' => $lineItems,
+            'parsed_at' => now()->toIso8601String(),
+        ]);
+
+        return [
+            'line_items' => $lineItems,
+            'line_count' => count($lineItems),
+        ];
+    }
+
+    public function saveTutorialVideo(QuizQuestion $question, string $videoUrl, string $videoName): QuizQuestion
+    {
+        $this->assertTakeoff($question);
+
+        return $this->persistOptions($question, [
+            'tutorial_video_url' => $videoUrl,
+            'tutorial_video_name' => $videoName,
+        ]);
+    }
+
+    /**
+     * @param  array<int, array{key: string, tolerance_override?: float|null, tolerance_override_mode?: string|null}>  $tolerances
+     */
+    public function saveLineTolerances(QuizQuestion $question, array $tolerances): QuizQuestion
+    {
+        $this->assertTakeoff($question);
+        $lineItems = $question->takeoffLineItems();
+        $toleranceMap = collect($tolerances)->keyBy('key');
+
+        foreach ($lineItems as &$line) {
+            if (! $toleranceMap->has($line['key'])) {
+                continue;
+            }
+
+            $this->applyLineTolerance($line, $toleranceMap[$line['key']]);
+        }
+        unset($line);
+
+        return $this->persistOptions($question, ['line_items' => $lineItems]);
     }
 
     /**
@@ -172,7 +290,7 @@ class QuizTakeoffService
             $lineItems,
             ['quantities' => $quantities],
             $totalMarks,
-            defaultPercentTolerance: (float) config('us_experience.default_tolerance_percent', 2),
+            defaultPercentTolerance: $question->takeoffTolerancePercent(),
         );
 
         $result['quantities'] = $quantities;
@@ -186,11 +304,11 @@ class QuizTakeoffService
     public function buildStudentPack(QuizQuestion $question): array
     {
         $options = $question->decodedOptions();
-        $pdfUrl = $options['pdf_url'] ?? null;
+        $drawings = $this->drawingsFromOptions($options);
         $answerKeyUrl = $options['answer_key_file_url'] ?? null;
         $lineItems = $options['line_items'] ?? [];
 
-        if (! $pdfUrl || ! $answerKeyUrl || $lineItems === []) {
+        if ($drawings === [] || ! $answerKeyUrl || $lineItems === []) {
             throw new InvalidArgumentException('This takeoff quiz is not ready to download.');
         }
 
@@ -204,14 +322,18 @@ class QuizTakeoffService
         }
 
         $cleanup = [$zipPath];
+        $usedNames = [];
 
         try {
-            $pdf = $this->files->resolveLocalPath($pdfUrl);
-            if ($pdf['temporary']) {
-                $cleanup[] = $pdf['path'];
+            foreach ($drawings as $index => $drawing) {
+                $resolved = $this->files->resolveLocalPath($drawing['file_url']);
+                if ($resolved['temporary']) {
+                    $cleanup[] = $resolved['path'];
+                }
+
+                $name = $this->uniqueZipName($usedNames, $drawing['file_name'] ?? ('drawing-'.($index + 1).'.pdf'), 'drawings');
+                $zip->addFile($resolved['path'], $name);
             }
-            $pdfName = basename((string) ($options['pdf_name'] ?? 'plans.pdf')) ?: 'plans.pdf';
-            $zip->addFile($pdf['path'], 'drawings/'.$pdfName);
 
             $answerKey = $this->files->resolveLocalPath($answerKeyUrl);
             if ($answerKey['temporary']) {
@@ -221,7 +343,7 @@ class QuizTakeoffService
             $templatePath = $this->files->makeTempFile('xlsx');
             $cleanup[] = $templatePath;
             $this->templates->generateBlankTemplate($answerKey['path'], $templatePath, $lineItems);
-            $zip->addFile($templatePath, 'template/student-template.xlsx');
+            $zip->addFile($templatePath, $this->uniqueZipName($usedNames, 'student-template.xlsx', 'template'));
             $zip->close();
         } catch (\Throwable $exception) {
             @$zip->close();
@@ -342,5 +464,128 @@ class QuizTakeoffService
         ]);
 
         return $submission->fresh();
+    }
+
+    /**
+     * @return list<array{file_url: string, file_name: string}>
+     */
+    public function drawingsFromOptions(array $options): array
+    {
+        $drawings = $options['drawings'] ?? null;
+
+        if (is_array($drawings)) {
+            return array_values(array_filter(
+                $drawings,
+                fn ($drawing) => is_array($drawing) && filled($drawing['file_url'] ?? null)
+            ));
+        }
+
+        if (filled($options['pdf_url'] ?? null)) {
+            return [[
+                'file_url' => (string) $options['pdf_url'],
+                'file_name' => (string) ($options['pdf_name'] ?? 'plans.pdf'),
+            ]];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $patch
+     */
+    private function persistOptions(QuizQuestion $question, array $patch): QuizQuestion
+    {
+        $options = array_merge($question->decodedOptions(), $patch);
+        $drawings = $this->drawingsFromOptions($options);
+        $options['drawings'] = $drawings;
+        $options['pdf_url'] = $drawings[0]['file_url'] ?? null;
+        $options['pdf_name'] = $drawings[0]['file_name'] ?? null;
+
+        $question->update(['options' => json_encode($options)]);
+
+        return $question->fresh();
+    }
+
+    /**
+     * @param  list<array{file_url: string, file_name?: string}>  $drawings
+     */
+    private function drawingExists(array $drawings, string $fileUrl): bool
+    {
+        foreach ($drawings as $drawing) {
+            if (($drawing['file_url'] ?? '') === $fileUrl) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $lineItems
+     * @param  list<array<string, mixed>>  $existing
+     * @return list<array<string, mixed>>
+     */
+    private function mergeLineOverrides(array $lineItems, array $existing): array
+    {
+        $oldOverrides = collect($existing)->mapWithKeys(fn (array $line) => [
+            $line['key'] => [
+                'tolerance_override' => $line['tolerance_override'] ?? null,
+                'tolerance_override_mode' => $line['tolerance_override_mode'] ?? null,
+            ],
+        ]);
+
+        foreach ($lineItems as &$line) {
+            if (! $oldOverrides->has($line['key'])) {
+                continue;
+            }
+
+            $line['tolerance_override'] = $oldOverrides[$line['key']]['tolerance_override'];
+            $mode = $oldOverrides[$line['key']]['tolerance_override_mode'];
+            if ($mode) {
+                $line['tolerance_override_mode'] = $mode;
+            }
+        }
+        unset($line);
+
+        return $lineItems;
+    }
+
+    /**
+     * @param  array<string, mixed>  $line
+     * @param  array{tolerance_override?: float|null, tolerance_override_mode?: string|null}  $incoming
+     */
+    private function applyLineTolerance(array &$line, array $incoming): void
+    {
+        $override = $incoming['tolerance_override'] ?? null;
+
+        if ($override === null || $override === '') {
+            $line['tolerance_override'] = null;
+            unset($line['tolerance_override_mode']);
+
+            return;
+        }
+
+        $mode = (string) ($incoming['tolerance_override_mode'] ?? 'percent');
+        $line['tolerance_override'] = (float) $override;
+        $line['tolerance_override_mode'] = in_array($mode, ['percent', 'absolute'], true) ? $mode : 'percent';
+    }
+
+    /**
+     * @param  array<string, bool>  $usedNames
+     */
+    private function uniqueZipName(array &$usedNames, string $original, string $folder): string
+    {
+        $base = basename($original) ?: 'file';
+        $name = $folder.'/'.$base;
+        $i = 1;
+
+        while (isset($usedNames[$name])) {
+            $name = $folder.'/'.$i.'-'.$base;
+            $i++;
+        }
+
+        $usedNames[$name] = true;
+
+        return $name;
     }
 }

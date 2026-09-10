@@ -1,5 +1,6 @@
 import ChunkedUploaderInput from '@/components/chunked-uploader-input';
 import InputError from '@/components/input-error';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2 } from 'lucide-react';
 
@@ -8,20 +9,51 @@ type UploadedFile = { file_url: string; file_name: string };
 interface Props {
    pdf: UploadedFile | null;
    answerKey: UploadedFile | null;
+   tolerancePercent: number;
    onPdfChange: (file: UploadedFile | null) => void;
    onAnswerKeyChange: (file: UploadedFile | null) => void;
+   onToleranceChange: (value: number) => void;
    pdfError?: string;
    answerKeyError?: string;
+   toleranceError?: string;
 }
 
-const QuizTakeoffFields = ({ pdf, answerKey, onPdfChange, onAnswerKeyChange, pdfError, answerKeyError }: Props) => {
+const QuizTakeoffFields = ({
+   pdf,
+   answerKey,
+   tolerancePercent,
+   onPdfChange,
+   onAnswerKeyChange,
+   onToleranceChange,
+   pdfError,
+   answerKeyError,
+   toleranceError,
+}: Props) => {
    return (
       <div className="space-y-4">
          <p className="text-muted-foreground text-sm">
             Upload the PDF plans and the Excel answer key (Estimator Notes / Quantity Summary). Students download a blank copy of
-            that Excel with quantities cleared, then submit their takeoff PDF and filled BOQ. Auto-check uses the same ±2%
-            line tolerance as Build Your US Experience. This quiz can only contain this one question.
+            that Excel with quantities cleared, then submit their takeoff PDF and filled BOQ. After saving, edit the question to
+            add more drawings, a walkthrough video, and per-line tolerances — same as Build Your US Experience.
          </p>
+
+         <div className="space-y-2">
+            <Label htmlFor="takeoff-tolerance">Quantity tolerance (%)</Label>
+            <Input
+               id="takeoff-tolerance"
+               type="number"
+               min={0}
+               max={100}
+               step={0.1}
+               value={tolerancePercent}
+               onChange={(event) => onToleranceChange(Number(event.target.value))}
+            />
+            <p className="text-muted-foreground text-xs">
+               A submitted quantity passes if it is within this percent of the answer key. Example: 2% on 100 SF allows 98–102
+               SF.
+            </p>
+            <InputError message={toleranceError} />
+         </div>
 
          <div className="space-y-2">
             <Label>Takeoff PDF</Label>

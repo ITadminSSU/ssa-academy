@@ -34,6 +34,8 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
    const answerPayload = parseJsonValue(latestAnswer?.answers);
    const breakdown = answerPayload?.grading_breakdown ?? null;
 
+   const drawingNames = question?.takeoff?.drawings?.map((drawing) => drawing.file_name).filter(Boolean) ?? [];
+   const tutorial = question?.takeoff?.tutorial_video;
    const [pdf, setPdf] = useState<UploadedFile | null>(null);
    const [excel, setExcel] = useState<UploadedFile | null>(null);
    const [submitting, setSubmitting] = useState(false);
@@ -76,7 +78,10 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
             <div className="grid gap-6 md:grid-cols-2">
                <div className="space-y-2">
                   <p className="font-medium">{frontend.summery}</p>
-                  <p className="text-muted-foreground text-sm">Quantity takeoff · {question?.takeoff?.line_count ?? 0} lines</p>
+                  <p className="text-muted-foreground text-sm">
+                     Quantity takeoff · {question?.takeoff?.line_count ?? 0} lines
+                     {drawingNames.length > 0 ? ` · ${drawingNames.length} drawing${drawingNames.length === 1 ? '' : 's'}` : ''}
+                  </p>
                   <p className="text-sm">
                      {frontend.total_marks}: {quiz.total_mark}
                   </p>
@@ -104,7 +109,7 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
 
             <p className="text-muted-foreground text-sm">
                Download the PDF plans and blank Excel, fill the Quantity Summary, then submit your takeoff PDF and BOQ. Auto-check
-               uses ±2% of each line, same as Build Your US Experience.
+               uses ±{question?.takeoff?.tolerance_percent ?? 2}% of each line unless a trainer set a custom percent.
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -123,6 +128,13 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
                   linesTotal={answerPayload?.lines_total}
                   viewer="student"
                />
+            )}
+
+            {tutorial && (
+               <div>
+                  <p className="mb-2 text-sm font-medium">{tutorial.name || 'Walkthrough'}</p>
+                  <video src={tutorial.url} controls className="max-h-80 w-full rounded-md bg-black" />
+               </div>
             )}
 
             {!canMarkProgress ? (

@@ -29,6 +29,7 @@ class UpdateQuestionRequest extends FormRequest
             'pdf_name' => 'nullable|string|max:255',
             'answer_key_url' => 'nullable|string|max:2048',
             'answer_key_name' => 'nullable|string|max:255',
+            'tolerance_percent' => $isTakeoff ? 'nullable|numeric|min:0|max:100' : 'nullable',
         ];
     }
 }

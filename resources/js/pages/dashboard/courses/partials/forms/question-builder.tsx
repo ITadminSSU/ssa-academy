@@ -27,6 +27,7 @@ interface DraftQuestion {
    answer: string[];
    pdf: UploadedFile | null;
    answerKey: UploadedFile | null;
+   tolerancePercent: number;
 }
 
 interface Props {
@@ -51,6 +52,7 @@ const createDraftQuestion = (type: QuestionType = 'single'): DraftQuestion => ({
    answer: type === 'boolean' ? ['True'] : [],
    pdf: null,
    answerKey: null,
+   tolerancePercent: 2,
 });
 
 const QuestionBuilder = ({ quiz, handler }: Props) => {
@@ -134,7 +136,7 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
 
       const payload = {
          section_quiz_id: quiz.id,
-         questions: questions.map(({ title, type, options, answer, pdf, answerKey }) =>
+         questions: questions.map(({ title, type, options, answer, pdf, answerKey, tolerancePercent }) =>
             type === 'quantity_takeoff'
                ? {
                     title: title || 'Quantity takeoff',
@@ -143,6 +145,7 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
                     pdf_name: pdf?.file_name,
                     answer_key_url: answerKey?.file_url,
                     answer_key_name: answerKey?.file_name,
+                    tolerance_percent: tolerancePercent,
                  }
                : { title, type, options, answer },
          ),
@@ -274,10 +277,13 @@ const QuestionBuilder = ({ quiz, handler }: Props) => {
                            <QuizTakeoffFields
                               pdf={question.pdf}
                               answerKey={question.answerKey}
+                              tolerancePercent={question.tolerancePercent}
                               onPdfChange={(pdf) => updateQuestion(question.key, { pdf })}
                               onAnswerKeyChange={(answerKey) => updateQuestion(question.key, { answerKey })}
+                              onToleranceChange={(tolerancePercent) => updateQuestion(question.key, { tolerancePercent })}
                               pdfError={errorFor(index, 'pdf_url')}
                               answerKeyError={errorFor(index, 'answer_key_url')}
+                              toleranceError={errorFor(index, 'tolerance_percent')}
                            />
                         ) : (
                            <>

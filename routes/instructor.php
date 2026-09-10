@@ -161,6 +161,11 @@ Route::prefix('dashboard/trainer')->group(function () {
       Route::put('quiz/question/update/{id}', 'update')->name('quiz.question.update');
       Route::delete('quiz/question/delete/{id}', 'delete')->name('quiz.question.delete');
       Route::post('quiz/question/sort/', 'sort')->name('quiz.question.sort');
+      Route::post('quiz/question/{id}/takeoff/drawings', 'addTakeoffDrawing')->name('quiz.question.takeoff.drawings.store');
+      Route::post('quiz/question/{id}/takeoff/drawings/remove', 'removeTakeoffDrawing')->name('quiz.question.takeoff.drawings.destroy');
+      Route::post('quiz/question/{id}/takeoff/answer-key', 'importTakeoffAnswerKey')->name('quiz.question.takeoff.answer-key');
+      Route::post('quiz/question/{id}/takeoff/tutorial', 'saveTakeoffTutorial')->name('quiz.question.takeoff.tutorial');
+      Route::post('quiz/question/{id}/takeoff/tolerances', 'saveTakeoffTolerances')->name('quiz.question.takeoff.tolerances');
    });
 
    // live classes
