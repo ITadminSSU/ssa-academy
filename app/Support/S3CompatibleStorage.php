@@ -81,15 +81,61 @@ class S3CompatibleStorage
         return "https://{$bucket}.s3.{$region}.amazonaws.com/{$key}";
     }
 
-    public static function temporaryObjectUrl(string $key, ?DateTimeInterface $expiresAt = null): string
+    public static function temporaryObjectUrl(string $key, ?DateTimeInterface $expiresAt = null, ?string $downloadName = null): string
     {
         $expiresAt ??= now()->addHours(12);
+        $bucket = (string) config('filesystems.disks.s3.bucket');
+        $commandInput = [
+            'Bucket' => $bucket,
+            'Key' => $key,
+        ];
+
+        if (filled($downloadName)) {
+            $safeName = str_replace(['"', '\\', "\r", "\n"], '', $downloadName);
+            $commandInput['ResponseContentDisposition'] = 'attachment; filename="'.$safeName.'"';
+        }
 
         try {
-            return Storage::disk('s3')->temporaryUrl($key, $expiresAt);
+            $client = static::makeClient();
+            $command = $client->getCommand('GetObject', $commandInput);
+            $request = $client->createPresignedRequest($command, $expiresAt);
+
+            return (string) $request->getUri();
         } catch (\Throwable) {
-            return static::objectFileUrl($key);
+            try {
+                return Storage::disk('s3')->temporaryUrl($key, $expiresAt);
+            } catch (\Throwable) {
+                return static::objectFileUrl($key);
+            }
         }
+    }
+
+    /**
+     * Browser-ready URL for a stored object (signed R2/S3, or local public path).
+     */
+    public static function browserUrl(?string $url, ?string $downloadName = null): ?string
+    {
+        if ($url === null || trim($url) === '') {
+            return $url;
+        }
+
+        $url = trim($url);
+
+        if (static::isExternalEmbedUrl($url)) {
+            return $url;
+        }
+
+        if (static::isLocalPublicUrl($url)) {
+            return function_exists('public_asset_url') ? (public_asset_url($url) ?? $url) : $url;
+        }
+
+        $key = static::extractObjectKey($url);
+
+        if ($key === null) {
+            return $url;
+        }
+
+        return static::temporaryObjectUrl($key, downloadName: $downloadName);
     }
 
     /**

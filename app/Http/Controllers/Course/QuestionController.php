@@ -11,6 +11,8 @@ use App\Http\Requests\UsExperience\SaveUsExperienceUploadedFileRequest;
 use App\Models\Course\QuizQuestion;
 use App\Services\Course\QuizQuestionService;
 use App\Services\Course\QuizTakeoffService;
+use App\Support\S3CompatibleStorage;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
@@ -114,6 +116,49 @@ class QuestionController extends Controller
         $this->takeoff->saveLineTolerances($this->takeoffQuestion($id), $request->validated('tolerances'));
 
         return back()->with('success', 'Per-line tolerances saved.');
+    }
+
+    public function viewTakeoffAnswerKey($id): RedirectResponse
+    {
+        $question = $this->takeoffQuestion($id);
+        $options = $question->decodedOptions();
+
+        return $this->redirectToStoredFile(
+            $options['answer_key_file_url'] ?? null,
+            $options['answer_key_file_name'] ?? 'answer-key.xlsx',
+        );
+    }
+
+    public function viewTakeoffDrawing(Request $request, $id): RedirectResponse
+    {
+        $question = $this->takeoffQuestion($id);
+        $fileUrl = $request->validate([
+            'file_url' => 'required|string|max:2048',
+        ])['file_url'];
+
+        $match = collect($this->takeoff->drawingsFromOptions($question->decodedOptions()))
+            ->first(fn (array $drawing) => ($drawing['file_url'] ?? '') === $fileUrl);
+
+        if (! $match) {
+            abort(404);
+        }
+
+        return $this->redirectToStoredFile($match['file_url'], $match['file_name'] ?? 'drawing.pdf');
+    }
+
+    private function redirectToStoredFile(?string $url, ?string $downloadName = null): RedirectResponse
+    {
+        if (! filled($url)) {
+            abort(404);
+        }
+
+        $browserUrl = S3CompatibleStorage::browserUrl($url, $downloadName);
+
+        if (! filled($browserUrl)) {
+            abort(404);
+        }
+
+        return redirect()->away($browserUrl);
     }
 
     private function takeoffQuestion($id): QuizQuestion

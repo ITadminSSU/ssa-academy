@@ -142,7 +142,12 @@ const QuizTakeoffEditor = ({ question, defaultTolerancePercent }: Props) => {
                <ul className="mt-3 space-y-2">
                   {drawings.map((drawing) => (
                      <li key={drawing.file_url} className="flex items-center justify-between gap-3 rounded-md border p-3">
-                        <a href={drawing.file_url} target="_blank" rel="noreferrer" className="truncate text-sm underline">
+                        <a
+                           href={route('quiz.question.takeoff.drawing.view', { id: questionId, file_url: drawing.file_url })}
+                           target="_blank"
+                           rel="noreferrer"
+                           className="truncate text-sm underline"
+                        >
                            {drawing.file_name}
                         </a>
                         <Button
@@ -219,7 +224,7 @@ const QuizTakeoffEditor = ({ question, defaultTolerancePercent }: Props) => {
                <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border bg-muted p-3">
                   <span className="flex-1 truncate text-sm">{options.answer_key_file_name || 'Current answer key'}</span>
                   <Button type="button" variant="outline" size="sm" asChild>
-                     <a href={options.answer_key_file_url} target="_blank" rel="noreferrer">
+                     <a href={route('quiz.question.takeoff.answer-key.view', { id: questionId })} target="_blank" rel="noreferrer">
                         View current key
                      </a>
                   </Button>

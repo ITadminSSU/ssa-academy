@@ -2,6 +2,7 @@
 
 namespace App\Models\Course;
 
+use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -74,13 +75,25 @@ class UsExperiencePlan extends Model
 
     public function toTrainerArray(): array
     {
-        return [
+        $payload = [
             ...$this->toArray(),
             'is_ready' => $this->isReady(),
             'drawings_count' => count($this->drawingsList()),
             'line_count' => count($this->answerKeyLines()),
             'attempts_count' => (int) ($this->attempts_count ?? $this->attempts()->count()),
+            'answer_key_file_url' => S3CompatibleStorage::browserUrl($this->answer_key_file_url, $this->answer_key_file_name),
+            'blank_template_file_url' => S3CompatibleStorage::browserUrl($this->blank_template_file_url, $this->blank_template_file_name),
+            'tutorial_video_url' => S3CompatibleStorage::browserUrl($this->tutorial_video_url, $this->tutorial_video_name),
+            'drawings' => array_map(function ($drawing) {
+                if (is_array($drawing) && ! empty($drawing['file_url'])) {
+                    $drawing['file_url'] = S3CompatibleStorage::browserUrl($drawing['file_url'], $drawing['file_name'] ?? null);
+                }
+
+                return $drawing;
+            }, $this->drawingsList()),
         ];
+
+        return $payload;
     }
 
     public function toPublicTeaseArray(): array
