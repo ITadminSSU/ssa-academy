@@ -21,11 +21,7 @@ class SubscriptionAccessService
 
     public function getAccessMode(User $user, Course $course, ?CourseEnrollment $enrollment = null): string
     {
-        if ($user->role === 'admin') {
-            return 'full';
-        }
-
-        if ($user->role === 'instructor' && (int) $user->instructor_id === (int) $course->instructor_id) {
+        if ($course->isStaffPreviewer($user)) {
             return 'full';
         }
 
@@ -150,7 +146,9 @@ class SubscriptionAccessService
 
     public function toFrontendPayload(User $user, Course $course, ?CourseEnrollment $enrollment = null): array
     {
-        $enrollment ??= $this->resolveEnrollment($user, $course);
+        if ($enrollment === null && !$course->isStaffPreviewer($user)) {
+            $enrollment = $this->resolveEnrollment($user, $course);
+        }
 
         if ($enrollment && !$enrollment->relationLoaded('subscription')) {
             $enrollment->load('subscription');
@@ -165,6 +163,7 @@ class SubscriptionAccessService
             'can_finish_course' => $mode === 'full',
             'can_resubscribe' => $mode === 'completed_only' && $course->usesSubscriptionBilling(),
             'is_subscription_course' => $course->usesSubscriptionBilling(),
+            'staff_preview' => $course->isStaffPreviewer($user),
             'access_status' => $enrollment?->access_status?->value,
             'subscription_status' => $enrollment?->subscription?->status?->value,
         ];

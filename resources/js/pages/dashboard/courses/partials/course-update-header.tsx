@@ -52,6 +52,8 @@ const CourseUpdateHeader = () => {
    const { course, watchHistory, approvalStatus, launchNotificationCount = 0, hasUsExperiencePlans = false } = props;
    const statuses = props.statuses.filter((status) => status !== course.status);
    const { approve_able, validation_messages, counts } = approvalStatus;
+   const canStaffPreviewPlayer =
+      user.role === 'admin' || (user.role === 'instructor' && String(user.instructor_id) === String(course.instructor_id));
    const launchLabel = formatCourseLaunchDateTime(course);
 
    const { data, put, setData, processing, errors, reset } = useForm({
@@ -270,7 +272,7 @@ const CourseUpdateHeader = () => {
                   {button.course_player}
                </Link>
             </Button>
-         ) : approve_able ? (
+         ) : canStaffPreviewPlayer || approve_able ? (
             <Button onClick={() => router.post(route('player.init.watch-history'), { course_id: course.id })}>{button.course_player}</Button>
          ) : (
             <Button disabled>{button.course_player}</Button>

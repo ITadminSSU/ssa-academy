@@ -29,10 +29,11 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
 
    const dripContent = true;
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
    const isCompleted = completed.some((item) => item.type === 'quiz' && item.id == quiz.id);
    const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && watchHistory.current_watching_id == quiz.id;
    const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
-   const canAccess = subscriptionLocked ? isCompleted : isCompleted || isCurrentLesson || isNext;
+   const canAccess = subscriptionLocked ? isCompleted : staffPreview || isCompleted || isCurrentLesson || isNext;
 
    if (variant === 'simple') {
       const meta = quiz.duration ? `Quiz · ${quiz.duration}` : 'Quiz';

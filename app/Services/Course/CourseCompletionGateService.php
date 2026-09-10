@@ -123,6 +123,12 @@ class CourseCompletionGateService
         int|string|null $quizId = null,
         ?WatchHistory $watchHistory = null,
     ): bool {
+        $user = User::query()->find($userId);
+
+        if ($user && $course->isStaffPreviewer($user)) {
+            return true;
+        }
+
         if ($quizId && $this->hasPassedQuiz($userId, $quizId)) {
             return true;
         }
@@ -131,8 +137,6 @@ class CourseCompletionGateService
             ->where('course_id', $course->id)
             ->where('user_id', $userId)
             ->first();
-
-        $user = User::query()->find($userId);
 
         if ($user) {
             $mode = $this->subscriptionAccess->getAccessMode($user, $course);
@@ -170,13 +174,17 @@ class CourseCompletionGateService
 
     public function canAccessLesson(Course $course, int $userId, int|string $lessonId, ?WatchHistory $watchHistory = null): bool
     {
+        $user = User::query()->find($userId);
+
+        if ($user && $course->isStaffPreviewer($user)) {
+            return true;
+        }
+
         $course->loadMissing(['sections.section_lessons', 'sections.section_quizzes']);
         $watchHistory ??= WatchHistory::query()
             ->where('course_id', $course->id)
             ->where('user_id', $userId)
             ->first();
-
-        $user = User::query()->find($userId);
 
         if ($user) {
             $mode = $this->subscriptionAccess->getAccessMode($user, $course);

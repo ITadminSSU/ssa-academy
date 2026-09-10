@@ -56,7 +56,11 @@ class PlayerController extends Controller
 
         $course = \App\Models\Course\Course::findOrFail($validated['course_id']);
 
-        if (!$course->isEnrollmentOpen() && !$course->canPreviewBeforeLaunch($user)) {
+        if (
+            !$course->isEnrollmentOpen()
+            && !$course->canPreviewBeforeLaunch($user)
+            && !$course->isStaffPreviewer($user)
+        ) {
             $message = $course->launch_at
                 ? 'This course launches on ' . $course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A') . '.'
                 : 'This course is coming soon.';
@@ -128,8 +132,13 @@ class PlayerController extends Controller
             $watch_history = $this->coursePlay->syncPassedQuizzes($watch_history, $user->id);
 
             $subscriptionAccess = $this->subscriptionAccess->toFrontendPayload($user, $course);
+            $staffPreview = $course->isStaffPreviewer($user);
 
-            if ($type === 'quiz' && !$this->courseCompletionGateService->canAccessQuiz($course, $user->id, $lesson_id, $watch_history)) {
+            if (
+                !$staffPreview
+                && $type === 'quiz'
+                && !$this->courseCompletionGateService->canAccessQuiz($course, $user->id, $lesson_id, $watch_history)
+            ) {
                 $errorMessage = $subscriptionAccess['mode'] === 'completed_only' && $course->usesSubscriptionBilling()
                     ? 'This quiz is locked. Resubscribe to continue learning.'
                     : ($subscriptionAccess['mode'] === 'completed_only'
@@ -141,7 +150,11 @@ class PlayerController extends Controller
                     ->with('error', $errorMessage);
             }
 
-            if ($type === 'lesson' && !$this->courseCompletionGateService->canAccessLesson($course, $user->id, $lesson_id, $watch_history)) {
+            if (
+                !$staffPreview
+                && $type === 'lesson'
+                && !$this->courseCompletionGateService->canAccessLesson($course, $user->id, $lesson_id, $watch_history)
+            ) {
                 $errorMessage = $subscriptionAccess['mode'] === 'completed_only' && $course->usesSubscriptionBilling()
                     ? 'This lesson is locked. Resubscribe to continue learning.'
                     : ($subscriptionAccess['mode'] === 'completed_only'
@@ -166,6 +179,10 @@ class PlayerController extends Controller
             $watching = $this->coursePlay->getWatchingLesson($lesson_id, $type);
 
             if (!$watching) {
+                if ($staffPreview) {
+                    return back()->with('error', 'Lesson not found.');
+                }
+
                 return redirect()
                     ->route('student.course.show', ['id' => $course->id, 'tab' => 'modules'])
                     ->with('error', 'Lesson not found.');

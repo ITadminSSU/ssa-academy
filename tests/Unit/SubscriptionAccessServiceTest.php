@@ -112,6 +112,22 @@ it('keeps full access during past_due grace on suspended enrollment rows', funct
     expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('full');
 });
 
+it('flags staff_preview for admin and the course instructor without enrollment', function () {
+    $course = makeCourse();
+    $admin = makeUser(['role' => 'admin']);
+    $instructor = makeUser(['role' => 'instructor', 'instructor_id' => 10]);
+    $otherInstructor = makeUser(['role' => 'instructor', 'instructor_id' => 99]);
+    $student = makeUser();
+
+    expect($course->isStaffPreviewer($admin))->toBeTrue();
+    expect($course->isStaffPreviewer($instructor))->toBeTrue();
+    expect($course->isStaffPreviewer($otherInstructor))->toBeFalse();
+    expect($course->isStaffPreviewer($student))->toBeFalse();
+
+    expect($this->service->toFrontendPayload($admin, $course, null)['staff_preview'])->toBeTrue();
+    expect($this->service->toFrontendPayload($instructor, $course, null)['staff_preview'])->toBeTrue();
+});
+
 it('returns none when there is no enrollment', function () {
     $user = makeUser();
     $course = makeCourse();

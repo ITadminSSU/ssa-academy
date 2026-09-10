@@ -49,14 +49,15 @@ const QuizIcon = ({ quiz, latestSubmission }: { quiz: SectionQuiz; latestSubmiss
 
 const QuizStatus = ({ quiz, completed }: Props) => {
    const { props } = usePage<StudentCourseProps | CoursePlayerProps>();
-   const { watchHistory, courseGates, translate } = props;
+   const { watchHistory, courseGates, translate, subscriptionAccess } = props;
    const { frontend } = translate;
 
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
    const isCompleted = completed.some((item) => item.type === 'quiz' && item.id == quiz.id);
    const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && watchHistory.current_watching_id == quiz.id;
    const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
    const quizzesUnlocked = courseGates?.quizzes_unlocked ?? true;
-   const canAccessQuiz = (isCompleted || isCurrentLesson || isNext) && quizzesUnlocked;
+   const canAccessQuiz = staffPreview || ((isCompleted || isCurrentLesson || isNext) && quizzesUnlocked);
 
    const latestSubmission =
       quiz.quiz_submissions && quiz.quiz_submissions.length > 0 ? quiz.quiz_submissions[quiz.quiz_submissions.length - 1] : null;
@@ -64,7 +65,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
    const totalMarks = latestSubmission?.total_marks || 0;
    const hasAttempted = latestSubmission !== null;
 
-   if (!quizzesUnlocked && !hasAttempted) {
+   if (!staffPreview && !quizzesUnlocked && !hasAttempted) {
       return (
          <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="flex flex-1 items-center gap-3 text-muted-foreground">

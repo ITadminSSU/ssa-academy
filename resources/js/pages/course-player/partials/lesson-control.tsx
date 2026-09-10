@@ -11,12 +11,13 @@ const LessonControl = ({ className }: { className?: string }) => {
    const { watchHistory } = useCoursePlayerProgress();
    const completed = getCompletedContents(watchHistory);
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
 
    const isCurrentComplete = completed.some(
       (item) => item.type === watchHistory.current_watching_type && String(item.id) === String(watchHistory.current_watching_id),
    );
 
-   const canGoNext = Boolean(watchHistory.next_watching_id) && isCurrentComplete && !subscriptionLocked;
+   const canGoNext = Boolean(watchHistory.next_watching_id) && (staffPreview || isCurrentComplete) && !subscriptionLocked;
 
    return (
       <>

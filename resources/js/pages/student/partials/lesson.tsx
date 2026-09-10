@@ -21,12 +21,14 @@ const LessonWrapper = ({ lesson, children }: { lesson: SectionLesson; children: 
 
 const Lesson = ({ lesson, completed }: Props) => {
    const { props } = usePage<StudentCourseProps>();
-   const { course, watchHistory } = props;
+   const { watchHistory, course, subscriptionAccess } = props;
 
    const dripContent = Boolean(course.drip_content);
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
    const isNext = lesson.id == watchHistory.next_watching_id;
    const isCompleted = completed.some((item) => item.type === 'lesson' && item.id == lesson.id);
    const isCurrentLesson = watchHistory.current_watching_id == lesson.id;
+   const canAccess = staffPreview || isCompleted || isCurrentLesson || isNext;
 
    return !dripContent ? (
       <LessonWrapper lesson={lesson}>
@@ -48,7 +50,7 @@ const Lesson = ({ lesson, completed }: Props) => {
       </LessonWrapper>
    ) : (
       <>
-         {isCompleted || isCurrentLesson || isNext ? (
+         {canAccess ? (
             <LessonWrapper lesson={lesson}>
                <Link
                   className={cn(

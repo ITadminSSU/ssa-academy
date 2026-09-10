@@ -187,6 +187,23 @@ class Course extends Model implements HasMedia
         return true;
     }
 
+    public function isStaffPreviewer(?User $user = null): bool
+    {
+        $user ??= Auth::user();
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $user->role === 'instructor'
+            && $user->instructor_id !== null
+            && (int) $user->instructor_id === (int) $this->instructor_id;
+    }
+
     public function canPreviewBeforeLaunch(?User $user = null): bool
     {
         $user ??= Auth::user();
@@ -203,12 +220,7 @@ class Course extends Model implements HasMedia
             return false;
         }
 
-        if ($user->role === 'admin') {
-            return true;
-        }
-
-        return $user->role === 'instructor'
-            && (int) $user->instructor_id === (int) $this->instructor_id;
+        return $this->isStaffPreviewer($user);
     }
 
     public function getCanPreviewBeforeLaunchAttribute(): bool

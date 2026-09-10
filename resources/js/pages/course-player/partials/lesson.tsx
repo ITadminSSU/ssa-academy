@@ -48,10 +48,11 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
 
    const dripContent = true;
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
    const isNext = lesson.id == watchHistory.next_watching_id;
    const isCompleted = completed.some((item) => item.type === 'lesson' && item.id == lesson.id);
    const isCurrentLesson = watchHistory.current_watching_id == lesson.id && watchHistory.current_watching_type === 'lesson';
-   const canAccess = subscriptionLocked ? isCompleted : isCompleted || isCurrentLesson || isNext;
+   const canAccess = subscriptionLocked ? isCompleted : staffPreview || isCompleted || isCurrentLesson || isNext;
 
    if (variant === 'simple') {
       const content = (

@@ -447,6 +447,16 @@ class StudentService extends MediaService
 
    public function getEnrolledCourse(string $id, User $user): Course
    {
+      $course = Course::with(['instructor:id,user_id', 'instructor.user:id,name,photo'])->find($id);
+
+      if (!$course) {
+         throw new \Exception('Course not found');
+      }
+
+      if ($course->isStaffPreviewer($user)) {
+         return $course;
+      }
+
       $enrollment = CourseEnrollment::where('user_id', $user->id)
          ->where('course_id', $id)
          ->first();
@@ -455,7 +465,7 @@ class StudentService extends MediaService
          throw new \Exception('You are not enrolled in this course');
       }
 
-      return Course::with(['instructor:id,user_id', 'instructor.user:id,name,photo'])->find($id);
+      return $course;
    }
 
    public function getCourseModules(string $course_id)

@@ -22,12 +22,14 @@ const QuizIcon = ({ quiz }: { quiz: SectionQuiz }) => {
 
 const Quiz = ({ quiz, completed }: Props) => {
    const { props } = usePage<CoursePlayerProps>();
-   const { course, watchHistory } = props;
+   const { course, watchHistory, subscriptionAccess } = props;
 
    const dripContent = Boolean(course.drip_content);
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
    const isCompleted = completed.some((item) => item.type === 'quiz' && item.id == quiz.id);
    const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && watchHistory.current_watching_id == quiz.id;
    const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
+   const canAccess = staffPreview || isCompleted || isCurrentLesson || isNext;
 
    return !dripContent ? (
       <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
@@ -51,7 +53,7 @@ const Quiz = ({ quiz, completed }: Props) => {
       </div>
    ) : (
       <>
-         {isCompleted || isCurrentLesson || isNext ? (
+         {canAccess ? (
             <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
                <Link
                   className={cn(

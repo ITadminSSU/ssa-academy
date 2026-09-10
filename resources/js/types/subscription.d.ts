@@ -11,6 +11,7 @@ interface SubscriptionAccess {
    can_finish_course: boolean;
    can_resubscribe: boolean;
    is_subscription_course: boolean;
+   staff_preview?: boolean;
    access_status?: EnrollmentAccessStatus | null;
    subscription_status?: SubscriptionStatus | null;
 }

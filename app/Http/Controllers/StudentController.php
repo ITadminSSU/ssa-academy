@@ -158,7 +158,7 @@ class StudentController extends Controller
         $courseGates = $this->courseCompletionGateService->getGateStatus($course, $user->id, $completion, $watchHistory);
         $subscriptionAccess = $this->subscriptionAccess->toFrontendPayload($user, $course);
 
-        if ($tab === 'quizzes' && !$courseGates['quizzes_unlocked']) {
+        if ($tab === 'quizzes' && !$courseGates['quizzes_unlocked'] && !$course->isStaffPreviewer($user)) {
             return redirect()
                 ->route('student.course.show', ['id' => $id, 'tab' => 'modules'])
                 ->with('error', 'Complete all video lessons before accessing quizzes.');
