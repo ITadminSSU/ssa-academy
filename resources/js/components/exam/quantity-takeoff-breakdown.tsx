@@ -88,17 +88,27 @@ const QuantityTakeoffBreakdown = ({
          </div>
 
          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
+               <colgroup>
+                  <col className="w-12" />
+                  <col />
+                  {isTrainer && <col className="w-28" />}
+                  <col className="w-32" />
+                  <col className="w-20" />
+                  {showAllowedBand && <col className="w-32" />}
+                  <col className="w-24" />
+                  <col className="w-36" />
+               </colgroup>
                <thead className="bg-muted/60">
                   <tr>
                      <th className="p-3 text-left">#</th>
                      <th className="p-3 text-left">Item</th>
                      {isTrainer && <th className="p-3 text-right whitespace-nowrap">Expected</th>}
                      <th className="p-3 text-right whitespace-nowrap">Submitted</th>
-                     <th className="p-3 text-left">Unit</th>
+                     <th className="p-3 text-center whitespace-nowrap">Unit</th>
                      {showAllowedBand && <th className="p-3 text-right whitespace-nowrap">± Tolerance</th>}
                      <th className="p-3 text-right whitespace-nowrap">Variance</th>
-                     <th className="p-3 text-left whitespace-nowrap">Result</th>
+                     <th className="p-3 text-center whitespace-nowrap">Result</th>
                   </tr>
                </thead>
                <tbody>
@@ -111,7 +121,7 @@ const QuantityTakeoffBreakdown = ({
                            className={cn('border-t align-middle', lineCorrect ? 'bg-green-500/5' : 'bg-red-500/5')}
                         >
                            <td className="p-3 text-left text-muted-foreground">{index + 1}</td>
-                           <td className="max-w-md p-3 text-left whitespace-normal">
+                           <td className="p-3 text-left whitespace-normal break-words">
                               <div className="space-y-1">
                                  <span>{line.item}</span>
                                  {line.manual_override !== null && line.manual_override !== undefined && (
@@ -129,7 +139,7 @@ const QuantityTakeoffBreakdown = ({
                            <td className={cn('p-3 text-right font-medium tabular-nums whitespace-nowrap', !lineCorrect && 'text-red-600')}>
                               {formatQty(line.submitted_qty)}
                            </td>
-                           <td className="p-3 text-left">
+                           <td className="p-3 text-center">
                               <Badge variant="outline">{line.unit || '—'}</Badge>
                            </td>
                            {showAllowedBand && (
@@ -141,14 +151,14 @@ const QuantityTakeoffBreakdown = ({
                            <td className={cn('p-3 text-right font-medium tabular-nums whitespace-nowrap', !lineCorrect && 'text-red-600')}>
                               {formatVariance(line.submitted_qty, line.expected_qty)}
                            </td>
-                           <td className="p-3 text-left whitespace-nowrap">
+                           <td className="p-3 text-center whitespace-nowrap">
                               {lineCorrect ? (
-                                 <span className="inline-flex items-center gap-1 font-medium text-green-600">
+                                 <span className="inline-flex items-center justify-center gap-1 font-medium text-green-600">
                                     <Check className="h-4 w-4 shrink-0" />
                                     Correct
                                  </span>
                               ) : (
-                                 <span className="inline-flex items-center gap-1 font-medium text-red-600">
+                                 <span className="inline-flex items-center justify-center gap-1 font-medium text-red-600">
                                     <X className="h-4 w-4 shrink-0" />
                                     Incorrect
                                  </span>
