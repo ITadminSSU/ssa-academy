@@ -203,9 +203,12 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                      ) : isUpfrontSubscription ? (
                         catalogPromo?.kind === 'upfront' ? (
                            <div className="flex min-w-0 flex-col gap-0.5 normal-case">
-                              <span className="text-muted-foreground text-sm font-medium line-through">
-                                 {symbol}
-                                 {formatOfferAmount(catalogPromo.list_price)}
+                              <span className="text-muted-foreground text-sm font-medium">
+                                 <span className="line-through">
+                                    {symbol}
+                                    {formatOfferAmount(catalogPromo.list_price)}
+                                 </span>{' '}
+                                 course price
                               </span>
                               <span>
                                  {symbol}
@@ -231,9 +234,12 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                         )
                      ) : catalogPromo?.kind === 'one_time' ? (
                         <div className="flex min-w-0 flex-col gap-0.5 normal-case">
-                           <span className="text-muted-foreground text-sm font-medium line-through">
-                              {symbol}
-                              {formatOfferAmount(catalogPromo.list_price)}
+                           <span className="text-muted-foreground text-sm font-medium">
+                              <span className="line-through">
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.list_price)}
+                              </span>{' '}
+                              course price
                            </span>
                            <span>
                               {symbol}

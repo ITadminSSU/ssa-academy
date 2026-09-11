@@ -202,14 +202,14 @@ const CatalogCouponPromoFields = ({
                ) : null}
                {variant === 'one_time' && off > 0 && price > 0 ? (
                   <p className="text-muted-foreground text-xs">
-                     Card preview: {catalogPromoMoney(priceWithCoupon)} with coupon. No-code price stays{' '}
-                     {catalogPromoMoney(price)}.
+                     Card preview: {catalogPromoMoney(price)} course price, {catalogPromoMoney(priceWithCoupon)} with
+                     coupon.
                   </p>
                ) : null}
                {variant === 'upfront' && off > 0 && price > 0 ? (
                   <p className="text-muted-foreground text-xs">
-                     Card preview: {catalogPromoMoney(priceWithCoupon)} with coupon + {catalogPromoMoney(monthly)}/mo.
-                     No-code enrollment stays {catalogPromoMoney(price)}.
+                     Card preview: {catalogPromoMoney(price)} course price, {catalogPromoMoney(priceWithCoupon)} with
+                     coupon + {catalogPromoMoney(monthly)}/mo.
                   </p>
                ) : null}
             </>
