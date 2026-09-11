@@ -359,7 +359,8 @@ const Index = (props: Props) => {
 
                   <div>
                      <Label htmlFor="thumbnail">{input.thumbnail}</Label>
-                     <Input type="file" name="thumbnail" onChange={(e) => onHandleChange(e, setData)} />
+                     <Input type="file" name="thumbnail" accept="image/*" onChange={(e) => onHandleChange(e, setData)} />
+                     <p className="text-muted-foreground mt-1 text-xs">Maximum 100 MB.</p>
                      <InputError message={errors.thumbnail} />
                   </div>
                </div>

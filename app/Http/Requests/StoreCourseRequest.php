@@ -67,7 +67,7 @@ class StoreCourseRequest extends FormRequest
             'expiry_type' => "required|string|in:$lifetime,$limited",
             'expiry_duration' => "nullable|string|required_if:expiry_type,$limited",
             'training_hours' => 'nullable|string|max:50',
-            'thumbnail' => 'nullable|image|max:2048',
+            'thumbnail' => 'nullable|image|max:102400',
             'created_from' => 'nullable|string|in:web,api',
             'instructor_id' => ['required', Rule::exists(Instructor::class, 'id')],
             'course_category_id' => ['required', Rule::exists(CourseCategory::class, 'id')],

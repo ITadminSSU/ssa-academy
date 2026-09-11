@@ -91,7 +91,8 @@ const Media = () => {
          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
                <Label>{dashboard.thumbnail}</Label>
-               <Input type="file" name="thumbnail" onChange={(e) => onHandleChange(e, setData, setThumbnailBanner)} />
+               <Input type="file" name="thumbnail" accept="image/*" onChange={(e) => onHandleChange(e, setData, setThumbnailBanner)} />
+               <p className="text-muted-foreground mt-1 text-xs">Maximum 100 MB.</p>
                <InputError message={errors.thumbnail} />
 
                <img src={thumbnailBanner || '/assets/images/blank-image.jpg'} alt="" className="mt-2 w-full max-w-sm rounded-md" />
@@ -99,7 +100,8 @@ const Media = () => {
 
             <div>
                <Label>{dashboard.banner}</Label>
-               <Input type="file" name="banner" onChange={(e) => onHandleChange(e, setData, setPreviewBanner)} />
+               <Input type="file" name="banner" accept="image/*" onChange={(e) => onHandleChange(e, setData, setPreviewBanner)} />
+               <p className="text-muted-foreground mt-1 text-xs">Maximum 100 MB.</p>
                <InputError message={errors.banner} />
 
                <img src={previewBanner || '/assets/images/blank-image.jpg'} alt="" className="mt-2 w-full max-w-sm rounded-md" />

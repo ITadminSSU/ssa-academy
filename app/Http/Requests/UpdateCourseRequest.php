@@ -247,8 +247,8 @@ class UpdateCourseRequest extends FormRequest
     private function mediaTabRules(): array
     {
         return [
-            'thumbnail' => 'nullable|image|max:2048',
-            'banner' => 'nullable|image|max:2048',
+            'thumbnail' => 'nullable|image|max:102400',
+            'banner' => 'nullable|image|max:102400',
             'preview_type' => 'nullable|string|in:video_url,video',
             'preview' => 'nullable|string',
         ];
