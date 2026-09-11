@@ -27,6 +27,16 @@ const ContentList = ({ completedContents, courseCompletion }: ContentListProps) 
       router.post(route('course.player.finish', { watch_history: watchHistory.id }));
    };
 
+   const currentSectionIds = (course.sections ?? [])
+      .filter((section) => {
+         if (watchHistory.current_watching_type === 'quiz') {
+            return section.section_quizzes?.some((quiz) => String(quiz.id) === String(watchHistory.current_watching_id));
+         }
+
+         return section.section_lessons?.some((lesson) => String(lesson.id) === String(watchHistory.current_watching_id));
+      })
+      .map((section) => section.id);
+
    return (
       <div className="ssu-curriculum-panel relative flex h-[calc(100vh-4rem)] flex-col">
          <div className="border-border shrink-0 border-b px-4">
@@ -46,6 +56,7 @@ const ContentList = ({ completedContents, courseCompletion }: ContentListProps) 
          <ScrollArea className="min-h-0 flex-1">
             <CurriculumSectionList
                sections={course.sections ?? []}
+               defaultOpenSectionIds={currentSectionIds}
                renderLesson={(lesson, index) => (
                   <Lesson key={lesson.id} lesson={lesson} completed={completedContents} variant="simple" index={index} />
                )}

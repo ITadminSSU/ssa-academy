@@ -1,3 +1,4 @@
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { mergeCurriculumItems } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
@@ -14,6 +15,7 @@ interface CurriculumSectionListProps {
    className?: string;
    includeLessons?: boolean;
    includeQuizzes?: boolean;
+   defaultOpenSectionIds?: Array<string | number>;
    renderLesson?: (lesson: SectionLesson, index: number) => ReactNode;
    renderQuiz?: (quiz: SectionQuiz, index: number) => ReactNode;
    emptyMessage?: string;
@@ -24,6 +26,7 @@ const CurriculumSectionList = ({
    className,
    includeLessons = true,
    includeQuizzes = true,
+   defaultOpenSectionIds,
    renderLesson,
    renderQuiz,
    emptyMessage = 'There is no section added',
@@ -33,42 +36,44 @@ const CurriculumSectionList = ({
    }
 
    let itemNumber = 0;
+   const defaultOpen = (defaultOpenSectionIds?.length ? defaultOpenSectionIds : [sections[0].id]).map(String);
 
    return (
-      <div className={cn('ssu-curriculum-panel', className)}>
+      <Accordion type="multiple" defaultValue={defaultOpen} className={cn('ssu-curriculum-panel', className)}>
          {sections.map((section, sectionIndex) => (
-            <div key={section.id}>
-               <p className="text-muted-foreground px-4 pt-4 pb-2 text-xs leading-snug">
+            <AccordionItem key={section.id} value={String(section.id)} className="border-border/60">
+               <AccordionTrigger className="text-muted-foreground hover:no-underline px-4 py-3 text-xs font-normal leading-snug">
                   Section {sectionIndex + 1} — {section.title}
-               </p>
+               </AccordionTrigger>
+               <AccordionContent className="pb-2 pt-0">
+                  {mergeCurriculumItems(section).map((item) => {
+                     if (item.kind === 'lesson') {
+                        if (!includeLessons) {
+                           return null;
+                        }
 
-               {mergeCurriculumItems(section).map((item) => {
-                  if (item.kind === 'lesson') {
-                     if (!includeLessons) {
+                        itemNumber += 1;
+                        return renderLesson?.(item.lesson, itemNumber);
+                     }
+
+                     if (!includeQuizzes) {
                         return null;
                      }
 
                      itemNumber += 1;
-                     return renderLesson?.(item.lesson, itemNumber);
-                  }
+                     return renderQuiz?.(item.quiz, itemNumber);
+                  })}
 
-                  if (!includeQuizzes) {
-                     return null;
-                  }
-
-                  itemNumber += 1;
-                  return renderQuiz?.(item.quiz, itemNumber);
-               })}
-
-               {includeLessons &&
-                  includeQuizzes &&
-                  (section.section_lessons?.length ?? 0) === 0 &&
-                  (section.section_quizzes?.length ?? 0) === 0 && (
-                     <p className="text-muted-foreground px-4 pb-3 text-sm">There is no lesson added</p>
-                  )}
-            </div>
+                  {includeLessons &&
+                     includeQuizzes &&
+                     (section.section_lessons?.length ?? 0) === 0 &&
+                     (section.section_quizzes?.length ?? 0) === 0 && (
+                        <p className="text-muted-foreground px-4 pb-3 text-sm">There is no lesson added</p>
+                     )}
+               </AccordionContent>
+            </AccordionItem>
          ))}
-      </div>
+      </Accordion>
    );
 };
 
