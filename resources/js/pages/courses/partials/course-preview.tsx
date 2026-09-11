@@ -148,12 +148,9 @@ const CoursePreview = () => {
                   )
                ) : catalogPromo?.kind === 'one_time' ? (
                   <>
-                     <span className="text-muted-foreground text-xl font-medium">
-                        <span className="line-through">
-                           {symbol}
-                           {formatOfferAmount(catalogPromo.list_price)}
-                        </span>{' '}
-                        course price
+                     <span className="text-muted-foreground text-xl font-medium line-through">
+                        {symbol}
+                        {formatOfferAmount(catalogPromo.list_price)} course price
                      </span>
                      <span className="mt-1 block">
                         {symbol}
