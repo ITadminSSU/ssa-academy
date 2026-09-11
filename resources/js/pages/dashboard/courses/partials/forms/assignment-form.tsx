@@ -242,7 +242,7 @@ const AssignmentForm = ({ title, assignment, handler }: Props) => {
                               }}
                            />
                            <InputError message={errors.sample_project_path || resourceError} />
-                           <p className="text-muted-foreground text-xs">Formats: PDF, DOC, DOCX, PNG, JPEG, ZIP (max 20 MB)</p>
+                           <p className="text-muted-foreground text-xs">Formats: PDF, DOC, DOCX, PNG, JPEG, ZIP (max 256 MB)</p>
                         </div>
                      )}
                   </div>

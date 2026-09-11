@@ -12,6 +12,8 @@ class S3MultipartUploadService
 {
     public const MIN_PART_BYTES = 5 * 1024 * 1024;
 
+    public const TARGET_PART_BYTES = 256 * 1024 * 1024;
+
     protected string $bucket;
 
     public function __construct()

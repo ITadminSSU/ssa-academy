@@ -31,7 +31,7 @@ export interface UploadedFileData {
 const FILETYPE_MAX_BYTES: Record<string, number> = {
    audio: 100 * 1024 * 1024,
    video: 1024 * 1024 * 1024,
-   document: 20 * 1024 * 1024,
+   document: 256 * 1024 * 1024,
    image: 2 * 1024 * 1024,
    zip: 256 * 1024 * 1024,
 };
@@ -73,7 +73,8 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const abortControllerRef = useRef<AbortController | null>(null);
    const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
    // Cloudflare R2/S3 require every multipart part except the last to be >= 5MB.
-   const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024;
+   const MIN_PART_BYTES = 5 * 1024 * 1024;
+   const DEFAULT_CHUNK_SIZE = 256 * 1024 * 1024;
 
    const formatUploadError = (error: any, fallback: string): string => {
       if (error?.response?.status === 413) {
@@ -164,7 +165,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       const mimetype = activeFile.type || mimeTypeFromFilename(activeFile.name);
 
       try {
-         // Always use R2/S3-safe 5MB parts (server also returns chunk_size to confirm).
+         // Use 256MB parts (server also returns chunk_size). R2 still requires >= 5MB except the last part.
          const chunkSize = DEFAULT_CHUNK_SIZE;
          const totalChunks = Math.ceil(activeFile.size / chunkSize);
 
@@ -220,7 +221,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
 
       const response = await axios.post(`/dashboard/uploads/chunked/${uploadId}/chunk`, formData, {
          signal,
-         timeout: 120000,
+         timeout: 900000,
          maxContentLength: Infinity,
          maxBodyLength: Infinity,
          headers: {
@@ -307,7 +308,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
             const partNumber = chunkIndex + 1;
             const isLast = partNumber === totalChunks;
 
-            if (!isLast && chunk.size < DEFAULT_CHUNK_SIZE) {
+            if (!isLast && chunk.size < MIN_PART_BYTES) {
                throw new Error('Upload part is smaller than the 5MB minimum required by Cloudflare R2.');
             }
 

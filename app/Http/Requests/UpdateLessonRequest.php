@@ -60,7 +60,7 @@ class UpdateLessonRequest extends FormRequest
             'activity_total_mark' => 'nullable|integer|min:1|required_if:requires_submission,true',
             'activity_pass_mark' => 'nullable|integer|min:0|required_if:requires_submission,true',
             'activity_retake' => 'nullable|integer|min:1',
-            'attachment' => 'nullable|file|max:20480', // Max 20MB
+            'attachment' => 'nullable|file|max:262144', // Max 256MB
             'embed_source' => [
                 'nullable',
                 'string',

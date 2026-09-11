@@ -246,7 +246,7 @@ const QuantityTakeoff = () => {
                      onError={() => setPendingAnswerKey(null)}
                      onCancelUpload={() => setPendingAnswerKey(null)}
                   />
-                  <p className="text-xs text-muted-foreground">Upload .xlsx answer key (max 20MB). Wait for “Completed upload” before importing.</p>
+                  <p className="text-xs text-muted-foreground">Upload .xlsx answer key (max 256MB). Wait for “Completed upload” before importing.</p>
 
                   {pendingAnswerKey && (
                      <p className="flex items-center gap-2 text-sm text-green-600">
@@ -320,7 +320,7 @@ const QuantityTakeoff = () => {
                   onError={() => setPendingStudentTemplate(null)}
                   onCancelUpload={() => setPendingStudentTemplate(null)}
                />
-               <p className="text-xs text-muted-foreground">Upload blank .xlsx template (max 20MB). Wait for “Completed upload” before saving.</p>
+               <p className="text-xs text-muted-foreground">Upload blank .xlsx template (max 256MB). Wait for “Completed upload” before saving.</p>
 
                {pendingStudentTemplate && (
                   <p className="flex items-center gap-2 text-sm text-green-600">

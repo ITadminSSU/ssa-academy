@@ -250,7 +250,7 @@ const QuantityTakeoffAttempt = ({ attempt, lineItems, gradingRules, templateDown
                            onError={() => setSupportingFile(null)}
                            onCancelUpload={() => setSupportingFile(null)}
                         />
-                        <p className="text-xs text-muted-foreground">Accepted: .xlsx or .pdf (max 20MB)</p>
+                        <p className="text-xs text-muted-foreground">Accepted: .xlsx or .pdf (max 256MB)</p>
                         {supportingFile && (
                            <p className="flex items-center gap-2 text-sm text-green-600">
                               <CheckCircle2 className="h-4 w-4" />
