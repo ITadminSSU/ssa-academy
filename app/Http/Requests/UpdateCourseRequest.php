@@ -59,6 +59,9 @@ class UpdateCourseRequest extends FormRequest
         $isOneTime = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME->value;
         $needsMonthlyPrice = $isMonthlyOnly || $isUpfrontSubscription || $launchOfferEnabled;
         $needsUpfrontPrice = $isOneTime || $isUpfrontSubscription;
+        $catalogPromoAllowed = ! $isFree && ($isOneTime || $isUpfrontSubscription || $launchOfferEnabled);
+        $catalogPromoOn = $catalogPromoAllowed
+            && filter_var($this->input('catalog_coupon_promo'), FILTER_VALIDATE_BOOLEAN);
 
         $this->merge([
             'pricing_type' => $pricingType,
@@ -106,13 +109,10 @@ class UpdateCourseRequest extends FormRequest
             'launch_full_upfront_price' => $launchOfferEnabled && $this->filled('launch_full_upfront_price')
                 ? (float) $this->input('launch_full_upfront_price')
                 : null,
-            'catalog_coupon_promo' => $launchOfferEnabled
-                && filter_var($this->input('catalog_coupon_promo'), FILTER_VALIDATE_BOOLEAN),
-            'catalog_coupon_off_remaining' => $launchOfferEnabled
-                && filter_var($this->input('catalog_coupon_promo'), FILTER_VALIDATE_BOOLEAN)
-                && $this->filled('catalog_coupon_off_remaining')
-                    ? (float) $this->input('catalog_coupon_off_remaining')
-                    : null,
+            'catalog_coupon_promo' => $catalogPromoOn,
+            'catalog_coupon_off_remaining' => $catalogPromoOn && $this->filled('catalog_coupon_off_remaining')
+                ? (float) $this->input('catalog_coupon_off_remaining')
+                : null,
         ]);
     }
 
@@ -143,6 +143,8 @@ class UpdateCourseRequest extends FormRequest
             'launch_at.required_if' => 'Launch date is required for Coming Soon courses.',
             'price.required' => 'Please enter a course price.',
             'subscription_price.required' => 'Please enter a monthly subscription price.',
+            'catalog_coupon_off_remaining.lt' => 'The coupon amount must be less than the course price.',
+            'catalog_coupon_off_remaining.lte' => 'The coupon amount cannot be more than the remaining balance.',
         ];
     }
 
@@ -235,8 +237,9 @@ class UpdateCourseRequest extends FormRequest
                 'nullable',
                 'numeric',
                 'min:0.01',
-                'lte:launch_balance_amount',
                 Rule::requiredIf(fn () => (bool) $this->boolean('catalog_coupon_promo')),
+                Rule::when($launchOfferEnabled, ['lte:launch_balance_amount']),
+                Rule::when($isOneTime || $isUpfrontSubscription, ['lt:price']),
             ],
         ];
     }

@@ -60,6 +60,14 @@ const timezoneHint = (timezone?: string) => {
    return timezone.replace(/_/g, ' ');
 };
 
+type CatalogCouponVariant = 'pre_register' | 'one_time' | 'upfront';
+
+const catalogPromoMoney = (value: number) => {
+   const rounded = Math.round(value * 100) / 100;
+
+   return Number.isInteger(rounded) ? `$${rounded}` : `$${rounded.toFixed(2)}`;
+};
+
 const catalogPromoPreview = (
    deposit: string | number,
    remaining: string | number,
@@ -100,6 +108,7 @@ const CatalogCouponPromoFields = ({
    data,
    setData,
    errors,
+   variant = 'pre_register',
 }: {
    data: {
       catalog_coupon_promo: boolean;
@@ -108,9 +117,13 @@ const CatalogCouponPromoFields = ({
       launch_balance_amount: string | number;
       launch_full_upfront_price: string | number;
       launch_offer_ends_at: string;
+      price: string | number;
+      subscription_price: string | number;
+      discount?: boolean;
    };
    setData: (key: string, value: unknown) => void;
    errors: Record<string, string | undefined>;
+   variant?: CatalogCouponVariant;
 }) => {
    const preview = catalogPromoPreview(
       data.launch_deposit_amount,
@@ -119,19 +132,42 @@ const CatalogCouponPromoFields = ({
       data.launch_full_upfront_price,
    );
    const windowLabel = formatLocalDateLabel(data.launch_offer_ends_at);
+   const price = Number(data.price) || 0;
+   const monthly = Number(data.subscription_price) || 0;
+   const off = Number(data.catalog_coupon_off_remaining) || 0;
+   const priceWithCoupon = Math.max(0, Math.round((price - off) * 100) / 100);
+   const switchId = `catalog_coupon_promo_${variant}`;
+   const copy =
+      variant === 'one_time'
+         ? {
+              help: 'Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from Coupons. Taken off the course price on the catalog card.',
+              amountLabel: 'Amount off price (display)',
+              amountHelp:
+                 'Taken off the listed price only. Keep the course price at the no-code amount. Create the actual codes under Coupons.',
+           }
+         : variant === 'upfront'
+           ? {
+                help: 'Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from Coupons. Taken off the enrollment price only, never the monthly.',
+                amountLabel: 'Amount off enrollment (display)',
+                amountHelp:
+                   'Taken off enrollment only. Never taken off monthly. Keep enrollment at the no-code amount. Create the actual codes under Coupons.',
+             }
+           : {
+                help: 'Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from Coupons. Never taken off the deposit. After pre-register end, the card shows the full upfront price.',
+                amountLabel: 'Amount off remaining (display)',
+                amountHelp:
+                   'Taken off remaining only. Keep remaining at the no-code amount. Create the actual codes under Coupons.',
+             };
 
    return (
       <div className="sm:col-span-2 space-y-3 rounded-md border bg-muted/20 p-3">
          <div className="flex items-start justify-between gap-4">
             <div>
-               <Label htmlFor="catalog_coupon_promo">Show coupon price on catalog card</Label>
-               <p className="text-muted-foreground mt-1 text-xs">
-                  Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from
-                  Coupons. Never taken off the deposit. After pre-register end, the card shows the full upfront price.
-               </p>
+               <Label htmlFor={switchId}>Show coupon price on catalog card</Label>
+               <p className="text-muted-foreground mt-1 text-xs">{copy.help}</p>
             </div>
             <Switch
-               id="catalog_coupon_promo"
+               id={switchId}
                checked={Boolean(data.catalog_coupon_promo)}
                onCheckedChange={(checked) => setData('catalog_coupon_promo', checked)}
             />
@@ -141,7 +177,7 @@ const CatalogCouponPromoFields = ({
          {data.catalog_coupon_promo ? (
             <>
                <div>
-                  <Label>Amount off remaining (display)</Label>
+                  <Label>{copy.amountLabel}</Label>
                   <Input
                      type="number"
                      min="0.01"
@@ -149,15 +185,31 @@ const CatalogCouponPromoFields = ({
                      value={String(data.catalog_coupon_off_remaining ?? '')}
                      onChange={(e) => setData('catalog_coupon_off_remaining', e.target.value)}
                   />
-                  <p className="text-muted-foreground mt-1 text-xs">
-                     Taken off remaining only. Keep remaining at the no-code amount. Create the actual codes under Coupons.
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">{copy.amountHelp}</p>
                   <InputError message={errors.catalog_coupon_off_remaining} />
                </div>
-               {preview.off > 0 ? (
+               {variant === 'one_time' && Boolean(data.discount) ? (
+                  <p className="text-muted-foreground text-xs">
+                     The discount checkbox is a real sale price. This coupon amount is advertising only. Avoid using both
+                     stories on the catalog card.
+                  </p>
+               ) : null}
+               {variant === 'pre_register' && preview.off > 0 ? (
                   <p className="text-muted-foreground text-xs">
                      Card preview: ${preview.totalWith} with coupon (${preview.deposit} + ${preview.remainingWith} remaining).
                      No-code remaining stays ${preview.remaining}. After {windowLabel ?? 'pre-register end'}: ${preview.full}.
+                  </p>
+               ) : null}
+               {variant === 'one_time' && off > 0 && price > 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                     Card preview: {catalogPromoMoney(priceWithCoupon)} with coupon. No-code price stays{' '}
+                     {catalogPromoMoney(price)}.
+                  </p>
+               ) : null}
+               {variant === 'upfront' && off > 0 && price > 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                     Card preview: {catalogPromoMoney(priceWithCoupon)} with coupon + {catalogPromoMoney(monthly)}/mo.
+                     No-code enrollment stays {catalogPromoMoney(price)}.
                   </p>
                ) : null}
             </>
@@ -253,9 +305,13 @@ const Pricing = () => {
    ]);
 
    transform((form) => {
+      const isPaidForm = form.pricing_type === paidValue;
       const isUpfront = form.billing_model === 'upfront_subscription';
       const isPreRegister = form.billing_model === 'pre_register_subscription';
       const launchEnabled = (isPreRegister || Boolean(form.launch_offer_enabled)) && !isUpfront;
+      const catalogPromoAllowed =
+         isPaidForm && (form.billing_model === 'one_time' || isUpfront || launchEnabled);
+      const catalogPromoOn = catalogPromoAllowed && Boolean(form.catalog_coupon_promo);
 
       return {
          ...form,
@@ -276,9 +332,8 @@ const Pricing = () => {
          launch_balance_amount: launchEnabled ? Number(form.launch_balance_amount) : null,
          launch_balance_grace_days: launchEnabled ? Number(form.launch_balance_grace_days || 5) : 5,
          launch_full_upfront_price: launchEnabled ? Number(form.launch_full_upfront_price) : null,
-         catalog_coupon_promo: launchEnabled && Boolean(form.catalog_coupon_promo),
-         catalog_coupon_off_remaining:
-            launchEnabled && Boolean(form.catalog_coupon_promo) ? Number(form.catalog_coupon_off_remaining) : null,
+         catalog_coupon_promo: catalogPromoOn,
+         catalog_coupon_off_remaining: catalogPromoOn ? Number(form.catalog_coupon_off_remaining) : null,
          launch_offer_starts_at: launchEnabled ? form.launch_offer_starts_at : null,
          launch_offer_ends_at: launchEnabled ? form.launch_offer_ends_at : null,
          launch_subscription_trial_ends_at: launchEnabled ? form.launch_subscription_trial_ends_at : null,
@@ -437,6 +492,10 @@ const Pricing = () => {
                                  ) : null}
                               </div>
                            ) : null}
+
+                           {isOneTime ? (
+                              <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="one_time" />
+                           ) : null}
                         </>
                      ) : null}
 
@@ -466,6 +525,10 @@ const Pricing = () => {
                               </p>
                               <InputError message={errors.subscription_price} />
                            </div>
+
+                           {isUpfrontSubscription ? (
+                              <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="upfront" />
+                           ) : null}
 
                            {!isUpfrontSubscription ? (
                               <>
@@ -561,7 +624,12 @@ const Pricing = () => {
                                                 </p>
                                                 <InputError message={errors.launch_balance_amount} />
                                              </div>
-                                             <CatalogCouponPromoFields data={data} setData={setData} errors={errors} />
+                                             <CatalogCouponPromoFields
+                                                data={data}
+                                                setData={setData}
+                                                errors={errors}
+                                                variant="pre_register"
+                                             />
                                              <div>
                                                 <Label>Grace days after launch</Label>
                                                 <Input
@@ -676,7 +744,12 @@ const Pricing = () => {
                                              </p>
                                              <InputError message={errors.launch_balance_amount} />
                                           </div>
-                                          <CatalogCouponPromoFields data={data} setData={setData} errors={errors} />
+                                          <CatalogCouponPromoFields
+                                             data={data}
+                                             setData={setData}
+                                             errors={errors}
+                                             variant="pre_register"
+                                          />
                                           <div>
                                              <Label>Grace days after launch</Label>
                                              <Input

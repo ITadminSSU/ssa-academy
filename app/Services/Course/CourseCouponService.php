@@ -2,6 +2,7 @@
 
 namespace App\Services\Course;
 
+use App\Enums\CourseBillingModel;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCoupon;
 use App\Services\Payment\LaunchOfferService;
@@ -214,10 +215,11 @@ class CourseCouponService
    }
 
    /**
-    * Coupon applies to remaining / full payment, never the deposit.
+    * Display-only catalog amounts. Never applied at checkout.
     *
     * @return array{
     *     advertised: bool,
+    *     kind: string,
     *     list_price: float,
     *     deposit_amount: float,
     *     balance_amount: float,
@@ -234,57 +236,11 @@ class CourseCouponService
    {
       $launchOffer = app(LaunchOfferService::class);
 
-      if (! $launchOffer->isConfigured($course) || $launchOffer->isFullPricePeriod($course)) {
-         return null;
+      if ($launchOffer->isConfigured($course) && ! $launchOffer->isFullPricePeriod($course)) {
+         return $this->launchWindowCatalogPromoFor($course, $coupon, $launchOffer);
       }
 
-      $deposit = $launchOffer->depositAmount($course);
-      $balance = $launchOffer->balanceAmount($course);
-      $list = $launchOffer->listPrice($course);
-      $fullUpfront = $launchOffer->fullUpfrontPrice($course);
-
-      if ($this->pricingCatalogPromoEnabled($course)) {
-         $amounts = $this->amountsForFixedOffRemaining(
-            $deposit,
-            $balance,
-            $fullUpfront,
-            (float) $course->catalog_coupon_off_remaining,
-         );
-      } else {
-         $coupon ??= $this->featuredCatalogCouponFor($course);
-
-         if (! $coupon) {
-            return null;
-         }
-
-         $balanceDiscount = $this->discountForAmount($coupon, $balance);
-         $upfrontDiscount = $this->discountForAmount($coupon, $fullUpfront);
-         $balanceWithCoupon = round(max(0, $balance - $balanceDiscount), 2);
-         $amounts = [
-            'balance_with_coupon' => $balanceWithCoupon,
-            'total_with_coupon' => round($deposit + $balanceWithCoupon, 2),
-            'full_upfront_with_coupon' => round(max(0, $fullUpfront - $upfrontDiscount), 2),
-            'discount_amount' => $balanceDiscount,
-         ];
-      }
-
-      if ($amounts['balance_with_coupon'] >= $balance - 0.009 && $amounts['full_upfront_with_coupon'] >= $fullUpfront - 0.009) {
-         return null;
-      }
-
-      return [
-         'advertised' => true,
-         'list_price' => round($list, 2),
-         'deposit_amount' => round($deposit, 2),
-         'balance_amount' => round($balance, 2),
-         'balance_with_coupon' => $amounts['balance_with_coupon'],
-         'total_with_coupon' => $amounts['total_with_coupon'],
-         'full_upfront_price' => round($fullUpfront, 2),
-         'full_upfront_with_coupon' => $amounts['full_upfront_with_coupon'],
-         'subscription_price' => round($launchOffer->subscriptionPrice($course), 2),
-         'discount_amount' => $amounts['discount_amount'],
-         'window_end' => $launchOffer->windowEnd($course)->toIso8601String(),
-      ];
+      return $this->pricedCatalogPromoFor($course);
    }
 
    public function featuredCatalogCouponFor(Course $course): ?CourseCoupon
@@ -371,9 +327,138 @@ class CourseCouponService
          ->update(['show_on_catalog' => false]);
    }
 
+   private function launchWindowCatalogPromoFor(Course $course, ?CourseCoupon $coupon, LaunchOfferService $launchOffer): ?array
+   {
+      $deposit = $launchOffer->depositAmount($course);
+      $balance = $launchOffer->balanceAmount($course);
+      $list = $launchOffer->listPrice($course);
+      $fullUpfront = $launchOffer->fullUpfrontPrice($course);
+
+      if ($this->pricingCatalogPromoEnabled($course)) {
+         $amounts = $this->amountsForFixedOffRemaining(
+            $deposit,
+            $balance,
+            $fullUpfront,
+            (float) $course->catalog_coupon_off_remaining,
+         );
+      } else {
+         $coupon ??= $this->featuredCatalogCouponFor($course);
+
+         if (! $coupon) {
+            return null;
+         }
+
+         $balanceDiscount = $this->discountForAmount($coupon, $balance);
+         $upfrontDiscount = $this->discountForAmount($coupon, $fullUpfront);
+         $balanceWithCoupon = round(max(0, $balance - $balanceDiscount), 2);
+         $amounts = [
+            'balance_with_coupon' => $balanceWithCoupon,
+            'total_with_coupon' => round($deposit + $balanceWithCoupon, 2),
+            'full_upfront_with_coupon' => round(max(0, $fullUpfront - $upfrontDiscount), 2),
+            'discount_amount' => $balanceDiscount,
+         ];
+      }
+
+      if ($amounts['balance_with_coupon'] >= $balance - 0.009 && $amounts['full_upfront_with_coupon'] >= $fullUpfront - 0.009) {
+         return null;
+      }
+
+      return [
+         'advertised' => true,
+         'kind' => 'pre_register',
+         'list_price' => round($list, 2),
+         'deposit_amount' => round($deposit, 2),
+         'balance_amount' => round($balance, 2),
+         'balance_with_coupon' => $amounts['balance_with_coupon'],
+         'total_with_coupon' => $amounts['total_with_coupon'],
+         'full_upfront_price' => round($fullUpfront, 2),
+         'full_upfront_with_coupon' => $amounts['full_upfront_with_coupon'],
+         'subscription_price' => round($launchOffer->subscriptionPrice($course), 2),
+         'discount_amount' => $amounts['discount_amount'],
+         'window_end' => $launchOffer->windowEnd($course)->toIso8601String(),
+      ];
+   }
+
+   private function pricedCatalogPromoFor(Course $course): ?array
+   {
+      if (! $this->pricingCatalogPromoEnabled($course)) {
+         return null;
+      }
+
+      $billing = $this->billingModelValue($course);
+      $off = (float) ($course->catalog_coupon_off_remaining ?? 0);
+
+      if ($billing === CourseBillingModel::ONE_TIME->value) {
+         return $this->pricedPromoPayload('one_time', (float) ($course->price ?? 0), 0.0, $off);
+      }
+
+      if ($billing === CourseBillingModel::UPFRONT_SUBSCRIPTION->value) {
+         return $this->pricedPromoPayload(
+            'upfront',
+            (float) ($course->price ?? 0),
+            (float) ($course->subscription_price ?? 0),
+            $off,
+         );
+      }
+
+      return null;
+   }
+
+   /**
+    * @return array{
+    *     advertised: bool,
+    *     kind: string,
+    *     list_price: float,
+    *     deposit_amount: float,
+    *     balance_amount: float,
+    *     balance_with_coupon: float,
+    *     total_with_coupon: float,
+    *     full_upfront_price: float,
+    *     full_upfront_with_coupon: float,
+    *     subscription_price: float,
+    *     discount_amount: float,
+    *     window_end: string|null
+    * }|null
+    */
+   private function pricedPromoPayload(string $kind, float $price, float $monthly, float $off): ?array
+   {
+      $price = round(max(0, $price), 2);
+      $monthly = round(max(0, $monthly), 2);
+      $off = round(max(0, $off), 2);
+      $withCoupon = round(max(0, $price - min($off, $price)), 2);
+
+      if ($price <= 0 || $withCoupon <= 0 || $withCoupon >= $price - 0.009) {
+         return null;
+      }
+
+      return [
+         'advertised' => true,
+         'kind' => $kind,
+         'list_price' => $price,
+         'deposit_amount' => 0.0,
+         'balance_amount' => $price,
+         'balance_with_coupon' => $withCoupon,
+         'total_with_coupon' => $withCoupon,
+         'full_upfront_price' => $price,
+         'full_upfront_with_coupon' => $withCoupon,
+         'subscription_price' => $monthly,
+         'discount_amount' => round($price - $withCoupon, 2),
+         'window_end' => null,
+      ];
+   }
+
+   private function billingModelValue(Course $course): string
+   {
+      $model = $course->billing_model;
+
+      return $model instanceof CourseBillingModel
+         ? $model->value
+         : (string) ($model ?? CourseBillingModel::ONE_TIME->value);
+   }
+
    private function pricingCatalogPromoEnabled(Course $course): bool
    {
-      if (! Schema::hasTable('courses') || ! Schema::hasColumn('courses', 'catalog_coupon_promo')) {
+      if (Schema::hasTable('courses') && ! Schema::hasColumn('courses', 'catalog_coupon_promo')) {
          return false;
       }
 

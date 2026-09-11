@@ -40,9 +40,13 @@ export interface LaunchOfferView {
 
 
 
+export type CatalogPromoKind = 'pre_register' | 'one_time' | 'upfront';
+
 export interface CatalogPromo {
 
    advertised: boolean;
+
+   kind?: CatalogPromoKind;
 
    list_price: number;
 
@@ -86,7 +90,17 @@ const resolveCatalogPromo = (course: Course, serverPayload?: Record<string, unkn
 
    }
 
-   if (toNumber(raw.balance_with_coupon, toNumber(raw.balance_amount)) >= toNumber(raw.balance_amount) - 0.009) {
+   const kind: CatalogPromoKind = raw.kind ?? 'pre_register';
+
+   if (kind === 'one_time' || kind === 'upfront') {
+
+      if (toNumber(raw.total_with_coupon) >= toNumber(raw.list_price) - 0.009) {
+
+         return null;
+
+      }
+
+   } else if (toNumber(raw.balance_with_coupon, toNumber(raw.balance_amount)) >= toNumber(raw.balance_amount) - 0.009) {
 
       return null;
 
@@ -95,6 +109,8 @@ const resolveCatalogPromo = (course: Course, serverPayload?: Record<string, unkn
    return {
 
       advertised: true,
+
+      kind,
 
       list_price: toNumber(raw.list_price),
 
@@ -502,6 +518,12 @@ export const formatCatalogPromoDate = (value?: string | null): string | null => 
 export const formatOfferAmount = (amount: number): string =>
 
    Number.isInteger(amount) ? String(amount) : amount.toFixed(2);
+
+
+
+export const isPricedCatalogPromo = (promo: CatalogPromo | null | undefined): promo is CatalogPromo =>
+
+   promo?.kind === 'one_time' || promo?.kind === 'upfront';
 
 
 

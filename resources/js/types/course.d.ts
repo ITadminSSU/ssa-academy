@@ -29,6 +29,7 @@ interface CourseCategoryChild extends TableCommon {
 
 interface CatalogPromo {
    advertised: boolean;
+   kind?: 'pre_register' | 'one_time' | 'upfront';
    list_price: number;
    deposit_amount: number;
    balance_amount: number;

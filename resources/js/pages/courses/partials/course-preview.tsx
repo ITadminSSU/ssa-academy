@@ -115,14 +115,44 @@ const CoursePreview = () => {
                      </>
                   )
                ) : isUpfrontSubscription ? (
+                  catalogPromo?.kind === 'upfront' ? (
+                     <>
+                        <span className="text-muted-foreground text-xl font-medium line-through">
+                           {symbol}
+                           {formatOfferAmount(catalogPromo.list_price)}
+                        </span>
+                        <span className="mt-1 block">
+                           {symbol}
+                           {formatOfferAmount(catalogPromo.total_with_coupon)}{' '}
+                           <span className="text-muted-foreground text-base font-medium normal-case">with coupon</span>
+                           <span className="text-muted-foreground ml-2 text-base font-medium">
+                              + {symbol}
+                              {formatOfferAmount(catalogPromo.subscription_price)}/mo
+                           </span>
+                        </span>
+                     </>
+                  ) : (
+                     <>
+                        <span className="font-semibold">
+                           {currency?.symbol}
+                           {course.price}
+                        </span>
+                        <span className="text-muted-foreground ml-2 text-base font-medium">
+                           + {currency?.symbol}
+                           {course.subscription_price}/mo
+                        </span>
+                     </>
+                  )
+               ) : catalogPromo?.kind === 'one_time' ? (
                   <>
-                     <span className="font-semibold">
-                        {currency?.symbol}
-                        {course.price}
+                     <span className="text-muted-foreground text-xl font-medium line-through">
+                        {symbol}
+                        {formatOfferAmount(catalogPromo.list_price)}
                      </span>
-                     <span className="text-muted-foreground ml-2 text-base font-medium">
-                        + {currency?.symbol}
-                        {course.subscription_price}/mo
+                     <span className="mt-1 block">
+                        {symbol}
+                        {formatOfferAmount(catalogPromo.total_with_coupon)}{' '}
+                        <span className="text-muted-foreground text-base font-medium normal-case">with coupon</span>
                      </span>
                   </>
                ) : course.billing_model === 'subscription' ? (
@@ -202,11 +232,19 @@ const CoursePreview = () => {
                   from My Subscriptions.
                </p>
             ) : isUpfrontSubscription ? (
-               <p className="text-muted-foreground text-sm">
-                  Pay {currency?.symbol}
-                  {course.price} now, plus the first month of Project Plans ({currency?.symbol}
-                  {course.subscription_price}). Monthly billing continues after that. Cancel anytime from My Subscriptions.
-               </p>
+               <div className="text-muted-foreground space-y-3 text-sm leading-relaxed">
+                  <p>
+                     Pay {currency?.symbol}
+                     {course.price} now, plus the first month of Project Plans ({currency?.symbol}
+                     {course.subscription_price}). Monthly billing continues after that. Cancel anytime from My
+                     Subscriptions.
+                  </p>
+                  {catalogPromo?.kind === 'upfront' ? (
+                     <p>Enter code at checkout. Coupons apply to enrollment only, never the monthly.</p>
+                  ) : null}
+               </div>
+            ) : catalogPromo?.kind === 'one_time' ? (
+               <p className="text-muted-foreground text-sm">Enter code at checkout.</p>
             ) : null}
 
             {isSubscription && !(offer.enabled && (offer.phase === 'pre_register' || offer.phase === 'full_price')) ? (

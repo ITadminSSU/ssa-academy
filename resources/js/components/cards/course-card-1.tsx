@@ -201,16 +201,46 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                            </>
                         )
                      ) : isUpfrontSubscription ? (
-                        <>
+                        catalogPromo?.kind === 'upfront' ? (
+                           <div className="flex min-w-0 flex-col gap-0.5 normal-case">
+                              <span className="text-muted-foreground text-sm font-medium line-through">
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.list_price)}
+                              </span>
+                              <span>
+                                 {symbol}
+                                 {formatOfferAmount(catalogPromo.total_with_coupon)}{' '}
+                                 <span className="text-muted-foreground text-xs font-medium">with coupon</span>
+                                 <span className="text-muted-foreground ml-1 text-sm font-medium">
+                                    +{symbol}
+                                    {formatOfferAmount(catalogPromo.subscription_price)}/mo
+                                 </span>
+                              </span>
+                           </div>
+                        ) : (
+                           <>
+                              <span>
+                                 {symbol}
+                                 {course.price}
+                              </span>
+                              <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
+                                 +{symbol}
+                                 {course.subscription_price}/mo
+                              </span>
+                           </>
+                        )
+                     ) : catalogPromo?.kind === 'one_time' ? (
+                        <div className="flex min-w-0 flex-col gap-0.5 normal-case">
+                           <span className="text-muted-foreground text-sm font-medium line-through">
+                              {symbol}
+                              {formatOfferAmount(catalogPromo.list_price)}
+                           </span>
                            <span>
                               {symbol}
-                              {course.price}
+                              {formatOfferAmount(catalogPromo.total_with_coupon)}{' '}
+                              <span className="text-muted-foreground text-xs font-medium">with coupon</span>
                            </span>
-                           <span className="text-muted-foreground ml-1 text-sm font-medium normal-case">
-                              +{symbol}
-                              {course.subscription_price}/mo
-                           </span>
-                        </>
+                        </div>
                      ) : isSubscription ? (
                         <>
                            <span>
@@ -298,8 +328,17 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                         </>
                      )}
                   </p>
-               ) : isSubscription ? (
-                  <SubscriptionBillingNotice course={course} variant="compact" />
+               ) : catalogPromo?.kind === 'one_time' || catalogPromo?.kind === 'upfront' || isSubscription ? (
+                  <div className="space-y-1">
+                     {catalogPromo?.kind === 'one_time' || catalogPromo?.kind === 'upfront' ? (
+                        <p className="text-muted-foreground text-xs leading-snug normal-case">
+                           {catalogPromo.kind === 'upfront'
+                              ? 'Enter code at checkout · enrollment only'
+                              : 'Enter code at checkout'}
+                        </p>
+                     ) : null}
+                     {isSubscription ? <SubscriptionBillingNotice course={course} variant="compact" /> : null}
+                  </div>
                ) : null}
             </CardFooter>
          </div>
