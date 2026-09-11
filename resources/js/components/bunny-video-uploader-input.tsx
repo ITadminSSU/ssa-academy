@@ -31,7 +31,7 @@ interface Props {
    onCancelUpload?: () => void;
 }
 
-const DEFAULT_MAX_FILE_SIZE = 1024 * 1024 * 1024;
+const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024;
 
 const BunnyVideoUploaderInput = ({
    isSubmit = false,
@@ -80,7 +80,11 @@ const BunnyVideoUploaderInput = ({
       const selectedFile = event.target.files[0];
 
       if (selectedFile.size > maxFileSize) {
-         const message = `File is too large. Maximum file size is ${(maxFileSize / (1024 * 1024)).toFixed(0)} MB`;
+         const message = `File is too large. Maximum file size is ${
+            maxFileSize >= 1024 * 1024 * 1024
+               ? `${(maxFileSize / (1024 * 1024 * 1024)).toFixed(0)} GB`
+               : `${(maxFileSize / (1024 * 1024)).toFixed(0)} MB`
+         }`;
          setErrorMessage(message);
          onError?.(message);
          return;

@@ -15,9 +15,9 @@ class ChunkInitiateRequest extends FormRequest
 
         $fileMaxSizes = [
             'audio' => 102400, // 100MB
-            'video' => 1048576, // 1GB
+            'video' => 5242880, // 5GB
             'document' => 262144,   // 256MB
-            'image' => 2048,        // 2MB
+            'image' => 102400,      // 100MB
             'zip' => 262144, // 256MB
             // 'assets' => 262144, // 256MB
         ];

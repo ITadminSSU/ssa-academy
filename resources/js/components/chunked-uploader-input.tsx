@@ -30,9 +30,9 @@ export interface UploadedFileData {
 
 const FILETYPE_MAX_BYTES: Record<string, number> = {
    audio: 100 * 1024 * 1024,
-   video: 1024 * 1024 * 1024,
+   video: 5 * 1024 * 1024 * 1024,
    document: 256 * 1024 * 1024,
-   image: 2 * 1024 * 1024,
+   image: 100 * 1024 * 1024,
    zip: 256 * 1024 * 1024,
 };
 
@@ -47,6 +47,14 @@ const mimeTypeFromFilename = (filename: string): string => {
          txt: 'text/plain',
       }[extension ?? ''] ?? ''
    );
+};
+
+const formatMaxFileSize = (bytes: number): string => {
+   if (bytes >= 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
+   }
+
+   return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
 };
 
 const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
@@ -71,7 +79,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const fileInputRef = useRef<HTMLInputElement>(null);
    const fileRef = useRef<File | null>(null);
    const abortControllerRef = useRef<AbortController | null>(null);
-   const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 1024 * 1024 * 1024;
+   const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 5 * 1024 * 1024 * 1024;
    // Cloudflare R2/S3 require every multipart part except the last to be >= 5MB.
    const MIN_PART_BYTES = 5 * 1024 * 1024;
    const DEFAULT_CHUNK_SIZE = 256 * 1024 * 1024;
@@ -135,7 +143,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
          const selectedFile = event.target.files[0];
 
          if (selectedFile.size > maxFileSize) {
-            setErrorMessage(`File is too large. Maximum file size is ${(maxFileSize / (1024 * 1024)).toFixed(0)} MB`);
+            setErrorMessage(`File is too large. Maximum file size is ${formatMaxFileSize(maxFileSize)}`);
             return;
          }
 
