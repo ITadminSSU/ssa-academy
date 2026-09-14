@@ -167,7 +167,7 @@ const UsExperience = () => {
                            {plan.tutorial_video && (
                               <div className="mt-3">
                                  <p className="mb-2 text-sm font-medium">Walkthrough</p>
-                                 <video src={plan.tutorial_video.url} controls className="max-h-80 w-full rounded-md bg-black" />
+                                 <video src={plan.tutorial_video.url} controls playsInline preload="metadata" className="max-h-80 w-full rounded-md bg-black" />
                               </div>
                            )}
                         </div>

@@ -5,6 +5,7 @@ namespace App\Services\UsExperience;
 use App\Models\Course\Course;
 use App\Models\Course\UsExperiencePlan;
 use App\Models\User;
+use App\Support\S3CompatibleStorage;
 use InvalidArgumentException;
 use Modules\Exam\Services\QuantityTakeoffXlsxParser;
 
@@ -217,7 +218,7 @@ class UsExperiencePlanService
     public function saveTutorialVideo(UsExperiencePlan $plan, string $videoUrl, string $videoName): UsExperiencePlan
     {
         $plan->update([
-            'tutorial_video_url' => $videoUrl,
+            'tutorial_video_url' => S3CompatibleStorage::normalizeStoredUrl($videoUrl) ?? $videoUrl,
             'tutorial_video_name' => $videoName,
         ]);
 

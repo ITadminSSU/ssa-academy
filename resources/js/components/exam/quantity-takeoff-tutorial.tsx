@@ -22,7 +22,7 @@ const QuantityTakeoffTutorial = ({ video }: Props) => {
          </CardHeader>
          <CardContent className="space-y-3">
             <p className="text-sm font-medium">{video.name}</p>
-            <video src={video.url} controls className="w-full rounded-lg border bg-black" preload="metadata">
+            <video src={video.url} controls playsInline preload="metadata" className="w-full rounded-lg border bg-black">
                Your browser does not support the video tag.
             </video>
          </CardContent>

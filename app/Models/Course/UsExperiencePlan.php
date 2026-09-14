@@ -83,7 +83,7 @@ class UsExperiencePlan extends Model
             'attempts_count' => (int) ($this->attempts_count ?? $this->attempts()->count()),
             'answer_key_file_url' => S3CompatibleStorage::browserUrl($this->answer_key_file_url, $this->answer_key_file_name),
             'blank_template_file_url' => S3CompatibleStorage::browserUrl($this->blank_template_file_url, $this->blank_template_file_name),
-            'tutorial_video_url' => S3CompatibleStorage::browserUrl($this->tutorial_video_url, $this->tutorial_video_name),
+            'tutorial_video_url' => S3CompatibleStorage::resolvePlaybackUrl($this->tutorial_video_url),
             'drawings' => array_map(function ($drawing) {
                 if (is_array($drawing) && ! empty($drawing['file_url'])) {
                     $drawing['file_url'] = S3CompatibleStorage::browserUrl($drawing['file_url'], $drawing['file_name'] ?? null);

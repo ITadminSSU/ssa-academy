@@ -141,9 +141,14 @@ class ExamController extends Controller
             }
         }
 
+        $takeoffService = app(ExamQuantityTakeoffService::class);
         $takeoffAnalytics = $exam->isQuantityTakeoff()
-            ? app(ExamQuantityTakeoffService::class)->lineMissAnalytics($exam)
+            ? $takeoffService->lineMissAnalytics($exam)
             : null;
+
+        if ($exam->isQuantityTakeoff()) {
+            $exam->setAttribute('takeoff_config', $takeoffService->takeoffConfigForBrowser($exam));
+        }
 
         return Inertia::render('dashboard/exams/update', [
             'tab' => $tab,

@@ -359,7 +359,8 @@ const QuantityTakeoff = () => {
                      <video
                         src={takeoffConfig.tutorial_video_url}
                         controls
-                        className="w-full max-w-2xl rounded-lg border"
+                        playsInline
+                        className="w-full max-w-2xl rounded-lg border bg-black"
                         preload="metadata"
                      />
                   </div>

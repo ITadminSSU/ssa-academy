@@ -3,6 +3,7 @@
 namespace Modules\Exam\Services;
 
 use App\Models\ChunkedUpload;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
@@ -137,12 +138,32 @@ class ExamQuantityTakeoffService
         }
 
         $config = $exam->takeoff_config ?? [];
-        $config['tutorial_video_url'] = $videoUrl;
+        $config['tutorial_video_url'] = S3CompatibleStorage::normalizeStoredUrl($videoUrl) ?? $videoUrl;
         $config['tutorial_video_name'] = $videoName;
 
         $exam->update(['takeoff_config' => $config]);
 
         return $exam->fresh();
+    }
+
+    /**
+     * Sign private walkthrough URLs for the trainer editor without persisting the signature.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function takeoffConfigForBrowser(Exam $exam): ?array
+    {
+        $config = $exam->takeoff_config;
+
+        if (! is_array($config)) {
+            return $config;
+        }
+
+        if (filled($config['tutorial_video_url'] ?? null)) {
+            $config['tutorial_video_url'] = S3CompatibleStorage::resolvePlaybackUrl($config['tutorial_video_url']);
+        }
+
+        return $config;
     }
 
     /**
@@ -157,7 +178,7 @@ class ExamQuantityTakeoffService
         }
 
         return [
-            'url' => $url,
+            'url' => S3CompatibleStorage::resolvePlaybackUrl($url),
             'name' => $exam->takeoff_config['tutorial_video_name'] ?? 'Walkthrough video',
         ];
     }

@@ -133,7 +133,7 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
             {tutorial && (
                <div>
                   <p className="mb-2 text-sm font-medium">{tutorial.name || 'Walkthrough'}</p>
-                  <video src={tutorial.url} controls className="max-h-80 w-full rounded-md bg-black" />
+                  <video src={tutorial.url} controls playsInline preload="metadata" className="max-h-80 w-full rounded-md bg-black" />
                </div>
             )}
 

@@ -9,6 +9,7 @@ use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionQuiz;
 use App\Models\User;
 use App\Services\UsExperience\UsExperienceFileService;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Modules\Exam\Services\QuantityTakeoffGradingService;
@@ -203,7 +204,7 @@ class QuizTakeoffService
         $this->assertTakeoff($question);
 
         return $this->persistOptions($question, [
-            'tutorial_video_url' => $videoUrl,
+            'tutorial_video_url' => S3CompatibleStorage::normalizeStoredUrl($videoUrl) ?? $videoUrl,
             'tutorial_video_name' => $videoName,
         ]);
     }

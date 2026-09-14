@@ -376,7 +376,16 @@ const UsExperiencePlanEditor = () => {
             </CardHeader>
             <CardContent className="space-y-4">
                {plan.tutorial_video_url && (
-                  <div className="rounded-md border bg-muted p-3 text-sm">{plan.tutorial_video_name || 'Current tutorial video'}</div>
+                  <div className="space-y-3">
+                     <p className="text-sm font-medium">{plan.tutorial_video_name || 'Current tutorial video'}</p>
+                     <video
+                        src={plan.tutorial_video_url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full max-w-2xl rounded-lg border bg-black"
+                     />
+                  </div>
                )}
                <ChunkedUploaderInput
                   isSubmit={false}

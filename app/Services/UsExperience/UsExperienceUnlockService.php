@@ -7,6 +7,7 @@ use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
 use App\Services\Course\CourseCompletionGateService;
 use App\Services\Payment\SubscriptionAccessService;
+use App\Support\S3CompatibleStorage;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -134,7 +135,7 @@ class UsExperienceUnlockService
                     : [],
                 'tutorial_video' => ($canSeeScores && $latestAttempt && $plan->tutorial_video_url)
                     ? [
-                        'url' => $plan->tutorial_video_url,
+                        'url' => S3CompatibleStorage::resolvePlaybackUrl($plan->tutorial_video_url),
                         'name' => $plan->tutorial_video_name ?: 'Walkthrough video',
                     ]
                     : null,

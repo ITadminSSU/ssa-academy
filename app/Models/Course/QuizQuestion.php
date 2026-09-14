@@ -2,6 +2,7 @@
 
 namespace App\Models\Course;
 
+use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -119,7 +120,7 @@ class QuizQuestion extends Model
             'tolerance_percent' => $this->takeoffTolerancePercent(),
             'tutorial_video' => ($hasAttempt && filled($options['tutorial_video_url'] ?? null))
                 ? [
-                    'url' => $options['tutorial_video_url'],
+                    'url' => S3CompatibleStorage::resolvePlaybackUrl($options['tutorial_video_url']),
                     'name' => $options['tutorial_video_name'] ?? 'Walkthrough video',
                 ]
                 : null,

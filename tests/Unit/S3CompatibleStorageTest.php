@@ -30,6 +30,12 @@ test('decodeObjectKey leaves plain keys unchanged', function () {
         ->toBe('489/Lumber-Thumbnail.jpeg');
 });
 
+test('videoMimeForKey maps playback extensions used by walkthrough uploads', function () {
+    expect(S3CompatibleStorage::videoMimeForKey('lessons/abc.mp4'))->toBe('video/mp4');
+    expect(S3CompatibleStorage::videoMimeForKey('lessons/abc.webm'))->toBe('video/webm');
+    expect(S3CompatibleStorage::videoMimeForKey('lessons/abc.xlsx'))->toBeNull();
+});
+
 test('extractObjectKey reads path-style R2 API urls used by chat attachments', function () {
     $url = 'https://662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/679/SL0001---Skill-Level-1---Plans.pdf';
 

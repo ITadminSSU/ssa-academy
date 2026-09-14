@@ -93,6 +93,9 @@ class S3CompatibleStorage
         if (filled($downloadName)) {
             $safeName = str_replace(['"', '\\', "\r", "\n"], '', $downloadName);
             $commandInput['ResponseContentDisposition'] = 'attachment; filename="'.$safeName.'"';
+        } elseif ($videoMime = static::videoMimeForKey($key)) {
+            $commandInput['ResponseContentType'] = $videoMime;
+            $commandInput['ResponseContentDisposition'] = 'inline';
         }
 
         try {
@@ -309,6 +312,22 @@ class S3CompatibleStorage
         }
 
         return $key !== null ? static::decodeObjectKey($key) : null;
+    }
+
+    /**
+     * @return string|null MIME type for HTML5 <video> playback, or null when the key is not a video.
+     */
+    public static function videoMimeForKey(string $key): ?string
+    {
+        $extension = strtolower((string) pathinfo($key, PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'mp4', 'm4v' => 'video/mp4',
+            'webm' => 'video/webm',
+            'ogv', 'ogg' => 'video/ogg',
+            'mov' => 'video/quicktime',
+            default => null,
+        };
     }
 
     /**
