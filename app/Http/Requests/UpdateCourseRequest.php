@@ -50,10 +50,7 @@ class UpdateCourseRequest extends FormRequest
         $billingModel = (string) $this->input('billing_model', CourseBillingModel::ONE_TIME->value);
         $isUpfrontSubscription = ! $isFree && $billingModel === CourseBillingModel::UPFRONT_SUBSCRIPTION->value;
         $isPreRegistrationSubscription = ! $isFree && $billingModel === CourseBillingModel::PRE_REGISTER_SUBSCRIPTION->value;
-        $launchOfferEnabled = ! $isFree && (
-            $isPreRegistrationSubscription
-            || (! $isUpfrontSubscription && filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN))
-        );
+        $launchOfferEnabled = $isPreRegistrationSubscription;
 
         $isMonthlyOnly = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
         $isOneTime = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME->value;
@@ -202,8 +199,7 @@ class UpdateCourseRequest extends FormRequest
         $isUpfrontSubscription = $isPaid && $billingModel === $upfrontSubscription;
         $isPreRegistrationSubscription = $isPaid && $billingModel === $preRegisterSubscription;
         $isSubscription = $isPaid && ($billingModel === $subscription || $isUpfrontSubscription || $isPreRegistrationSubscription);
-        $launchOfferEnabled = $isPreRegistrationSubscription
-            || (filter_var($this->input('launch_offer_enabled'), FILTER_VALIDATE_BOOLEAN) && ! $isUpfrontSubscription);
+        $launchOfferEnabled = $isPreRegistrationSubscription;
 
         return [
             'pricing_type' => "required|string|in:$free,$paid",

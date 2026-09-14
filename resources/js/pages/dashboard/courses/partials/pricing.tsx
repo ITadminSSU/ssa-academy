@@ -48,6 +48,20 @@ const billingModelLabel = (value: string) => {
    return 'One-time purchase';
 };
 
+const firstPositiveAmount = (...values: Array<string | number | null | undefined>): string => {
+   for (const value of values) {
+      if (value === '' || value === null || value === undefined) {
+         continue;
+      }
+
+      if (Number(value) > 0) {
+         return String(value);
+      }
+   }
+
+   return '';
+};
+
 const timezoneHint = (timezone?: string) => {
    if (!timezone) {
       return 'App timezone';
@@ -259,20 +273,23 @@ const Pricing = () => {
       ];
    }, [billingModels]);
 
+   const storedBillingModel = asOptionValue(course.billing_model) || 'one_time';
+   const initialBillingModel =
+      course.launch_offer_enabled && storedBillingModel === 'subscription'
+         ? 'pre_register_subscription'
+         : storedBillingModel;
+
    const { data, setData, post, errors, processing, transform } = useForm({
       tab: 'pricing',
       pricing_type: asOptionValue(course.pricing_type) || paidValue,
-      billing_model:
-         course.launch_offer_enabled && asOptionValue(course.billing_model) === 'subscription'
-            ? 'pre_register_subscription'
-            : asOptionValue(course.billing_model) || 'one_time',
+      billing_model: initialBillingModel,
       price: course.price ?? '',
       subscription_price: course.subscription_price ?? '',
       discount: Boolean(course.discount),
       discount_price: course.discount_price ?? '',
       expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
       expiry_duration: course.expiry_duration || '',
-      launch_offer_enabled: Boolean(course.launch_offer_enabled) && asOptionValue(course.billing_model) !== 'upfront_subscription',
+      launch_offer_enabled: initialBillingModel === 'pre_register_subscription',
       launch_offer_starts_at: toDateTimeLocalValue(course.launch_offer_starts_at, appTimezone) || '2026-08-15T00:00',
       launch_offer_ends_at: toDateTimeLocalValue(course.launch_offer_ends_at, appTimezone) || '2026-09-14T23:59',
       launch_list_price: course.launch_list_price ?? '75',
@@ -308,7 +325,7 @@ const Pricing = () => {
       const isPaidForm = form.pricing_type === paidValue;
       const isUpfront = form.billing_model === 'upfront_subscription';
       const isPreRegister = form.billing_model === 'pre_register_subscription';
-      const launchEnabled = (isPreRegister || Boolean(form.launch_offer_enabled)) && !isUpfront;
+      const launchEnabled = isPaidForm && isPreRegister;
       const catalogPromoAllowed =
          isPaidForm && (form.billing_model === 'one_time' || isUpfront || launchEnabled);
       const catalogPromoOn = catalogPromoAllowed && Boolean(form.catalog_coupon_promo);
@@ -344,14 +361,13 @@ const Pricing = () => {
    const [syncing, setSyncing] = useState(false);
    const isPaid = data.pricing_type === paidValue;
    const isPreRegisterSubscription = isPaid && data.billing_model === 'pre_register_subscription';
-   const isUpfrontSubscription = isPaid && data.billing_model === 'upfront_subscription' && !data.launch_offer_enabled;
+   const isUpfrontSubscription = isPaid && data.billing_model === 'upfront_subscription';
    const isSubscription =
       isPaid &&
       (data.billing_model === 'subscription' ||
          data.billing_model === 'upfront_subscription' ||
-         data.billing_model === 'pre_register_subscription' ||
-         data.launch_offer_enabled);
-   const isOneTime = isPaid && data.billing_model === 'one_time' && !data.launch_offer_enabled;
+         data.billing_model === 'pre_register_subscription');
+   const isOneTime = isPaid && data.billing_model === 'one_time';
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -401,22 +417,22 @@ const Pricing = () => {
                         <Label>Billing model *</Label>
                         <RadioGroup
                            value={data.billing_model}
-                           className="grid gap-3 sm:grid-cols-1 lg:grid-cols-3"
+                           className="grid gap-3 sm:grid-cols-2"
                            onValueChange={(value) => {
                               setData((current) => ({
                                  ...current,
                                  billing_model: value,
                                  discount: value === 'one_time' ? current.discount : false,
                                  discount_price: value === 'one_time' ? current.discount_price : '',
-                                 launch_offer_enabled:
-                                    value === 'pre_register_subscription'
-                                       ? true
-                                       : value === 'upfront_subscription'
-                                          ? false
-                                          : current.launch_offer_enabled,
+                                 launch_offer_enabled: value === 'pre_register_subscription',
                                  price:
-                                    value === 'upfront_subscription' && !current.price
-                                       ? '75'
+                                    value === 'one_time' || value === 'upfront_subscription'
+                                       ? firstPositiveAmount(
+                                            current.price,
+                                            current.launch_full_upfront_price,
+                                            current.launch_list_price,
+                                            current.launch_offer_price,
+                                         ) || (value === 'upfront_subscription' ? '75' : current.price)
                                        : current.price,
                                  subscription_price:
                                     (value === 'subscription' ||
@@ -530,13 +546,11 @@ const Pricing = () => {
                               <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="upfront" />
                            ) : null}
 
-                           {!isUpfrontSubscription ? (
+                           {isPreRegisterSubscription ? (
                               <>
                                  <Separator />
 
                                  <div className="space-y-4 rounded-md border p-4">
-                                    {isPreRegisterSubscription ? (
-                                       <>
                                           <div>
                                              <Label className="text-base">Pre-registration setup</Label>
                                              <p className="text-muted-foreground mt-1 text-xs">
@@ -669,154 +683,14 @@ const Pricing = () => {
                                                 </p>
                                              </div>
                                           </div>
-                                       </>
-                                    ) : data.launch_offer_enabled ? (
-                                       <div className="grid gap-4 sm:grid-cols-2">
-                                          <div className="sm:col-span-2">
-                                             <p className="text-muted-foreground text-xs">
-                                                All early-bird dates below use {dateTimezoneLabel}. Enter times the same way
-                                                as Coming Soon / Launch date.
-                                             </p>
-                                          </div>
-                                          <div>
-                                             <Label>Pre-register start ({dateTimezoneLabel})</Label>
-                                             <Input
-                                                type="datetime-local"
-                                                value={data.launch_offer_starts_at}
-                                                onChange={(e) => setData('launch_offer_starts_at', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_offer_starts_at} />
-                                          </div>
-                                          <div>
-                                             <Label>Pre-register end ({dateTimezoneLabel})</Label>
-                                             <Input
-                                                type="datetime-local"
-                                                value={data.launch_offer_ends_at}
-                                                onChange={(e) => setData('launch_offer_ends_at', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_offer_ends_at} />
-                                          </div>
-                                          <div>
-                                             <Label>List price (was)</Label>
-                                             <Input
-                                                type="number"
-                                                min="1"
-                                                step="0.01"
-                                                value={String(data.launch_list_price)}
-                                                onChange={(e) => setData('launch_list_price', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_list_price} />
-                                          </div>
-                                          <div>
-                                             <Label>Early bird total (display)</Label>
-                                             <Input
-                                                type="number"
-                                                min="1"
-                                                step="0.01"
-                                                value={String(data.launch_offer_price)}
-                                                onChange={(e) => setData('launch_offer_price', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_offer_price} />
-                                          </div>
-                                          <div>
-                                             <Label>Deposit (pay now)</Label>
-                                             <Input
-                                                type="number"
-                                                min="1"
-                                                step="0.01"
-                                                value={String(data.launch_deposit_amount)}
-                                                onChange={(e) => setData('launch_deposit_amount', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_deposit_amount} />
-                                          </div>
-                                          <div>
-                                             <Label>Balance (pay on launch)</Label>
-                                             <Input
-                                                type="number"
-                                                min="1"
-                                                step="0.01"
-                                                value={String(data.launch_balance_amount)}
-                                                onChange={(e) => setData('launch_balance_amount', e.target.value)}
-                                             />
-                                             <p className="text-muted-foreground mt-1 text-xs">
-                                                No-code remaining amount. Advertise a coupon from Pricing below instead of
-                                                lowering this to the coupon price.
-                                             </p>
-                                             <InputError message={errors.launch_balance_amount} />
-                                          </div>
-                                          <CatalogCouponPromoFields
-                                             data={data}
-                                             setData={setData}
-                                             errors={errors}
-                                             variant="pre_register"
-                                          />
-                                          <div>
-                                             <Label>Grace days after launch</Label>
-                                             <Input
-                                                type="number"
-                                                min="1"
-                                                max="30"
-                                                value={String(data.launch_balance_grace_days)}
-                                                onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_balance_grace_days} />
-                                             <p className="text-muted-foreground mt-1 text-xs">
-                                                Days after launch to pay the balance and keep the free subscription month.
-                                                After this, the seat and free month are cancelled.
-                                             </p>
-                                          </div>
-                                          <div>
-                                             <Label>Full upfront (from Sept 15+)</Label>
-                                             <Input
-                                                type="number"
-                                                min="1"
-                                                step="0.01"
-                                                value={String(data.launch_full_upfront_price)}
-                                                onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
-                                             />
-                                             <InputError message={errors.launch_full_upfront_price} />
-                                          </div>
-                                          <div className="sm:col-span-2">
-                                             <p className="text-muted-foreground text-xs">
-                                                Free subscription month: one month free from the date the launch balance is paid,
-                                                then the first monthly charge the following month. Only on-time balance payments qualify. Deposit is non-refundable if the balance is
-                                                not paid within the grace days.
-                                             </p>
-                                          </div>
-                                       </div>
-                                    ) : (
-                                       <>
-                                          <div className="flex items-center space-x-2">
-                                             <Checkbox
-                                                id="launch_offer_enabled"
-                                                checked={data.launch_offer_enabled}
-                                                onCheckedChange={(checked) => {
-                                                   const enabled = Boolean(checked);
-                                                   setData((current) => ({
-                                                      ...current,
-                                                      launch_offer_enabled: enabled,
-                                                      subscription_price:
-                                                         enabled && !current.subscription_price ? '6' : current.subscription_price,
-                                                   }));
-                                                }}
-                                             />
-                                             <Label htmlFor="launch_offer_enabled">Enable launch / early-bird offer</Label>
-                                          </div>
-                                          <p className="text-muted-foreground text-xs">
-                                             Pre-register window shows a deposit now and balance due on launch. After the window,
-                                             students pay the full upfront amount + monthly subscription.
-                                          </p>
-                                          <InputError message={errors.launch_offer_enabled} />
-                                       </>
-                                    )}
                                  </div>
                               </>
-                           ) : (
+                           ) : isUpfrontSubscription ? (
                               <p className="text-muted-foreground text-sm">
                                  Regular pricing: students pay the upfront amount now for full access, then the monthly
                                  subscription after 30 days. Early-bird / deposit setup is not used with this model.
                               </p>
-                           )}
+                           ) : null}
 
                            <Separator />
 

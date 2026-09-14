@@ -2,6 +2,7 @@
 
 namespace App\Services\Course;
 
+use App\Enums\CourseBillingModel;
 use App\Enums\CourseStatusType;
 use App\Enums\EnrollmentAccessStatus;
 use App\Models\Course\Course;
@@ -90,25 +91,29 @@ class CourseService extends MediaService
             break;
 
          case 'pricing':
+            $billingModel = (string) ($data['billing_model'] ?? CourseBillingModel::ONE_TIME->value);
+            $launchOfferEnabled = $billingModel === CourseBillingModel::PRE_REGISTER_SUBSCRIPTION->value;
             $pricing = [
                'pricing_type' => $data['pricing_type'],
-               'billing_model' => $data['billing_model'] ?? 'one_time',
+               'billing_model' => $billingModel,
                'price' => $data['price'] ?? null,
                'discount' => (bool) ($data['discount'] ?? false),
                'discount_price' => $data['discount_price'] ?? null,
                'subscription_price' => $data['subscription_price'] ?? null,
                'expiry_type' => $data['expiry_type'],
                'expiry_duration' => $data['expiry_duration'] ?? null,
-               'launch_offer_enabled' => (bool) ($data['launch_offer_enabled'] ?? false),
-               'launch_offer_starts_at' => $data['launch_offer_starts_at'] ?? null,
-               'launch_offer_ends_at' => $data['launch_offer_ends_at'] ?? null,
-               'launch_list_price' => $data['launch_list_price'] ?? null,
-               'launch_offer_price' => $data['launch_offer_price'] ?? null,
-               'launch_deposit_amount' => $data['launch_deposit_amount'] ?? null,
-               'launch_balance_amount' => $data['launch_balance_amount'] ?? null,
-               'launch_balance_grace_days' => $data['launch_balance_grace_days'] ?? 5,
-               'launch_subscription_trial_ends_at' => $data['launch_subscription_trial_ends_at'] ?? null,
-               'launch_full_upfront_price' => $data['launch_full_upfront_price'] ?? null,
+               'launch_offer_enabled' => $launchOfferEnabled,
+               'launch_offer_starts_at' => $launchOfferEnabled ? ($data['launch_offer_starts_at'] ?? null) : null,
+               'launch_offer_ends_at' => $launchOfferEnabled ? ($data['launch_offer_ends_at'] ?? null) : null,
+               'launch_list_price' => $launchOfferEnabled ? ($data['launch_list_price'] ?? null) : null,
+               'launch_offer_price' => $launchOfferEnabled ? ($data['launch_offer_price'] ?? null) : null,
+               'launch_deposit_amount' => $launchOfferEnabled ? ($data['launch_deposit_amount'] ?? null) : null,
+               'launch_balance_amount' => $launchOfferEnabled ? ($data['launch_balance_amount'] ?? null) : null,
+               'launch_balance_grace_days' => $launchOfferEnabled ? ($data['launch_balance_grace_days'] ?? 5) : 5,
+               'launch_subscription_trial_ends_at' => $launchOfferEnabled
+                  ? ($data['launch_subscription_trial_ends_at'] ?? null)
+                  : null,
+               'launch_full_upfront_price' => $launchOfferEnabled ? ($data['launch_full_upfront_price'] ?? null) : null,
             ];
 
             if (Schema::hasColumn('courses', 'catalog_coupon_promo')) {

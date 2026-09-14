@@ -17,7 +17,7 @@ class BulkStoreQuestionRequest extends FormRequest
         return [
             'section_quiz_id' => 'required|exists:section_quizzes,id',
             'questions' => 'required|array|min:1',
-            'questions.*.title' => 'required|string|max:255',
+            'questions.*.title' => 'required|string|max:20000',
             'questions.*.type' => 'required|in:single,multiple,boolean,quantity_takeoff',
             'questions.*.options' => 'required_unless:questions.*.type,boolean,quantity_takeoff',
             'questions.*.answer' => 'required_unless:questions.*.type,quantity_takeoff',
@@ -35,6 +35,7 @@ class BulkStoreQuestionRequest extends FormRequest
             'questions.required' => 'Add at least one question before saving.',
             'questions.min' => 'Add at least one question before saving.',
             'questions.*.title.required' => 'Question text is required.',
+            'questions.*.title.max' => 'Question text is too long. Shorten it and try again.',
             'questions.*.type.in' => 'Question type must be single, multiple, true/false, or quantity takeoff.',
             'questions.*.options.required_unless' => 'Options are required for this question type.',
             'questions.*.answer.required_unless' => 'Answer is required.',

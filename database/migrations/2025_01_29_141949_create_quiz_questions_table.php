@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('quiz_questions', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
+            $table->text('title');
             $table->string('type'); // single, multiple and boolean
             $table->json('options')->nullable();
             $table->json('answer')->nullable();

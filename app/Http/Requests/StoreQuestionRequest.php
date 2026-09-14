@@ -19,7 +19,7 @@ class StoreQuestionRequest extends FormRequest
         $isTakeoff = $this->input('type') === 'quantity_takeoff';
 
         return [
-            'title' => 'required|string|max:255',
+            'title' => 'required|string|max:20000',
             'type' => 'required|in:single,multiple,boolean,quantity_takeoff',
             'options' => $isTakeoff ? 'nullable' : 'required_unless:type,boolean',
             'answer' => $isTakeoff ? 'nullable' : 'required',
