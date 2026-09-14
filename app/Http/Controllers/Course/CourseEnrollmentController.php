@@ -29,13 +29,7 @@ class CourseEnrollmentController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $data = array_merge(
-            $request->all(),
-            isAdmin() ? [] : (
-                $user->instructor ?
-                ['instructor_id' => $user->instructor->id] :
-                ['user_id' => $user->id])
-        );
+        $data = $this->enrollmentListFilters($request);
 
         $prices = array_map(
             static fn (CoursePricingType $case): string => $case->value,
@@ -43,7 +37,7 @@ class CourseEnrollmentController extends Controller
         );
         $users = $this->user->getUsers([]);
         $courses = $this->enrollmentCourseOptions($user);
-        $enrollments = $this->courseEnrollment->getEnrollments($data, true);
+        $enrollments = $this->courseEnrollment->getEnrollments($data, true, true);
 
         return Inertia::render('dashboard/enrollments/courses', [
             'prices' => $prices,
@@ -51,6 +45,11 @@ class CourseEnrollmentController extends Controller
             'courses' => $courses,
             'enrollments' => $enrollments,
         ]);
+    }
+
+    public function export(Request $request)
+    {
+        return $this->courseEnrollment->exportEnrollmentsCsv($this->enrollmentListFilters($request));
     }
 
     /**
@@ -117,5 +116,22 @@ class CourseEnrollmentController extends Controller
             )
             ->orderBy('title')
             ->get();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function enrollmentListFilters(Request $request): array
+    {
+        $user = Auth::user();
+
+        return array_merge(
+            $request->only(['search', 'per_page']),
+            isAdmin() ? [] : (
+                $user?->instructor
+                    ? ['instructor_id' => $user->instructor->id]
+                    : ['user_id' => $user?->id]
+            )
+        );
     }
 }

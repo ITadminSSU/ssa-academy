@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
+import { enrollmentBillingColumns } from './enrollment-billing-columns';
 
 const InstructorTableColumn = (
    enrollmentType: 'course' | 'exam',
@@ -51,43 +51,7 @@ const InstructorTableColumn = (
             );
          },
       },
-      {
-         id: 'enrolled_date',
-         header: table.enrolled_date,
-         cell: ({ row }) => {
-            // Convert to a readable date format
-            const date = new Date(row.original.entry_date);
-            const formattedDate = date.toLocaleDateString('en-US', {
-               month: 'long',
-               day: '2-digit',
-               year: 'numeric',
-            });
-
-            return <div>{formattedDate}</div>;
-         },
-      },
-      {
-         id: 'expiry_date',
-         header: () => <div className="pr-4 text-end">{table.expiry_date}</div>,
-         cell: ({ row }) => {
-            if (!row.original.expiry_date) {
-               return (
-                  <div className="pr-4 text-end">
-                     <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{table.lifetime_access}</Badge>
-                  </div>
-               );
-            }
-
-            const date = new Date(row.original.expiry_date);
-            const formattedDate = date.toLocaleDateString('en-US', {
-               month: 'long',
-               day: '2-digit',
-               year: 'numeric',
-            });
-
-            return <div className="pr-4 text-end">{formattedDate}</div>;
-         },
-      },
+      ...enrollmentBillingColumns(enrollmentType, translate),
    ];
 };
 

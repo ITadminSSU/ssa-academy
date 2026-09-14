@@ -175,6 +175,7 @@ Route::prefix('dashboard/trainer')->group(function () {
 
    // course enrolment
    Route::get('enrollments/courses', [CourseEnrollmentController::class, 'index'])->name('course-enrollments.index');
+   Route::get('enrollments/courses/export', [CourseEnrollmentController::class, 'export'])->name('course-enrollments.export');
 
    // student progress (trainers: own courses; admin: all)
    Route::get('student-progress', [CourseStudentProgressController::class, 'index'])->name('student-progress.index');

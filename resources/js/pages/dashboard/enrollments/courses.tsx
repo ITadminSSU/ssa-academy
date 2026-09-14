@@ -48,10 +48,10 @@ const Courses = (props: Props) => {
                globalSearch={true}
                tablePageSizes={[10, 15, 20, 25]}
                routeName="course-enrollments.index"
-               // Icon={<Users className="h-6 w-6 text-primary" />}
-               // exportPath={route('users.export')}
+               exportPath="course-enrollments.export"
             />
 
+            <div className="overflow-x-auto">
             <Table className="border-border border-y">
                <TableHeader table={table} />
 
@@ -71,6 +71,7 @@ const Courses = (props: Props) => {
                   )}
                </TableBody>
             </Table>
+            </div>
 
             <TableFooter className="p-5 sm:p-7" routeName="course-enrollments.index" paginationInfo={enrollments} />
          </Card>

@@ -2,6 +2,7 @@ interface TableLang {
    // Common Table Elements
    type: string;
    csv: string;
+   excel: string;
    resume: string;
    view_resume: string;
    img_placeholder: string;
@@ -28,6 +29,9 @@ interface TableLang {
    enrolled_course: string;
    enrolled_date: string;
    expiry_date: string;
+   coupon: string;
+   subscription_status: string;
+   subscription_expiry: string;
    payout_amount: string;
    payout_method: string;
    processed_date: string;

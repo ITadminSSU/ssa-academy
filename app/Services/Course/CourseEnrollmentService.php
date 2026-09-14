@@ -8,11 +8,15 @@ use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
 use App\Services\Course\CourseSectionService;
 use App\Services\MediaService;
+use App\Support\EnrollmentListBilling;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 use Carbon\Carbon;
+use Modules\PaymentGateways\Models\PaymentHistory;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CourseEnrollmentService extends MediaService
 {
@@ -26,14 +30,24 @@ class CourseEnrollmentService extends MediaService
       return CourseEnrollment::where('course_id', $courseId)->where('user_id', $userId)->first();
    }
 
-   function getEnrollments(array $data, bool $paginate = false): LengthAwarePaginator|Collection
+   function getEnrollments(array $data, bool $paginate = false, bool $withBilling = false): LengthAwarePaginator|Collection
    {
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
 
-      $enrollments = CourseEnrollment::with(['user', 'course.instructor.user', 'course.final_exam:id,title,slug'])
-         ->when(array_key_exists('search', $data), function ($query) use ($data) {
-            return $query->whereHas('user', function ($user) use ($data) {
-               $user->where('name', 'LIKE', '%' . $data['search'] . '%');
+      $enrollments = CourseEnrollment::with([
+            'user',
+            'course.instructor.user',
+            'course.final_exam:id,title,slug',
+            ...($withBilling ? ['subscription'] : []),
+         ])
+         ->when(array_key_exists('search', $data) && filled($data['search']), function ($query) use ($data) {
+            $search = $data['search'];
+
+            return $query->whereHas('user', function ($user) use ($search) {
+               $user->where(function ($inner) use ($search) {
+                  $inner->where('name', 'LIKE', '%' . $search . '%')
+                     ->orWhere('email', 'LIKE', '%' . $search . '%');
+               });
             });
          })
          ->when(array_key_exists('instructor_id', $data), function ($query) use ($data) {
@@ -47,10 +61,126 @@ class CourseEnrollmentService extends MediaService
          ->orderBy('created_at', 'desc');
 
       if ($paginate) {
-         return $enrollments->paginate($page);
+         $result = $enrollments->paginate($page);
+
+         if ($withBilling) {
+            $this->decorateListRows($result->getCollection());
+         }
+
+         return $result;
       }
 
-      return $enrollments->get();
+      $rows = $enrollments->get();
+
+      if ($withBilling) {
+         $this->decorateListRows($rows);
+      }
+
+      return $rows;
+   }
+
+   public function exportEnrollmentsCsv(array $data): StreamedResponse
+   {
+      $enrollments = $this->getEnrollments($data, false, true);
+      $filename = sprintf('course-enrollments-%s.csv', now()->format('Y-m-d'));
+
+      return response()->streamDownload(function () use ($enrollments) {
+         $handle = fopen('php://output', 'w');
+
+         fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+         fputcsv($handle, [
+            'Student name',
+            'Email',
+            'Course',
+            'Coupon',
+            'Enrolled date',
+            'Course expiry',
+            'Subscription status',
+            'Subscription expiry',
+         ]);
+
+         foreach ($enrollments as $enrollment) {
+            fputcsv($handle, [
+               $enrollment->user?->name ?? '',
+               $enrollment->user?->email ?? '',
+               $enrollment->course?->title ?? '',
+               $enrollment->coupon_code ?: '',
+               optional($enrollment->entry_date)?->format('Y-m-d') ?? '',
+               $enrollment->expiry_date
+                  ? $enrollment->expiry_date->format('Y-m-d')
+                  : 'Lifetime access',
+               $enrollment->subscription_status_label ?? '',
+               $enrollment->subscription_expires_at
+                  ? \Carbon\Carbon::parse($enrollment->subscription_expires_at)->format('Y-m-d')
+                  : '',
+            ]);
+         }
+
+         fclose($handle);
+      }, $filename, [
+         'Content-Type' => 'text/csv; charset=UTF-8',
+      ]);
+   }
+
+   /**
+    * @param  Collection<int, CourseEnrollment>|SupportCollection<int, CourseEnrollment>  $enrollments
+    */
+   private function decorateListRows($enrollments): void
+   {
+      if ($enrollments->isEmpty()) {
+         return;
+      }
+
+      $codes = $this->couponCodesFor($enrollments);
+
+      foreach ($enrollments as $enrollment) {
+         $key = $enrollment->user_id.':'.$enrollment->course_id;
+         $summary = EnrollmentListBilling::subscriptionSummary($enrollment->subscription, $enrollment->course);
+
+         $enrollment->setAttribute('coupon_code', $codes[$key] ?? null);
+         $enrollment->setAttribute('subscription_status', $summary['status']);
+         $enrollment->setAttribute('subscription_status_label', $summary['label']);
+         $enrollment->setAttribute('subscription_expires_at', $summary['expires_at']);
+         $enrollment->makeHidden(['subscription']);
+      }
+   }
+
+   /**
+    * @param  Collection<int, CourseEnrollment>|SupportCollection<int, CourseEnrollment>  $enrollments
+    * @return array<string, string>
+    */
+   private function couponCodesFor($enrollments): array
+   {
+      $query = PaymentHistory::query()
+         ->where('purchase_type', Course::class)
+         ->where(function ($outer) use ($enrollments) {
+            foreach ($enrollments as $enrollment) {
+               $outer->orWhere(function ($inner) use ($enrollment) {
+                  $inner->where('user_id', $enrollment->user_id)
+                     ->where('purchase_id', $enrollment->course_id);
+               });
+            }
+         })
+         ->orderByDesc('id');
+
+      $codes = [];
+
+      foreach ($query->get(['id', 'user_id', 'purchase_id', 'coupon', 'meta']) as $payment) {
+         $key = $payment->user_id.':'.$payment->purchase_id;
+
+         if (isset($codes[$key])) {
+            continue;
+         }
+
+         $code = EnrollmentListBilling::couponCodeFromPayment($payment);
+
+         if ($code !== '') {
+            $codes[$key] = $code;
+         }
+      }
+
+      return $codes;
    }
 
 

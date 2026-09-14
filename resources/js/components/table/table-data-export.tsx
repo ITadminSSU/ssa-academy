@@ -33,7 +33,7 @@ const TableDataExport = (props: Props) => {
             <DropdownMenuContent align="end">
                <ScrollArea className="max-h-[198px]">
                   <DropdownMenuItem onClick={dataExport} className="text-center">
-                     {table.csv}
+                     {table.excel ?? table.csv}
                   </DropdownMenuItem>
                </ScrollArea>
             </DropdownMenuContent>

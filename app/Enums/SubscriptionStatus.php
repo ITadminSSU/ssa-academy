@@ -20,4 +20,15 @@ enum SubscriptionStatus: string
     {
         return $this === self::PAST_DUE;
     }
+
+    public function listLabel(): string
+    {
+        return match ($this) {
+            self::TRIALING, self::ACTIVE => 'Active',
+            self::PAST_DUE => 'Past due',
+            self::CANCELED => 'Canceled',
+            self::UNPAID => 'Unpaid',
+            self::PAUSED => 'Paused',
+        };
+    }
 }

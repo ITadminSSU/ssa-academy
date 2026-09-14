@@ -1,8 +1,8 @@
 import DeleteModal from '@/components/inertia/delete-modal';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
+import { enrollmentBillingColumns } from './enrollment-billing-columns';
 
 const AdminTableColumn = (
    enrollmentType: 'course' | 'exam',
@@ -55,39 +55,7 @@ const AdminTableColumn = (
             );
          },
       },
-      {
-         id: 'enrolled_date',
-         header: table.enrolled_date,
-         cell: ({ row }) => {
-            // Convert to a readable date format
-            const date = new Date(row.original.entry_date);
-            const formattedDate = date.toLocaleDateString('en-US', {
-               month: 'long',
-               day: '2-digit',
-               year: 'numeric',
-            });
-
-            return <div>{formattedDate}</div>;
-         },
-      },
-      {
-         id: 'expiry_date',
-         header: table.expiry_date,
-         cell: ({ row }) => {
-            if (!row.original.expiry_date) {
-               return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{table.lifetime_access}</Badge>;
-            }
-
-            const date = new Date(row.original.expiry_date);
-            const formattedDate = date.toLocaleDateString('en-US', {
-               month: 'long',
-               day: '2-digit',
-               year: 'numeric',
-            });
-
-            return <div>{formattedDate}</div>;
-         },
-      },
+      ...enrollmentBillingColumns(enrollmentType, translate),
       {
          id: 'actions',
          header: () => <div className="pr-4 text-end">{table.action}</div>,

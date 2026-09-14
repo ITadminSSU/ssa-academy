@@ -18,6 +18,7 @@ return [
         'properties' => [
             'type' => 'Type',
             'csv' => 'CSV',
+            'excel' => 'Excel',
             'resume' => 'Resume',
             'view_resume' => 'View Resume',
             'img_placeholder' => 'IMG',
@@ -47,6 +48,9 @@ return [
             'enrolled_course' => 'Enrolled Course',
             'enrolled_date' => 'Enrolled Date',
             'expiry_date' => 'Expiry Date',
+            'coupon' => 'Coupon',
+            'subscription_status' => 'Subscription',
+            'subscription_expiry' => 'Subscription expiry',
             'payout_amount' => 'Payout amount',
             'payout_method' => 'Payout Method',
             'processed_date' => 'Processed Date',
