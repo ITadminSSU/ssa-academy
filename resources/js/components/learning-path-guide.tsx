@@ -72,8 +72,8 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
       return [
          {
             connector: 'and_or',
-            left: [links.fundamentals, links.estimating, links.us_experience],
-            right: [links.advanced, resume],
+            left: [links.fundamentals],
+            right: [links.advanced, links.estimating, links.us_experience, resume],
          },
       ];
    }
@@ -82,8 +82,8 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
       return [
          {
             connector: 'and_or',
-            left: [links.advanced, links.estimating, links.us_experience],
-            right: [links.estimating, resume],
+            left: [links.advanced],
+            right: [links.estimating, links.us_experience, resume],
          },
       ];
    }
@@ -209,33 +209,25 @@ const LearningPathGuide = ({ learningPath }: Props) => {
                            const stacked = step.items ?? [];
 
                            if (step.connector === 'and_or' && (left.length > 0 || right.length > 0)) {
-                              const rowCount = Math.max(left.length, right.length);
-
                               return (
                                  <div
                                     key={index}
-                                    className="grid items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
+                                    className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
                                  >
                                     <div className="flex flex-col gap-2">
-                                       {Array.from({ length: rowCount }, (_, row) =>
-                                          left[row] ? (
-                                             <PathItem key={left[row].label} item={left[row]} />
-                                          ) : (
-                                             <div key={`left-spacer-${row}`} className="min-h-[6.5rem]" />
-                                          ),
-                                       )}
+                                       {left.map((item) => (
+                                          <PathItem key={item.label} item={item} />
+                                       ))}
                                     </div>
-                                    <span className="bg-[color:var(--brand-red)] shrink-0 self-center justify-self-center rounded-md px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
-                                       and / or
-                                    </span>
+                                    <div className="flex min-h-[6.5rem] items-center justify-center">
+                                       <span className="bg-[color:var(--brand-red)] shrink-0 rounded-md px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
+                                          and / or
+                                       </span>
+                                    </div>
                                     <div className="flex flex-col gap-2">
-                                       {Array.from({ length: rowCount }, (_, row) =>
-                                          right[row] ? (
-                                             <PathItem key={right[row].label} item={right[row]} />
-                                          ) : (
-                                             <div key={`right-spacer-${row}`} className="min-h-[6.5rem]" />
-                                          ),
-                                       )}
+                                       {right.map((item) => (
+                                          <PathItem key={item.label} item={item} />
+                                       ))}
                                     </div>
                                  </div>
                               );
