@@ -54,6 +54,7 @@ const Index = () => {
                            <Link
                               key={id}
                               href={route('notifications.show', id)}
+                              preserveState={false}
                               className={cn(
                                  'hover:bg-accent/50 flex items-start gap-4 px-5 py-4 transition-colors',
                                  !read_at && 'bg-primary/5',

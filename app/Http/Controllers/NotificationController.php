@@ -22,16 +22,21 @@ class NotificationController extends Controller
 
     /**
      * Display the specified resource.
+     * Opening a notification marks it as read.
      */
-    public function show(string $id)
+    public function show(string $notification)
     {
-        $notification = $this->notificationService->markAsRead($id);
+        $model = $this->notificationService->markAsRead($notification);
 
-        if ($notification && !empty($notification->data['url'])) {
-            return redirect($notification->data['url']);
+        if (! $model) {
+            abort(404);
         }
 
-        return Inertia::render('notification/show', compact('notification'));
+        if (! empty($model->data['url'])) {
+            return redirect($model->data['url']);
+        }
+
+        return Inertia::render('notification/show', ['notification' => $model]);
     }
 
     /**

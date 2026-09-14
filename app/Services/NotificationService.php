@@ -28,10 +28,9 @@ class NotificationService extends MediaService
       Auth::user()->unreadNotifications->markAsRead();
    }
 
-   // I want to return the read notification
    function markAsRead(string $id)
    {
-      $notification = Auth::user()->notifications->find($id);
+      $notification = Auth::user()->notifications()->whereKey($id)->first();
 
       if ($notification) {
          $notification->markAsRead();
