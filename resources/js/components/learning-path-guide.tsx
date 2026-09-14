@@ -82,7 +82,7 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
       return [
          {
             connector: 'and_or',
-            left: [links.advanced, links.us_experience],
+            left: [links.advanced, links.estimating, links.us_experience],
             right: [links.estimating, resume],
          },
       ];
