@@ -17,6 +17,7 @@ export interface LearningPathPayload {
    advanced: LearningPathLink;
    estimating: LearningPathLink;
    us_experience: LearningPathLink;
+   resume?: LearningPathLink;
 }
 
 type ExperienceAnswer = 'yes' | 'no' | null;
@@ -41,13 +42,19 @@ const choiceClass = (selected: boolean) =>
          : 'border-2 border-[color:var(--brand-red)] bg-background text-primary hover:bg-[color:var(--brand-red)]/10',
    );
 
+const pathItemClass =
+   'bg-primary text-primary-foreground flex h-full min-h-[6.5rem] items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide uppercase shadow-sm';
+
 const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: LearningPathPayload): PathStep[] => {
+   const resume = links.resume ?? { label: 'Building A Winning Resume', url: '', clickable: false };
+
    if (experience === 'no') {
       return [
          { items: [links.fundamentals] },
          { items: [links.advanced] },
          { items: [links.estimating] },
          { items: [links.us_experience] },
+         { items: [resume] },
       ];
    }
 
@@ -57,6 +64,7 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
          { items: [links.advanced] },
          { items: [links.estimating] },
          { items: [links.us_experience] },
+         { items: [resume] },
       ];
    }
 
@@ -64,11 +72,9 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
       return [
          {
             connector: 'and_or',
-            left: [links.fundamentals],
-            right: [links.advanced],
+            left: [links.fundamentals, links.estimating, links.us_experience],
+            right: [links.advanced, resume],
          },
-         { items: [links.estimating] },
-         { items: [links.us_experience] },
       ];
    }
 
@@ -76,10 +82,9 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
       return [
          {
             connector: 'and_or',
-            left: [links.advanced],
-            right: [links.estimating],
+            left: [links.advanced, links.us_experience],
+            right: [links.estimating, resume],
          },
-         { items: [links.us_experience] },
       ];
    }
 
@@ -88,10 +93,7 @@ const buildPath = (experience: ExperienceAnswer, years: YearsAnswer, links: Lear
 
 const PathItem = ({ item }: { item: LearningPathLink }) => {
    const clickable = item.clickable !== false && Boolean(item.url);
-   const className = cn(
-      'bg-primary text-primary-foreground flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold tracking-wide uppercase shadow-sm',
-      clickable ? 'transition hover:bg-primary-dark' : 'cursor-default',
-   );
+   const className = cn(pathItemClass, clickable ? 'transition hover:bg-primary-dark' : 'cursor-default');
    const inner = (
       <>
          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-500 text-white">
@@ -207,23 +209,33 @@ const LearningPathGuide = ({ learningPath }: Props) => {
                            const stacked = step.items ?? [];
 
                            if (step.connector === 'and_or' && (left.length > 0 || right.length > 0)) {
+                              const rowCount = Math.max(left.length, right.length);
+
                               return (
                                  <div
                                     key={index}
-                                    className="grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
+                                    className="grid items-stretch gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
                                  >
-                                    <div className="flex flex-col justify-center gap-2">
-                                       {left.map((item) => (
-                                          <PathItem key={item.label} item={item} />
-                                       ))}
+                                    <div className="flex flex-col gap-2">
+                                       {Array.from({ length: rowCount }, (_, row) =>
+                                          left[row] ? (
+                                             <PathItem key={left[row].label} item={left[row]} />
+                                          ) : (
+                                             <div key={`left-spacer-${row}`} className="min-h-[6.5rem]" />
+                                          ),
+                                       )}
                                     </div>
                                     <span className="bg-[color:var(--brand-red)] shrink-0 self-center justify-self-center rounded-md px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
                                        and / or
                                     </span>
                                     <div className="flex flex-col gap-2">
-                                       {right.map((item) => (
-                                          <PathItem key={item.label} item={item} />
-                                       ))}
+                                       {Array.from({ length: rowCount }, (_, row) =>
+                                          right[row] ? (
+                                             <PathItem key={right[row].label} item={right[row]} />
+                                          ) : (
+                                             <div key={`right-spacer-${row}`} className="min-h-[6.5rem]" />
+                                          ),
+                                       )}
                                     </div>
                                  </div>
                               );

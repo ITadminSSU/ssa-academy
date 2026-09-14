@@ -16,7 +16,8 @@ class LearningPathGuide
      *     fundamentals: array{label: string, url: string},
      *     advanced: array{label: string, url: string},
      *     estimating: array{label: string, url: string},
-     *     us_experience: array{label: string, url: string, note: string, clickable: bool}
+     *     us_experience: array{label: string, url: string, note: string, clickable: bool},
+     *     resume: array{label: string, url: string}
      * }
      */
     public function payload(?User $user = null): array
@@ -41,6 +42,8 @@ class LearningPathGuide
             ?? $this->firstMatchingCourse($courses, ['plan swift', 'fundamental']);
         $advanced = $this->firstMatchingCourse($courses, ['planswift', 'advanced'])
             ?? $this->firstMatchingCourse($courses, ['plan swift', 'advanced']);
+        $resume = $this->firstMatchingCourse($courses, ['winning', 'resume'])
+            ?? $this->firstMatchingCourse($courses, ['building a winning resume']);
 
         return [
             'fundamentals' => [
@@ -60,6 +63,10 @@ class LearningPathGuide
                 'url' => '',
                 'clickable' => false,
                 'note' => 'This is a tab on Estimating courses. Enroll in a course first. It unlocks after you finish the lessons and quizzes.',
+            ],
+            'resume' => [
+                'label' => 'Building A Winning Resume',
+                'url' => $resume ? $this->courseUrl($resume) : $this->categoryBrowseUrl(['all']),
             ],
         ];
     }

@@ -8,7 +8,8 @@ it('matches PlanSwift fundamentals and advanced by title words', function () {
 
     expect($guide->titleContainsAll('PlanSwift Fundamentals', ['planswift', 'fundamental']))->toBeTrue()
         ->and($guide->titleContainsAll('Advanced PlanSwift', ['planswift', 'advanced']))->toBeTrue()
-        ->and($guide->titleContainsAll('Advanced PlanSwift', ['planswift', 'fundamental']))->toBeFalse();
+        ->and($guide->titleContainsAll('Advanced PlanSwift', ['planswift', 'fundamental']))->toBeFalse()
+        ->and($guide->titleContainsAll('Building a Winning Resume: How to Showcase Your U.S. Construction Experience', ['winning', 'resume']))->toBeTrue();
 });
 
 it('picks the first catalog course whose title contains all needles', function () {
