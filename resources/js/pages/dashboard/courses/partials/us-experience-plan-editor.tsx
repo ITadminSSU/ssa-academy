@@ -370,7 +370,9 @@ const UsExperiencePlanEditor = () => {
                   <PlayCircle className="h-5 w-5" />
                   Walkthrough tutorial video
                </CardTitle>
-               <CardDescription>Optional. Students see this only after they submit the plan.</CardDescription>
+               <CardDescription>
+                  Optional. Students see this only after they submit the plan. Maximum 5 GB.
+               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                {plan.tutorial_video_url && (

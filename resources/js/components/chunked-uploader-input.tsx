@@ -83,8 +83,13 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    // Cloudflare R2/S3 require every multipart part except the last to be >= 5MB.
    const MIN_PART_BYTES = 5 * 1024 * 1024;
    const DEFAULT_CHUNK_SIZE = 256 * 1024 * 1024;
+   const CHUNK_UPLOAD_TIMEOUT_MS = 45 * 60 * 1000;
 
    const formatUploadError = (error: any, fallback: string): string => {
+      if (error?.code === 'ECONNABORTED' || /timeout of \d+ms exceeded/i.test(String(error?.message ?? ''))) {
+         return 'Upload timed out. Keep this tab open and try again on a stronger connection. Large videos can take several minutes per part.';
+      }
+
       if (error?.response?.status === 413) {
          return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M. Or paste a YouTube/Vimeo URL.';
       }
@@ -229,7 +234,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
 
       const response = await axios.post(`/dashboard/uploads/chunked/${uploadId}/chunk`, formData, {
          signal,
-         timeout: 900000,
+         timeout: CHUNK_UPLOAD_TIMEOUT_MS,
          maxContentLength: Infinity,
          maxBodyLength: Infinity,
          headers: {
@@ -368,7 +373,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
                storage: storage,
             },
             {
-               timeout: 120000, // 2 minute timeout for completion request
+               timeout: CHUNK_UPLOAD_TIMEOUT_MS,
             },
          );
 
