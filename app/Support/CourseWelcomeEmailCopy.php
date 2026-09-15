@@ -66,6 +66,26 @@ class CourseWelcomeEmailCopy
         return self::VARIANT_PROFESSIONAL;
     }
 
+    public static function companionAccessParagraph(string $courseTitle): string
+    {
+        $title = trim($courseTitle);
+
+        return 'You also have complimentary access to “'.$title.'”. You will find it on your Courses tab, included with this enrollment at no extra charge.';
+    }
+
+    /**
+     * @return array{label: string, url: string, description: string, button_color: string}
+     */
+    public static function companionAccessCta(string $url): array
+    {
+        return [
+            'label' => 'Open your bonus course',
+            'url' => $url,
+            'description' => 'This course is included with your enrollment. Start here whenever you are ready.',
+            'button_color' => '#8C2A23',
+        ];
+    }
+
     public static function showsUsExperience(?Course $course): bool
     {
         $course?->loadMissing('course_category');

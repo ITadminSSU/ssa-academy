@@ -18,6 +18,7 @@ class CourseEnrollmentWelcomeMailService
     public function __construct(
         private TransactionalMailSender $mailSender,
         private CourseWelcomePaymentBreakdown $paymentBreakdown,
+        private CompanionCourseEnrollmentService $companionCourse,
     ) {}
 
     public function sendForPaidCoursePurchase(int|string $userId, int|string $courseId, bool $force = false): bool
@@ -95,6 +96,41 @@ class CourseEnrollmentWelcomeMailService
 
         $intro .= ' You have successfully enrolled and we’re excited to have you join '.$academyName.'.';
 
+        $bodyParagraphs = CourseWelcomeEmailCopy::bodyParagraphs($variant);
+        $ctas = [
+            [
+                'label' => 'Join Our Facebook Community',
+                'url' => $this->facebookGroupUrl(),
+                'description' => 'Connect with other learners, ask questions, get support from your instructor, and stay updated with the latest announcements and course information.',
+                'button_color' => '#1877F2',
+            ],
+            [
+                'label' => 'Explore your course',
+                'url' => route('course.details', [
+                    'slug' => $course->slug,
+                    'id' => $course->id,
+                ]),
+                'description' => 'Ready to start learning? Your course materials are waiting for you.',
+                'button_color' => '#8C2A23',
+            ],
+            [
+                'label' => 'Follow Our Facebook Page',
+                'url' => $this->facebookPageUrl(),
+                'description' => 'Connect with SMARTSOURCING USA and be updated with job opportunities and other important updates in the construction industry.',
+                'button_color' => '#1877F2',
+            ],
+        ];
+
+        $companion = $this->companionCourse->welcomeCompanionCourse($course);
+
+        if ($companion && filled($companion->title) && filled($companion->slug)) {
+            $bodyParagraphs[] = CourseWelcomeEmailCopy::companionAccessParagraph((string) $companion->title);
+            array_splice($ctas, 2, 0, [CourseWelcomeEmailCopy::companionAccessCta(route('course.details', [
+                'slug' => $companion->slug,
+                'id' => $companion->id,
+            ]))]);
+        }
+
         $sent = $this->send($user, new CourseEnrollmentWelcomeMail(
             emailSubject: 'Welcome to '.$course->title.'!',
             greeting: 'Hi '.$this->firstName($user).',',
@@ -103,32 +139,10 @@ class CourseEnrollmentWelcomeMailService
                 $intro,
             ],
             paymentBullets: $breakdown['bullets'],
-            bodyParagraphs: CourseWelcomeEmailCopy::bodyParagraphs($variant),
+            bodyParagraphs: $bodyParagraphs,
             instructorName: $instructor?->user?->name ?: $instructor?->designation,
             instructorBio: $bio !== '' ? $bio : null,
-            ctas: [
-                [
-                    'label' => 'Join Our Facebook Community',
-                    'url' => $this->facebookGroupUrl(),
-                    'description' => 'Connect with other learners, ask questions, get support from your instructor, and stay updated with the latest announcements and course information.',
-                    'button_color' => '#1877F2',
-                ],
-                [
-                    'label' => 'Explore your course',
-                    'url' => route('course.details', [
-                        'slug' => $course->slug,
-                        'id' => $course->id,
-                    ]),
-                    'description' => 'Ready to start learning? Your course materials are waiting for you.',
-                    'button_color' => '#8C2A23',
-                ],
-                [
-                    'label' => 'Follow Our Facebook Page',
-                    'url' => $this->facebookPageUrl(),
-                    'description' => 'Connect with SMARTSOURCING USA and be updated with job opportunities and other important updates in the construction industry.',
-                    'button_color' => '#1877F2',
-                ],
-            ],
+            ctas: $ctas,
             closingNote: 'Thank you for trusting '.$academyName.' with your learning journey. We look forward to supporting you as you build your skills and prepare for new opportunities.',
             farewell: 'Best regards,',
             signatureName: $academyName.' Team',

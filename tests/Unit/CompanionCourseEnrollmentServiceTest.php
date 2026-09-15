@@ -96,3 +96,17 @@ it('treats an empty companion course id as disabled', function () {
     expect($service->isEnabled())->toBeFalse()
         ->and($service->grantForExistingLearners()['granted'])->toBe(0);
 });
+
+it('does not add companion welcome copy when auto-enroll is off', function () {
+    $source = new \App\Models\Course\Course(['title' => 'Building a Winning Resume']);
+    $source->id = 9;
+
+    expect(companionService(companionSettings(5, enabled: false))->welcomeCompanionCourse($source))->toBeNull();
+});
+
+it('does not add companion welcome copy when the source course is the gift course', function () {
+    $source = new \App\Models\Course\Course(['title' => 'Academy Orientation']);
+    $source->id = 5;
+
+    expect(companionService(companionSettings(5))->welcomeCompanionCourse($source))->toBeNull();
+});

@@ -41,6 +41,24 @@ class CompanionCourseEnrollmentService
     }
 
     /**
+     * Companion course to mention on a source-course welcome email.
+     */
+    public function welcomeCompanionCourse(?Course $sourceCourse): ?Course
+    {
+        $companionCourseId = $this->companionCourseId();
+
+        if (! $companionCourseId) {
+            return null;
+        }
+
+        if ($sourceCourse && (int) $sourceCourse->getKey() === $companionCourseId) {
+            return null;
+        }
+
+        return Course::query()->find($companionCourseId);
+    }
+
+    /**
      * Grant the companion course when the learner has real access to another course.
      */
     public function grantForEnrollment(CourseEnrollment $enrollment): ?CourseEnrollment

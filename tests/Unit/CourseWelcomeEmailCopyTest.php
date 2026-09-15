@@ -61,3 +61,15 @@ it('hides US Experience when the course has no category', function () {
     expect(CourseWelcomeEmailCopy::showsUsExperience($course))->toBeFalse()
         ->and(CourseWelcomeEmailCopy::showsUsExperience(null))->toBeFalse();
 });
+
+it('adds a shared companion-course sentence that is not catalog-specific', function () {
+    $paragraph = CourseWelcomeEmailCopy::companionAccessParagraph('Academy Orientation');
+    $cta = CourseWelcomeEmailCopy::companionAccessCta('https://example.test/courses/details/academy-orientation/12');
+
+    expect($paragraph)
+        ->toContain('You also have complimentary access to “Academy Orientation”')
+        ->toContain('Courses tab')
+        ->not->toContain('Build Your US Experience')
+        ->and($cta['label'])->toBe('Open your bonus course')
+        ->and($cta['url'])->toContain('academy-orientation');
+});
