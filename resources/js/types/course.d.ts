@@ -507,6 +507,7 @@ interface WatchHistory extends TableCommon {
    next_watching_id: string | null;
    next_watching_type: 'lesson' | 'quiz' | null;
    completed_watching?: any[];
+   lesson_watch_progress?: Record<string, { percent?: number; max_seconds?: number; duration_seconds?: number }> | null;
    completion_date: string;
    user_id: number;
    course_id: number;

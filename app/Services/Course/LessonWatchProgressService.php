@@ -10,6 +10,10 @@ class LessonWatchProgressService
 {
     public const COMPLETION_THRESHOLD = 95;
 
+    public const SEEK_GRACE_SECONDS = 15;
+
+    private const SENTINEL_TIME = 999990;
+
     public function isVideoLesson(SectionLesson $lesson): bool
     {
         return in_array($lesson->lesson_type, ['video', 'video_url'], true);
@@ -30,7 +34,39 @@ class LessonWatchProgressService
 
     public function recordFullProgress(WatchHistory $watchHistory, int|string $lessonId): WatchHistory
     {
-        return $this->recordProgress($watchHistory, $lessonId, 999999, 999999);
+        return $this->recordProgress($watchHistory, $lessonId, 999999, 999999, allowSeekJump: true);
+    }
+
+    /**
+     * @param  array{percent?: float|int, max_seconds?: float|int, duration_seconds?: float|int}  $existing
+     * @return array{percent: float, max_seconds: float, duration_seconds: float}
+     */
+    public function applyProgressUpdate(array $existing, float $currentTime, float $duration, bool $allowSeekJump = false): array
+    {
+        $existingMax = (float) ($existing['max_seconds'] ?? 0);
+        $durationSeconds = $duration > 0 && $duration < self::SENTINEL_TIME
+            ? $duration
+            : (float) ($existing['duration_seconds'] ?? 0);
+
+        if (! $allowSeekJump && ($currentTime >= self::SENTINEL_TIME || $duration >= self::SENTINEL_TIME)) {
+            $currentTime = $existingMax;
+        } elseif (! $allowSeekJump) {
+            $maxAllowed = $existingMax + self::SEEK_GRACE_SECONDS;
+            if ($currentTime > $maxAllowed) {
+                $currentTime = $existingMax;
+            }
+        }
+
+        $maxSeconds = max($existingMax, max(0, $currentTime));
+        $percent = $durationSeconds > 0
+            ? min(100, round(($maxSeconds / $durationSeconds) * 100, 2))
+            : 0;
+
+        return [
+            'percent' => $percent,
+            'max_seconds' => $maxSeconds,
+            'duration_seconds' => $durationSeconds,
+        ];
     }
 
     public function getProgressMap(WatchHistory $watchHistory): array
@@ -61,29 +97,21 @@ class LessonWatchProgressService
         int|string $lessonId,
         float $currentTime,
         float $duration,
+        bool $allowSeekJump = false,
     ): WatchHistory {
         $progress = $this->getProgressMap($watchHistory);
         $key = (string) $lessonId;
         $existing = $progress[$key] ?? ['percent' => 0, 'max_seconds' => 0, 'duration_seconds' => 0];
 
-        $maxSeconds = max((float) ($existing['max_seconds'] ?? 0), $currentTime);
-        $durationSeconds = $duration > 0 ? $duration : (float) ($existing['duration_seconds'] ?? 0);
-        $percent = $durationSeconds > 0
-            ? min(100, round(($maxSeconds / $durationSeconds) * 100, 2))
-            : 0;
-
-        $progress[$key] = [
-            'percent' => $percent,
-            'max_seconds' => $maxSeconds,
-            'duration_seconds' => $durationSeconds,
-        ];
+        $updated = $this->applyProgressUpdate($existing, $currentTime, $duration, $allowSeekJump);
+        $progress[$key] = $updated;
 
         $watchHistory->lesson_watch_progress = $progress;
         $watchHistory->save();
 
         // Backfill lesson duration from real video length when trainers left it at 00:00:00.
-        if ($durationSeconds >= 1) {
-            $this->backfillLessonDuration($lessonId, (int) round($durationSeconds));
+        if ($updated['duration_seconds'] >= 1) {
+            $this->backfillLessonDuration($lessonId, (int) round($updated['duration_seconds']));
         }
 
         return $watchHistory;

@@ -31,7 +31,8 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
 
    const [finished, setFinished] = useState(false);
    const [currentTab, setCurrentTab] = useState('summary');
-   const submissions = quiz.quiz_submissions;
+   const submissions = quiz.quiz_submissions ?? [];
+   const questions = quiz.quiz_questions ?? [];
 
    const { data, setData, post, reset, processing } = useForm({
       submission_id: submissions.length > 0 ? submissions[0].id : null,
@@ -119,20 +120,20 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
       if (previousQuestion < 0) {
          setCurrentTab('summary');
       } else {
-         setCurrentTab(quiz.quiz_questions[previousQuestion].id.toString());
+         setCurrentTab(questions[previousQuestion].id.toString());
       }
 
       setFinished(false);
    };
 
    const quizNext = (index: number) => {
-      const totalQuestions = quiz.quiz_questions.length;
+      const totalQuestions = questions.length;
       const currentQuestion = index + 1;
 
       if (currentQuestion === totalQuestions) {
          setFinished(true);
       } else {
-         setCurrentTab(quiz.quiz_questions[currentQuestion].id.toString());
+         setCurrentTab(questions[currentQuestion].id.toString());
       }
    };
 
@@ -143,7 +144,12 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
 
    // Function to start/restart the quiz
    const startQuiz = () => {
-      // Reset all form data
+      const firstQuestion = questions[0];
+
+      if (!firstQuestion) {
+         return;
+      }
+
       setData({
          submission_id: submissions.length > 0 ? submissions[0].id : null,
          section_quiz_id: quiz.id,
@@ -151,14 +157,11 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
          answers: [] as QuizAnswer[],
       });
 
-      // Reset state
       setFinished(false);
-
-      // Start from first question
-      setCurrentTab(quiz.quiz_questions[0].id.toString());
+      setCurrentTab(firstQuestion.id.toString());
    };
 
-   if (quiz.quiz_questions.some((question) => question.type === 'quantity_takeoff')) {
+   if (questions.some((question) => question.type === 'quantity_takeoff')) {
       return <TakeoffQuizViewer quiz={quiz} />;
    }
 
@@ -183,7 +186,7 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
                         </div>
                         <div className="flex gap-2 text-sm">
                            <p className="text-muted-foreground">{frontend.total_questions}</p>
-                           <p>: {quiz.quiz_questions.length}</p>
+                           <p>: {questions.length}</p>
                         </div>
                         <div className="flex gap-2 text-sm">
                            <p className="text-muted-foreground">{frontend.total_marks}</p>
@@ -227,6 +230,10 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
                   <div className="flex justify-center p-6">
                      {!canMarkProgress ? (
                         <p className="text-muted-foreground text-sm">This quiz is read-only while your subscription is inactive.</p>
+                     ) : questions.length === 0 ? (
+                        <p className="text-muted-foreground max-w-sm text-center text-sm">
+                           This quiz has no questions yet. Please contact your trainer.
+                        </p>
                      ) : submissions[0]?.attempts >= quiz.retake ? (
                         <Button type="button" size="lg">
                            {frontend.quiz_submitted}
@@ -239,7 +246,7 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
                   </div>
                </TabsContent>
 
-               {quiz.quiz_questions.map((question, index) => {
+               {questions.map((question, index) => {
                   // Parse the options and answers if they're strings
                   const options = question?.options ? (typeof question.options === 'string' ? JSON.parse(question.options) : question.options) : [];
 

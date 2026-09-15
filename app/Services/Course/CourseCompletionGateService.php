@@ -7,6 +7,7 @@ use App\Models\Course\AssignmentSubmission;
 use App\Models\Course\Course;
 use App\Models\Course\CourseAssignment;
 use App\Models\Course\QuizSubmission;
+use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
@@ -165,6 +166,100 @@ class CourseCompletionGateService
         }
 
         return $this->canAccessOrderedCurriculumItem($course, $userId, $quizId, 'quiz', $watchHistory);
+    }
+
+    /**
+     * @return array{id: int|string, type: string}|null
+     */
+    public function firstIncompletePredecessor(
+        Course $course,
+        int $userId,
+        int|string $itemId,
+        string $type,
+        WatchHistory $watchHistory,
+    ): ?array {
+        $course->loadMissing(['sections.section_lessons', 'sections.section_quizzes']);
+        $allItems = $this->getOrderedCurriculumItems($course);
+        $targetIndex = $allItems->search(
+            fn ($item) => $item['type'] === $type && (string) $item['id'] === (string) $itemId
+        );
+
+        if ($targetIndex === false || $targetIndex === 0) {
+            return null;
+        }
+
+        for ($i = 0; $i < $targetIndex; $i++) {
+            $item = $allItems[$i];
+            if (! $this->isCurriculumItemComplete($watchHistory, $item, $userId, $course)) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array{id: int|string, type: string}  $item
+     */
+    public function curriculumItemTitle(Course $course, array $item): string
+    {
+        $course->loadMissing(['sections.section_lessons', 'sections.section_quizzes']);
+
+        foreach ($course->sections as $section) {
+            if (($item['type'] ?? '') === 'quiz') {
+                $quiz = $section->section_quizzes->first(
+                    fn ($quiz) => (string) $quiz->id === (string) $item['id']
+                );
+
+                if ($quiz) {
+                    return (string) $quiz->title;
+                }
+
+                continue;
+            }
+
+            $lesson = $section->section_lessons->first(
+                fn ($lesson) => (string) $lesson->id === (string) $item['id']
+            );
+
+            if ($lesson) {
+                return (string) $lesson->title;
+            }
+        }
+
+        return ($item['type'] ?? '') === 'quiz' ? 'the previous quiz' : 'the previous lesson';
+    }
+
+    public function lockMessageForItem(
+        Course $course,
+        int $userId,
+        int|string $itemId,
+        string $type,
+        WatchHistory $watchHistory,
+        array $subscriptionAccess,
+    ): string {
+        if (($subscriptionAccess['mode'] ?? null) === 'completed_only') {
+            if ($course->usesSubscriptionBilling()) {
+                return $type === 'quiz'
+                    ? 'This quiz is locked. Resubscribe to continue learning.'
+                    : 'This lesson is locked. Resubscribe to continue learning.';
+            }
+
+            return $type === 'quiz' ? 'This quiz is locked.' : 'This lesson is locked.';
+        }
+
+        $predecessor = $this->firstIncompletePredecessor($course, $userId, $itemId, $type, $watchHistory);
+
+        if ($predecessor) {
+            $title = $this->curriculumItemTitle($course, $predecessor);
+            $kind = $type === 'quiz' ? 'quiz' : 'lesson';
+
+            return 'Finish "'.$title.'" before this '.$kind.'.';
+        }
+
+        return $type === 'quiz'
+            ? 'Complete the previous item before continuing.'
+            : 'Complete the previous lesson before continuing.';
     }
 
     public function canAccessCertificate(Course $course, int $userId, ?array $completion = null): bool
@@ -375,13 +470,36 @@ class CourseCompletionGateService
             ->values();
     }
 
-    private function isCurriculumItemComplete(WatchHistory $watchHistory, array $item, int $userId): bool
+    private function isCurriculumItemComplete(WatchHistory $watchHistory, array $item, int $userId, Course $course): bool
     {
         if ($item['type'] === 'quiz') {
             return $this->isQuizComplete($watchHistory, $item['id'], $userId);
         }
 
-        return $this->isLessonComplete($watchHistory, (object) ['id' => $item['id']]);
+        $lesson = $this->lessonFromCourse($course, $item['id']) ?? (object) ['id' => $item['id']];
+
+        return $this->isLessonComplete($watchHistory, $lesson);
+    }
+
+    private function lessonFromCourse(Course $course, int|string $lessonId): ?SectionLesson
+    {
+        if ($course->relationLoaded('sections')) {
+            foreach ($course->sections as $section) {
+                if (! $section->relationLoaded('section_lessons')) {
+                    continue;
+                }
+
+                $lesson = $section->section_lessons->first(
+                    fn ($lesson) => (string) $lesson->id === (string) $lessonId
+                );
+
+                if ($lesson instanceof SectionLesson) {
+                    return $lesson;
+                }
+            }
+        }
+
+        return SectionLesson::query()->find($lessonId);
     }
 
     private function isQuizComplete(WatchHistory $watchHistory, int|string $quizId, int $userId): bool
@@ -426,7 +544,7 @@ class CourseCompletionGateService
 
         for ($i = 0; $i < $targetIndex; $i++) {
             $item = $allItems[$i];
-            if (!$this->isCurriculumItemComplete($watchHistory, $item, $userId)) {
+            if (!$this->isCurriculumItemComplete($watchHistory, $item, $userId, $course)) {
                 return false;
             }
         }
@@ -445,6 +563,21 @@ class CourseCompletionGateService
 
     private function isLessonComplete(WatchHistory $watchHistory, $lesson): bool
     {
-        return $this->isItemInCompletedWatching($watchHistory, $lesson->id, 'lesson');
+        if (! $this->isItemInCompletedWatching($watchHistory, $lesson->id, 'lesson')) {
+            return false;
+        }
+
+        $model = $lesson instanceof SectionLesson ? $lesson : null;
+
+        if (
+            $model
+            && $this->lessonWatchProgress->isVideoLesson($model)
+            && ! $this->lessonWatchProgress->isExternalVideoLesson($model)
+            && ! $this->lessonWatchProgress->hasWatchedFully($watchHistory, $model)
+        ) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -1,6 +1,7 @@
+import LockedCurriculumButton from '@/components/locked-curriculum-button';
 import LessonIcons from '@/components/lesson-icons';
 import PlayerNavLink from '@/components/player-nav-link';
-import { resolveCurriculumAccess } from '@/lib/curriculum-items';
+import { resolveCurriculumAccess, resolveCurriculumLockReason } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
@@ -55,6 +56,7 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
    const isCurrentLesson =
       watchHistory.current_watching_type === 'lesson' && String(watchHistory.current_watching_id) === String(lesson.id);
    const canAccess = resolveCurriculumAccess(props, completed, { id: lesson.id, type: 'lesson' });
+   const lockReason = resolveCurriculumLockReason(props, completed, { id: lesson.id, type: 'lesson' });
 
    if (variant === 'simple') {
       const content = (
@@ -74,12 +76,12 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
 
       if (!canAccess) {
          return (
-            <div className="text-muted-foreground px-4 py-3">
+            <LockedCurriculumButton reason={lockReason || 'This lesson is locked.'} className="text-muted-foreground px-4 py-3">
                {content}
                {subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Resubscribe to unlock</p>
                ) : null}
-            </div>
+            </LockedCurriculumButton>
          );
       }
 
@@ -148,11 +150,11 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
             </LessonWrapper>
          ) : (
             <LessonWrapper lesson={lesson}>
-               <div className="flex items-center gap-3 py-1 text-muted-foreground">
+               <LockedCurriculumButton reason={lockReason || 'This lesson is locked.'} className="flex items-center gap-3 py-1 text-muted-foreground">
                   <LessonIcons type="inactive" lesson={lesson} dripContent={true} isCompleted={isCompleted} />
 
                   <p>{lesson.title}</p>
-               </div>
+               </LockedCurriculumButton>
             </LessonWrapper>
          )}
       </>

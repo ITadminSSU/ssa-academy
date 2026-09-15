@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Course;
 
 use App\Http\Controllers\Controller;
+use App\Models\Course\Course;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\WatchHistory;
 use App\Services\Course\CourseCertificateIssuanceService;
@@ -18,6 +19,7 @@ use App\Services\Course\QuizTakeoffService;
 use App\Services\Course\VideoPlaybackTokenService;
 use App\Services\LiveClass\ZoomLiveService;
 use App\Services\Payment\SubscriptionAccessService;
+use App\Support\CurriculumSequence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -147,15 +149,14 @@ class PlayerController extends Controller
                 && $type === 'quiz'
                 && !$this->courseCompletionGateService->canAccessQuiz($course, $user->id, $lesson_id, $watch_history)
             ) {
-                $errorMessage = $subscriptionAccess['mode'] === 'completed_only' && $course->usesSubscriptionBilling()
-                    ? 'This quiz is locked. Resubscribe to continue learning.'
-                    : ($subscriptionAccess['mode'] === 'completed_only'
-                        ? 'This quiz is locked.'
-                        : 'Complete the previous item before continuing.');
-
-                return redirect()
-                    ->route('student.course.show', ['id' => $course->id, 'tab' => 'quizzes'])
-                    ->with('error', $errorMessage);
+                return $this->redirectLockedCurriculumItem(
+                    $course,
+                    $user->id,
+                    $type,
+                    $lesson_id,
+                    $watch_history,
+                    $subscriptionAccess,
+                );
             }
 
             if (
@@ -163,29 +164,14 @@ class PlayerController extends Controller
                 && $type === 'lesson'
                 && !$this->courseCompletionGateService->canAccessLesson($course, $user->id, $lesson_id, $watch_history)
             ) {
-                $errorMessage = $subscriptionAccess['mode'] === 'completed_only' && $course->usesSubscriptionBilling()
-                    ? 'This lesson is locked. Resubscribe to continue learning.'
-                    : ($subscriptionAccess['mode'] === 'completed_only'
-                        ? 'This lesson is locked.'
-                        : 'Complete the previous lesson before continuing.');
-
-                $fallbackType = (string) $watch_history->current_watching_type;
-                $fallbackId = (string) $watch_history->current_watching_id;
-                $sameItem = $fallbackType === $type && $fallbackId === (string) $lesson_id;
-
-                if ($fallbackType && $fallbackId && ! $sameItem) {
-                    return redirect()
-                        ->route('course.player', [
-                            'type' => $fallbackType,
-                            'watch_history' => $watch_history->id,
-                            'lesson_id' => $fallbackId,
-                        ])
-                        ->with('error', $errorMessage);
-                }
-
-                return redirect()
-                    ->route('student.course.show', ['id' => $course->id, 'tab' => 'modules'])
-                    ->with('error', $errorMessage);
+                return $this->redirectLockedCurriculumItem(
+                    $course,
+                    $user->id,
+                    $type,
+                    $lesson_id,
+                    $watch_history,
+                    $subscriptionAccess,
+                );
             }
 
             $watching = $this->coursePlay->getWatchingLesson($lesson_id, $type);
@@ -300,6 +286,7 @@ class PlayerController extends Controller
             $validated['lesson_id'],
             (float) $validated['current_time'],
             (float) $validated['duration'],
+            $course->isStaffPreviewer($user),
         );
 
         return response()->json(['ok' => true]);
@@ -348,14 +335,7 @@ class PlayerController extends Controller
             }
 
             if ($lesson && $this->lessonWatchProgress->isVideoLesson($lesson)) {
-                // Video `ended` can race ahead of the async watch-progress POST.
-                // Treat a genuine end event (or external video) as fully watched.
-                if (
-                    $request->boolean('from_video_end')
-                    || $this->lessonWatchProgress->isExternalVideoLesson($lesson)
-                ) {
-                    $this->lessonWatchProgress->recordFullProgress($watch_history, $lesson->id);
-                } elseif (!$this->lessonWatchProgress->hasWatchedFully($watch_history, $lesson)) {
+                if (! $this->lessonWatchProgress->hasWatchedFully($watch_history, $lesson)) {
                     return response()->json([
                         'message' => 'Watch the entire video before marking this lesson complete.',
                     ], 422);
@@ -442,5 +422,55 @@ class PlayerController extends Controller
         return redirect()
             ->route('student.course.show', ['id' => $course->id, 'tab' => 'certificate'])
             ->with('success', 'Course completed successfully. Your certificate has been issued.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $subscriptionAccess
+     */
+    private function redirectLockedCurriculumItem(
+        Course $course,
+        int $userId,
+        string $type,
+        string $itemId,
+        WatchHistory $watchHistory,
+        array $subscriptionAccess,
+    ) {
+        $message = $this->courseCompletionGateService->lockMessageForItem(
+            $course,
+            $userId,
+            $itemId,
+            $type,
+            $watchHistory,
+            $subscriptionAccess,
+        );
+
+        $predecessor = $this->courseCompletionGateService->firstIncompletePredecessor(
+            $course,
+            $userId,
+            $itemId,
+            $type,
+            $watchHistory,
+        );
+
+        $resumeType = $predecessor['type'] ?? (string) $watchHistory->current_watching_type;
+        $resumeId = isset($predecessor['id'])
+            ? (string) $predecessor['id']
+            : (string) $watchHistory->current_watching_id;
+
+        $sameItem = $resumeType === $type && $resumeId === (string) $itemId;
+
+        if ($sameItem || $resumeType === '' || $resumeId === '') {
+            $first = CurriculumSequence::flattenCourse($course)->first();
+            $resumeType = (string) ($first['type'] ?? 'lesson');
+            $resumeId = (string) ($first['id'] ?? $itemId);
+        }
+
+        return redirect()
+            ->route('course.player', [
+                'type' => $resumeType,
+                'watch_history' => $watchHistory->id,
+                'lesson_id' => $resumeId,
+            ])
+            ->with('error', $message);
     }
 }

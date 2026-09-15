@@ -77,8 +77,12 @@ const Index = (props: CoursePlayerProps) => {
                   <Main>
                      <ErrorBoundary
                         resetKeys={[type, watching?.id]}
-                        title="This lesson could not be shown"
-                        description="The player hit a display error. Try again, or reload the page to continue."
+                        title={type === 'quiz' ? 'This quiz could not be shown' : 'This lesson could not be shown'}
+                        description={
+                           type === 'quiz'
+                              ? 'The quiz hit a display error. Try again, or reload the page to continue.'
+                              : 'The player hit a display error. Try again, or reload the page to continue.'
+                        }
                      >
                         {type === 'lesson' ? (
                            <LessonViewer

@@ -1,5 +1,6 @@
+import LockedCurriculumButton from '@/components/locked-curriculum-button';
 import PlayerNavLink from '@/components/player-nav-link';
-import { resolveCurriculumAccess } from '@/lib/curriculum-items';
+import { resolveCurriculumAccess, resolveCurriculumLockReason } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
@@ -34,6 +35,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
    const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && String(watchHistory.current_watching_id) === String(quiz.id);
    const isNext = watchHistory.next_watching_type === 'quiz' && String(quiz.id) === String(watchHistory.next_watching_id);
    const canAccess = resolveCurriculumAccess(props, completed, { id: quiz.id, type: 'quiz' });
+   const lockReason = resolveCurriculumLockReason(props, completed, { id: quiz.id, type: 'quiz' });
 
    if (variant === 'simple') {
       const meta = quiz.duration ? `Quiz · ${quiz.duration}` : 'Quiz';
@@ -55,12 +57,12 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
 
       if (!canAccess) {
          return (
-            <div className="text-muted-foreground px-4 py-3">
+            <LockedCurriculumButton reason={lockReason || 'This quiz is locked.'} className="text-muted-foreground px-4 py-3">
                {content}
                {subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Resubscribe to unlock</p>
                ) : null}
-            </div>
+            </LockedCurriculumButton>
          );
       }
 
@@ -71,6 +73,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
                watch_history: watchHistory.id,
                lesson_id: quiz.id,
             })}
+            preserveState={false}
             className={cn(
                'hover:bg-muted/70 ssu-curriculum-item block px-4 py-3 transition-colors',
                isCurrentLesson && 'ssu-curriculum-item--active',
@@ -95,16 +98,17 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
                   watch_history: watchHistory.id,
                   lesson_id: quiz.id,
                })}
+               preserveState={false}
             >
                {isCompleted ? <CircleCheck className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
 
                <QuizIcon quiz={quiz} />
             </PlayerNavLink>
          ) : (
-            <div className="flex items-center gap-3 py-1 text-muted-foreground">
+            <LockedCurriculumButton reason={lockReason || 'This quiz is locked.'} className="flex items-center gap-3 py-1 text-muted-foreground">
                <Lock className="h-4 w-4" />
                <QuizIcon quiz={quiz} />
-            </div>
+            </LockedCurriculumButton>
          )}
 
          <span>{quiz.duration}</span>
@@ -123,6 +127,7 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
                      watch_history: watchHistory.id,
                      lesson_id: quiz.id,
                   })}
+                  preserveState={false}
                >
                   {isCompleted ? (
                      <CircleCheck className="h-4 w-4" />
@@ -141,11 +146,11 @@ const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
             </div>
          ) : (
             <div className="flex items-center justify-between gap-3 rounded-sm border p-2 py-2 md:gap-3">
-               <div className="flex items-center gap-3 py-1 text-muted-foreground">
+               <LockedCurriculumButton reason={lockReason || 'This quiz is locked.'} className="flex items-center gap-3 py-1 text-muted-foreground">
                   <Lock className="h-4 w-4" />
 
                   <QuizIcon quiz={quiz} />
-               </div>
+               </LockedCurriculumButton>
 
                <span>{quiz.duration}</span>
             </div>

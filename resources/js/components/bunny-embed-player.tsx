@@ -7,21 +7,32 @@ interface BunnyEmbedPlayerProps {
    title?: string;
    onEnded?: () => void;
    onWatchProgress?: (currentTime: number, duration: number) => void;
+   preventSkipAhead?: boolean;
+   initialMaxSeconds?: number;
 }
 
 function iframeSrcFor(embedUrl: string): string {
    return embedUrl.includes('playerjs=') ? embedUrl : `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}playerjs=true`;
 }
 
-const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchProgress }: BunnyEmbedPlayerProps) => {
+const BunnyEmbedPlayer = ({
+   embedUrl,
+   title = 'Lesson video',
+   onEnded,
+   onWatchProgress,
+   preventSkipAhead = false,
+   initialMaxSeconds = 0,
+}: BunnyEmbedPlayerProps) => {
    const hostRef = useRef<HTMLDivElement>(null);
    const onEndedRef = useRef(onEnded);
    const onWatchProgressRef = useRef(onWatchProgress);
    const lastReportedSecond = useRef(-1);
    const hasEnded = useRef(false);
+   const maxWatchedRef = useRef(Math.max(0, initialMaxSeconds));
 
    onEndedRef.current = onEnded;
    onWatchProgressRef.current = onWatchProgress;
+   maxWatchedRef.current = Math.max(maxWatchedRef.current, initialMaxSeconds);
 
    const iframeSrc = iframeSrcFor(embedUrl);
 
@@ -40,6 +51,7 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
 
       hasEnded.current = false;
       lastReportedSecond.current = -1;
+      maxWatchedRef.current = Math.max(0, initialMaxSeconds);
 
       const iframe = document.createElement('iframe');
       iframe.src = iframeSrc;
@@ -51,6 +63,24 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
 
       let player: PlayerJsInstance | null = null;
       let cancelled = false;
+
+      const clampToWatched = (currentTime: number) => {
+         if (!preventSkipAhead) {
+            return currentTime;
+         }
+
+         if (currentTime > maxWatchedRef.current + 1.5) {
+            try {
+               player?.setCurrentTime?.(maxWatchedRef.current);
+            } catch {
+               // player.js may not expose setCurrentTime on every embed.
+            }
+
+            return maxWatchedRef.current;
+         }
+
+         return currentTime;
+      };
 
       const reportProgress = (currentTime: number, duration: number) => {
          if (!onWatchProgressRef.current || duration <= 0) {
@@ -71,6 +101,11 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
             return;
          }
 
+         if (preventSkipAhead && duration > 0 && maxWatchedRef.current < duration * 0.95) {
+            clampToWatched(duration);
+            return;
+         }
+
          hasEnded.current = true;
 
          if (onWatchProgressRef.current && duration > 0) {
@@ -81,9 +116,15 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
       };
 
       const handleTimeUpdate = (currentTime: number, duration: number) => {
-         reportProgress(currentTime, duration);
+         const safeTime = clampToWatched(currentTime);
 
-         if (duration > 0 && currentTime >= Math.max(duration - 1, duration * 0.98)) {
+         if (safeTime > maxWatchedRef.current) {
+            maxWatchedRef.current = safeTime;
+         }
+
+         reportProgress(safeTime, duration);
+
+         if (duration > 0 && safeTime >= Math.max(duration - 1, duration * 0.98)) {
             handleEnded(duration);
          }
       };
@@ -101,6 +142,12 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
             player.on('ready', () => {
                if (cancelled || !player) {
                   return;
+               }
+
+               try {
+                  player.setPlaybackRate?.(1);
+               } catch {
+                  // Optional API.
                }
 
                player.on('timeupdate', (data: unknown) => {
@@ -171,7 +218,7 @@ const BunnyEmbedPlayer = ({ embedUrl, title = 'Lesson video', onEnded, onWatchPr
 
          host.replaceChildren();
       };
-   }, [iframeSrc, title]);
+   }, [iframeSrc, title, preventSkipAhead, initialMaxSeconds]);
 
    return <div ref={hostRef} className="bg-muted relative aspect-video w-full overflow-hidden rounded-lg" />;
 };

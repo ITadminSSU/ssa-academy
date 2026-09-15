@@ -1,6 +1,7 @@
+import LockedCurriculumButton from '@/components/locked-curriculum-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { resolveCurriculumAccess } from '@/lib/curriculum-items';
+import { resolveCurriculumAccess, resolveCurriculumLockReason } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps, StudentCourseProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
@@ -60,6 +61,8 @@ const QuizStatus = ({ quiz, completed }: Props) => {
    const quizzesUnlocked = courseGates?.quizzes_unlocked ?? true;
    const canAccessQuiz =
       staffPreview || (resolveCurriculumAccess(props, completed, { id: quiz.id, type: 'quiz' }) && quizzesUnlocked);
+   const lockReason =
+      resolveCurriculumLockReason(props, completed, { id: quiz.id, type: 'quiz' }) || 'Complete all video lessons first';
 
    const latestSubmission =
       quiz.quiz_submissions && quiz.quiz_submissions.length > 0 ? quiz.quiz_submissions[quiz.quiz_submissions.length - 1] : null;
@@ -69,13 +72,13 @@ const QuizStatus = ({ quiz, completed }: Props) => {
 
    if (!staffPreview && !quizzesUnlocked && !hasAttempted) {
       return (
-         <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
+         <LockedCurriculumButton reason={lockReason} className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="flex flex-1 items-center gap-3 text-muted-foreground">
                <Lock className="h-5 w-5 shrink-0" />
                <QuizIcon quiz={quiz} latestSubmission={null} />
             </div>
             <p className="text-muted-foreground max-w-xs text-right text-sm">Complete all video lessons first</p>
-         </div>
+         </LockedCurriculumButton>
       );
    }
 
@@ -113,6 +116,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
                               watch_history: watchHistory.id,
                               lesson_id: quiz.id,
                            })}
+                           preserveState={false}
                         >
                            {'Take Quiz'}
                         </Link>
@@ -121,7 +125,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
                </div>
             </div>
          ) : (
-            <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
+            <LockedCurriculumButton reason={lockReason} className="bg-card flex items-center justify-between gap-3 rounded-lg border p-3">
                <div className="flex flex-1 items-center gap-3 text-muted-foreground">
                   <Lock className="h-5 w-5" />
 
@@ -138,7 +142,7 @@ const QuizStatus = ({ quiz, completed }: Props) => {
                      </div>
                   )}
                </div>
-            </div>
+            </LockedCurriculumButton>
          )}
       </>
    );

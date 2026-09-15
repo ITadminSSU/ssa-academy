@@ -11,6 +11,7 @@ import { usePage } from '@inertiajs/react';
 import axios from 'axios';
 import { CheckCircle2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Renderer } from 'richtor';
 import 'richtor/styles';
 import DocumentViewer from './document-viewer';
@@ -69,8 +70,13 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
             if (data?.watchHistory) {
                applyCoursePlayerProgress(data);
             }
-         } catch {
-            setHasVideoEnded(true);
+         } catch (error) {
+            const message =
+               axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
+                  ? error.response.data.message
+                  : 'Watch the entire video before marking this lesson complete.';
+            toast.error(message);
+            setHasVideoEnded(false);
          }
       },
       [lesson, watchHistory.id, canMarkProgress],
@@ -112,20 +118,8 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
          return;
       }
 
-      // Persist full watch progress before mark-complete so the server gate
-      // cannot lose a race against the async progress POST from the player.
-      try {
-         await axios.post(route('course.player.watch-progress', { watch_history: watchHistory.id }), {
-            lesson_id: lesson.id,
-            current_time: 999999,
-            duration: 999999,
-         });
-      } catch {
-         // from_video_end still records full progress on the server.
-      }
-
       await markLessonComplete(true);
-   }, [lesson, canMarkProgress, watchHistory.id, markLessonComplete]);
+   }, [lesson, canMarkProgress, markLessonComplete]);
 
    const handleVideoEndedRef = useRef(handleVideoEnded);
    handleVideoEndedRef.current = handleVideoEnded;
@@ -164,8 +158,11 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
 
    const lessonIsVideo = isVideoLesson(lesson);
    const externalVideo = isExternalVideoLesson(lesson);
+   const staffPreview = subscriptionAccess?.staff_preview ?? false;
    const isPracticalActivity = Boolean(lesson.requires_submission);
    const watchPercent = Math.max(lessonWatchProgress?.percent ?? 0, livePercent);
+   const canMarkVideoComplete = staffPreview || watchPercent >= 95;
+   const nextItemIsQuiz = watchHistory.next_watching_type === 'quiz';
    const nextLessonHref =
       watchHistory.next_watching_id && watchHistory.next_watching_type
          ? route('course.player', {
@@ -210,6 +207,8 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                   initialPlayback={lesson.video_playback ?? null}
                   source={videoSource}
                   translate={translate}
+                  preventSkipAhead={!staffPreview}
+                  initialMaxSeconds={lessonWatchProgress?.max_seconds ?? 0}
                   onEnded={stableOnEnded}
                   onWatchProgress={stableOnWatchProgress}
                />
@@ -250,7 +249,9 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                      <FacebookGroupButton />
                      {nextLessonHref ? (
                         <Button asChild>
-                           <PlayerNavLink href={nextLessonHref}>Continue to next lesson</PlayerNavLink>
+                           <PlayerNavLink href={nextLessonHref} preserveState={false}>
+                              {nextItemIsQuiz ? 'Continue to quiz' : 'Continue to next lesson'}
+                           </PlayerNavLink>
                         </Button>
                      ) : (
                         <p className="text-muted-foreground text-sm">You have reached the last item in this module.</p>
@@ -265,15 +266,17 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                         : hasVideoEnded
                           ? 'Finishing lesson...'
                           : externalVideo
-                            ? 'This lesson completes automatically when the video ends.'
+                            ? 'Watch this video without skipping ahead. It completes when you reach the end.'
                             : watchPercent >= 95
                               ? 'You watched enough of this video. Mark it complete to continue.'
-                              : `This lesson is marked complete automatically when the video ends. If it does not, you can mark it complete here (${Math.round(watchPercent)}% watched).`}
+                              : `Watch the video without skipping ahead (${Math.round(watchPercent)}% watched). The next item unlocks when it ends.`}
                   </p>
 
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
                      <FacebookGroupButton />
-                     {canMarkProgress ? <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button> : null}
+                     {canMarkProgress && canMarkVideoComplete ? (
+                        <Button onClick={() => markLessonComplete(false)}>Mark lesson as complete</Button>
+                     ) : null}
                   </div>
                </div>
             ) : (

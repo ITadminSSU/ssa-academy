@@ -9,11 +9,13 @@ type PlayerNavLinkProps = ComponentProps<typeof Link>;
  * The video player is isolated from React's DOM, so SPA visits are safe
  * and keep the player chrome on screen.
  */
-const PlayerNavLink = forwardRef<HTMLAnchorElement, PlayerNavLinkProps>(({ className, children, ...props }, ref) => (
-   <Link ref={ref} className={cn(className)} {...props} preserveScroll preserveState>
-      {children}
-   </Link>
-));
+const PlayerNavLink = forwardRef<HTMLAnchorElement, PlayerNavLinkProps>(
+   ({ className, children, preserveScroll = true, preserveState = true, ...props }, ref) => (
+      <Link ref={ref} className={cn(className)} preserveScroll={preserveScroll} preserveState={preserveState} {...props}>
+         {children}
+      </Link>
+   ),
+);
 
 PlayerNavLink.displayName = 'PlayerNavLink';
 

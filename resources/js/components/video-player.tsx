@@ -21,6 +21,8 @@ interface Props {
    secureStream?: boolean;
    lessonId?: number | string;
    initialPlayback?: SecureVideoPlayback | null;
+   preventSkipAhead?: boolean;
+   initialMaxSeconds?: number;
 }
 
 type PlyrSource = {
@@ -34,11 +36,11 @@ type PlyrSource = {
 
 const PLYR_OPTIONS: Plyr.Options = {
    ratio: '16:9',
-   controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen'],
-   settings: ['quality', 'speed'],
-   speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+   controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+   settings: [],
+   speed: { selected: 1, options: [1] },
    resetOnEnd: true,
-   keyboard: { focused: true, global: false },
+   keyboard: { focused: false, global: false },
    displayDuration: true,
    tooltips: { controls: true, seek: true },
    i18n: {
@@ -148,6 +150,8 @@ const VideoPlayer = ({
    secureStream = false,
    lessonId,
    initialPlayback = null,
+   preventSkipAhead = false,
+   initialMaxSeconds = 0,
 }: Props) => {
    const containerRef = useRef<HTMLDivElement>(null);
    const hostRef = useRef<HTMLDivElement>(null);
@@ -203,10 +207,33 @@ const VideoPlayer = ({
 
       const target = mountPlyrTarget(host, processedSource, protectDownload);
       const player = new Plyr(target, PLYR_OPTIONS);
+      let maxWatched = Math.max(0, initialMaxSeconds);
+
+      const clampIfNeeded = () => {
+         if (!preventSkipAhead) {
+            return false;
+         }
+
+         const currentTime = player.currentTime ?? 0;
+         if (currentTime > maxWatched + 1.5) {
+            player.currentTime = maxWatched;
+            return true;
+         }
+
+         return false;
+      };
 
       const handleTimeUpdate = () => {
+         if (clampIfNeeded()) {
+            return;
+         }
+
          const currentTime = Math.floor(player.currentTime ?? 0);
          const duration = player.duration ?? 0;
+
+         if (currentTime > maxWatched) {
+            maxWatched = currentTime;
+         }
 
          if (currentTime !== lastReportedSecond.current && duration > 0) {
             lastReportedSecond.current = currentTime;
@@ -214,8 +241,24 @@ const VideoPlayer = ({
          }
       };
 
+      const handleSeeking = () => {
+         clampIfNeeded();
+      };
+
+      const handleRateChange = () => {
+         if (preventSkipAhead && player.speed !== 1) {
+            player.speed = 1;
+         }
+      };
+
       const handleEnded = () => {
          const duration = player.duration > 0 ? player.duration : player.currentTime > 0 ? player.currentTime : 1;
+
+         if (preventSkipAhead && duration > 0 && maxWatched < duration * 0.95) {
+            player.currentTime = maxWatched;
+            return;
+         }
+
          onWatchProgressRef.current?.(duration, duration);
          onEndedRef.current?.();
       };
@@ -225,11 +268,17 @@ const VideoPlayer = ({
       };
 
       player.on('timeupdate', handleTimeUpdate);
+      player.on('seeking', handleSeeking);
+      player.on('seeked', handleSeeking);
+      player.on('ratechange', handleRateChange);
       player.on('ended', handleEnded);
       player.on('error', handleError);
 
       return () => {
          player.off('timeupdate', handleTimeUpdate);
+         player.off('seeking', handleSeeking);
+         player.off('seeked', handleSeeking);
+         player.off('ratechange', handleRateChange);
          player.off('ended', handleEnded);
          player.off('error', handleError);
 
@@ -241,7 +290,7 @@ const VideoPlayer = ({
 
          host.replaceChildren();
       };
-   }, [sourceKey, processedSource, protectDownload, playbackFailedMessage]);
+   }, [sourceKey, processedSource, protectDownload, playbackFailedMessage, preventSkipAhead, initialMaxSeconds]);
 
    if (loading) {
       return (
@@ -264,6 +313,8 @@ const VideoPlayer = ({
          <BunnyEmbedPlayer
             key={embedUrl}
             embedUrl={embedUrl}
+            preventSkipAhead={preventSkipAhead}
+            initialMaxSeconds={initialMaxSeconds}
             onEnded={() => onEndedRef.current?.()}
             onWatchProgress={(currentTime, duration) => onWatchProgressRef.current?.(currentTime, duration)}
          />

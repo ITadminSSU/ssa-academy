@@ -9,6 +9,10 @@ export type PlayerJsInstance = {
    mute?: () => void;
    setVolume?: (volume: number) => void;
    getMuted?: (callback: (muted: boolean) => void) => void;
+   getCurrentTime?: (callback: (time: number) => void) => void;
+   setCurrentTime?: (time: number) => void;
+   getDuration?: (callback: (duration: number) => void) => void;
+   setPlaybackRate?: (rate: number) => void;
 };
 
 type PlayerJsConstructor = new (iframe: HTMLIFrameElement) => PlayerJsInstance;
