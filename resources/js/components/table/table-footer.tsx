@@ -36,25 +36,19 @@ const TableFooter = (props: Props) => {
    }
 
    const gotoPage = (pageNumber: number) => {
-      router.get(
-         route(routeName, {
-            ...(routeParams || {}),
-            ...urlParams,
-            page: pageNumber,
-         }),
-      );
+      router.get(route(routeName, routeParams || {}), {
+         ...urlParams,
+         page: pageNumber,
+      });
    };
 
    const gotoRoute = (path: string) => {
       const pathParams = getQueryParams(path);
 
-      router.get(
-         route(routeName, {
-            ...(routeParams || {}),
-            ...urlParams,
-            ...pathParams,
-         }),
-      );
+      router.get(route(routeName, routeParams || {}), {
+         ...urlParams,
+         ...pathParams,
+      });
    };
 
    const menuItem = (e: number) => {

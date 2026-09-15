@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { router, usePage } from '@inertiajs/react';
 import { Search } from 'lucide-react';
-import { ReactNode, useEffect, useRef } from 'react';
+import { ChangeEvent, ReactNode, useMemo, useRef } from 'react';
 import TableDataExport from './table-data-export';
 import TablePageSize from './table-page-size';
 
@@ -28,30 +28,40 @@ const TableFilter = (props: Props) => {
    const page = usePage<SharedData>();
    const urlParams = getQueryParams(page.url);
    const searchRef = useRef<HTMLInputElement>(null);
+   const urlParamsRef = useRef(urlParams);
+   urlParamsRef.current = urlParams;
 
-   const searchHandler = debounce(async (e: any) => {
-      const query = e.target.value;
+   const visitSearch = useMemo(
+      () =>
+         debounce((query: string) => {
+            if (!routeName) {
+               return;
+            }
 
-      router.get(
-         route(routeName || '', {
-            ...(routeParams || {}),
-            ...urlParams,
-            search: query,
-         }),
-         {},
-         {
-            preserveState: true,
-            preserveScroll: true,
-            showProgress: false,
-         },
-      );
-   }, 300);
+            const params: Record<string, string | number> = { ...(urlParamsRef.current || {}) };
+            const trimmed = query.trim();
 
-   useEffect(() => {
-      if (urlParams['search'] && searchRef.current) {
-         searchRef.current.focus();
-      }
-   }, [props]);
+            if (trimmed) {
+               params.search = trimmed;
+            } else {
+               delete params.search;
+            }
+
+            delete params.page;
+
+            router.get(route(routeName, routeParams || {}), params, {
+               preserveState: true,
+               preserveScroll: true,
+               replace: true,
+               showProgress: false,
+            });
+         }, 300),
+      [routeName, routeParams],
+   );
+
+   const searchHandler = (e: ChangeEvent<HTMLInputElement>) => {
+      visitSearch(e.target.value);
+   };
 
    return (
       <div className={cn('items-center justify-between p-6 md:flex', className)}>

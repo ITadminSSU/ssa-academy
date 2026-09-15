@@ -15,6 +15,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserService
 {
+    public function getEnrollmentPickerUsers(): Collection
+    {
+        return User::query()
+            ->select(['id', 'name', 'email'])
+            ->whereNotIn('role', ['admin', 'instructor', 'social_media'])
+            ->orderBy('name')
+            ->get();
+    }
+
     public function getUsers(array $data): LengthAwarePaginator|Collection
     {
         $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;

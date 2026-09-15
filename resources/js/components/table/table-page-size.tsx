@@ -22,13 +22,13 @@ const TablePageSize = (props: Props) => {
 
    const gotoPage = (size: number) => {
       router.get(
-         route(routeName, {
-            ...(routeParams || {}),
+         route(routeName, routeParams || {}),
+         {
             ...urlParams,
             [pageSizeKey]: size,
-         }),
-         {},
-         { preserveState: true },
+            page: 1,
+         },
+         { preserveState: true, preserveScroll: true },
       );
    };
 
