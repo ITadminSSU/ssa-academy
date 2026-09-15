@@ -219,6 +219,7 @@ interface ButtonLang {
    us_experience_attempts?: string;
    details: string;
    instructor: string;
+   faqs: string;
    reviews: string;
    summery: string;
    certificate: string;

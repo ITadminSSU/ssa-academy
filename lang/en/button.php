@@ -225,6 +225,7 @@ return [
     'build_your_us_experience' => 'Build Your US Experience',
     'details' => 'Details',
     'instructor' => 'Instructor',
+    'faqs' => 'FAQs',
     'reviews' => 'Reviews',
     'summery' => 'Summary',
     'certificate' => 'Certificate',

@@ -9,6 +9,7 @@ import CoursePreview from './partials/course-preview';
 import CourseReviews from './partials/course-reviews';
 import Curriculum from './partials/curriculum';
 import Details from './partials/details';
+import Faqs from './partials/faqs';
 import Instructor from './partials/instructor';
 import Overview from './partials/overview';
 import UsExperience from './partials/us-experience';
@@ -59,6 +60,11 @@ const Show = ({ course, system, translate, showUsExperience = false }: CourseDet
          Component: <Instructor course={course} />,
       },
       {
+         value: 'faqs',
+         label: button.faqs ?? 'FAQs',
+         Component: <Faqs faqs={course.faqs} />,
+      },
+      {
          value: 'reviews',
          label: button.reviews,
          Component: <CourseReviews />,
@@ -70,6 +76,10 @@ const Show = ({ course, system, translate, showUsExperience = false }: CourseDet
 
       if (tab.value === 'instructor') {
          return system.sub_type === 'collaborative' ? true : false;
+      }
+
+      if (tab.value === 'faqs') {
+         return (course.faqs?.length ?? 0) > 0;
       }
 
       return true;

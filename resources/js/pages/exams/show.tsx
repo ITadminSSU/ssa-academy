@@ -13,6 +13,7 @@ import CoursePreview from './partials/exam-preview';
 import Instructor from './partials/instructor';
 import Overview from './partials/overview';
 import CourseReviews from './partials/reviews';
+import Faqs from '../courses/partials/faqs';
 
 const Show = ({ tab, exam, system, translate }: ExamPreviewProps) => {
    const { button } = translate;
@@ -34,11 +35,16 @@ const Show = ({ tab, exam, system, translate }: ExamPreviewProps) => {
          Component: <Instructor />,
       },
       {
+         value: 'faqs',
+         label: button.faqs ?? 'FAQs',
+         Component: <Faqs faqs={exam.faqs} />,
+      },
+      {
          value: 'reviews',
          label: button.reviews,
          Component: <CourseReviews />,
       },
-   ];
+   ].filter((item) => item.value !== 'faqs' || (exam.faqs?.length ?? 0) > 0);
 
    // Generate meta information for the exam
    const pageTitle = exam.meta_title || `${exam.title} | ${system.fields?.name}`;
