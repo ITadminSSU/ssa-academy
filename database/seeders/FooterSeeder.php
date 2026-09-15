@@ -41,7 +41,6 @@ class FooterSeeder extends Seeder
                 'items' => [
                     ['title' => 'Cookie Policy', 'url' => '/cookie-policy'],
                     ['title' => 'Terms & Conditions', 'url' => '/terms-and-conditions'],
-                    ['title' => 'Non-Disclosure Agreement', 'url' => '/non-disclosure-agreement'],
                     ['title' => 'Privacy Policy', 'url' => '/privacy-policy'],
                     ['title' => 'Refund Policy', 'url' => '/refund-policy'],
                 ],
