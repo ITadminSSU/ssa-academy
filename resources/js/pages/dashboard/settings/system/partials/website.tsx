@@ -140,18 +140,23 @@ const Website = () => {
             </div>
 
             <div className="border-b pb-6">
-               <h2 className="mb-2 text-xl font-semibold">{settings.companion_course_auto_enroll}</h2>
-               <p className="text-muted-foreground mb-6 text-sm">{settings.companion_course_auto_enroll_help}</p>
+               <h2 className="mb-2 text-xl font-semibold">
+                  {settings.companion_course_auto_enroll || 'Companion course auto-enroll'}
+               </h2>
+               <p className="text-muted-foreground mb-6 text-sm">
+                  {settings.companion_course_auto_enroll_help ||
+                     'When a learner gets full access to any other course, they are also enrolled in this free course. Deposit-only seats wait until the balance is paid. Leave this Off until you pick a course.'}
+               </p>
 
                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
-                     <Label>{settings.companion_auto_enroll_enabled}</Label>
+                     <Label>{settings.companion_auto_enroll_enabled || 'Auto-enroll'}</Label>
                      <Select
                         value={data.companion_auto_enroll_enabled ? '1' : '0'}
                         onValueChange={(value) => setData('companion_auto_enroll_enabled', value === '1')}
                      >
                         <SelectTrigger>
-                           <SelectValue placeholder={input.select_option} />
+                           <SelectValue placeholder={input.select_option || 'Select'} />
                         </SelectTrigger>
                         <SelectContent>
                            <SelectItem value="1">On</SelectItem>
@@ -162,16 +167,21 @@ const Website = () => {
                   </div>
 
                   <div>
-                     <Label>{settings.companion_course}</Label>
+                     <Label>{settings.companion_course || 'Companion course'}</Label>
                      <Combobox
                         data={companionCourseOptions.map((course) => ({
                            label: course.title,
                            value: String(course.id),
                         }))}
                         defaultValue={data.companion_course_id || ''}
-                        placeholder={settings.companion_course_placeholder}
+                        placeholder={settings.companion_course_placeholder || 'Select a free course'}
                         onSelect={(selected) => setData('companion_course_id', selected.value)}
                      />
+                     {companionCourseOptions.length === 0 ? (
+                        <p className="text-muted-foreground mt-2 text-xs">
+                           No approved courses yet. Publish the gift course as Approved, then return here to select it.
+                        </p>
+                     ) : null}
                      <InputError message={errors.companion_course_id} />
                   </div>
                </div>
