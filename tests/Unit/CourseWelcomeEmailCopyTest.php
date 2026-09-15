@@ -70,6 +70,8 @@ it('adds a shared companion-course sentence that is not catalog-specific', funct
         ->toContain('You also have complimentary access to “Academy Orientation”')
         ->toContain('Courses tab')
         ->not->toContain('Build Your US Experience')
+        ->and(CourseWelcomeEmailCopy::companionAccessFollowUp())
+        ->toContain('no extra charge')
         ->and($cta['label'])->toBe('Open your bonus course')
         ->and($cta['url'])->toContain('academy-orientation');
 });

@@ -56,6 +56,31 @@
          </tr>
       @endforeach
 
+      @if (! empty($companionCourseTitle))
+         <tr>
+            <td style="padding: 4px 28px 18px;">
+               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: #f8efe8; border: 2px solid #8C2A23;">
+                  <tr>
+                     <td style="padding: 16px 18px;">
+                        <p style="margin: 0 0 8px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: #8C2A23;">
+                           Included free with your enrollment
+                        </p>
+                        <p style="margin: 0 0 8px; font-size: 16px; line-height: 1.5; color: #14110f;">
+                           You also have complimentary access to
+                           <strong style="color: #8C2A23;">“{{ $companionCourseTitle }}”</strong>.
+                        </p>
+                        @if (! empty($companionHighlightRest))
+                           <p style="margin: 0; font-size: 14px; color: #2c2824;">
+                              {{ $companionHighlightRest }}
+                           </p>
+                        @endif
+                     </td>
+                  </tr>
+               </table>
+            </td>
+         </tr>
+      @endif
+
       @if ($instructorName || $instructorBio)
          <tr>
             <td style="padding: 8px 28px 18px;">

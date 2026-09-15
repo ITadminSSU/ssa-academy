@@ -32,6 +32,8 @@ class CourseEnrollmentWelcomeMail extends Mailable
         public string $farewell = 'Best regards,',
         public ?string $signatureName = null,
         public string $paymentHeading = 'Payment Breakdown:',
+        public ?string $companionCourseTitle = null,
+        public ?string $companionHighlightRest = null,
     ) {}
 
     public function envelope(): Envelope

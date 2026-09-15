@@ -122,9 +122,12 @@ class CourseEnrollmentWelcomeMailService
         ];
 
         $companion = $this->companionCourse->welcomeCompanionCourse($course);
+        $companionCourseTitle = null;
+        $companionHighlightRest = null;
 
         if ($companion && filled($companion->title) && filled($companion->slug)) {
-            $bodyParagraphs[] = CourseWelcomeEmailCopy::companionAccessParagraph((string) $companion->title);
+            $companionCourseTitle = (string) $companion->title;
+            $companionHighlightRest = CourseWelcomeEmailCopy::companionAccessFollowUp();
             array_splice($ctas, 2, 0, [CourseWelcomeEmailCopy::companionAccessCta(route('course.details', [
                 'slug' => $companion->slug,
                 'id' => $companion->id,
@@ -146,6 +149,8 @@ class CourseEnrollmentWelcomeMailService
             closingNote: 'Thank you for trusting '.$academyName.' with your learning journey. We look forward to supporting you as you build your skills and prepare for new opportunities.',
             farewell: 'Best regards,',
             signatureName: $academyName.' Team',
+            companionCourseTitle: $companionCourseTitle,
+            companionHighlightRest: $companionHighlightRest,
         ));
 
         if ($sent) {

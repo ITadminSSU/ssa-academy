@@ -70,7 +70,12 @@ class CourseWelcomeEmailCopy
     {
         $title = trim($courseTitle);
 
-        return 'You also have complimentary access to “'.$title.'”. You will find it on your Courses tab, included with this enrollment at no extra charge.';
+        return 'You also have complimentary access to “'.$title.'”. '.self::companionAccessFollowUp();
+    }
+
+    public static function companionAccessFollowUp(): string
+    {
+        return 'You will find it on your Courses tab, included with this enrollment at no extra charge.';
     }
 
     /**
