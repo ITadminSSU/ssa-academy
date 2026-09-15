@@ -1,4 +1,5 @@
 import CrispChat from '@/components/crisp-chat';
+import SiteAlertBar from '@/components/site-alert-bar';
 import { MessagesRealtimeProvider } from '@/contexts/messages-realtime-context';
 import { ReverbConfig } from '@/lib/echo';
 import { SharedData } from '@/types/global';
@@ -26,6 +27,7 @@ export default function AppRealtimeShell({ children }: { children: ReactNode }) 
    return (
       <>
          <CrispChat />
+         <SiteAlertBar />
          {content}
       </>
    );

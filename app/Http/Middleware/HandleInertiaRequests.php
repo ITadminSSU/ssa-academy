@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Support\Branding;
 use App\Support\Features;
+use App\Support\SiteAlert;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
@@ -250,6 +251,10 @@ class HandleInertiaRequests extends Middleware
         if (empty($fields['description']) || Branding::isLegacyName($fields['description'])) {
             $fields['description'] = Branding::description();
         }
+
+        $alert = SiteAlert::fromFields($fields);
+        $fields['site_alert_enabled'] = $alert['enabled'];
+        $fields['site_alert_message'] = $alert['message'];
 
         $system->fields = $fields;
 

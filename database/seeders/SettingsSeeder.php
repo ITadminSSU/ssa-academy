@@ -40,6 +40,8 @@ class SettingsSeeder extends Seeder
                     'theme' => 'light',
                     'companion_auto_enroll_enabled' => false,
                     'companion_course_id' => null,
+                    'site_alert_enabled' => false,
+                    'site_alert_message' => '',
                 ],
             ],
             [

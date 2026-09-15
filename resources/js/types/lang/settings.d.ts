@@ -248,6 +248,11 @@ interface SettingsLang {
    media_settings: string;
    logo_favicon: string;
    social_media_links: string;
+   site_alert: string;
+   site_alert_help: string;
+   site_alert_enabled: string;
+   site_alert_message: string;
+   site_alert_message_placeholder: string;
 
    // Update Process
    maintenance_mode: string;

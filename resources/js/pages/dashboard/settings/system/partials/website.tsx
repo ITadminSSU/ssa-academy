@@ -32,6 +32,8 @@ const Website = () => {
       ...systemFields,
       companion_auto_enroll_enabled: Boolean(systemFields.companion_auto_enroll_enabled),
       companion_course_id: systemFields.companion_course_id ? String(systemFields.companion_course_id) : '',
+      site_alert_enabled: Boolean(systemFields.site_alert_enabled),
+      site_alert_message: systemFields.site_alert_message || '',
       direction: 'none',
       ...(mediaFields as MediaFields),
    });
@@ -45,6 +47,50 @@ const Website = () => {
    return (
       <Card className="p-4 sm:p-6">
          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="border-b pb-6">
+               <h2 className="mb-2 text-xl font-semibold">{settings.site_alert || 'Site-wide alert bar'}</h2>
+               <p className="text-muted-foreground mb-6 text-sm">
+                  {settings.site_alert_help ||
+                     'When On, every visitor sees this message at the top of the site. Turn it Off when maintenance is finished.'}
+               </p>
+
+               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div>
+                     <Label>{settings.site_alert_enabled || 'Show alert'}</Label>
+                     <Select
+                        value={data.site_alert_enabled ? '1' : '0'}
+                        onValueChange={(value) => setData('site_alert_enabled', value === '1')}
+                     >
+                        <SelectTrigger>
+                           <SelectValue placeholder={input.select_option || 'Select'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="1">On</SelectItem>
+                           <SelectItem value="0">Off</SelectItem>
+                        </SelectContent>
+                     </Select>
+                     <InputError message={errors.site_alert_enabled} />
+                  </div>
+
+                  <div className="md:col-span-2">
+                     <Label>{settings.site_alert_message || 'Alert message'}</Label>
+                     <Textarea
+                        rows={3}
+                        name="site_alert_message"
+                        value={data.site_alert_message || ''}
+                        onChange={(e) => onHandleChange(e, setData)}
+                        placeholder={
+                           settings.site_alert_message_placeholder ||
+                           'Example: The academy will be down for about 15 minutes while we upgrade the server.'
+                        }
+                        maxLength={280}
+                     />
+                     <p className="text-muted-foreground mt-2 text-xs">{(data.site_alert_message || '').length}/280</p>
+                     <InputError message={errors.site_alert_message} />
+                  </div>
+               </div>
+            </div>
+
             {/* Website Information */}
             <div className="border-b pb-6">
                <h2 className="mb-4 text-xl font-semibold">{settings.website_information}</h2>

@@ -10,6 +10,7 @@ use App\Models\Page;
 use App\Models\Setting;
 use App\Support\DashboardWelcomeOverlay;
 use App\Support\LandingOverlay;
+use App\Support\SiteAlert;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -84,6 +85,12 @@ class SettingsService extends MediaService
                 $filteredData['companion_course_id'] = ($companionCourseId === '' || $companionCourseId === null || (int) $companionCourseId <= 0)
                     ? null
                     : (int) $companionCourseId;
+            }
+
+            if (array_key_exists('site_alert_enabled', $filteredData) || array_key_exists('site_alert_message', $filteredData)) {
+                $alert = SiteAlert::fromFields($filteredData);
+                $filteredData['site_alert_enabled'] = $alert['enabled'];
+                $filteredData['site_alert_message'] = $alert['message'];
             }
 
             $setting->update(['fields' => $filteredData]);

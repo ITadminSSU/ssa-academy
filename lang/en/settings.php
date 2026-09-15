@@ -265,6 +265,11 @@ return [
   'companion_course' => 'Companion course',
   'companion_course_placeholder' => 'Select a free course',
   'companion_auto_enroll_enabled' => 'Auto-enroll',
+  'site_alert' => 'Site-wide alert bar',
+  'site_alert_help' => 'When On, every visitor sees this message at the top of the site. Turn it Off when maintenance is finished.',
+  'site_alert_enabled' => 'Show alert',
+  'site_alert_message' => 'Alert message',
+  'site_alert_message_placeholder' => 'Example: The academy will be down for about 15 minutes while we upgrade the server.',
 
   // Website Settings
   'website_information' => 'Website Information',
