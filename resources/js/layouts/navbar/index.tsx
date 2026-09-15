@@ -123,7 +123,7 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
 
    return (
       <>
-         <div className={cn('ssu-nav-shell fixed top-0 z-30 w-full', isMenuOpen && 'bg-background', isSticky && 'ssu-nav-shell--sticky')}>
+         <div className={cn('ssu-nav-shell fixed top-[var(--site-alert-offset,0px)] z-30 w-full', isMenuOpen && 'bg-background', isSticky && 'ssu-nav-shell--sticky')}>
             <div
                className={cn(
                   'container mt-0 flex min-h-14 items-center justify-between gap-1 !px-4 py-1.5 transition-all duration-200 md:min-h-16 md:gap-6',

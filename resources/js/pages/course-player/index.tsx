@@ -69,7 +69,7 @@ const Index = (props: CoursePlayerProps) => {
             <SubscriptionAccessBanner />
 
             <div className="flex w-full flex-row-reverse">
-               <Sidebar side="right" className="ssu-player-sidebar top-16 shadow-lg">
+               <Sidebar side="right" className="ssu-player-sidebar top-[calc(4rem+var(--site-alert-offset,0px))] shadow-lg">
                   <ContentList completedContents={completed} courseCompletion={completion} />
                </Sidebar>
 

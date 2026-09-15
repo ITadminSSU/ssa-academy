@@ -28,7 +28,9 @@ export default function AppRealtimeShell({ children }: { children: ReactNode }) 
       <>
          <CrispChat />
          <SiteAlertBar />
-         {content}
+         <div className="min-h-0" style={{ paddingTop: 'var(--site-alert-offset, 0px)' }}>
+            {content}
+         </div>
       </>
    );
 }

@@ -44,7 +44,7 @@ const LandingNavbar = () => {
    }, []);
 
    return (
-      <header className={cn('bg-background sticky top-0 z-50 border-b', isSticky && 'shadow-card')}>
+      <header className={cn('bg-background sticky top-[var(--site-alert-offset,0px)] z-50 border-b', isSticky && 'shadow-card')}>
          <div className={cn('relative container', customize && 'section-edit')}>
             <div className="flex h-14 items-center justify-between md:h-16">
                {/* Logo */}

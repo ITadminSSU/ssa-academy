@@ -48,7 +48,7 @@ const AttemptNavbar = ({ attempt, questionIndex }: NavbarProps) => {
 
    return (
       <>
-         <div className={cn('fixed top-0 z-30 w-full', isMenuOpen && 'bg-background')}>
+         <div className={cn('fixed top-[var(--site-alert-offset,0px)] z-30 w-full', isMenuOpen && 'bg-background')}>
             <div
                className={cn(
                   'gap-1 !px-4 transition-all duration-200 md:gap-6',
