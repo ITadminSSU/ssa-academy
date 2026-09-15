@@ -15,14 +15,6 @@ class StripeInvoiceIds
             return $direct;
         }
 
-        $parent = $invoice->parent ?? null;
-        if (is_object($parent)) {
-            $nested = StripeCheckoutIds::objectId($parent->subscription_details->subscription ?? null);
-            if ($nested !== '') {
-                return $nested;
-            }
-        }
-
         return StripeCheckoutIds::objectId(data_get($invoice, 'parent.subscription_details.subscription'));
     }
 
