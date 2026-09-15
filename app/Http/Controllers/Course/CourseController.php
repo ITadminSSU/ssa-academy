@@ -234,7 +234,8 @@ class CourseController extends Controller
         $this->courseService->preparePublicCourseCurriculum($course, $canViewCurriculum);
 
         if ($course->exists()) {
-            $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course)
+            $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
+            $canViewUsExperiencePlans = $showUsExperience
                 && $this->subscriptionAccess->canViewPublicUsExperience($user, $course, $enrollment);
 
             // Generate meta tags for SEO and social sharing
@@ -268,10 +269,11 @@ class CourseController extends Controller
                         $user,
                         $user?->email,
                     ),
-                    'usExperiencePreview' => $showUsExperience
+                    'usExperiencePreview' => $canViewUsExperiencePlans
                         ? $this->usExperiencePlans->publicTease($course)
                         : [],
                     'showUsExperience' => $showUsExperience,
+                    'canViewUsExperiencePlans' => $canViewUsExperiencePlans,
                 ]
             )->withViewData([
                 'metaTitle' => $pageTitle,

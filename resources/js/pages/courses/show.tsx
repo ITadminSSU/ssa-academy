@@ -3,6 +3,7 @@ import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LandingLayout from '@/layouts/landing-layout';
 import { SharedData } from '@/types/global';
 import { Head } from '@inertiajs/react';
+import { Lock } from 'lucide-react';
 import { ReactNode } from 'react';
 import CourseHero from './partials/course-hero';
 import CoursePreview from './partials/course-preview';
@@ -28,9 +29,10 @@ export interface CourseDetailsProps extends SharedData {
    launchNotifySubscribed?: boolean;
    usExperiencePreview?: UsExperiencePublicGroup[];
    showUsExperience?: boolean;
+   canViewUsExperiencePlans?: boolean;
 }
 
-const Show = ({ course, system, translate, showUsExperience = false }: CourseDetailsProps & { translate: any }) => {
+const Show = ({ course, system, translate, showUsExperience = false, canViewUsExperiencePlans = false }: CourseDetailsProps & { translate: any }) => {
    const { button, frontend } = translate;
 
    const tabs = [
@@ -184,7 +186,12 @@ const Show = ({ course, system, translate, showUsExperience = false }: CourseDet
                                  value={value}
                                  className="relative overflow-hidden rounded-full border border-transparent bg-clip-padding px-4 py-2 text-sm font-medium whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                               >
-                                 <span>{label}</span>
+                                 <span className="inline-flex items-center gap-2">
+                                    {value === 'us-experience' && !canViewUsExperiencePlans ? (
+                                       <Lock className="h-3.5 w-3.5 shrink-0" />
+                                    ) : null}
+                                    <span>{label}</span>
+                                 </span>
                               </TabsTrigger>
                            ))}
                         </TabsList>

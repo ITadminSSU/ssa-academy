@@ -87,8 +87,9 @@ class SubscriptionAccessService
 
     /**
      * Trainer-authored US Experience plan titles/descriptions on the public
-     * course page. Enrolled students only — not guests, reserved seats, or
-     * staff preview without an enrollment in this course.
+     * course page. The tab itself stays visible for estimating courses.
+     * Guests, reserved seats, and staff preview without an enrollment do not
+     * see the plan list.
      */
     public function canViewPublicUsExperience(?User $user, Course $course, ?CourseEnrollment $enrollment = null): bool
     {
