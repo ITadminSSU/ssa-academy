@@ -22,6 +22,17 @@ it('uses an expanded payment intent object id', function () {
     expect(StripeCheckoutIds::transactionId($session))->toBe('pi_expanded');
 });
 
+it('falls back to the invoice id for subscription checkouts', function () {
+    $session = (object) [
+        'id' => 'cs_test_session',
+        'payment_intent' => null,
+        'invoice' => 'in_first',
+        'subscription' => 'sub_first',
+    ];
+
+    expect(StripeCheckoutIds::transactionId($session))->toBe('in_first');
+});
+
 it('falls back to the checkout session id when payment_intent is null', function () {
     $session = (object) [
         'id' => 'cs_test_session',

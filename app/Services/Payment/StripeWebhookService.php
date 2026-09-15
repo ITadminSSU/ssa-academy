@@ -2,10 +2,13 @@
 
 namespace App\Services\Payment;
 
+use App\Enums\PaymentBillingType;
 use App\Models\Course\Course;
 use App\Models\StripeWebhookEvent;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Support\StripeCheckoutIds;
+use App\Support\StripeInvoiceIds;
 use Illuminate\Support\Facades\Log;
 use Modules\PaymentGateways\Services\PaymentService;
 use Stripe\Exception\SignatureVerificationException;
@@ -47,6 +50,7 @@ class StripeWebhookService
             'customer.subscription.updated' => $this->handleSubscriptionUpdated($event->data->object),
             'customer.subscription.deleted' => $this->handleSubscriptionDeleted($event->data->object),
             'invoice.payment_succeeded' => $this->handleInvoicePaymentSucceeded($event->data->object),
+            'invoice.paid' => $this->handleInvoicePaymentSucceeded($event->data->object),
             'invoice.payment_failed' => $this->handleInvoicePaymentFailed($event->data->object),
             default => null,
         };
@@ -76,7 +80,8 @@ class StripeWebhookService
 
         $this->recordLaunchBalanceFromSession($session);
 
-        $this->subscriptions->activateFromCheckoutSession($session);
+        $subscription = $this->subscriptions->activateFromCheckoutSession($session);
+        $this->recordInitialSubscriptionPayment($session, $subscription);
     }
 
     public function enrollOneTimeFromCheckoutSession(object $session): bool
@@ -219,15 +224,62 @@ class StripeWebhookService
         }
     }
 
+    protected function recordInitialSubscriptionPayment(object $session, Subscription $subscription): void
+    {
+        if ((string) data_get($session, 'metadata.launch_offer_mode') === 'balance') {
+            return;
+        }
+
+        $amount = round(($session->amount_total ?? 0) / 100, 2);
+
+        if ($amount <= 0) {
+            return;
+        }
+
+        $transactionId = StripeCheckoutIds::transactionId($session);
+
+        if ($transactionId === '') {
+            return;
+        }
+
+        $couponCode = data_get($session, 'metadata.coupon_code')
+            ?: data_get($session, 'subscription_details.metadata.coupon_code');
+        $couponDiscount = (float) data_get($session, 'metadata.coupon_discount', 0);
+
+        try {
+            $this->payment->recordSubscriptionPayment(
+                $subscription,
+                $transactionId,
+                $amount,
+                0.0,
+                PaymentBillingType::SUBSCRIPTION,
+                $couponCode ? (string) $couponCode : null,
+                $couponDiscount > 0 ? $couponDiscount : null,
+                $amount,
+                array_filter([
+                    StripeCheckoutIds::objectId($session->invoice ?? null),
+                    StripeCheckoutIds::objectId($session->id ?? null),
+                ]),
+            );
+        } catch (\Throwable $exception) {
+            Log::error('Stripe subscription checkout payment could not be recorded', [
+                'session_id' => $session->id ?? null,
+                'message' => $exception->getMessage(),
+            ]);
+        }
+    }
+
     protected function handleInvoicePaymentFailed(object $invoice): void
     {
-        if (empty($invoice->subscription)) {
+        $subscriptionId = StripeInvoiceIds::subscriptionId($invoice);
+
+        if ($subscriptionId === '') {
             return;
         }
 
         $this->stripeCustomer->configureStripe();
 
-        $stripeSubscription = \Stripe\Subscription::retrieve($invoice->subscription);
+        $stripeSubscription = \Stripe\Subscription::retrieve($subscriptionId);
         $this->subscriptions->handlePaymentFailed($stripeSubscription);
     }
 }

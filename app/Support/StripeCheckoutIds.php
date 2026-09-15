@@ -30,6 +30,11 @@ class StripeCheckoutIds
             return $paymentIntentId;
         }
 
+        $invoiceId = self::objectId($session->invoice ?? null);
+        if ($invoiceId !== '') {
+            return $invoiceId;
+        }
+
         $subscriptionId = self::objectId($session->subscription ?? null);
         if ($subscriptionId !== '') {
             return $subscriptionId;
@@ -38,7 +43,7 @@ class StripeCheckoutIds
         return self::objectId($session->id ?? null);
     }
 
-    private static function objectId(mixed $value): string
+    public static function objectId(mixed $value): string
     {
         if (is_object($value)) {
             return trim((string) ($value->id ?? ''));

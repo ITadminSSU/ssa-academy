@@ -207,8 +207,18 @@ class PaymentService
         ?string $couponCode = null,
         ?float $couponDiscount = null,
         ?float $chargedAmount = null,
+        array $alternateTransactionIds = [],
     ): void {
-        if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
+        $ids = array_values(array_filter(array_unique([
+            $transactionId,
+            ...$alternateTransactionIds,
+        ])));
+
+        if ($ids === []) {
+            return;
+        }
+
+        if ($existing = PaymentHistory::query()->whereIn('transaction_id', $ids)->first()) {
             $this->applyCouponToPayment($existing, $couponCode, $couponDiscount);
             $this->rememberCourseCharge($existing, $chargedAmount);
 

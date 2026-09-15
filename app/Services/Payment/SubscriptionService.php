@@ -10,8 +10,10 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
+use App\Support\StripeInvoiceIds;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\PaymentGateways\Services\PaymentService;
 use Stripe\Subscription as StripeSubscription;
 
@@ -136,16 +138,22 @@ class SubscriptionService
 
     public function handleInvoicePaymentSucceeded(object $invoice): void
     {
-        if (empty($invoice->subscription)) {
+        $subscriptionId = StripeInvoiceIds::subscriptionId($invoice);
+
+        if ($subscriptionId === '') {
+            Log::warning('Stripe invoice payment has no subscription id', [
+                'invoice_id' => $invoice->id ?? null,
+            ]);
+
             return;
         }
 
         $this->stripeCustomer->configureStripe();
 
-        $stripeSubscription = StripeSubscription::retrieve($invoice->subscription);
+        $stripeSubscription = StripeSubscription::retrieve($subscriptionId);
         $subscription = $this->syncFromStripeSubscription($stripeSubscription);
 
-        $billingType = ($invoice->billing_reason ?? '') === 'subscription_create'
+        $billingType = StripeInvoiceIds::billingReason($invoice) === 'subscription_create'
             ? PaymentBillingType::SUBSCRIPTION
             : PaymentBillingType::SUBSCRIPTION_RENEWAL;
         $launchOfferMode = $stripeSubscription->metadata['launch_offer_mode'] ?? null;
@@ -160,13 +168,14 @@ class SubscriptionService
 
         $this->paymentService->recordSubscriptionPayment(
             $subscription,
-            (string) ($invoice->payment_intent ?: $invoice->id),
+            StripeInvoiceIds::transactionId($invoice),
             round(($invoice->amount_paid ?? 0) / 100, 2),
             $this->extractTaxAmount($invoice),
             $billingType,
             $couponCode,
             $couponDiscount,
             $chargedAmount > 0 ? $chargedAmount : null,
+            StripeInvoiceIds::lookupIds($invoice),
         );
 
         if ($billingType === PaymentBillingType::SUBSCRIPTION && $launchOfferMode !== 'balance') {
