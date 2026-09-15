@@ -173,6 +173,10 @@ class CoursePlayerService
 
    public function calculateCompletion(Course $course, ?WatchHistory $watchHistory): array
    {
+      if (! $course->relationLoaded('sections')) {
+         return $this->calculateCompletionFromCounts((string) $course->id, $watchHistory);
+      }
+
       if (!$watchHistory) {
          $totalItems = 0;
          foreach ($course->sections as $section) {
@@ -219,6 +223,42 @@ class CoursePlayerService
       }
 
       // Calculate completion
+      $completion = $totalItems > 0 ? round(($completedCount / $totalItems) * 100, 2) : 0;
+
+      return [
+         'total_items' => $totalItems,
+         'completed_items' => $completedCount,
+         'completion' => $completion,
+      ];
+   }
+
+   /**
+    * Dashboard-safe completion: count rows instead of hydrating every lesson.
+    *
+    * @return array{total_items: int, completed_items: int, completion: float|int}
+    */
+   public function calculateCompletionFromCounts(string $courseId, ?WatchHistory $watchHistory): array
+   {
+      $totalItems = SectionLesson::query()->where('course_id', $courseId)->count()
+         + SectionQuiz::query()->where('course_id', $courseId)->count();
+
+      if (! $watchHistory || $totalItems === 0) {
+         return [
+            'total_items' => $totalItems,
+            'completed_items' => 0,
+            'completion' => 0,
+         ];
+      }
+
+      $completedCount = 0;
+
+      foreach ($watchHistory->getCompletedWatchingItems() as $item) {
+         if (in_array($item['type'] ?? '', ['lesson', 'quiz'], true)) {
+            $completedCount++;
+         }
+      }
+
+      $completedCount = min($completedCount, $totalItems);
       $completion = $totalItems > 0 ? round(($completedCount / $totalItems) * 100, 2) : 0;
 
       return [

@@ -53,6 +53,7 @@ export interface SharedData {
    flash: {
       error: string;
       warning: string;
+      info?: string;
       success: string;
       status: string;
       two_factor_setup?: { secret: string; qr_url: string } | null;

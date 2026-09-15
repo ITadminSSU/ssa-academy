@@ -273,8 +273,6 @@ class StudentService extends MediaService
          $enrollment->course->loadMissing([
             'instructor.user',
             'final_exam:id,title,slug',
-            'sections.section_lessons',
-            'sections.section_quizzes',
          ]);
 
          $watchHistory = $this->coursePlayer->getWatchHistory($enrollment->course_id, $user->id);

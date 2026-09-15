@@ -85,6 +85,12 @@ class PlayerController extends Controller
 
         $watchHistory = $this->sectionService->initWatchHistory($validated['course_id'], 'lesson', $user->id);
 
+        if (! $watchHistory) {
+            return redirect()
+                ->route('student.course.show', ['id' => $course->id, 'tab' => 'modules'])
+                ->with('error', 'This course has no lessons yet. Please try again after content is published.');
+        }
+
         $url = route('course.player', [
             'type' => 'lesson',
             'watch_history' => $watchHistory->id,
@@ -163,12 +169,16 @@ class PlayerController extends Controller
                         ? 'This lesson is locked.'
                         : 'Complete the previous lesson before continuing.');
 
-                if ($watch_history->current_watching_type && $watch_history->current_watching_id) {
+                $fallbackType = (string) $watch_history->current_watching_type;
+                $fallbackId = (string) $watch_history->current_watching_id;
+                $sameItem = $fallbackType === $type && $fallbackId === (string) $lesson_id;
+
+                if ($fallbackType && $fallbackId && ! $sameItem) {
                     return redirect()
                         ->route('course.player', [
-                            'type' => $watch_history->current_watching_type,
+                            'type' => $fallbackType,
                             'watch_history' => $watch_history->id,
-                            'lesson_id' => $watch_history->current_watching_id,
+                            'lesson_id' => $fallbackId,
                         ])
                         ->with('error', $errorMessage);
                 }

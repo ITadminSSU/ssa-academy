@@ -10,8 +10,18 @@ type AccessibleEnrollment = Pick<CourseEnrollment, 'access_status'> & {
  * Reserved seats and coming-soon courses must not open the player.
  * Send learners to the public course details page instead.
  */
+function enrollmentAccessStatus(enrollment: AccessibleEnrollment): string {
+   const status = enrollment.access_status as string | { value?: string } | null | undefined;
+
+   if (status && typeof status === 'object') {
+      return String(status.value ?? '');
+   }
+
+   return String(status ?? '');
+}
+
 export function enrollmentBlocksPlayerAccess(enrollment: AccessibleEnrollment): boolean {
-   const status = enrollment.access_status;
+   const status = enrollmentAccessStatus(enrollment);
 
    if (status === 'reserved' || status === 'canceled') {
       return true;

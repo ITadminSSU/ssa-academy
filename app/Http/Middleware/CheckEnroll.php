@@ -75,14 +75,22 @@ class CheckEnroll
             return $next($request);
         }
 
-        if ($enrollment) {
+        $message = 'You are not enrolled in this course';
+
+        if ($enrollment?->isReservedSeat()) {
+            $message = 'Your seat is reserved. Pay the remaining balance on the course page to unlock full access.';
+        } elseif ($course->isComingSoon()) {
+            $message = $course->launch_at
+                ? 'This course launches on '.$course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A').'.'
+                : 'This course is coming soon.';
+        } elseif ($enrollment) {
             $message = $course->usesSubscriptionBilling()
                 ? 'Your access to this course has expired. Resubscribe to continue.'
                 : 'Your access to this course has expired.';
-
-            return back()->with('error', $message);
         }
 
-        return back()->with('error', 'You are not enrolled in this course');
+        return redirect()
+            ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+            ->with('error', $message);
     }
 }
