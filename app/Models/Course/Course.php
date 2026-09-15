@@ -308,7 +308,7 @@ class Course extends Model implements HasMedia
 
     public function sections(): HasMany
     {
-        return $this->hasMany(CourseSection::class)->orderBy('sort', 'asc');
+        return $this->hasMany(CourseSection::class)->orderBy('sort', 'asc')->orderBy('id', 'asc');
     }
 
     public function lessons(): HasMany

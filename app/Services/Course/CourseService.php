@@ -313,7 +313,7 @@ class CourseService extends MediaService
          'assignments.submissions',
          'enrollments:id',
          'sections' => function ($query) use ($user) {
-            $query->with([
+            $query->orderBy('sort')->orderBy('id')->with([
                'section_lessons.resources',
                'section_quizzes' => function ($quizzes) use ($user) {
                   $quizzes->with([
@@ -352,7 +352,7 @@ class CourseService extends MediaService
             'outcomes',
             'requirements',
             'sections' => function ($query) {
-               $query->with([
+               $query->orderBy('sort')->orderBy('id')->with([
                   'section_lessons',
                   'section_quizzes',
                ]);

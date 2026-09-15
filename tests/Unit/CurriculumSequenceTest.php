@@ -51,6 +51,32 @@ it('keeps quizzes after lessons when quiz sort is unset', function () {
     expect($items->pluck('id')->all())->toBe([11, 12, 21]);
 });
 
+it('flattens sections by sort even when they were loaded in id order', function () {
+    $course = new Course(['title' => 'Drywall']);
+    $course->id = 13;
+    $course->exists = true;
+
+    $module = new CourseSection(['title' => 'Module 1', 'sort' => 2]);
+    $module->id = 10;
+    $module->setRelation('section_lessons', collect([
+        makeCurriculumItem(SectionLesson::class, 12, 1, 'What is Drywall'),
+    ]));
+    $module->setRelation('section_quizzes', collect());
+
+    $intro = new CourseSection(['title' => 'Introduction', 'sort' => 1]);
+    $intro->id = 20;
+    $intro->setRelation('section_lessons', collect([
+        makeCurriculumItem(SectionLesson::class, 11, 1, 'Welcome'),
+    ]));
+    $intro->setRelation('section_quizzes', collect());
+
+    $course->setRelation('sections', collect([$module, $intro]));
+
+    $items = CurriculumSequence::flattenCourse($course);
+
+    expect($items->pluck('id')->all())->toBe([11, 12]);
+});
+
 it('flattens a course in mixed section order', function () {
     $course = new Course(['title' => 'Course']);
     $course->id = 9;

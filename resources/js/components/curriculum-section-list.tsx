@@ -1,11 +1,12 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { mergeCurriculumItems } from '@/lib/curriculum-items';
+import { mergeCurriculumItems, sortCurriculumSections } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { ReactNode } from 'react';
 
 export interface CurriculumSection {
    id: string | number;
    title: string;
+   sort?: number | string | null;
    section_lessons?: SectionLesson[];
    section_quizzes?: SectionQuiz[];
 }
@@ -31,16 +32,18 @@ const CurriculumSectionList = ({
    renderQuiz,
    emptyMessage = 'There is no section added',
 }: CurriculumSectionListProps) => {
-   if (sections.length === 0) {
+   const orderedSections = sortCurriculumSections(sections);
+
+   if (orderedSections.length === 0) {
       return <div className="text-muted-foreground p-6 text-center text-sm">{emptyMessage}</div>;
    }
 
    let itemNumber = 0;
-   const defaultOpen = (defaultOpenSectionIds?.length ? defaultOpenSectionIds : [sections[0].id]).map(String);
+   const defaultOpen = (defaultOpenSectionIds?.length ? defaultOpenSectionIds : [orderedSections[0].id]).map(String);
 
    return (
       <Accordion type="multiple" defaultValue={defaultOpen} className={cn('ssu-curriculum-panel', className)}>
-         {sections.map((section, sectionIndex) => (
+         {orderedSections.map((section, sectionIndex) => (
             <AccordionItem key={section.id} value={String(section.id)} className="border-border/60">
                <AccordionTrigger className="text-muted-foreground hover:no-underline px-4 py-3 text-xs font-normal leading-snug">
                   Section {sectionIndex + 1} — {section.title}

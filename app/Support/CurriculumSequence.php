@@ -80,13 +80,30 @@ class CurriculumSequence
     }
 
     /**
-     * @return Collection<int, array{id: int|string, type: string, section: CourseSection, section_index: int}>
+     * @param  iterable<int, CourseSection>|Collection<int, CourseSection>  $sections
+     * @return Collection<int, CourseSection>
+     */
+    public static function sortSections(iterable $sections): Collection
+    {
+        return collect($sections)
+            ->sortBy([
+                ['sort', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values();
+    }
+
+    /**
+     * @return Collection<int, array{id: int|string, type: string, section: CourseSection, section_index: int, sort: int}>
      */
     public static function flattenCourse(Course $course): Collection
     {
         $items = collect();
+        $sections = $course->relationLoaded('sections')
+            ? $course->sections
+            : $course->sections()->get();
 
-        foreach ($course->sections as $sectionIndex => $section) {
+        foreach (self::sortSections($sections) as $sectionIndex => $section) {
             foreach (self::itemsForSection($section) as $item) {
                 $items->push([
                     'id' => $item['id'],

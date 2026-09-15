@@ -53,9 +53,22 @@ export const toSortableCurriculumItems = (section: {
    );
 
 export type CurriculumSectionLike = {
+   id?: string | number;
+   sort?: number | string | null;
    section_lessons?: SectionLesson[];
    section_quizzes?: SectionQuiz[];
 };
+
+export const sortCurriculumSections = <T extends CurriculumSectionLike>(sections: T[]): T[] =>
+   [...sections].sort((left, right) => {
+      const sortDelta = Number(left.sort ?? 0) - Number(right.sort ?? 0);
+
+      if (sortDelta !== 0) {
+         return sortDelta;
+      }
+
+      return Number(left.id ?? 0) - Number(right.id ?? 0);
+   });
 
 export type CurriculumItemRef = {
    id: string | number;
@@ -68,7 +81,7 @@ export const isSameCurriculumItem = (
 ): boolean => left.type === right.type && String(left.id) === String(right.id);
 
 export const flattenCurriculumItems = (sections: CurriculumSectionLike[]): CurriculumItemRef[] =>
-   sections.flatMap((section) =>
+   sortCurriculumSections(sections).flatMap((section) =>
       mergeCurriculumItems(section).map((item) =>
          item.kind === 'lesson'
             ? { id: item.lesson.id, type: 'lesson' as const }
@@ -83,7 +96,9 @@ export const getPageCurriculumSections = (props: {
 }): CurriculumSectionLike[] => {
    const candidates = [props.modules, props.course?.sections, props.quizzes];
 
-   return candidates.find((sections) => Array.isArray(sections) && sections.length > 0) ?? [];
+   const sections = candidates.find((candidate) => Array.isArray(candidate) && candidate.length > 0) ?? [];
+
+   return sortCurriculumSections(sections);
 };
 
 export const isCurriculumItemComplete = (
