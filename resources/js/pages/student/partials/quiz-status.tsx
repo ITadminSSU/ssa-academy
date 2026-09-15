@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { resolveCurriculumAccess } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps, StudentCourseProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
@@ -53,11 +54,12 @@ const QuizStatus = ({ quiz, completed }: Props) => {
    const { frontend } = translate;
 
    const staffPreview = subscriptionAccess?.staff_preview ?? false;
-   const isCompleted = completed.some((item) => item.type === 'quiz' && item.id == quiz.id);
-   const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && watchHistory.current_watching_id == quiz.id;
-   const isNext = watchHistory.next_watching_type === 'quiz' && quiz.id == watchHistory.next_watching_id;
+   const isCompleted = completed.some((item) => item.type === 'quiz' && String(item.id) === String(quiz.id));
+   const isCurrentLesson = watchHistory.current_watching_type === 'quiz' && String(watchHistory.current_watching_id) === String(quiz.id);
+   const isNext = watchHistory.next_watching_type === 'quiz' && String(quiz.id) === String(watchHistory.next_watching_id);
    const quizzesUnlocked = courseGates?.quizzes_unlocked ?? true;
-   const canAccessQuiz = staffPreview || ((isCompleted || isCurrentLesson || isNext) && quizzesUnlocked);
+   const canAccessQuiz =
+      staffPreview || (resolveCurriculumAccess(props, completed, { id: quiz.id, type: 'quiz' }) && quizzesUnlocked);
 
    const latestSubmission =
       quiz.quiz_submissions && quiz.quiz_submissions.length > 0 ? quiz.quiz_submissions[quiz.quiz_submissions.length - 1] : null;

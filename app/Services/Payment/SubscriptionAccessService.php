@@ -85,6 +85,28 @@ class SubscriptionAccessService
         return $this->canAccessPlayer($user, $course, $enrollment);
     }
 
+    /**
+     * Trainer-authored US Experience plan titles/descriptions on the public
+     * course page. Enrolled students only — not guests, reserved seats, or
+     * staff preview without an enrollment in this course.
+     */
+    public function canViewPublicUsExperience(?User $user, Course $course, ?CourseEnrollment $enrollment = null): bool
+    {
+        if (!$user || !$enrollment) {
+            return false;
+        }
+
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+            return false;
+        }
+
+        if ($course->usesSubscriptionBilling()) {
+            return $enrollment->hasFullAccess() || $enrollment->isSuspended();
+        }
+
+        return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE;
+    }
+
     public function canAccessItem(
         User $user,
         Course $course,

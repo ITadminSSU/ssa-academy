@@ -51,3 +51,93 @@ export const toSortableCurriculumItems = (section: {
               title: item.quiz.title,
            },
    );
+
+export type CurriculumSectionLike = {
+   section_lessons?: SectionLesson[];
+   section_quizzes?: SectionQuiz[];
+};
+
+export type CurriculumItemRef = {
+   id: string | number;
+   type: 'lesson' | 'quiz';
+};
+
+export const isSameCurriculumItem = (
+   left: { id: string | number; type: string },
+   right: { id: string | number; type: string },
+): boolean => left.type === right.type && String(left.id) === String(right.id);
+
+export const flattenCurriculumItems = (sections: CurriculumSectionLike[]): CurriculumItemRef[] =>
+   sections.flatMap((section) =>
+      mergeCurriculumItems(section).map((item) =>
+         item.kind === 'lesson'
+            ? { id: item.lesson.id, type: 'lesson' as const }
+            : { id: item.quiz.id, type: 'quiz' as const },
+      ),
+   );
+
+export const getPageCurriculumSections = (props: {
+   modules?: CurriculumSectionLike[] | null;
+   quizzes?: CurriculumSectionLike[] | null;
+   course?: { sections?: CurriculumSectionLike[] | null } | null;
+}): CurriculumSectionLike[] => {
+   const candidates = [props.modules, props.course?.sections, props.quizzes];
+
+   return candidates.find((sections) => Array.isArray(sections) && sections.length > 0) ?? [];
+};
+
+export const isCurriculumItemComplete = (
+   completed: Array<{ id: string | number; type: string }>,
+   item: CurriculumItemRef,
+): boolean => completed.some((entry) => isSameCurriculumItem(entry, item));
+
+/**
+ * Matches CourseCompletionGateService: the first item is open, later items
+ * unlock only after every previous lesson/quiz is complete.
+ */
+export const canAccessCurriculumItem = (
+   sections: CurriculumSectionLike[],
+   completed: Array<{ id: string | number; type: string }>,
+   item: CurriculumItemRef,
+   options?: { staffPreview?: boolean; completedOnly?: boolean },
+): boolean => {
+   if (options?.staffPreview) {
+      return true;
+   }
+
+   if (isCurriculumItemComplete(completed, item)) {
+      return true;
+   }
+
+   if (options?.completedOnly) {
+      return false;
+   }
+
+   const items = flattenCurriculumItems(sections);
+   const targetIndex = items.findIndex((entry) => isSameCurriculumItem(entry, item));
+
+   if (targetIndex < 0) {
+      return false;
+   }
+
+   if (targetIndex === 0) {
+      return true;
+   }
+
+   return items.slice(0, targetIndex).every((entry) => isCurriculumItemComplete(completed, entry));
+};
+
+export const resolveCurriculumAccess = (
+   props: {
+      modules?: CurriculumSectionLike[] | null;
+      quizzes?: CurriculumSectionLike[] | null;
+      course?: { sections?: CurriculumSectionLike[] | null } | null;
+      subscriptionAccess?: { staff_preview?: boolean; mode?: string } | null;
+   },
+   completed: Array<{ id: string | number; type: string }>,
+   item: CurriculumItemRef,
+): boolean =>
+   canAccessCurriculumItem(getPageCurriculumSections(props), completed, item, {
+      staffPreview: props.subscriptionAccess?.staff_preview ?? false,
+      completedOnly: props.subscriptionAccess?.mode === 'completed_only',
+   });

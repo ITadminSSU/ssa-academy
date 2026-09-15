@@ -159,6 +159,30 @@ it('hides public curriculum from guests reserved seats and other instructors', f
     expect($this->service->canViewPublicCurriculum($admin, $course, null))->toBeTrue();
 });
 
+it('hides public us experience from guests staff and anyone not enrolled in the course', function () {
+    $course = makeCourse();
+    $oneTimeCourse = makeCourse(['billing_model' => CourseBillingModel::ONE_TIME]);
+    $student = makeUser();
+    $admin = makeUser(['role' => 'admin']);
+    $courseInstructor = makeUser(['role' => 'instructor', 'instructor_id' => 10]);
+    $reserved = makeEnrollment(EnrollmentAccessStatus::RESERVED);
+    $canceled = makeEnrollment(EnrollmentAccessStatus::CANCELED);
+    $active = makeEnrollment(EnrollmentAccessStatus::ACTIVE);
+    $lapsed = makeEnrollment(EnrollmentAccessStatus::SUSPENDED);
+
+    expect($this->service->canViewPublicUsExperience(null, $course, null))->toBeFalse();
+    expect($this->service->canViewPublicUsExperience($student, $course, null))->toBeFalse();
+    expect($this->service->canViewPublicUsExperience($student, $course, $reserved))->toBeFalse();
+    expect($this->service->canViewPublicUsExperience($student, $course, $canceled))->toBeFalse();
+    expect($this->service->canViewPublicUsExperience($admin, $course, null))->toBeFalse();
+    expect($this->service->canViewPublicUsExperience($courseInstructor, $course, null))->toBeFalse();
+
+    expect($this->service->canViewPublicUsExperience($student, $course, $active))->toBeTrue();
+    expect($this->service->canViewPublicUsExperience($student, $course, $lapsed))->toBeTrue();
+    expect($this->service->canViewPublicUsExperience($student, $oneTimeCourse, $active))->toBeTrue();
+    expect($this->service->canViewPublicUsExperience($student, $oneTimeCourse, $lapsed))->toBeFalse();
+});
+
 it('allows employees through linked exam gate without subscription', function () {
     $user = makeUser(['user_type' => LearnerUserType::EMPLOYEE]);
 

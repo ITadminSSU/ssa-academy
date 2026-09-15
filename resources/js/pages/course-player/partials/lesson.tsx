@@ -1,5 +1,6 @@
 import LessonIcons from '@/components/lesson-icons';
 import PlayerNavLink from '@/components/player-nav-link';
+import { resolveCurriculumAccess } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
@@ -48,11 +49,12 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
 
    const dripContent = true;
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';
-   const staffPreview = subscriptionAccess?.staff_preview ?? false;
-   const isNext = lesson.id == watchHistory.next_watching_id;
-   const isCompleted = completed.some((item) => item.type === 'lesson' && item.id == lesson.id);
-   const isCurrentLesson = watchHistory.current_watching_id == lesson.id && watchHistory.current_watching_type === 'lesson';
-   const canAccess = subscriptionLocked ? isCompleted : staffPreview || isCompleted || isCurrentLesson || isNext;
+   const isNext =
+      watchHistory.next_watching_type === 'lesson' && String(lesson.id) === String(watchHistory.next_watching_id);
+   const isCompleted = completed.some((item) => item.type === 'lesson' && String(item.id) === String(lesson.id));
+   const isCurrentLesson =
+      watchHistory.current_watching_type === 'lesson' && String(watchHistory.current_watching_id) === String(lesson.id);
+   const canAccess = resolveCurriculumAccess(props, completed, { id: lesson.id, type: 'lesson' });
 
    if (variant === 'simple') {
       const content = (

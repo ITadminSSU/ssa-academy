@@ -234,7 +234,8 @@ class CourseController extends Controller
         $this->courseService->preparePublicCourseCurriculum($course, $canViewCurriculum);
 
         if ($course->exists()) {
-            $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
+            $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course)
+                && $this->subscriptionAccess->canViewPublicUsExperience($user, $course, $enrollment);
 
             // Generate meta tags for SEO and social sharing
             $system = app('system_settings');
