@@ -45,16 +45,23 @@ const Resource = () => {
                         </span>
                      </div>
 
-                     <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => handleDownload(resource, e)}>
-                        <Download className="h-3 w-3" />
-                     </Button>
+                     <div className="flex items-center gap-2">
+                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => handleView(resource, e)}>
+                           <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => handleDownload(resource, e)}>
+                           <Download className="h-3 w-3" />
+                        </Button>
+                     </div>
                   </div>
                </div>
             ) : (
                <div key={resource.id} className="bg-muted rounded-md p-1.5">
                   <div className="flex items-center justify-between gap-2">
                      <div className="w-full px-1">
-                        <span className="text-sm">{resource.title.slice(0, 50) + (resource.title.length > 50 ? '...' : '')}</span>
+                        <span className="cursor-pointer text-sm hover:underline" onClick={(e) => handleView(resource, e)}>
+                           {resource.title.slice(0, 50) + (resource.title.length > 50 ? '...' : '')}
+                        </span>
                      </div>
 
                      <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => handleView(resource, e)}>

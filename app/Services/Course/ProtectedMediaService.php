@@ -239,7 +239,25 @@ class ProtectedMediaService
             return null;
         }
 
-        return ChunkedUpload::where('file_url', $url)->first();
+        return ChunkedUpload::where('file_url', $url)->first()
+            ?? $this->findChunkedUploadByTruncatedUrl($url);
+    }
+
+    /**
+     * Older lesson_resources.resource columns were VARCHAR(255), so R2 URLs
+     * could be stored truncated. Match the completed upload by prefix.
+     */
+    private function findChunkedUploadByTruncatedUrl(string $url): ?ChunkedUpload
+    {
+        if (strlen($url) < 250) {
+            return null;
+        }
+
+        return ChunkedUpload::query()
+            ->where('status', 'completed')
+            ->where('file_url', 'like', $url.'%')
+            ->latest('id')
+            ->first();
     }
 
     public function streamObjectStorageResponse(Request $request, string $key, string $mimeType): Response
@@ -468,7 +486,7 @@ class ProtectedMediaService
 
     public function resolveMimeType(?string $url, ?string $fallback = 'application/octet-stream'): string
     {
-        $chunkedUpload = $url ? ChunkedUpload::where('file_url', $url)->first() : null;
+        $chunkedUpload = $this->findChunkedUpload($url);
 
         if ($chunkedUpload?->mime_type) {
             return $chunkedUpload->mime_type;
@@ -512,8 +530,7 @@ class ProtectedMediaService
 
         $chunkedUpload = $this->findChunkedUpload($url);
         $mimeType = $this->resolveMimeType($url);
-        $filename = $chunkedUpload?->original_filename
-            ?: ($chunkedUpload?->filename ?? $fallbackFilename);
+        $filename = $this->safeDownloadFilename($fallbackFilename, $chunkedUpload);
 
         if ($media['type'] === 'local') {
             return response()->streamDownload(
@@ -559,6 +576,22 @@ class ProtectedMediaService
         }
 
         return $this->resolveMediaForStreaming($resource->resource) !== null;
+    }
+
+    private function safeDownloadFilename(string $fallbackFilename, ?ChunkedUpload $chunkedUpload): string
+    {
+        $extension = $chunkedUpload
+            ? pathinfo((string) $chunkedUpload->original_filename, PATHINFO_EXTENSION)
+            : pathinfo($fallbackFilename, PATHINFO_EXTENSION);
+
+        $base = pathinfo($fallbackFilename, PATHINFO_FILENAME) ?: $fallbackFilename;
+        $base = trim($base) !== '' ? $base : ($chunkedUpload?->original_filename ?? 'resource');
+
+        if ($extension && ! str_ends_with(strtolower($base), '.'.strtolower($extension))) {
+            return $base.'.'.$extension;
+        }
+
+        return $base;
     }
 
     private function isExternalVideoUrl(string $url): bool

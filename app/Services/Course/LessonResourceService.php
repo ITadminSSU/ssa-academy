@@ -2,7 +2,6 @@
 
 namespace App\Services\Course;
 
-use App\Models\ChunkedUpload;
 use App\Models\Course\LessonResource;
 use App\Models\Course\SectionLesson;
 use App\Services\MediaService;
@@ -13,7 +12,7 @@ class LessonResourceService extends MediaService
 {
    protected LocalFileUploadService | S3MultipartUploadService $uploaderService;
 
-   public function __construct()
+   public function __construct(private ProtectedMediaService $protectedMedia)
    {
       $this->uploaderService = config('filesystems.default') === 's3' ? new S3MultipartUploadService() : new LocalFileUploadService();
    }
@@ -31,32 +30,57 @@ class LessonResourceService extends MediaService
 
    public function resourceStore(array $data): LessonResource
    {
-      if ($data['type'] === 'link') {
-         $resource = LessonResource::create($data);
-      } else {
-         $resource = LessonResource::create([...$data, 'resource' => $data['resource_url']]);
+      if (($data['type'] ?? '') === 'link') {
+         return LessonResource::create([
+            'title' => $data['title'],
+            'type' => $data['type'],
+            'resource' => $data['resource'] ?? '',
+            'section_lesson_id' => $data['section_lesson_id'],
+            'is_downloadable' => $data['is_downloadable'] ?? true,
+         ]);
       }
 
-      return $resource;
+      return LessonResource::create([
+         'title' => $data['title'],
+         'type' => $data['type'],
+         'resource' => $data['resource_url'] ?? $data['resource'] ?? '',
+         'section_lesson_id' => $data['section_lesson_id'],
+         'is_downloadable' => $data['is_downloadable'] ?? true,
+      ]);
    }
 
    public function resourceUpdate(LessonResource $resource, array $data): bool
    {
-      if ($data['type'] === 'link') {
-         $resource->update($data);
-      } else {
-         $chunkedUpload = ChunkedUpload::where('file_url', $data['resource'])->first();
-         $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
-
-         $resource->update([...$data, 'resource' => $data['resource_url']]);
+      if (($data['type'] ?? $resource->type) === 'link') {
+         return $resource->update([
+            'title' => $data['title'],
+            'type' => $data['type'],
+            'resource' => $data['resource'] ?? $resource->resource,
+            'is_downloadable' => $data['is_downloadable'] ?? $resource->is_downloadable,
+         ]);
       }
 
-      return true;
+      $newUrl = trim((string) ($data['resource_url'] ?? ''));
+      $newUrl = $newUrl !== '' ? $newUrl : null;
+
+      if ($newUrl && $newUrl !== $resource->resource) {
+         $chunkedUpload = $this->protectedMedia->findChunkedUpload($resource->resource);
+         $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
+      }
+
+      return $resource->update([
+         'title' => $data['title'],
+         'type' => $data['type'],
+         'resource' => $newUrl ?: $resource->resource,
+         'is_downloadable' => array_key_exists('is_downloadable', $data)
+            ? $data['is_downloadable']
+            : $resource->is_downloadable,
+      ]);
    }
 
    public function resourceDelete(LessonResource $resource): bool
    {
-      $chunkedUpload = ChunkedUpload::where('file_url', $resource->resource)->first();
+      $chunkedUpload = $this->protectedMedia->findChunkedUpload($resource->resource);
       $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
 
       $resource->delete();

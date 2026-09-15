@@ -14,6 +14,15 @@ class StoreLessonResourceRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->exists('is_downloadable')) {
+            $this->merge([
+                'is_downloadable' => filter_var($this->input('is_downloadable'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -24,8 +33,8 @@ class StoreLessonResourceRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'type' => 'required|string|max:255',
-            'resource' => 'nullable|string|max:255',
-            'resource_url' => 'nullable|string|max:255',
+            'resource' => 'nullable|string|max:4096',
+            'resource_url' => 'nullable|string|max:4096',
             'section_lesson_id' => 'required|exists:section_lessons,id',
             'is_downloadable' => 'sometimes|boolean',
         ];

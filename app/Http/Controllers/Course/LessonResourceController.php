@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Course;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLessonResourceRequest;
 use App\Http\Requests\UpdateLessonResourceRequest;
-use App\Models\ChunkedUpload;
 use App\Models\Course\LessonResource;
 use App\Services\Course\LessonResourceService;
 use App\Services\Course\ProtectedMediaService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LessonResourceController extends Controller
@@ -43,29 +43,22 @@ class LessonResourceController extends Controller
         return back()->with('success', 'Resource deleted successfully');
     }
 
-    public function view(string $id)
+    public function view(Request $request, string $resource)
     {
-        $lessonResource = LessonResource::findOrFail($id);
+        $lessonResource = LessonResource::findOrFail($resource);
         $this->protectedMedia->authorizeResourceAccess(Auth::user(), $lessonResource);
 
         if ($lessonResource->type === 'link') {
             return redirect()->away($lessonResource->resource);
         }
 
-        $filePath = $this->protectedMedia->resolveResourcePath($lessonResource);
-
-        if (!$filePath || !is_file($filePath)) {
+        if (! $this->protectedMedia->resourceIsStreamable($lessonResource)) {
             abort(404, 'File not found');
         }
 
         $mimeType = $this->protectedMedia->resolveMimeType($lessonResource->resource);
 
-        return response()->file($filePath, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline',
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control' => 'private, no-store, max-age=0',
-        ]);
+        return $this->protectedMedia->streamMediaResponse($request, $lessonResource->resource, $mimeType);
     }
 
     public function download(string $id)
@@ -73,33 +66,18 @@ class LessonResourceController extends Controller
         $lessonResource = LessonResource::findOrFail($id);
         $this->protectedMedia->authorizeResourceDownload(Auth::user(), $lessonResource);
 
-        $resourceUrl = $lessonResource->resource;
-        $chunkedUpload = ChunkedUpload::where('file_url', $resourceUrl)->first();
-        $mimeType = $chunkedUpload?->mime_type ?? $this->protectedMedia->resolveMimeType($resourceUrl);
-        $extension = $chunkedUpload
-            ? pathinfo($chunkedUpload->original_filename, PATHINFO_EXTENSION)
-            : pathinfo($resourceUrl, PATHINFO_EXTENSION);
-        $filename = $lessonResource->title
-            ? $lessonResource->title . ($extension ? '.' . $extension : '')
-            : ($chunkedUpload?->filename ?? 'resource');
+        if ($lessonResource->type === 'link') {
+            return redirect()->away($lessonResource->resource);
+        }
 
-        $filePath = $this->protectedMedia->resolveResourcePath($lessonResource);
-
-        if (!$filePath || !is_file($filePath)) {
+        if (! $this->protectedMedia->resourceIsStreamable($lessonResource)) {
             abort(404, 'File not found');
         }
 
-        return response()->streamDownload(
-            function () use ($filePath) {
-                $stream = fopen($filePath, 'r');
-                fpassthru($stream);
-                fclose($stream);
-            },
-            $filename,
-            [
-                'Content-Type' => $mimeType,
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            ]
-        );
+        $filename = trim((string) $lessonResource->title) !== ''
+            ? $lessonResource->title
+            : 'resource';
+
+        return $this->protectedMedia->streamStoredFileDownload($lessonResource->resource, $filename);
     }
 }

@@ -13,24 +13,21 @@ interface Props {
 const ResourceList = ({ lesson, isSubmit, setIsSubmit, setOpen }: Props) => {
    const [editId, setEditId] = useState('');
 
-   // Helper to handle file download
-   const handleDownload = async (resource: LessonResource, e: React.MouseEvent) => {
+   const handleDownload = (resource: LessonResource, e: React.MouseEvent) => {
       e.preventDefault();
-      try {
-         // For non-link resources, use the download endpoint
-         const url = route('resources.download', resource.id);
-         window.open(url, '_blank');
-      } catch (error) {
-         // Fallback to direct download if the endpoint fails
-         window.open(resource.resource, '_blank');
-      }
+      window.open(route('resources.download', resource.id), '_blank');
+   };
+
+   const handleView = (resource: LessonResource, e: React.MouseEvent) => {
+      e.preventDefault();
+      window.open(route('resources.view', { resource: resource.id }), '_blank');
    };
 
    return (
       <div className="space-y-4 py-3">
          {lesson.resources.length > 0 ? (
             lesson.resources.map((resource: LessonResource) => (
-               <div className="bg-muted rounded-md p-1.5">
+               <div key={resource.id} className="bg-muted rounded-md p-1.5">
                   {resource.id === editId ? (
                      <div className="relative">
                         <ResourceForm lesson={lesson} resource={resource} isSubmit={isSubmit} setIsSubmit={setIsSubmit} setIsOpen={setOpen} />
@@ -39,14 +36,17 @@ const ResourceList = ({ lesson, isSubmit, setIsSubmit, setOpen }: Props) => {
                         </Button>
                      </div>
                   ) : (
-                     <div key={resource.id} className="flex items-center justify-between gap-2">
+                     <div className="flex items-center justify-between gap-2">
                         <div className="w-full px-1">
                            {resource.type === 'link' ? (
-                              <a target="_blank" href={resource.resource} className="cursor-pointer text-sm hover:underline">
+                              <a target="_blank" rel="noopener noreferrer" href={resource.resource} className="cursor-pointer text-sm hover:underline">
                                  {resource.title.slice(0, 50) + (resource.title.length > 50 ? '...' : '')}
                               </a>
                            ) : (
-                              <span className="cursor-pointer text-sm hover:underline" onClick={(e) => handleDownload(resource, e)}>
+                              <span
+                                 className="cursor-pointer text-sm hover:underline"
+                                 onClick={(e) => (resource.is_downloadable !== false ? handleDownload(resource, e) : handleView(resource, e))}
+                              >
                                  {resource.title.slice(0, 50) + (resource.title.length > 50 ? '...' : '')}
                               </span>
                            )}
@@ -57,13 +57,13 @@ const ResourceList = ({ lesson, isSubmit, setIsSubmit, setOpen }: Props) => {
                               <Pencil className="h-3 w-3" />
                            </Button>
 
-                           {resource.type !== 'link' ? (
-                              <Button asChild size="icon" variant="secondary" className="h-7 w-7">
-                                 <a target="_blank" href={resource.resource}>
-                                    <Eye className="h-3 w-3" />
-                                 </a>
+                           {resource.type !== 'link' && (
+                              <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => handleView(resource, e)}>
+                                 <Eye className="h-3 w-3" />
                               </Button>
-                           ) : (
+                           )}
+
+                           {resource.type !== 'link' && resource.is_downloadable !== false && (
                               <Button size="icon" variant="secondary" className="h-7 w-7" onClick={(e) => handleDownload(resource, e)}>
                                  <Download className="h-3 w-3" />
                               </Button>

@@ -21,12 +21,13 @@ interface Props {
 
 const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Props) => {
    const [isFileUploaded, setIsFileUploaded] = useState(false);
+   const [isFileSelected, setIsFileSelected] = useState(false);
 
    const { props } = usePage<CourseUpdateProps>();
    const { translate } = props;
    const { input, button } = translate;
 
-   const { data, setData, post, put, reset, processing, errors, clearErrors } = useForm({
+   const { data, setData, post, put, reset, processing, errors, clearErrors, transform } = useForm({
       title: resource ? resource.title : '',
       type: resource ? resource.type : 'document',
       resource: resource ? resource.resource : '',
@@ -35,10 +36,15 @@ const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Pr
       is_downloadable: resource ? resource.is_downloadable !== false : true,
    });
 
+   transform((formData) => ({
+      ...formData,
+      is_downloadable: formData.is_downloadable ? 1 : 0,
+   }));
+
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
 
-      if (data.type === 'link') {
+      if (data.type === 'link' || (resource && !isFileSelected)) {
          submitForm();
          return;
       }
@@ -73,10 +79,9 @@ const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Pr
    useEffect(() => {
       if (data.resource_url && isFileUploaded) {
          submitForm();
-         reset('resource_url');
          setIsFileUploaded(false);
       }
-   }, [data.resource_url]);
+   }, [data.resource_url, isFileUploaded]);
 
    const resourceTypes = [
       { label: 'Document', value: 'document' },
@@ -134,6 +139,7 @@ const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Pr
                   filetype={data.type}
                   delayUpload={true}
                   onFileSelected={(file) => {
+                     setIsFileSelected(true);
                      getFileMetadata(file).then((metadata) => {
                         setData('title', metadata.name);
                      });
@@ -142,13 +148,16 @@ const ResourceForm = ({ lesson, resource, isSubmit, setIsSubmit, setIsOpen }: Pr
                      setIsFileUploaded(true);
                      setData('resource_url', fileData.file_url);
                   }}
-                  onError={(errors) => {
+                  onError={() => {
                      setIsSubmit(false);
                   }}
                   onCancelUpload={() => {
                      setIsSubmit(false);
                   }}
                />
+               {resource?.resource && !isFileSelected && (
+                  <p className="text-muted-foreground mt-2 text-xs">Current file will be kept unless you choose a new one.</p>
+               )}
             </div>
          )}
 

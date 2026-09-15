@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StudentCourseProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { Download, ExternalLink } from 'lucide-react';
+import { Download, Eye, ExternalLink } from 'lucide-react';
 
 const CourseResources = () => {
    const { props } = usePage<StudentCourseProps>();
@@ -16,17 +16,14 @@ const CourseResources = () => {
       return format(date, 'MMMM dd, yyyy, hh:mm a');
    };
 
-   // Helper to handle file download
-   const handleDownload = async (resource: LessonResource, e: React.MouseEvent) => {
+   const handleDownload = (resource: LessonResource, e: React.MouseEvent) => {
       e.preventDefault();
-      try {
-         // For non-link resources, use the download endpoint
-         const url = route('resources.download', resource.id);
-         window.open(url, '_blank');
-      } catch (error) {
-         // Fallback to direct download if the endpoint fails
-         window.open(resource.resource, '_blank');
-      }
+      window.open(route('resources.download', resource.id), '_blank');
+   };
+
+   const handleView = (resource: LessonResource, e: React.MouseEvent) => {
+      e.preventDefault();
+      window.open(route('resources.view', { resource: resource.id }), '_blank');
    };
 
    return (
@@ -71,15 +68,20 @@ const CourseResources = () => {
                                                    <div className="flex items-center justify-end gap-2">
                                                       {resource.type === 'link' ? (
                                                          <Button asChild size="sm" variant="secondary">
-                                                            <a target="_blank" href={resource.resource}>
+                                                            <a target="_blank" rel="noopener noreferrer" href={resource.resource}>
                                                                <ExternalLink className="h-3 w-3" />
                                                                Check
                                                             </a>
                                                          </Button>
-                                                      ) : (
+                                                      ) : resource.is_downloadable !== false ? (
                                                          <Button size="sm" variant="secondary" onClick={(e) => handleDownload(resource, e)}>
                                                             <Download className="h-3 w-3" />
                                                             Download
+                                                         </Button>
+                                                      ) : (
+                                                         <Button size="sm" variant="secondary" onClick={(e) => handleView(resource, e)}>
+                                                            <Eye className="h-3 w-3" />
+                                                            View
                                                          </Button>
                                                       )}
                                                    </div>

@@ -264,14 +264,18 @@ export const generateSlug = (title: string) => {
 };
 
 // Helper to handle file download
-export const handleDownload = async (resource: LessonResource, e: React.MouseEvent) => {
+export const handleDownload = (resource: LessonResource, e: React.MouseEvent) => {
    e.preventDefault();
-   try {
-      // For non-link resources, use the download endpoint
-      const url = route('resources.download', resource.id);
-      window.open(url, '_blank');
-   } catch (error) {
-      // Fallback to direct download if the endpoint fails
+
+   if (resource.type === 'link') {
       window.open(resource.resource, '_blank');
+      return;
    }
+
+   if (resource.is_downloadable === false) {
+      window.open(route('resources.view', { resource: resource.id }), '_blank');
+      return;
+   }
+
+   window.open(route('resources.download', resource.id), '_blank');
 };
