@@ -19,8 +19,9 @@ interface MediaFields {
 
 const Website = () => {
    const { props } = usePage<SharedData & SystemProps>();
-   const { translate } = props;
+   const { translate, companionCourseOptions = [] } = props;
    const { input, settings } = translate;
+   const systemFields = props.system.fields as SystemFields;
 
    const mediaFields: MediaFields = {
       new_favicon: null,
@@ -28,7 +29,9 @@ const Website = () => {
    };
 
    const { data, setData, post, errors, processing } = useForm({
-      ...(props.system.fields as SystemFields),
+      ...systemFields,
+      companion_auto_enroll_enabled: Boolean(systemFields.companion_auto_enroll_enabled),
+      companion_course_id: systemFields.companion_course_id ? String(systemFields.companion_course_id) : '',
       direction: 'none',
       ...(mediaFields as MediaFields),
    });
@@ -132,6 +135,44 @@ const Website = () => {
                      <Label>Phone</Label>
                      <Input name="phone" value={data.phone || ''} onChange={(e) => onHandleChange(e, setData)} placeholder="Enter Phone Number" />
                      <InputError message={errors.phone} />
+                  </div>
+               </div>
+            </div>
+
+            <div className="border-b pb-6">
+               <h2 className="mb-2 text-xl font-semibold">{settings.companion_course_auto_enroll}</h2>
+               <p className="text-muted-foreground mb-6 text-sm">{settings.companion_course_auto_enroll_help}</p>
+
+               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div>
+                     <Label>{settings.companion_auto_enroll_enabled}</Label>
+                     <Select
+                        value={data.companion_auto_enroll_enabled ? '1' : '0'}
+                        onValueChange={(value) => setData('companion_auto_enroll_enabled', value === '1')}
+                     >
+                        <SelectTrigger>
+                           <SelectValue placeholder={input.select_option} />
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="1">On</SelectItem>
+                           <SelectItem value="0">Off</SelectItem>
+                        </SelectContent>
+                     </Select>
+                     <InputError message={errors.companion_auto_enroll_enabled} />
+                  </div>
+
+                  <div>
+                     <Label>{settings.companion_course}</Label>
+                     <Combobox
+                        data={companionCourseOptions.map((course) => ({
+                           label: course.title,
+                           value: String(course.id),
+                        }))}
+                        defaultValue={data.companion_course_id || ''}
+                        placeholder={settings.companion_course_placeholder}
+                        onSelect={(selected) => setData('companion_course_id', selected.value)}
+                     />
+                     <InputError message={errors.companion_course_id} />
                   </div>
                </div>
             </div>

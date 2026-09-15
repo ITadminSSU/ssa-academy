@@ -3,28 +3,21 @@
 namespace App\Services\Course;
 
 use App\Enums\EnrollmentAccessStatus;
-use App\Enums\PaymentBillingType;
 use App\Mail\CourseEnrollmentWelcomeMail;
-use App\Models\Course\Course;
-use App\Models\Course\CourseCoupon;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
-use App\Services\Payment\LaunchOfferService;
 use App\Support\CourseWelcomeEmailCopy;
+use App\Support\CourseWelcomePaymentBreakdown;
 use App\Support\PaymentVoucherCopy;
 use App\Support\TransactionalMailSender;
-use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Modules\PaymentGateways\Models\PaymentHistory;
-use Modules\PaymentGateways\Services\PaymentService;
 
 class CourseEnrollmentWelcomeMailService
 {
     public function __construct(
         private TransactionalMailSender $mailSender,
-        private LaunchOfferService $launchOffer,
-        private PaymentService $paymentService,
+        private CourseWelcomePaymentBreakdown $paymentBreakdown,
     ) {}
 
     public function sendForPaidCoursePurchase(int|string $userId, int|string $courseId, bool $force = false): bool
@@ -70,12 +63,16 @@ class CourseEnrollmentWelcomeMailService
             return false;
         }
 
+        if (! $force && $this->paymentBreakdown->shouldWaitForPayment($enrollment)) {
+            return false;
+        }
+
         $user = $enrollment->user;
         $course = $enrollment->course;
         $instructor = $course->instructor;
         $bio = $this->shortBio($instructor?->biography);
         $academyName = (string) config('branding.name', config('app.name'));
-        $breakdown = $this->paymentBreakdown($enrollment);
+        $breakdown = $this->paymentBreakdown->build($enrollment);
         $variant = CourseWelcomeEmailCopy::resolveVariant($course);
         $intro = 'Thank you for your payment of '.$this->money($breakdown['this_payment_amount']).' for “'.$course->title.'”.';
 
@@ -159,242 +156,6 @@ class CourseEnrollmentWelcomeMailService
         return $status === EnrollmentAccessStatus::ACTIVE || $status === null;
     }
 
-    /**
-     * @return array{this_payment_amount: float, discount_amount: float, discount_percent: float, coupon_code: string, bullets: list<string>}
-     */
-    private function paymentBreakdown(CourseEnrollment $enrollment): array
-    {
-        $depositAmount = (float) ($enrollment->deposit_amount ?? 0);
-        $depositDate = $enrollment->deposit_paid_at;
-
-        $thisPayment = $this->resolveCompletingPayment($enrollment);
-        $thisPaymentAmount = (float) ($thisPayment?->amount ?? 0);
-        $thisPaymentDate = $enrollment->balance_paid_at
-            ?? $thisPayment?->created_at
-            ?? $enrollment->entry_date
-            ?? now();
-
-        $expectedSubtotal = $this->expectedSubtotalBeforeDiscount($enrollment, $thisPayment);
-        $voucher = $this->resolveVoucher($enrollment, $thisPayment, $expectedSubtotal, $thisPaymentAmount);
-        $discountAmount = $voucher['amount'];
-        $discountPercent = $voucher['percent'];
-        $couponCode = $voucher['code'];
-
-        if ($discountAmount > 0) {
-            $afterDiscount = round(max(0, $expectedSubtotal - $discountAmount), 2);
-            if ($thisPaymentAmount <= 0 || abs($thisPaymentAmount - $expectedSubtotal) < 0.009) {
-                $thisPaymentAmount = $afterDiscount;
-            }
-        } elseif ($thisPaymentAmount <= 0 && $expectedSubtotal > 0) {
-            $thisPaymentAmount = $expectedSubtotal;
-        }
-
-        $totalAmount = $depositAmount + $expectedSubtotal;
-
-        if ($totalAmount <= 0) {
-            $totalAmount = $thisPaymentAmount + $discountAmount;
-        }
-
-        $bullets = [];
-
-        if ($depositAmount > 0) {
-            $bullets[] = 'Pre-registration ('.$this->date($depositDate).'): '.$this->money($depositAmount);
-        }
-
-        if ($couponCode !== '' || $discountAmount > 0) {
-            if ($expectedSubtotal > 0) {
-                $priceLabel = $depositAmount > 0 ? 'Balance' : 'Course Price';
-                $bullets[] = $priceLabel.': '.$this->money($expectedSubtotal);
-            }
-
-            $bullets[] = PaymentVoucherCopy::breakdownLine($couponCode, $discountAmount, $discountPercent);
-        }
-
-        $bullets[] = 'This Payment ('.$this->date($thisPaymentDate).'): '.$this->money($thisPaymentAmount);
-        $bullets[] = 'Total Course Price: '.$this->money($totalAmount);
-
-        return [
-            'this_payment_amount' => $thisPaymentAmount,
-            'discount_amount' => $discountAmount,
-            'discount_percent' => $discountPercent,
-            'coupon_code' => $couponCode,
-            'bullets' => $bullets,
-        ];
-    }
-
-    private function resolveCompletingPayment(CourseEnrollment $enrollment): ?PaymentHistory
-    {
-        if ($enrollment->balance_payment_history_id) {
-            $balancePayment = PaymentHistory::query()->find($enrollment->balance_payment_history_id);
-            if ($balancePayment) {
-                return $balancePayment;
-            }
-        }
-
-        $query = PaymentHistory::query()
-            ->where('user_id', $enrollment->user_id)
-            ->where('purchase_type', Course::class)
-            ->where('purchase_id', $enrollment->course_id)
-            ->where(function ($q) {
-                $q->whereNull('billing_type')
-                    ->orWhere('billing_type', '!=', PaymentBillingType::DEPOSIT->value);
-            })
-            ->orderByDesc('id');
-
-        if ($enrollment->deposit_payment_history_id) {
-            $query->where('id', '!=', $enrollment->deposit_payment_history_id);
-        }
-
-        return $query->first();
-    }
-
-    private function expectedSubtotalBeforeDiscount(CourseEnrollment $enrollment, ?PaymentHistory $thisPayment): float
-    {
-        $course = $enrollment->course;
-        $depositAmount = (float) ($enrollment->deposit_amount ?? 0);
-
-        if ($depositAmount > 0 || ($thisPayment?->billing_type === PaymentBillingType::BALANCE)) {
-            return (float) ($enrollment->balance_amount ?? $this->launchOffer->balanceAmount($course));
-        }
-
-        if ($this->launchOffer->isConfigured($course)) {
-            return $this->launchOffer->fullUpfrontPrice($course);
-        }
-
-        $price = $course->discount && $course->discount_price
-            ? (float) $course->discount_price
-            : (float) ($course->price ?? 0);
-
-        return max(0, $price);
-    }
-
-    /**
-     * @return array{code: string, amount: float, percent: float}
-     */
-    private function resolveVoucher(
-        CourseEnrollment $enrollment,
-        ?PaymentHistory $thisPayment,
-        float $expectedSubtotal,
-        float $paidAmount,
-    ): array {
-        $couponCode = '';
-        $discountAmount = 0.0;
-        $discountPercent = 0.0;
-
-        foreach ($this->relatedPayments($enrollment, $thisPayment) as $payment) {
-            $couponCode = PaymentVoucherCopy::normalizeCode($payment->coupon)
-                ?: PaymentVoucherCopy::normalizeCode(data_get($payment->meta, 'coupon_code'));
-
-            $metaDiscount = (float) data_get($payment->meta, 'coupon_discount', 0);
-            if ($metaDiscount > $discountAmount) {
-                $discountAmount = $metaDiscount;
-            }
-
-            if ($couponCode !== '') {
-                break;
-            }
-        }
-
-        $coupon = $couponCode !== ''
-            ? CourseCoupon::query()->whereRaw('LOWER(code) = ?', [strtolower($couponCode)])->first()
-            : null;
-
-        if ($coupon && $this->couponIsPercentage($coupon)) {
-            $discountPercent = (float) $coupon->discount;
-        }
-
-        $discountBase = $expectedSubtotal;
-        if ($discountBase <= 0) {
-            $discountBase = (float) ($enrollment->balance_amount ?? 0);
-        }
-        if ($discountBase <= 0) {
-            $discountBase = $paidAmount;
-        }
-
-        if ($coupon && $discountAmount <= 0) {
-            $discountAmount = $this->couponDiscountForSubtotal($coupon, $discountBase);
-        }
-
-        if ($discountAmount <= 0 && $expectedSubtotal > 0 && $paidAmount > 0 && $expectedSubtotal > $paidAmount + 0.009) {
-            $discountAmount = round($expectedSubtotal - $paidAmount, 2);
-        }
-
-        return [
-            'code' => $couponCode,
-            'amount' => $discountAmount,
-            'percent' => $discountPercent,
-        ];
-    }
-
-    private function couponIsPercentage(CourseCoupon $coupon): bool
-    {
-        return in_array(strtolower((string) $coupon->discount_type), ['percentage', 'percent', 'pct'], true);
-    }
-
-    private function couponDiscountForSubtotal(CourseCoupon $coupon, float $subtotal): float
-    {
-        $value = (float) $coupon->discount;
-
-        if ($value <= 0) {
-            return 0.0;
-        }
-
-        if ($this->couponIsPercentage($coupon)) {
-            if ($subtotal <= 0) {
-                return 0.0;
-            }
-
-            return min($subtotal, round(($subtotal * $value) / 100, 2));
-        }
-
-        if ($subtotal > 0) {
-            return min($subtotal, round($value, 2));
-        }
-
-        return round($value, 2);
-    }
-
-    /**
-     * @return list<PaymentHistory>
-     */
-    private function relatedPayments(CourseEnrollment $enrollment, ?PaymentHistory $thisPayment): array
-    {
-        $payments = [];
-        $seen = [];
-
-        $add = function (?PaymentHistory $payment) use (&$payments, &$seen): void {
-            if (! $payment || isset($seen[$payment->id])) {
-                return;
-            }
-
-            $seen[$payment->id] = true;
-            $payments[] = $payment;
-        };
-
-        $add($thisPayment);
-
-        foreach ([$enrollment->balance_payment_history_id, $enrollment->deposit_payment_history_id] as $id) {
-            if ($id) {
-                $add(PaymentHistory::query()->find($id));
-            }
-        }
-
-        PaymentHistory::query()
-            ->where('user_id', $enrollment->user_id)
-            ->where('purchase_type', Course::class)
-            ->where('purchase_id', $enrollment->course_id)
-            ->where(function ($query) {
-                $query->where(function ($couponQuery) {
-                    $couponQuery->whereNotNull('coupon')->where('coupon', '!=', '');
-                })->orWhereNotNull('meta->coupon_code');
-            })
-            ->orderByDesc('id')
-            ->get()
-            ->each($add);
-
-        return $payments;
-    }
-
     private function shortBio(?string $biography): string
     {
         $text = trim(html_entity_decode(strip_tags((string) $biography), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
@@ -435,19 +196,6 @@ class CourseEnrollmentWelcomeMailService
     private function money(float $amount): string
     {
         return '$'.number_format($amount, 2);
-    }
-
-    private function date(null|CarbonInterface|string $date): string
-    {
-        if (! $date) {
-            return 'N/A';
-        }
-
-        if (is_string($date)) {
-            $date = \Carbon\Carbon::parse($date);
-        }
-
-        return $date->timezone(config('app.timezone'))->format('F j, Y');
     }
 
     private function send(User $user, CourseEnrollmentWelcomeMail $mailable): bool

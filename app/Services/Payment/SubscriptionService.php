@@ -149,9 +149,14 @@ class SubscriptionService
             ? PaymentBillingType::SUBSCRIPTION
             : PaymentBillingType::SUBSCRIPTION_RENEWAL;
         $launchOfferMode = $stripeSubscription->metadata['launch_offer_mode'] ?? null;
-        $couponCode = $billingType === PaymentBillingType::SUBSCRIPTION && $launchOfferMode !== 'balance'
+        $rawCoupon = $billingType === PaymentBillingType::SUBSCRIPTION && $launchOfferMode !== 'balance'
             ? ($stripeSubscription->metadata['coupon_code'] ?? null)
             : null;
+        $couponCode = is_string($rawCoupon) && trim($rawCoupon) !== '' ? $rawCoupon : null;
+        $couponDiscount = $couponCode
+            ? (float) ($stripeSubscription->metadata['coupon_discount'] ?? 0)
+            : null;
+        $chargedAmount = (float) ($stripeSubscription->metadata['charged_amount'] ?? 0);
 
         $this->paymentService->recordSubscriptionPayment(
             $subscription,
@@ -160,7 +165,21 @@ class SubscriptionService
             $this->extractTaxAmount($invoice),
             $billingType,
             $couponCode,
+            $couponDiscount,
+            $chargedAmount > 0 ? $chargedAmount : null,
         );
+
+        if ($billingType === PaymentBillingType::SUBSCRIPTION && $launchOfferMode !== 'balance') {
+            $enrollment = CourseEnrollment::query()
+                ->where('user_id', $subscription->user_id)
+                ->where('course_id', $subscription->course_id)
+                ->with(['user', 'course.instructor.user', 'course.course_category'])
+                ->first();
+
+            if ($enrollment) {
+                app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
+            }
+        }
     }
 
     protected function syncEnrollment(Subscription $subscription): CourseEnrollment

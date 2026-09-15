@@ -205,9 +205,12 @@ class PaymentService
         float $taxAmount,
         PaymentBillingType $billingType,
         ?string $couponCode = null,
+        ?float $couponDiscount = null,
+        ?float $chargedAmount = null,
     ): void {
         if ($existing = PaymentHistory::where('transaction_id', $transactionId)->first()) {
-            $this->applyCouponToPayment($existing, $couponCode);
+            $this->applyCouponToPayment($existing, $couponCode, $couponDiscount);
+            $this->rememberCourseCharge($existing, $chargedAmount);
 
             return;
         }
@@ -245,7 +248,8 @@ class PaymentService
             ...$historyData,
         ]);
 
-        $this->applyCouponToPayment($history, $couponCode);
+        $this->applyCouponToPayment($history, $couponCode, $couponDiscount);
+        $this->rememberCourseCharge($history, $chargedAmount);
     }
 
     public function recordLaunchOfferPayment(
@@ -395,6 +399,21 @@ class PaymentService
         if ($couponCode !== '') {
             $this->syncCouponUsedCount($couponCode);
         }
+    }
+
+    private function rememberCourseCharge(PaymentHistory $payment, ?float $chargedAmount): void
+    {
+        if ($chargedAmount === null || $chargedAmount < 0) {
+            return;
+        }
+
+        $meta = is_array($payment->meta) ? $payment->meta : [];
+        if ((float) ($meta['charged_amount'] ?? 0) > 0) {
+            return;
+        }
+
+        $meta['charged_amount'] = round($chargedAmount, 2);
+        $payment->forceFill(['meta' => $meta])->save();
     }
 
     public function syncCouponUsedCount(string $code): void

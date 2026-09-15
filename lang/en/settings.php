@@ -260,6 +260,13 @@ return [
   'update_application' => 'Update Application',
 
   // Website Settings
+  'companion_course_auto_enroll' => 'Companion course auto-enroll',
+  'companion_course_auto_enroll_help' => 'When a learner gets full access to any other course, they are also enrolled in this free course. Deposit-only seats wait until the balance is paid. Turned off until you pick a course.',
+  'companion_course' => 'Companion course',
+  'companion_course_placeholder' => 'Select a free course',
+  'companion_auto_enroll_enabled' => 'Auto-enroll',
+
+  // Website Settings
   'website_information' => 'Website Information',
   'contact_information' => 'Contact Information',
   'media_settings' => 'Media Settings',

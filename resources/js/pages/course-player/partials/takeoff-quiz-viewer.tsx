@@ -75,7 +75,7 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
          <Separator />
 
          <div className="space-y-6 p-6">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="mx-auto flex max-w-sm flex-col items-stretch gap-8">
                <div className="space-y-2">
                   <p className="font-medium">{frontend.summery}</p>
                   <p className="text-muted-foreground text-sm">
@@ -155,6 +155,8 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
                         isSubmit={false}
                         filetype="document"
                         delayUpload={false}
+                        accept=".pdf,application/pdf"
+                        acceptError="This file is not a PDF. Please upload a PDF."
                         onFileSelected={() => setPdf(null)}
                         onFileUploaded={(fileData) => {
                            if (!fileData?.file_url) {
@@ -179,6 +181,8 @@ const TakeoffQuizViewer = ({ quiz }: { quiz: SectionQuiz }) => {
                         isSubmit={false}
                         filetype="document"
                         delayUpload={false}
+                        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        acceptError="This file is not an .xlsx Excel file. Please upload an .xlsx file."
                         onFileSelected={() => setExcel(null)}
                         onFileUploaded={(fileData) => {
                            if (!fileData?.file_url) {

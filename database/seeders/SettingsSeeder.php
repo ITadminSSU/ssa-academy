@@ -38,6 +38,8 @@ class SettingsSeeder extends Seeder
                     'direction' => 'none',
                     'language_selector' => true,
                     'theme' => 'light',
+                    'companion_auto_enroll_enabled' => false,
+                    'companion_course_id' => null,
                 ],
             ],
             [

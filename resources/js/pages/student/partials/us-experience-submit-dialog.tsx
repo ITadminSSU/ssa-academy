@@ -61,6 +61,8 @@ const UsExperienceSubmitDialog = ({ plan }: { plan: UsExperienceStudentPlan }) =
                      isSubmit={false}
                      filetype="document"
                      delayUpload={false}
+                     accept=".pdf,application/pdf"
+                     acceptError="This file is not a PDF. Please upload a PDF."
                      onFileSelected={() => setPdf(null)}
                      onFileUploaded={(fileData) => {
                         if (!fileData?.file_url) {
@@ -85,6 +87,8 @@ const UsExperienceSubmitDialog = ({ plan }: { plan: UsExperienceStudentPlan }) =
                      isSubmit={false}
                      filetype="document"
                      delayUpload={false}
+                     accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                     acceptError="This file is not an .xlsx Excel file. Please upload an .xlsx file."
                      onFileSelected={() => setExcel(null)}
                      onFileUploaded={(fileData) => {
                         if (!fileData?.file_url) {

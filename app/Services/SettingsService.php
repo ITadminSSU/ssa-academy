@@ -72,6 +72,20 @@ class SettingsService extends MediaService
                 'direction',
             ]);
 
+            if (array_key_exists('companion_auto_enroll_enabled', $filteredData)) {
+                $filteredData['companion_auto_enroll_enabled'] = filter_var(
+                    $filteredData['companion_auto_enroll_enabled'],
+                    FILTER_VALIDATE_BOOLEAN
+                );
+            }
+
+            if (array_key_exists('companion_course_id', $filteredData)) {
+                $companionCourseId = $filteredData['companion_course_id'];
+                $filteredData['companion_course_id'] = ($companionCourseId === '' || $companionCourseId === null || (int) $companionCourseId <= 0)
+                    ? null
+                    : (int) $companionCourseId;
+            }
+
             $setting->update(['fields' => $filteredData]);
 
             return $setting;

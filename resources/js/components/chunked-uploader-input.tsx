@@ -13,6 +13,8 @@ interface ChunkedUploaderInputProps {
    courseId?: string | number;
    sectionId?: string | number;
    delayUpload?: boolean;
+   accept?: string;
+   acceptError?: string;
    onError?: (message: string) => void;
    onCancelUpload?: () => void;
    onFileSelected?: (file: File) => void;
@@ -49,6 +51,44 @@ const mimeTypeFromFilename = (filename: string): string => {
    );
 };
 
+const fileMatchesAccept = (file: File, accept: string): boolean => {
+   const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+   const tokens = accept
+      .split(',')
+      .map((token) => token.trim().toLowerCase())
+      .filter(Boolean);
+
+   if (tokens.length === 0) {
+      return true;
+   }
+
+   return tokens.some((token) => {
+      if (token.startsWith('.')) {
+         return extension === token.slice(1);
+      }
+
+      if (token.endsWith('/*')) {
+         return file.type.startsWith(token.slice(0, -1));
+      }
+
+      return file.type === token;
+   });
+};
+
+const acceptErrorFor = (accept: string): string => {
+   const normalized = accept.toLowerCase();
+
+   if (normalized.includes('.pdf') || normalized.includes('application/pdf')) {
+      return 'This file is not a PDF. Please upload a PDF.';
+   }
+
+   if (normalized.includes('.xlsx')) {
+      return 'This file is not an .xlsx Excel file. Please upload an .xlsx file.';
+   }
+
+   return 'This file type is not allowed.';
+};
+
 const formatMaxFileSize = (bytes: number): string => {
    if (bytes >= 1024 * 1024 * 1024) {
       return `${(bytes / (1024 * 1024 * 1024)).toFixed(0)} GB`;
@@ -64,6 +104,8 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    sectionId,
    filetype,
    delayUpload = false,
+   accept,
+   acceptError,
    onError,
    onCancelUpload,
    onFileSelected,
@@ -149,6 +191,17 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
 
          if (selectedFile.size > maxFileSize) {
             setErrorMessage(`File is too large. Maximum file size is ${formatMaxFileSize(maxFileSize)}`);
+            return;
+         }
+
+         if (accept && !fileMatchesAccept(selectedFile, accept)) {
+            const message = acceptError || acceptErrorFor(accept);
+            setErrorMessage(message);
+            setUploadStatus('error');
+            setFile(null);
+            fileRef.current = null;
+            event.target.value = '';
+            onError?.(message);
             return;
          }
 
@@ -480,7 +533,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    return (
       <div>
          <div className="relative overflow-hidden rounded-sm">
-            <Input ref={fileInputRef} type="file" name="file" onChange={handleFileChange} />
+            <Input ref={fileInputRef} type="file" name="file" accept={accept} onChange={handleFileChange} />
 
             {file && uploadStatus !== 'idle' && uploadStatus !== 'error' && (
                <div className="absolute top-0 left-0 z-10 flex h-full w-full items-center justify-between">

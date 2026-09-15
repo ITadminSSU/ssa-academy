@@ -36,6 +36,8 @@ interface SystemFields {
    direction: string;
    language_selector: boolean;
    theme: Appearance;
+   companion_auto_enroll_enabled?: boolean;
+   companion_course_id?: number | string | null;
 }
 
 interface GoogleAuthFields {

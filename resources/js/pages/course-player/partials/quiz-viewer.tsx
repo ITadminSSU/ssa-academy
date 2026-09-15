@@ -173,9 +173,9 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
          <form onSubmit={handleSubmit}>
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full p-6">
                <TabsContent value="summary">
-                  <div className="flex justify-between p-6">
+                  <div className="mx-auto flex max-w-sm flex-col items-stretch gap-8 p-6">
                      <div className="space-y-2">
-                        <p>{frontend.summery}</p>
+                        <p className="font-medium">{frontend.summery}</p>
 
                         <div className="flex gap-2 text-sm">
                            <p className="text-muted-foreground">{frontend.duration}</p>
@@ -199,7 +199,7 @@ const QuizViewer = ({ quiz }: QuizViewerProps) => {
                         </div>
                      </div>
                      <div className="space-y-2">
-                        <p>{frontend.result}</p>
+                        <p className="font-medium">{frontend.result}</p>
 
                         <div className="flex gap-2 text-sm">
                            <p className="text-muted-foreground">{frontend.retake_attempts}</p>

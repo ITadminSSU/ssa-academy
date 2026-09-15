@@ -391,6 +391,8 @@ class StripeController extends Controller
                 'course_id' => (string) $course->id,
                 'launch_offer_mode' => $offerMode,
                 'coupon_code' => (string) ($coupon?->code ?? ''),
+                'coupon_discount' => (string) ($pricing['couponDiscount'] ?? 0),
+                'charged_amount' => (string) ($pricing['finalPrice'] ?? 0),
             ],
         ];
         $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);

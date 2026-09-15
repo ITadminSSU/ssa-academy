@@ -82,8 +82,19 @@ class SettingController extends Controller
     public function system(Request $request)
     {
         $system = $this->settingsService->getSetting(['type' => 'system']);
+        $companionCourseOptions = \App\Models\Course\Course::query()
+            ->select(['id', 'title', 'status'])
+            ->where('status', 'approved')
+            ->when(
+                $system?->getField('companion_course_id'),
+                function ($query, $selectedId) {
+                    $query->orWhere('id', $selectedId);
+                }
+            )
+            ->orderBy('title')
+            ->get();
 
-        return Inertia::render('dashboard/settings/system/index', compact('system'));
+        return Inertia::render('dashboard/settings/system/index', compact('system', 'companionCourseOptions'));
     }
 
     /**

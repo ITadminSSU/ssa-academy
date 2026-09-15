@@ -11,6 +11,11 @@ import Website from './partials/website';
 
 export interface SystemProps extends SharedData {
    system: Settings<SystemFields>;
+   companionCourseOptions: Array<{
+      id: number;
+      title: string;
+      status: string;
+   }>;
 }
 
 const System = () => {
