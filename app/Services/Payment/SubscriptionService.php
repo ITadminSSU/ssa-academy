@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
+use App\Support\StripeCheckoutIds;
 use App\Support\StripeInvoiceIds;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -62,13 +63,15 @@ class SubscriptionService
 
     public function activateFromCheckoutSession(object $session): Subscription
     {
-        if ($session->mode !== 'subscription' || empty($session->subscription)) {
+        $subscriptionId = StripeCheckoutIds::objectId($session->subscription ?? null);
+
+        if ($session->mode !== 'subscription' || $subscriptionId === '') {
             throw new \InvalidArgumentException('Checkout session is not a subscription.');
         }
 
         $this->stripeCustomer->configureStripe();
 
-        $stripeSubscription = StripeSubscription::retrieve($session->subscription);
+        $stripeSubscription = StripeSubscription::retrieve($subscriptionId);
 
         return $this->syncFromStripeSubscription($stripeSubscription, [
             'user_id' => (int) ($session->metadata['user_id'] ?? $session->client_reference_id),

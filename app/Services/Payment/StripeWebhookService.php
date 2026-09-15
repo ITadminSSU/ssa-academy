@@ -72,7 +72,7 @@ class StripeWebhookService
             return;
         }
 
-        if ($mode !== 'subscription' || empty($session->subscription)) {
+        if ($mode !== 'subscription' || StripeCheckoutIds::objectId($session->subscription ?? null) === '') {
             return;
         }
 

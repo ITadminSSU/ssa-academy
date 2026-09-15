@@ -31,6 +31,7 @@ class SyncStripeInvoicePaymentsCommand extends Command
                 'limit' => 100,
                 'status' => 'paid',
                 'created' => ['gte' => now()->subHours($hours)->getTimestamp()],
+                'expand' => ['data.parent', 'data.payments'],
             ];
 
             if ($startingAfter) {
@@ -40,6 +41,7 @@ class SyncStripeInvoicePaymentsCommand extends Command
             $invoices = Invoice::all($params);
 
             foreach ($invoices->data as $invoice) {
+                $invoice = $this->invoiceWithSubscription($invoice);
                 $amount = round(($invoice->amount_paid ?? 0) / 100, 2);
                 $ids = StripeInvoiceIds::lookupIds($invoice);
                 $subscriptionId = StripeInvoiceIds::subscriptionId($invoice);
@@ -62,10 +64,13 @@ class SyncStripeInvoicePaymentsCommand extends Command
                     number_format($amount, 2),
                 ));
 
-                if (! $dryRun) {
-                    $subscriptions->handleInvoicePaymentSucceeded($invoice);
+                if ($dryRun) {
                     $created++;
+                    continue;
                 }
+
+                $subscriptions->handleInvoicePaymentSucceeded($invoice);
+                $created++;
             }
 
             $startingAfter = $invoices->has_more && count($invoices->data) > 0
@@ -74,9 +79,24 @@ class SyncStripeInvoicePaymentsCommand extends Command
         } while ($startingAfter);
 
         $this->info($dryRun
-            ? "Dry run complete. {$skipped} invoices already recorded or skipped."
+            ? "Dry run complete. {$created} missing invoice payments. Skipped {$skipped}."
             : "Recorded {$created} missing invoice payments. Skipped {$skipped}.");
 
         return self::SUCCESS;
+    }
+
+    private function invoiceWithSubscription(object $invoice): object
+    {
+        if (StripeInvoiceIds::subscriptionId($invoice) !== '') {
+            return $invoice;
+        }
+
+        try {
+            return Invoice::retrieve($invoice->id, [
+                'expand' => ['parent', 'payments'],
+            ]);
+        } catch (\Throwable) {
+            return $invoice;
+        }
     }
 }
