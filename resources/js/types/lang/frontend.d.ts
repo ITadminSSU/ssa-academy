@@ -50,6 +50,7 @@ interface FrontendLang {
    edit_review: string;
    review: string;
    submit_review: string;
+   finish_course_to_review: string;
    you_rated_this: string;
    characters: string;
    no_courses_found: string;

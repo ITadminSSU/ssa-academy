@@ -32,6 +32,7 @@ use App\Services\Payment\SubscriptionAccessService;
 use App\Services\UsExperience\UsExperiencePlanService;
 use App\Support\CourseWelcomeEmailCopy;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 class CourseController extends Controller
@@ -309,6 +310,7 @@ class CourseController extends Controller
         $course = $this->courseService->getUserCourseById($id, $user);
         if ($course) {
             app(\App\Services\Course\LessonDurationSyncService::class)->syncCourse($course);
+            $this->appendLessonMediaPreviews($course);
         }
         $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
 
@@ -457,5 +459,34 @@ class CourseController extends Controller
         }
 
         abort(403, 'You can only delete courses you created.');
+    }
+
+    private function appendLessonMediaPreviews(Course $course): void
+    {
+        if (! $course->relationLoaded('sections')) {
+            return;
+        }
+
+        foreach ($course->sections as $section) {
+            if (! $section->relationLoaded('section_lessons')) {
+                continue;
+            }
+
+            foreach ($section->section_lessons as $lesson) {
+                if ($lesson->lesson_type !== 'image' || ! $lesson->lesson_src) {
+                    continue;
+                }
+
+                $lesson->setAttribute(
+                    'media_preview_url',
+                    URL::temporarySignedRoute(
+                        'course.player.media',
+                        now()->addHours(2),
+                        ['lesson' => $lesson->id],
+                        absolute: false,
+                    ),
+                );
+            }
+        }
     }
 }

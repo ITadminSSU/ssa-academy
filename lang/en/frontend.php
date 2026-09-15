@@ -63,6 +63,7 @@ return [
     'edit_review' => 'Edit Review',
     'review' => 'Review',
     'submit_review' => 'Submit Review',
+    'finish_course_to_review' => 'Finish the course to submit a review.',
     'you_rated_this' => 'You rated this',
     'characters' => 'Characters',
     'no_courses_found' => 'No courses found',

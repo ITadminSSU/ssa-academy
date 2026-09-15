@@ -17,7 +17,7 @@ import { getFileMetadata } from '@/lib/file-metadata';
 import { onHandleChange } from '@/lib/inertia';
 import { cn } from '@/lib/utils';
 import { useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 import { CourseUpdateProps } from '../../update';
@@ -46,6 +46,10 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
    const [lessonType, setLessonType] = useState('type');
    const [isFileSelected, setIsFileSelected] = useState(false);
    const [isFileUploaded, setIsFileUploaded] = useState(false);
+   const [pickedPreviewUrl, setPickedPreviewUrl] = useState<string | null>(null);
+   const pendingSrcRef = useRef<string | null>(null);
+   const pendingBunnyRef = useRef<string | null>(null);
+   const uploadSubmitStarted = useRef(false);
 
    const { props } = usePage<CourseUpdateProps>();
    const { translate, bunnyStream } = props;
@@ -53,7 +57,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
 
    const lessonTypes = getLessonTypes(translate);
 
-   const { data, setData, post, put, reset, processing, errors, clearErrors } = useForm({
+   const { data, setData, post, put, reset, processing, errors, clearErrors, transform } = useForm({
       title: lesson ? lesson.title : '',
       status: lesson ? lesson.status : '',
       is_free: lesson ? lesson.is_free : 0,
@@ -77,6 +81,14 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
 
    const isFileUpload = ['video', 'document', 'image'].includes(data.lesson_type);
    const useBunnyForVideo = data.lesson_type === 'video' && Boolean(bunnyStream?.enabled);
+   const savedImagePreview =
+      data.lesson_type === 'image'
+         ? pickedPreviewUrl || lesson?.media_preview_url || lesson?.lesson_src || data.lesson_src || null
+         : null;
+   const savedFileLabel =
+      data.lesson_type === 'document' && (lesson?.lesson_src || data.lesson_src)
+         ? decodeURIComponent(String(lesson?.lesson_src || data.lesson_src).split('/').pop() || 'Saved file')
+         : null;
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -89,45 +101,64 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
       submitForm();
    };
 
+   const resetUploadState = () => {
+      pendingSrcRef.current = null;
+      pendingBunnyRef.current = null;
+      uploadSubmitStarted.current = false;
+      setIsFileSelected(false);
+      setIsFileUploaded(false);
+      setIsSubmit(false);
+      setPickedPreviewUrl((current) => {
+         if (current) {
+            URL.revokeObjectURL(current);
+         }
+
+         return null;
+      });
+   };
+
    const submitForm = () => {
       clearErrors();
 
+      const payloadExtras = {
+         lesson_src_new: pendingSrcRef.current || data.lesson_src_new,
+         bunny_video_id_new: pendingBunnyRef.current || data.bunny_video_id_new,
+      };
+
+      const options = {
+         preserveScroll: true,
+         onSuccess: () => {
+            resetUploadState();
+            setOpen(false);
+         },
+         onError: () => {
+            uploadSubmitStarted.current = false;
+            setIsSubmit(false);
+         },
+      };
+
+      transform((formData) => ({ ...formData, ...payloadExtras }));
+
       if (lesson) {
-         put(route('lesson.update', { id: lesson.id }), {
-            preserveScroll: true,
-            onSuccess: () => {
-               reset();
-               setOpen(false);
-               setIsSubmit(false);
-            },
-         });
+         put(route('lesson.update', { id: lesson.id }), options);
       } else {
-         post(route('lesson.store'), {
-            preserveScroll: true,
-            onSuccess: () => {
-               reset();
-               setOpen(false);
-               setIsSubmit(false);
-            },
-         });
+         post(route('lesson.store'), options);
       }
    };
 
    useEffect(() => {
-      if (data.lesson_src_new && isFileUploaded) {
-         submitForm();
-         reset('lesson_src_new');
-         setIsFileUploaded(false);
+      if (!isFileUploaded || uploadSubmitStarted.current) {
+         return;
       }
-   }, [data.lesson_src_new]);
 
-   useEffect(() => {
-      if (data.bunny_video_id_new && isFileUploaded) {
-         submitForm();
-         reset('bunny_video_id_new');
-         setIsFileUploaded(false);
+      if (!pendingSrcRef.current && !data.lesson_src_new && !pendingBunnyRef.current && !data.bunny_video_id_new) {
+         return;
       }
-   }, [data.bunny_video_id_new]);
+
+      uploadSubmitStarted.current = true;
+      submitForm();
+      setIsFileUploaded(false);
+   }, [isFileUploaded, data.lesson_src_new, data.bunny_video_id_new]);
 
    useEffect(() => {
       if (!open) {
@@ -152,6 +183,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
          if (!nextOpen && !isSubmit) {
             reset();
             clearErrors();
+            resetUploadState();
          }
          setOpen(nextOpen);
       }}>
@@ -234,10 +266,27 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                         )}
 
                         {['video', 'document', 'image'].includes(data.lesson_type) && (
-                           <div>
+                           <div className="space-y-3">
                               <Label>
                                  {input.select} {data.lesson_type}
                               </Label>
+
+                              {savedImagePreview ? (
+                                 <div className="bg-muted overflow-hidden rounded-md border">
+                                    <img
+                                       src={savedImagePreview}
+                                       alt={data.title || 'Lesson image'}
+                                       className="mx-auto max-h-56 w-full object-contain"
+                                    />
+                                    <p className="text-muted-foreground px-3 py-2 text-xs">
+                                       {pickedPreviewUrl ? 'New image selected. Save to replace the current file.' : 'Current saved image'}
+                                    </p>
+                                 </div>
+                              ) : null}
+
+                              {savedFileLabel && !pickedPreviewUrl ? (
+                                 <p className="text-muted-foreground text-sm">Current file: {savedFileLabel}</p>
+                              ) : null}
 
                               {useBunnyForVideo ? (
                                  <BunnyVideoUploaderInput
@@ -247,12 +296,15 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                     delayUpload={true}
                                     onFileSelected={(file) => {
                                        setIsFileSelected(true);
-                                       getFileMetadata(file).then((metadata) => {
-                                          setData('title', metadata.name);
-                                          setData('duration', metadata.duration || '00:00:00');
-                                       });
+                                       if (!lesson) {
+                                          getFileMetadata(file).then((metadata) => {
+                                             setData('title', metadata.name);
+                                             setData('duration', metadata.duration || '00:00:00');
+                                          });
+                                       }
                                     }}
                                     onFileUploaded={(fileData) => {
+                                       pendingBunnyRef.current = fileData.bunny_video_id;
                                        setIsFileUploaded(true);
                                        setData('bunny_video_id_new', fileData.bunny_video_id);
                                        // Don't overwrite client-detected length with Bunny's temporary 00:00:00.
@@ -261,9 +313,11 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                        }
                                     }}
                                     onError={() => {
+                                       uploadSubmitStarted.current = false;
                                        setIsSubmit(false);
                                     }}
                                     onCancelUpload={() => {
+                                       uploadSubmitStarted.current = false;
                                        setIsSubmit(false);
                                     }}
                                  />
@@ -273,26 +327,46 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                     courseId={data.course_id || ''}
                                     sectionId={data.course_section_id || ''}
                                     filetype={data.lesson_type}
+                                    accept={data.lesson_type === 'image' ? 'image/*' : undefined}
                                     delayUpload={true}
                                     onFileSelected={(file) => {
                                        setIsFileSelected(true);
-                                       getFileMetadata(file).then((metadata) => {
-                                          setData('title', metadata.name);
-                                          setData('duration', metadata.duration || '00:00:00');
-                                       });
+                                       if (data.lesson_type === 'image') {
+                                          setPickedPreviewUrl((current) => {
+                                             if (current) {
+                                                URL.revokeObjectURL(current);
+                                             }
+
+                                             return URL.createObjectURL(file);
+                                          });
+                                       }
+                                       if (!lesson) {
+                                          getFileMetadata(file).then((metadata) => {
+                                             setData('title', metadata.name);
+                                             setData('duration', metadata.duration || '00:00:00');
+                                          });
+                                       }
                                     }}
                                     onFileUploaded={(fileData) => {
+                                       pendingSrcRef.current = fileData.file_url;
                                        setIsFileUploaded(true);
                                        setData('lesson_src_new', fileData.file_url);
                                     }}
                                     onError={() => {
+                                       uploadSubmitStarted.current = false;
                                        setIsSubmit(false);
                                     }}
                                     onCancelUpload={() => {
+                                       uploadSubmitStarted.current = false;
                                        setIsSubmit(false);
                                     }}
                                  />
                               )}
+                              <p className="text-muted-foreground text-xs">
+                                 {lesson?.lesson_src || lesson?.media_preview_url
+                                    ? 'Choose a new file only if you want to replace the current one.'
+                                    : 'Choose a file, then save. The upload starts when you submit.'}
+                              </p>
                            </div>
                         )}
 

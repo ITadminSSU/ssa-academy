@@ -84,8 +84,19 @@ class CourseCompletionGateService
             'all_quizzes_passed' => $allQuizzesPassed,
             'certificate_unlocked' => $certificateUnlocked,
             'us_experience_unlocked' => $certificateUnlocked,
+            'reviews_unlocked' => $this->isReviewsUnlocked($watchHistory, $certificateUnlocked),
             'pending_assignments_count' => $pendingAssignments,
         ];
+    }
+
+    public function isReviewsUnlocked(?WatchHistory $watchHistory, bool $certificateUnlocked): bool
+    {
+        return $certificateUnlocked || filled($watchHistory?->completion_date);
+    }
+
+    public function canSubmitCourseReview(Course $course, int $userId, ?WatchHistory $watchHistory = null): bool
+    {
+        return $this->getGateStatus($course, $userId, null, $watchHistory)['reviews_unlocked'];
     }
 
     public function canAccessUsExperience(Course $course, int $userId, ?WatchHistory $watchHistory = null): bool

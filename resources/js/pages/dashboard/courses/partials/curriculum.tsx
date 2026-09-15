@@ -202,6 +202,7 @@ const SectionCurriculumItems = ({
                      />
 
                      <LessonForm
+                        key={`lesson-edit-${item.lesson.id}-${item.lesson.updated_at ?? item.lesson.lesson_src ?? ''}`}
                         lesson={item.lesson}
                         sectionId={section.id}
                         title={dashboard.update_lesson}

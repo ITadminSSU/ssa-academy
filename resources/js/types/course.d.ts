@@ -164,6 +164,7 @@ interface SectionLesson extends TableCommon {
    activity_retake?: number;
    activity_submissions?: LessonActivitySubmission[];
    lesson_src?: string;
+   media_preview_url?: string | null;
    bunny_video_id?: string | null;
    stream_protected?: boolean;
    video_playback?: LessonVideoPlayback | null;

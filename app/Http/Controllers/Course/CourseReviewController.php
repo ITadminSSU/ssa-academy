@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Course;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCourseReviewRequest;
 use App\Http\Requests\UpdateCourseReviewRequest;
+use App\Models\Course\Course;
+use App\Services\Course\CourseCompletionGateService;
 use App\Services\Course\CourseReviewService;
 
 class CourseReviewController extends Controller
 {
     public function __construct(
         public CourseReviewService $reviewService,
+        public CourseCompletionGateService $courseCompletionGateService,
     ) {}
 
     /**
@@ -18,7 +21,16 @@ class CourseReviewController extends Controller
      */
     public function store(StoreCourseReviewRequest $request)
     {
-        $this->reviewService->createReview($request->validated());
+        $data = $request->validated();
+        $course = Course::query()->findOrFail($data['course_id']);
+
+        if (! $this->courseCompletionGateService->canSubmitCourseReview($course, (int) $data['user_id'])) {
+            return back()->withErrors([
+                'course_id' => 'Finish the course before submitting a review.',
+            ]);
+        }
+
+        $this->reviewService->createReview($data);
 
         return redirect()->back()->with('success', 'Review created successfully');
     }

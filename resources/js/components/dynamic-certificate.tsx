@@ -48,6 +48,97 @@ const FIXED_TEXT = {
    },
 };
 
+const COURSE_NAME_MAX_WIDTH = WIDTH - 160;
+const COURSE_NAME_START_Y = 488;
+const COURSE_NAME_MAX_BOTTOM = 590;
+
+const wrapCanvasLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+   const words = text.trim().split(/\s+/).filter(Boolean);
+
+   if (words.length === 0) {
+      return [''];
+   }
+
+   const lines: string[] = [];
+   let current = words[0];
+
+   for (let index = 1; index < words.length; index++) {
+      const next = `${current} ${words[index]}`;
+
+      if (ctx.measureText(next).width <= maxWidth) {
+         current = next;
+      } else {
+         lines.push(current);
+         current = words[index];
+      }
+   }
+
+   lines.push(current);
+
+   return lines;
+};
+
+const preferredCourseNameBlocks = (text: string): string[] => {
+   const colon = text.indexOf(':');
+
+   if (colon <= 0 || colon >= text.length - 1) {
+      return [text];
+   }
+
+   const left = text.slice(0, colon + 1).trim();
+   const right = text.slice(colon + 1).trim();
+
+   return right ? [left, right] : [text];
+};
+
+const fitCourseName = (ctx: CanvasRenderingContext2D, text: string): { lines: string[]; fontSize: number; lineHeight: number } => {
+   const display = (text || '').toUpperCase();
+   const maxLines = 4;
+   let fontSize = 30;
+
+   while (fontSize >= 16) {
+      ctx.font = `bold ${fontSize}px ${FONT}`;
+      const lineHeight = Math.round(fontSize * 1.22);
+      const lines = preferredCourseNameBlocks(display).flatMap((block) => wrapCanvasLines(ctx, block, COURSE_NAME_MAX_WIDTH));
+      const lastLineY = COURSE_NAME_START_Y + (lines.length - 1) * lineHeight;
+      const fits =
+         lines.length > 0 &&
+         lines.length <= maxLines &&
+         lastLineY <= COURSE_NAME_MAX_BOTTOM &&
+         lines.every((line) => ctx.measureText(line).width <= COURSE_NAME_MAX_WIDTH);
+
+      if (fits) {
+         return { lines, fontSize, lineHeight };
+      }
+
+      fontSize -= 1;
+   }
+
+   ctx.font = `bold 16px ${FONT}`;
+
+   return {
+      lines: wrapCanvasLines(ctx, display, COURSE_NAME_MAX_WIDTH).slice(0, maxLines),
+      fontSize: 16,
+      lineHeight: 20,
+   };
+};
+
+const fitSingleLineFontSize = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, startSize: number, minSize: number): number => {
+   let fontSize = startSize;
+
+   while (fontSize > minSize) {
+      ctx.font = `bold ${fontSize}px ${FONT}`;
+
+      if (ctx.measureText(text).width <= maxWidth) {
+         return fontSize;
+      }
+
+      fontSize -= 1;
+   }
+
+   return minSize;
+};
+
 const DynamicCertificate = ({
    template,
    courseName,
@@ -171,19 +262,24 @@ const DynamicCertificate = ({
       ctx.fillText(copy.subtitle, WIDTH / 2, 258);
 
       // Recipient name
-      ctx.font = `bold 44px ${FONT}`;
+      const recipient = (studentName || '').toUpperCase();
+      const recipientSize = fitSingleLineFontSize(ctx, recipient, COURSE_NAME_MAX_WIDTH, 44, 24);
+      ctx.font = `bold ${recipientSize}px ${FONT}`;
       ctx.fillStyle = BLUE;
-      ctx.fillText((studentName || '').toUpperCase(), WIDTH / 2, 408);
+      ctx.fillText(recipient, WIDTH / 2, 408);
 
       // Connective text
       ctx.font = `20px ${FONT}`;
       ctx.fillStyle = BLUE;
       ctx.fillText(copy.connective, WIDTH / 2, 450);
 
-      // Course / exam name
-      ctx.font = `bold 30px ${FONT}`;
+      // Course / exam name — wrap and shrink so long titles stay inside the frame
+      const courseFit = fitCourseName(ctx, courseName || '');
+      ctx.font = `bold ${courseFit.fontSize}px ${FONT}`;
       ctx.fillStyle = RED;
-      ctx.fillText((courseName || '').toUpperCase(), WIDTH / 2, 495);
+      courseFit.lines.forEach((line, index) => {
+         ctx.fillText(line, WIDTH / 2, COURSE_NAME_START_Y + index * courseFit.lineHeight);
+      });
 
       // Metadata — exam certificates use a simplified layout (no training hours or instructor)
       if (isExam) {

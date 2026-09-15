@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useCoursePlayerProgress } from '@/lib/apply-course-player-progress';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
 import { useForm, usePage } from '@inertiajs/react';
@@ -17,9 +18,12 @@ import ReviewEdit from './review-edit';
 
 const ReviewForm = () => {
    const { props } = usePage<CoursePlayerProps>();
+   const { courseGates, watchHistory } = useCoursePlayerProgress();
    const { translate } = props;
    const { button, input, frontend, common } = translate;
    const [hoverRating, setHoverRating] = useState(0);
+   const reviewsUnlocked =
+      courseGates?.reviews_unlocked ?? Boolean(courseGates?.certificate_unlocked || watchHistory?.completion_date);
    const { data, setData, post, errors, processing, reset } = useForm({
       rating: 0,
       review: '',
@@ -29,6 +33,11 @@ const ReviewForm = () => {
 
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+
+      if (!reviewsUnlocked) {
+         toast.error(frontend.finish_course_to_review ?? 'Finish the course to submit a review.');
+         return;
+      }
 
       post(route('course-reviews.store'), {
          onError: (errors) => {
@@ -83,6 +92,10 @@ const ReviewForm = () => {
 
                      <p className="mt-3 text-sm">{props.userReview.review}</p>
                   </div>
+               ) : !reviewsUnlocked ? (
+                  <p className="text-muted-foreground text-sm">
+                     {frontend.finish_course_to_review ?? 'Finish the course to submit a review.'}
+                  </p>
                ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">
                      {/* Star Rating */}
