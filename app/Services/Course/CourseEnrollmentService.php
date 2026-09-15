@@ -41,12 +41,16 @@ class CourseEnrollmentService extends MediaService
             ...($withBilling ? ['subscription'] : []),
          ])
          ->when(array_key_exists('search', $data) && filled($data['search']), function ($query) use ($data) {
-            $search = $data['search'];
+            $search = trim((string) $data['search']);
 
-            return $query->whereHas('user', function ($user) use ($search) {
-               $user->where(function ($inner) use ($search) {
-                  $inner->where('name', 'LIKE', '%' . $search . '%')
-                     ->orWhere('email', 'LIKE', '%' . $search . '%');
+            return $query->where(function ($outer) use ($search) {
+               $outer->whereHas('user', function ($user) use ($search) {
+                  $user->where(function ($inner) use ($search) {
+                     $inner->where('name', 'LIKE', '%' . $search . '%')
+                        ->orWhere('email', 'LIKE', '%' . $search . '%');
+                  });
+               })->orWhereHas('course', function ($course) use ($search) {
+                  $course->where('title', 'LIKE', '%' . $search . '%');
                });
             });
          })
@@ -61,7 +65,7 @@ class CourseEnrollmentService extends MediaService
          ->orderBy('created_at', 'desc');
 
       if ($paginate) {
-         $result = $enrollments->paginate($page);
+         $result = $enrollments->paginate($page)->withQueryString();
 
          if ($withBilling) {
             $this->decorateListRows($result->getCollection());

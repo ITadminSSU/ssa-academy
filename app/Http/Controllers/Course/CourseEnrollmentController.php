@@ -35,7 +35,7 @@ class CourseEnrollmentController extends Controller
             static fn (CoursePricingType $case): string => $case->value,
             CoursePricingType::cases(),
         );
-        $users = $this->user->getUsers([]);
+        $users = $this->user->getEnrollmentPickerUsers();
         $courses = $this->enrollmentCourseOptions($user);
         $enrollments = $this->courseEnrollment->getEnrollments($data, true, true);
 
@@ -61,7 +61,7 @@ class CourseEnrollmentController extends Controller
             static fn (CoursePricingType $case): string => $case->value,
             CoursePricingType::cases(),
         );
-        $users = $this->user->getUsers([]);
+        $users = $this->user->getEnrollmentPickerUsers();
         $courses = $this->enrollmentCourseOptions(Auth::user());
 
         return Inertia::render('dashboard/enrollments/create', [
@@ -125,8 +125,17 @@ class CourseEnrollmentController extends Controller
     {
         $user = Auth::user();
 
+        $search = trim((string) $request->input('search', ''));
+        $perPage = $request->input('per_page');
+
         return array_merge(
-            $request->only(['search', 'per_page']),
+            array_filter(
+                [
+                    'search' => $search !== '' ? $search : null,
+                    'per_page' => $perPage,
+                ],
+                static fn ($value) => $value !== null && $value !== '',
+            ),
             isAdmin() ? [] : (
                 $user?->instructor
                     ? ['instructor_id' => $user->instructor->id]
