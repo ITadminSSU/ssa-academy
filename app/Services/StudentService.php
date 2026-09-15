@@ -469,6 +469,8 @@ class StudentService extends MediaService
    public function getCourseModules(string $course_id)
    {
       return CourseSection::where('course_id', $course_id)
+         ->orderBy('sort')
+         ->orderBy('id')
          ->with([
             'section_lessons',
             'section_quizzes'
@@ -506,6 +508,8 @@ class StudentService extends MediaService
    public function getCourseSectionQuizzes(string $course_id, User $user)
    {
       return CourseSection::where('course_id', $course_id)
+         ->orderBy('sort')
+         ->orderBy('id')
          ->with([
             'section_quizzes' => function ($quiz) use ($user) {
                $quiz->with([
@@ -534,6 +538,8 @@ class StudentService extends MediaService
    public function getCourseLessonResources(string $course_id)
    {
       return CourseSection::where('course_id', $course_id)
+         ->orderBy('sort')
+         ->orderBy('id')
          ->whereHas('section_lessons', function ($query) {
             $query->whereHas('resources');
          })
