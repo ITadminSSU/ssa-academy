@@ -3,6 +3,8 @@
 namespace Modules\Blog\Models;
 
 use App\Models\User;
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,6 +36,16 @@ class Blog extends Model implements HasMedia
     protected $attributes = [
         'status' => 'draft',
     ];
+
+    protected function thumbnail(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
+
+    protected function banner(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
 
     /**
      * Get the user that owns the blog.

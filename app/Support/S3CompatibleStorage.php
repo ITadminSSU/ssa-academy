@@ -194,11 +194,29 @@ class S3CompatibleStorage
         return static::objectFileUrl($key);
     }
 
+    public static function eloquentAttribute(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: fn (?string $value) => static::attributeGet($value),
+            set: fn (?string $value) => static::attributeSet($value),
+        );
+    }
+
     /**
      * Eloquent Attribute get: sign private R2/S3 URLs for the browser; keep local paths app-absolute.
      */
     public static function attributeGet(?string $value): ?string
     {
+        if ($value === null || trim($value) === '') {
+            return $value;
+        }
+
+        $value = trim($value);
+
+        if (static::isRelativePublicDiskPath($value)) {
+            return public_asset_url('/storage/'.ltrim($value, '/')) ?? '/storage/'.ltrim($value, '/');
+        }
+
         $resolved = static::resolvePlaybackUrl($value);
 
         if ($resolved === null || $resolved === '') {
@@ -250,6 +268,27 @@ class S3CompatibleStorage
         $path = (string) parse_url($url, PHP_URL_PATH);
 
         return str_contains($path, '/storage/') || str_contains($path, '/assets/');
+    }
+
+    /**
+     * Paths returned by Storage::disk('public')->store(), e.g. marksheets/logos/file.png.
+     */
+    public static function isRelativePublicDiskPath(string $url): bool
+    {
+        if ($url === ''
+            || str_starts_with($url, '/')
+            || str_starts_with($url, 'http://')
+            || str_starts_with($url, 'https://')
+            || str_starts_with($url, '//')
+        ) {
+            return false;
+        }
+
+        try {
+            return \Illuminate\Support\Facades\Storage::disk('public')->exists($url);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**

@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MarksheetPreview from './marksheet-preview';
+import StoredMediaImage from '@/components/stored-media-image';
 
 const MarksheetBuilderForm = ({ template }: { template?: MarksheetTemplate | null }) => {
    const [logoPreview, setLogoPreview] = useState(template?.logo_path);
@@ -28,6 +29,12 @@ const MarksheetBuilderForm = ({ template }: { template?: MarksheetTemplate | nul
          fontFamily: 'sans-serif',
       },
    });
+
+   useEffect(() => {
+      if (!data.logo) {
+         setLogoPreview(template?.logo_path);
+      }
+   }, [template?.logo_path, data.logo]);
 
    const onLogoChange = (name: string, value: unknown) => {
       setData(name as any, value as any);
@@ -89,7 +96,7 @@ const MarksheetBuilderForm = ({ template }: { template?: MarksheetTemplate | nul
                      <div className="space-y-2">
                         {logoPreview && (
                            <div className="h-20 w-20 overflow-hidden rounded border">
-                              <img src={logoPreview} alt="Logo preview" className="h-full w-full object-contain" />
+                              <StoredMediaImage src={logoPreview} alt="Logo preview" className="h-full w-full object-contain" />
                            </div>
                         )}
                         <div className="flex-1">

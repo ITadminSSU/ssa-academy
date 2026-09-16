@@ -47,6 +47,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
    const [isFileSelected, setIsFileSelected] = useState(false);
    const [isFileUploaded, setIsFileUploaded] = useState(false);
    const [pickedPreviewUrl, setPickedPreviewUrl] = useState<string | null>(null);
+   const [previewFailed, setPreviewFailed] = useState(false);
    const pendingSrcRef = useRef<string | null>(null);
    const pendingBunnyRef = useRef<string | null>(null);
    const uploadSubmitStarted = useRef(false);
@@ -81,14 +82,25 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
 
    const isFileUpload = ['video', 'document', 'image'].includes(data.lesson_type);
    const useBunnyForVideo = data.lesson_type === 'video' && Boolean(bunnyStream?.enabled);
+   const isPrivateObjectUrl = (url?: string | null) =>
+      !!url && /r2\.cloudflarestorage\.com|\.amazonaws\.com/i.test(url);
    const savedImagePreview =
       data.lesson_type === 'image'
-         ? pickedPreviewUrl || lesson?.media_preview_url || lesson?.lesson_src || data.lesson_src || null
+         ? pickedPreviewUrl ||
+           lesson?.media_preview_url ||
+           (!isPrivateObjectUrl(lesson?.lesson_src) && !isPrivateObjectUrl(data.lesson_src)
+              ? lesson?.lesson_src || data.lesson_src || null
+              : null)
          : null;
    const savedFileLabel =
       data.lesson_type === 'document' && (lesson?.lesson_src || data.lesson_src)
          ? decodeURIComponent(String(lesson?.lesson_src || data.lesson_src).split('/').pop() || 'Saved file')
          : null;
+   const hasSavedImage = data.lesson_type === 'image' && Boolean(lesson?.lesson_src || lesson?.media_preview_url || data.lesson_src);
+
+   useEffect(() => {
+      setPreviewFailed(false);
+   }, [savedImagePreview]);
 
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -108,6 +120,7 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
       setIsFileSelected(false);
       setIsFileUploaded(false);
       setIsSubmit(false);
+      setPreviewFailed(false);
       setPickedPreviewUrl((current) => {
          if (current) {
             URL.revokeObjectURL(current);
@@ -271,15 +284,23 @@ const LessonForm = ({ title, handler, lesson, sectionId }: Props) => {
                                  {input.select} {data.lesson_type}
                               </Label>
 
-                              {savedImagePreview ? (
+                              {savedImagePreview && !previewFailed ? (
                                  <div className="bg-muted overflow-hidden rounded-md border">
                                     <img
                                        src={savedImagePreview}
                                        alt={data.title || 'Lesson image'}
                                        className="mx-auto max-h-56 w-full object-contain"
+                                       onError={() => setPreviewFailed(true)}
                                     />
                                     <p className="text-muted-foreground px-3 py-2 text-xs">
                                        {pickedPreviewUrl ? 'New image selected. Save to replace the current file.' : 'Current saved image'}
+                                    </p>
+                                 </div>
+                              ) : hasSavedImage && !pickedPreviewUrl ? (
+                                 <div className="bg-muted rounded-md border px-3 py-2">
+                                    <p className="text-sm font-medium">{data.title || 'Lesson image'}</p>
+                                    <p className="text-muted-foreground text-xs">
+                                       Image is saved. Choose a new file only if you want to replace it.
                                     </p>
                                  </div>
                               ) : null}

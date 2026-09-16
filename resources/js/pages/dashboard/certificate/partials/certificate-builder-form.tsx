@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { Eye, Save } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import CertificatePreview from './certificate-preview';
 import LiveCertificatePreviewDialog from './live-certificate-preview-dialog';
+import StoredMediaImage from '@/components/stored-media-image';
 
 const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate | null }) => {
    const [logoPreview, setLogoPreview] = useState(template?.logo_path);
@@ -31,6 +32,12 @@ const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate |
          fontFamily: 'serif',
       },
    });
+
+   useEffect(() => {
+      if (!data.logo) {
+         setLogoPreview(template?.logo_path);
+      }
+   }, [template?.logo_path, data.logo]);
 
    const onLogoChange = (name: string, value: unknown) => {
       setData(name as any, value as any);
@@ -112,7 +119,7 @@ const CertificateBuilderForm = ({ template }: { template?: CertificateTemplate |
                      <div className="space-y-2">
                         {logoPreview && (
                            <div className="h-20 w-20 overflow-hidden rounded border">
-                              <img src={logoPreview} alt="Logo preview" className="h-full w-full object-contain" />
+                              <StoredMediaImage src={logoPreview} alt="Logo preview" className="h-full w-full object-contain" />
                            </div>
                         )}
                         <div className="flex-1">

@@ -1,5 +1,6 @@
 import Combobox from '@/components/combobox';
 import InputError from '@/components/input-error';
+import StoredMediaImage from '@/components/stored-media-image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -154,7 +155,7 @@ const BlogForm = () => {
                   <InputError message={errors.banner} />
 
                   <div className="border-border mt-3 overflow-hidden rounded-lg border-2 border-dashed">
-                     <img src={banner} alt="" />
+                     <StoredMediaImage src={banner} alt="" className="w-full" />
                   </div>
                </div>
 
@@ -164,7 +165,7 @@ const BlogForm = () => {
                   <InputError message={errors.thumbnail} />
 
                   <div className="border-border mt-3 overflow-hidden rounded-lg border-2 border-dashed">
-                     <img src={thumbnail} alt="" />
+                     <StoredMediaImage src={thumbnail} alt="" className="w-full" />
                   </div>
                </div>
             </CardContent>

@@ -36,6 +36,12 @@ test('videoMimeForKey maps playback extensions used by walkthrough uploads', fun
     expect(S3CompatibleStorage::videoMimeForKey('lessons/abc.xlsx'))->toBeNull();
 });
 
+test('isRelativePublicDiskPath ignores urls and rooted paths', function () {
+    expect(S3CompatibleStorage::isRelativePublicDiskPath('/storage/logo.png'))->toBeFalse();
+    expect(S3CompatibleStorage::isRelativePublicDiskPath('https://example.com/logo.png'))->toBeFalse();
+    expect(S3CompatibleStorage::isRelativePublicDiskPath(''))->toBeFalse();
+});
+
 test('extractObjectKey reads path-style R2 API urls used by chat attachments', function () {
     $url = 'https://662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/679/SL0001---Skill-Level-1---Plans.pdf';
 

@@ -32,7 +32,6 @@ use App\Services\Payment\SubscriptionAccessService;
 use App\Services\UsExperience\UsExperiencePlanService;
 use App\Support\CourseWelcomeEmailCopy;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 
 class CourseController extends Controller
@@ -479,12 +478,7 @@ class CourseController extends Controller
 
                 $lesson->setAttribute(
                     'media_preview_url',
-                    URL::temporarySignedRoute(
-                        'course.player.media',
-                        now()->addHours(2),
-                        ['lesson' => $lesson->id],
-                        absolute: false,
-                    ),
+                    app(\App\Services\Course\ProtectedMediaService::class)->instructorLessonPreviewUrl($lesson),
                 );
             }
         }

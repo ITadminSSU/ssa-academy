@@ -240,22 +240,84 @@ class ProtectedMediaService
         }
 
         return ChunkedUpload::where('file_url', $url)->first()
+            ?? $this->findChunkedUploadByObjectKey($url)
             ?? $this->findChunkedUploadByTruncatedUrl($url);
     }
 
-    /**
-     * Older lesson_resources.resource columns were VARCHAR(255), so R2 URLs
-     * could be stored truncated. Match the completed upload by prefix.
-     */
-    private function findChunkedUploadByTruncatedUrl(string $url): ?ChunkedUpload
+    public function instructorLessonPreviewUrl(SectionLesson $lesson): ?string
     {
-        if (strlen($url) < 250) {
+        if ($lesson->lesson_type !== 'image') {
+            return null;
+        }
+
+        $src = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
+
+        if (! $src) {
+            return null;
+        }
+
+        $upload = $this->findChunkedUpload($src);
+        $key = $upload?->key ?: S3CompatibleStorage::extractObjectKey((string) $src);
+
+        if ($key && ($upload?->disk === 's3' || ! $this->isLocalMediaUrl($src))) {
+            try {
+                $preview = S3CompatibleStorage::temporaryObjectUrl($key, now()->addHours(self::SIGNED_URL_TTL_HOURS));
+
+                if (str_contains($preview, 'X-Amz-') || str_contains($preview, 'Signature=')) {
+                    return $preview;
+                }
+            } catch (\Throwable) {
+                // Fall through to the app-proxied stream.
+            }
+        }
+
+        if (! $lesson->id) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute(
+            'course.player.media',
+            now()->addHours(self::SIGNED_URL_TTL_HOURS),
+            ['lesson' => $lesson->id],
+            absolute: true,
+        );
+    }
+
+    private function findChunkedUploadByObjectKey(string $url): ?ChunkedUpload
+    {
+        $key = S3CompatibleStorage::extractObjectKey($url);
+
+        if (! $key) {
             return null;
         }
 
         return ChunkedUpload::query()
             ->where('status', 'completed')
-            ->where('file_url', 'like', $url.'%')
+            ->where(function ($query) use ($key) {
+                $query->where('key', $key)
+                    ->orWhere('filename', $key)
+                    ->orWhere('file_path', $key);
+            })
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * VARCHAR(255) columns truncated either the stored lesson URL or the
+     * chunked_uploads.file_url. Match both directions by prefix.
+     */
+    private function findChunkedUploadByTruncatedUrl(string $url): ?ChunkedUpload
+    {
+        $prefix = substr($url, 0, 255);
+
+        if (strlen($prefix) < 200) {
+            return null;
+        }
+
+        return ChunkedUpload::query()
+            ->where('status', 'completed')
+            ->whereNotNull('file_url')
+            ->where('file_url', 'like', substr($prefix, 0, 200).'%')
             ->latest('id')
             ->first();
     }
@@ -502,7 +564,19 @@ class ProtectedMediaService
             }
         }
 
-        return $fallback;
+        $extension = strtolower((string) pathinfo((string) parse_url((string) $url, PHP_URL_PATH), PATHINFO_EXTENSION));
+        $fromExtension = match ($extension) {
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'svg' => 'image/svg+xml',
+            'bmp' => 'image/bmp',
+            'pdf' => 'application/pdf',
+            default => null,
+        };
+
+        return $fromExtension ?: $fallback;
     }
 
     public function resolveResourcePath(LessonResource $resource): ?string

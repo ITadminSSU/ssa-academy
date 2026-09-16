@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,6 +40,11 @@ class Page extends Model
     protected $casts = [
         'active' => 'boolean',
     ];
+
+    protected function banner(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
 
     /**
      * Get all sections for this page

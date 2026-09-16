@@ -202,6 +202,14 @@ function public_asset_url(?string $url): ?string
    $appHost = parse_url($appUrl, PHP_URL_HOST);
 
    if (!in_array($parsed['host'], $localHosts, true) && $parsed['host'] !== $appHost) {
+      if (\App\Support\S3CompatibleStorage::extractObjectKey($url)) {
+         $signed = \App\Support\S3CompatibleStorage::attributeGet($url);
+
+         if ($signed) {
+            return tidy_public_url($signed);
+         }
+      }
+
       return tidy_public_url($url);
    }
 

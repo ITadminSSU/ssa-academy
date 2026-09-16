@@ -4,6 +4,8 @@ namespace Modules\Exam\Models;
 
 use App\Models\BaseModel;
 use App\Models\Instructor;
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -58,6 +60,16 @@ class Exam extends BaseModel implements HasMedia
       'total_questions' => 'integer',
       'takeoff_config' => 'array',
    ];
+
+   protected function thumbnail(): Attribute
+   {
+      return S3CompatibleStorage::eloquentAttribute();
+   }
+
+   protected function banner(): Attribute
+   {
+      return S3CompatibleStorage::eloquentAttribute();
+   }
 
    public function isQuantityTakeoff(): bool
    {

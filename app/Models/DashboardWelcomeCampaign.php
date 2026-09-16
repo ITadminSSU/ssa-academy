@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Support\DashboardWelcomeOverlay;
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
@@ -43,6 +45,11 @@ class DashboardWelcomeCampaign extends Model implements HasMedia
         'autoplay_muted' => 'boolean',
     ];
 
+    protected function posterUrl(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
+
     public function dismissals(): HasMany
     {
         return $this->hasMany(DashboardWelcomeDismissal::class, 'campaign_id');
@@ -68,7 +75,7 @@ class DashboardWelcomeCampaign extends Model implements HasMedia
             'body' => $this->body ?? '',
             'cta_label' => $this->cta_label ?? '',
             'cta_url' => $this->cta_url ?? '',
-            'poster_url' => $this->poster_url ?? '',
+            'poster_url' => $this->getRawOriginal('poster_url') ?? '',
             'video_type' => $this->video_type ?? DashboardWelcomeOverlay::VIDEO_NONE,
             'video_url' => $this->video_url ?? '',
             'autoplay_muted' => (bool) $this->autoplay_muted,
@@ -106,7 +113,7 @@ class DashboardWelcomeCampaign extends Model implements HasMedia
             'cta_url' => trim((string) ($this->cta_url ?? '')) !== ''
                 ? (string) $this->cta_url
                 : '/dashboard/browse/all',
-            'poster_url' => DashboardWelcomeOverlay::resolvePosterUrl((string) ($this->poster_url ?? '')),
+            'poster_url' => DashboardWelcomeOverlay::resolvePosterUrl((string) ($this->getRawOriginal('poster_url') ?? '')),
             'video_type' => $resolved['video_type'],
             'video_url' => $resolved['video_url'],
             'autoplay_muted' => (bool) $this->autoplay_muted,

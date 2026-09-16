@@ -2,6 +2,8 @@
 
 namespace Modules\Certificate\Models;
 
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
@@ -32,4 +34,14 @@ class CertificateTemplate extends Model implements HasMedia
         'is_active' => 'boolean',
         'is_default' => 'boolean',
     ];
+
+    protected function logoPath(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
+
+    protected function backgroundImagePath(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
 }

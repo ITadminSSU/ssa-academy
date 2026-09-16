@@ -6,6 +6,7 @@ import jsPDF from 'jspdf';
 import { Calendar, ClipboardList, Download, FileImage, FileText } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import StoredMediaImage from '@/components/stored-media-image';
 
 interface DynamicMarksheetProps {
    template: MarksheetTemplate;
@@ -336,7 +337,7 @@ const DynamicMarksheet = ({ template, courseName, studentName, completionDate, s
                      <div className="flex items-center gap-4">
                         {template.logo_path ? (
                            <div className="h-16 w-16">
-                              <img src={template.logo_path} alt="Logo" className="h-full w-full object-contain" />
+                              <StoredMediaImage src={template.logo_path} alt="Logo" className="h-full w-full object-contain" />
                            </div>
                         ) : (
                            <ClipboardList

@@ -44,7 +44,8 @@ class MarksheetTemplateController extends Controller
 
         $logoPath = null;
         if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('marksheets/logos', 'public');
+            $stored = $request->file('logo')->store('marksheets/logos', 'public');
+            $logoPath = Storage::disk('public')->url($stored);
         }
 
         $template = MarksheetTemplate::create([
@@ -85,15 +86,14 @@ class MarksheetTemplateController extends Controller
 
         // Handle logo update
         if ($request->hasFile('logo')) {
-            if ($template->logo_path) {
-                Storage::disk('public')->delete($template->logo_path);
-            }
-            $validated['logo_path'] = $request->file('logo')->store('marksheets/logos', 'public');
+            $this->deleteStoredLogo($template->getRawOriginal('logo_path'));
+            $stored = $request->file('logo')->store('marksheets/logos', 'public');
+            $validated['logo_path'] = Storage::disk('public')->url($stored);
         }
 
         $template->update([
             'name' => $validated['name'],
-            'logo_path' => $validated['logo_path'] ?? $template->logo_path,
+            'logo_path' => $validated['logo_path'] ?? $template->getRawOriginal('logo_path'),
             'template_data' => $validated['template_data'],
             'is_active' => $validated['is_active'] ?? $template->is_active,
         ]);
@@ -125,12 +125,25 @@ class MarksheetTemplateController extends Controller
         $template = MarksheetTemplate::findOrFail($id);
 
         // Delete logo if exists
-        if ($template->logo_path) {
-            Storage::disk('public')->delete($template->logo_path);
-        }
+        $this->deleteStoredLogo($template->getRawOriginal('logo_path'));
 
         $template->delete();
 
         return redirect()->back()->with('success', 'Marksheet template deleted successfully!');
+    }
+
+    private function deleteStoredLogo(?string $path): void
+    {
+        if (! $path) {
+            return;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            $path = ltrim((string) parse_url($path, PHP_URL_PATH), '/');
+        }
+
+        $path = preg_replace('#^storage/#', '', ltrim($path, '/')) ?? $path;
+
+        Storage::disk('public')->delete($path);
     }
 }

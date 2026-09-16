@@ -1,4 +1,5 @@
 import { Calendar, ClipboardList } from 'lucide-react';
+import StoredMediaImage from '@/components/stored-media-image';
 
 interface MarksheetPreviewProps {
    template: {
@@ -42,7 +43,7 @@ const MarksheetPreview = ({ template, studentName, courseName, completionDate, l
                <div className="flex items-center gap-4">
                   {logoUrl || template.logo_path ? (
                      <div className="h-16 w-16">
-                        <img src={logoUrl || template.logo_path || ''} alt="Logo" className="h-full w-full object-contain" />
+                        <StoredMediaImage src={logoUrl || template.logo_path} alt="Logo" className="h-full w-full object-contain" />
                      </div>
                   ) : (
                      <ClipboardList className="h-12 w-12" style={{ color: template_data.primaryColor }} />

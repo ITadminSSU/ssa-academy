@@ -1,4 +1,5 @@
 import { Award, Calendar } from 'lucide-react';
+import StoredMediaImage from '@/components/stored-media-image';
 
 interface CertificatePreviewProps {
    template: {
@@ -46,7 +47,7 @@ const CertificatePreview = ({ template, studentName, courseName, completionDate,
             {/* Logo */}
             {(logoUrl || template.logo_path) && (
                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
-                  <img src={logoUrl || template.logo_path || ''} alt="Logo" className="h-full w-full object-contain" />
+                  <StoredMediaImage src={logoUrl || template.logo_path} alt="Logo" className="h-full w-full object-contain" />
                </div>
             )}
 

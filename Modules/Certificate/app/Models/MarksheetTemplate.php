@@ -2,6 +2,8 @@
 
 namespace Modules\Certificate\Models;
 
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -29,6 +31,11 @@ class MarksheetTemplate extends Model
         'is_active' => 'boolean',
         'is_default' => 'boolean',
     ];
+
+    protected function logoPath(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
 
     /**
      * Boot the model.

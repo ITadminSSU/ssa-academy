@@ -71,8 +71,12 @@ class Branding
 
     public static function versionPublicPath(string $path): string
     {
-        if ($path === '' || str_contains($path, '://') || str_contains($path, '?v=')) {
+        if ($path === '' || str_contains($path, '?v=')) {
             return $path;
+        }
+
+        if (str_contains($path, '://')) {
+            return \App\Support\S3CompatibleStorage::attributeGet($path) ?? $path;
         }
 
         $relative = ltrim((string) (parse_url($path, PHP_URL_PATH) ?? $path), '/');

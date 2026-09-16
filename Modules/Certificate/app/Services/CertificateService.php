@@ -4,6 +4,7 @@ namespace Modules\Certificate\Services;
 
 use App\Services\MediaService;
 use App\Support\Branding;
+use App\Support\S3CompatibleStorage;
 use Modules\Certificate\Models\CertificateTemplate;
 use Modules\Certificate\Models\MarksheetTemplate;
 
@@ -97,7 +98,11 @@ class CertificateService extends MediaService
          ];
       }
 
-      $template->logo_path = $this->resolveCertificateLogo($template->logo_path);
+      $rawLogo = $template->getRawOriginal('logo_path');
+
+      if (empty($rawLogo) || Branding::isLegacyLogo($rawLogo)) {
+         $template->setAttribute('logo_path', Branding::resolveLogo(null, 'certificate'));
+      }
 
       return $template;
    }
@@ -135,6 +140,6 @@ class CertificateService extends MediaService
          return Branding::resolveLogo(null, 'certificate');
       }
 
-      return Branding::versionPublicPath($logoPath);
+      return S3CompatibleStorage::attributeGet($logoPath) ?: Branding::resolveLogo(null, 'certificate');
    }
 }

@@ -270,7 +270,7 @@ class DashboardWelcomeOverlay
         }
 
         if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://') || str_starts_with($url, '//')) {
-            return $url;
+            return (string) (S3CompatibleStorage::attributeGet($url) ?: $url);
         }
 
         if (function_exists('public_asset_url')) {
