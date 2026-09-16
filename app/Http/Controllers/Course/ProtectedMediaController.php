@@ -39,10 +39,12 @@ class ProtectedMediaController extends Controller
 
 
         $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
-
         $mimeType = $this->protectedMedia->resolveMimeType($originalSrc);
+        $filename = strtolower((string) $this->protectedMedia->lessonMediaFilename($lesson));
 
-
+        if (str_ends_with($filename, '.pdf') && ! str_contains(strtolower($mimeType), 'pdf')) {
+            $mimeType = 'application/pdf';
+        }
 
         return $this->protectedMedia->streamMediaResponse($request, $originalSrc, $mimeType);
 

@@ -43,10 +43,22 @@ class ProtectedMediaService
             return $lesson;
         }
 
+        $filename = $this->lessonMediaFilename($lesson);
+
+        if ($filename) {
+            $lesson->setAttribute('media_filename', $filename);
+        }
+
+        $routeParams = ['lesson' => $lesson->id];
+
+        if ($filename) {
+            $routeParams['filename'] = $filename;
+        }
+
         $lesson->lesson_src = URL::temporarySignedRoute(
             'course.player.media',
             now()->addHours(self::SIGNED_URL_TTL_HOURS),
-            ['lesson' => $lesson->id],
+            $routeParams,
             absolute: false,
         );
 
@@ -550,7 +562,7 @@ class ProtectedMediaService
     {
         $chunkedUpload = $this->findChunkedUpload($url);
 
-        if ($chunkedUpload?->mime_type) {
+        if ($chunkedUpload?->mime_type && ! str_contains(strtolower($chunkedUpload->mime_type), 'octet-stream')) {
             return $chunkedUpload->mime_type;
         }
 
@@ -565,7 +577,46 @@ class ProtectedMediaService
         }
 
         $extension = strtolower((string) pathinfo((string) parse_url((string) $url, PHP_URL_PATH), PATHINFO_EXTENSION));
-        $fromExtension = match ($extension) {
+
+        if ($extension === '' && $chunkedUpload) {
+            $extension = strtolower((string) pathinfo(
+                (string) ($chunkedUpload->original_filename ?: $chunkedUpload->filename),
+                PATHINFO_EXTENSION
+            ));
+        }
+
+        $fromExtension = $this->mimeFromExtension($extension);
+
+        return $fromExtension ?: $fallback;
+    }
+
+    public function lessonMediaFilename(SectionLesson $lesson): ?string
+    {
+        $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
+        $upload = is_string($originalSrc) ? $this->findChunkedUpload($originalSrc) : null;
+        $name = $upload?->original_filename ?: $upload?->filename;
+
+        if ((! is_string($name) || $name === '') && is_string($originalSrc) && $originalSrc !== '') {
+            $path = parse_url($originalSrc, PHP_URL_PATH) ?: $originalSrc;
+            $name = basename((string) $path);
+        }
+
+        $name = is_string($name) ? basename($name) : '';
+
+        if ($name !== '' && str_contains($name, '.')) {
+            return $name;
+        }
+
+        return match ($lesson->lesson_type) {
+            'document' => 'lesson.pdf',
+            'image' => 'lesson.jpg',
+            default => null,
+        };
+    }
+
+    private function mimeFromExtension(string $extension): ?string
+    {
+        return match (strtolower($extension)) {
             'jpg', 'jpeg' => 'image/jpeg',
             'png' => 'image/png',
             'gif' => 'image/gif',
@@ -573,10 +624,10 @@ class ProtectedMediaService
             'svg' => 'image/svg+xml',
             'bmp' => 'image/bmp',
             'pdf' => 'application/pdf',
+            'txt' => 'text/plain',
+            'csv' => 'text/csv',
             default => null,
         };
-
-        return $fromExtension ?: $fallback;
     }
 
     public function resolveResourcePath(LessonResource $resource): ?string

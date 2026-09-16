@@ -215,7 +215,9 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
             </ErrorBoundary>
          )}
 
-         {lesson.lesson_type === 'document' && <DocumentViewer src={lesson.lesson_src || ''} protectedMode />}
+         {lesson.lesson_type === 'document' && (
+            <DocumentViewer src={lesson.lesson_src || ''} fileName={lesson.media_filename} protectedMode />
+         )}
 
          {lesson.lesson_type === 'embed' && <EmbedViewer src={lesson.lesson_src || ''} />}
 

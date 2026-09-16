@@ -17,9 +17,43 @@ const DocumentViewer = ({ src, fileName, protectedMode = false, className, ...pr
    const { frontend } = translate;
 
    const documentInfo = useMemo(() => {
-      const getFileExtension = (url: string): string => {
-         const urlWithoutQuery = url.split('?')[0];
-         return urlWithoutQuery.split('.').pop()?.toLowerCase() || '';
+      const extensionFromName = (value: string): string => {
+         const base = decodeURIComponent(value.split('?')[0].split('#')[0]).split('/').pop() || '';
+         if (!base.includes('.')) {
+            return '';
+         }
+
+         const extension = base.split('.').pop()?.toLowerCase() || '';
+
+         return /^[a-z0-9]{2,5}$/.test(extension) && !/^\d+$/.test(extension) ? extension : '';
+      };
+
+      const getFileExtension = (url: string, name?: string): string => {
+         const fromName = name ? extensionFromName(name) : '';
+         if (fromName) {
+            return fromName;
+         }
+
+         try {
+            const parsed = new URL(url, 'https://academy.invalid');
+            const fromQuery = parsed.searchParams.get('filename') || parsed.searchParams.get('name') || '';
+            const queryExtension = fromQuery ? extensionFromName(fromQuery) : '';
+            if (queryExtension) {
+               return queryExtension;
+            }
+
+            const pathExtension = extensionFromName(parsed.pathname);
+            if (pathExtension) {
+               return pathExtension;
+            }
+         } catch {
+            const fallback = extensionFromName(url.split('?')[0]);
+            if (fallback) {
+               return fallback;
+            }
+         }
+
+         return /\/play-course\/media\/\d+/i.test(url) ? 'pdf' : '';
       };
 
       const getDocumentType = (extension: string): DocumentType => {
@@ -35,11 +69,11 @@ const DocumentViewer = ({ src, fileName, protectedMode = false, className, ...pr
          return 'unsupported';
       };
 
-      const extension = getFileExtension(src);
+      const extension = getFileExtension(src, fileName);
       const type = getDocumentType(extension);
 
       return { extension, type };
-   }, [src]);
+   }, [src, fileName]);
 
    const renderDocument = () => {
       const baseClassName = 'h-full max-h-[calc(100vh-4rem)] min-h-[80vh] w-full';
