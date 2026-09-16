@@ -12,7 +12,9 @@ class S3MultipartUploadService
 {
     public const MIN_PART_BYTES = 5 * 1024 * 1024;
 
-    public const TARGET_PART_BYTES = 256 * 1024 * 1024;
+    // Stay under Cloudflare's ~100MB orange-cloud body limit when a part
+    // has to go through the site. R2 still requires >= 5MB except the last part.
+    public const TARGET_PART_BYTES = 80 * 1024 * 1024;
 
     protected string $bucket;
 

@@ -62,7 +62,7 @@ class ChunkedUploadController extends Controller
                 'upload_id' => $upload->id,
                 'aws_upload_id' => $upload->upload_id,
                 'disk' => $upload->disk,
-                // R2/S3 require every part except the last to be >= 5MB. Target part size is 256MB.
+                // R2/S3 require every part except the last to be >= 5MB. Target part size is 80MB.
                 'chunk_size' => S3MultipartUploadService::TARGET_PART_BYTES,
                 'min_part_size' => S3MultipartUploadService::MIN_PART_BYTES,
                 'direct_to_storage' => $isS3,

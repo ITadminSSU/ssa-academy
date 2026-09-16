@@ -31,7 +31,7 @@ const ChunkedUploader: React.FC<ChunkedUploaderProps> = ({
    onError,
    acceptedFileTypes = '*/*', // Accept all file types by default
    maxFileSize = 1024 * 1024 * 512, // 512MB
-   chunkSize = 256 * 1024 * 1024, // 256MB chunks
+   chunkSize = 80 * 1024 * 1024, // 80MB chunks (under Cloudflare's ~100MB body limit)
    courseId,
    sectionId,
    type = 'lesson',

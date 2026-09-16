@@ -124,7 +124,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
    const maxFileSize = FILETYPE_MAX_BYTES[filetype] ?? 5 * 1024 * 1024 * 1024;
    // Cloudflare R2/S3 require every multipart part except the last to be >= 5MB.
    const MIN_PART_BYTES = 5 * 1024 * 1024;
-   const DEFAULT_CHUNK_SIZE = 256 * 1024 * 1024;
+   const DEFAULT_CHUNK_SIZE = 80 * 1024 * 1024;
    const CHUNK_UPLOAD_TIMEOUT_MS = 45 * 60 * 1000;
 
    const formatUploadError = (error: any, fallback: string): string => {
@@ -133,7 +133,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       }
 
       if (error?.response?.status === 413) {
-         return 'Upload rejected (413): raise Forge Nginx client_max_body_size to at least 20M. Or paste a YouTube/Vimeo URL.';
+         return 'Upload rejected (413): Cloudflare still blocks bodies over about 100MB even when Forge Nginx/PHP are 5GB. After deploy, this uploader uses 80MB parts. Or paste a YouTube/Vimeo URL, or set the DNS record to DNS-only (grey cloud).';
       }
 
       const data = error?.response?.data;
@@ -231,7 +231,7 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
       const mimetype = activeFile.type || mimeTypeFromFilename(activeFile.name);
 
       try {
-         // Use 256MB parts (server also returns chunk_size). R2 still requires >= 5MB except the last part.
+         // Use 80MB parts (server also returns chunk_size). R2 still requires >= 5MB except the last part.
          const chunkSize = DEFAULT_CHUNK_SIZE;
          const totalChunks = Math.ceil(activeFile.size / chunkSize);
 
@@ -389,6 +389,12 @@ const ChunkedUploaderInput: FC<ChunkedUploaderInputProps> = ({
             }
 
             if (!uploaded) {
+               if (directToStorage && chunk.size > 90 * 1024 * 1024) {
+                  throw new Error(
+                     'Direct upload to R2 failed, and this part is too large to send through Cloudflare (100MB limit). Check R2 CORS exposes ETag, or paste a YouTube/Vimeo URL.',
+                  );
+               }
+
                await uploadChunkViaServer(uploadId, partNumber, chunk, activeFile, mimetype, signal);
             }
 
