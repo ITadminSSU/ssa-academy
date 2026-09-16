@@ -49,16 +49,12 @@ class ProtectedMediaService
             $lesson->setAttribute('media_filename', $filename);
         }
 
-        $routeParams = ['lesson' => $lesson->id];
-
-        if ($filename) {
-            $routeParams['filename'] = $filename;
-        }
-
+        // Relative signed URLs only — extra query keys (filename, spaces) break
+        // Laravel signatures, and Chrome's PDF viewer drops query strings.
         $lesson->lesson_src = URL::temporarySignedRoute(
             'course.player.media',
             now()->addHours(self::SIGNED_URL_TTL_HOURS),
-            $routeParams,
+            ['lesson' => $lesson->id],
             absolute: false,
         );
 
@@ -291,7 +287,7 @@ class ProtectedMediaService
             'course.player.media',
             now()->addHours(self::SIGNED_URL_TTL_HOURS),
             ['lesson' => $lesson->id],
-            absolute: true,
+            absolute: false,
         );
     }
 

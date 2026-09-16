@@ -67,7 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::get('lesson/resources/view/{resource}', [LessonResourceController::class, 'view'])->name('resources.view');
     Route::get('lesson/resources/download/{id}', [LessonResourceController::class, 'download'])->name('resources.download');
     Route::get('play-course/media/{lesson}', [ProtectedMediaController::class, 'streamLesson'])
-        ->middleware('signed')
+        ->middleware('signed:relative')
         ->name('course.player.media');
 
     Route::get('play-course/video/{lesson}/stream-url', [VideoStreamController::class, 'streamUrl'])
