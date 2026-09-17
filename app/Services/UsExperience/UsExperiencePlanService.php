@@ -225,6 +225,16 @@ class UsExperiencePlanService
         return $plan->fresh();
     }
 
+    public function clearTutorialVideo(UsExperiencePlan $plan): UsExperiencePlan
+    {
+        $plan->update([
+            'tutorial_video_url' => null,
+            'tutorial_video_name' => null,
+        ]);
+
+        return $plan->fresh();
+    }
+
     /**
      * @param array<int, array{key: string, tolerance_override?: float|null, tolerance_override_mode?: string|null}> $tolerances
      */

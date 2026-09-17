@@ -131,6 +131,7 @@ Route::prefix('dashboard/trainer')->group(function () {
       Route::post('{plan}/answer-key', [UsExperiencePlanController::class, 'importAnswerKey'])->name('answer-key');
       Route::post('{plan}/student-template', [UsExperiencePlanController::class, 'saveStudentTemplate'])->name('student-template');
       Route::post('{plan}/tutorial', [UsExperiencePlanController::class, 'saveTutorial'])->name('tutorial');
+      Route::delete('{plan}/tutorial', [UsExperiencePlanController::class, 'clearTutorial'])->name('tutorial.destroy');
       Route::post('{plan}/tolerances', [UsExperiencePlanController::class, 'saveTolerances'])->name('tolerances');
       Route::get('{plan}/attempts', [UsExperienceAttemptReviewController::class, 'index'])->name('attempts.index');
       Route::get('{plan}/attempts/{attempt}', [UsExperienceAttemptReviewController::class, 'show'])->name('attempts.show');

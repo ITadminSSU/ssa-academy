@@ -115,6 +115,14 @@ class UsExperiencePlanController extends Controller
         return back()->with('success', 'Tutorial video saved. Students see it after they submit.');
     }
 
+    public function clearTutorial(Course $course, UsExperiencePlan $plan): RedirectResponse
+    {
+        $this->assertPlan($course, $plan);
+        $this->plans->clearTutorialVideo($plan);
+
+        return back()->with('success', 'Tutorial video removed. Students will not see a walkthrough for this plan.');
+    }
+
     public function saveTolerances(SaveUsExperienceTolerancesRequest $request, Course $course, UsExperiencePlan $plan): RedirectResponse
     {
         $this->assertPlan($course, $plan);

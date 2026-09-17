@@ -385,6 +385,25 @@ const UsExperiencePlanEditor = () => {
                         preload="metadata"
                         className="w-full max-w-2xl rounded-lg border bg-black"
                      />
+                     <Button
+                        type="button"
+                        variant="outline"
+                        disabled={saving === 'tutorial-remove'}
+                        onClick={() => {
+                           if (!window.confirm('Remove this walkthrough video? Students will no longer see it after they submit this plan. You can upload another later.')) {
+                              return;
+                           }
+
+                           setSaving('tutorial-remove');
+                           router.delete(route('courses.us-experience.tutorial.destroy', { course: course.id, plan: plan.id }), {
+                              preserveScroll: true,
+                              onFinish: () => setSaving(null),
+                           });
+                        }}
+                     >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {saving === 'tutorial-remove' ? 'Removing…' : 'Remove walkthrough video'}
+                     </Button>
                   </div>
                )}
                <ChunkedUploaderInput
