@@ -262,7 +262,7 @@ const LessonViewer = ({ lesson }: LessonViewerProps) => {
                </div>
             ) : lessonIsVideo ? (
                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm font-bold text-black dark:text-white">
                      {!canMarkProgress
                         ? 'This lesson is read-only while your subscription is inactive.'
                         : hasVideoEnded
