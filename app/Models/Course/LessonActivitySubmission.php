@@ -3,6 +3,8 @@
 namespace App\Models\Course;
 
 use App\Models\User;
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +31,11 @@ class LessonActivitySubmission extends Model
         'submitted_at' => 'datetime',
         'marks_obtained' => 'decimal:2',
     ];
+
+    protected function attachmentPath(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
 
     public function lesson(): BelongsTo
     {

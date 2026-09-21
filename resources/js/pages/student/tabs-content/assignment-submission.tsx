@@ -105,7 +105,7 @@ const AssignmentSubmission = ({ assignment, setDialogOpen }: Props) => {
                            </a>
                         ) : (
                            <Button variant="outline" size="sm" className="gap-2" asChild>
-                              <a href={`/storage/${latestSubmission.attachment_path}`} download>
+                              <a href={latestSubmission.attachment_path} target="_blank" rel="noopener noreferrer">
                                  <Download className="h-4 w-4" />
                                  Download File
                               </a>

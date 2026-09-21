@@ -3,6 +3,8 @@
 namespace App\Models\Course;
 
 use App\Models\User;
+use App\Support\S3CompatibleStorage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,6 +32,11 @@ class AssignmentSubmission extends Model
         'is_late' => 'boolean',
         'marks_obtained' => 'decimal:2',
     ];
+
+    protected function attachmentPath(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
 
     // Relationships
     public function assignment()

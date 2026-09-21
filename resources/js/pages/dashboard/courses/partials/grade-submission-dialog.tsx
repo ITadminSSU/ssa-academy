@@ -125,7 +125,7 @@ const GradeSubmissionDialog = ({ submission }: Props) => {
                               </a>
                            ) : (
                               <Button variant="outline" size="sm" className="gap-2" asChild>
-                                 <a href={submission.attachment_path} download>
+                                 <a href={submission.attachment_path} target="_blank" rel="noopener noreferrer">
                                     <Download className="h-4 w-4" />
                                     Download Submission File
                                  </a>
