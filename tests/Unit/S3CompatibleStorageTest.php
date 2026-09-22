@@ -48,3 +48,17 @@ test('extractObjectKey reads path-style R2 API urls used by chat attachments', f
     expect(S3CompatibleStorage::extractObjectKey($url))
         ->toBe('679/SL0001---Skill-Level-1---Plans.pdf');
 });
+
+test('temporaryObjectUrl adds attachment content disposition for downloads', function () {
+    config([
+        'filesystems.disks.s3.region' => 'us-east-1',
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+    ]);
+
+    $url = S3CompatibleStorage::temporaryObjectUrl('12/resume.pdf', downloadName: 'resume.pdf');
+
+    expect(urldecode($url))
+        ->toContain('response-content-disposition=attachment; filename="resume.pdf"')
+        ->and($url)->toContain('X-Amz-Signature=');
+});

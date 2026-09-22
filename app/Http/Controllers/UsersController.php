@@ -9,12 +9,14 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\Admin\AdminUserProvisioningService;
 use App\Support\MasterAdmin;
+use App\Support\S3CompatibleStorage;
 use App\Services\UserService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class UsersController extends Controller
 {
@@ -97,23 +99,39 @@ class UsersController extends Controller
             abort(404, $label.' not found');
         }
 
-        $fileName = $media->file_name;
+        try {
+            return $download
+                ? $media->toResponse(request())
+                : $media->toInlineResponse(request());
+        } catch (\Throwable) {
+            // Fall through to a signed URL or local path.
+        }
+
+        $fileName = $this->safeDownloadFilename($media->file_name);
         $mimeType = $media->mime_type ?: 'application/octet-stream';
         $disposition = ($download ? 'attachment' : 'inline').'; filename="'.$fileName.'"';
 
-        if ($media->disk !== 's3') {
-            $localPath = $media->getPath();
-            if (is_string($localPath) && $localPath !== '' && file_exists($localPath)) {
-                return $download
-                    ? response()->download($localPath, $fileName, [
-                        'Content-Type' => $mimeType,
-                        'Content-Disposition' => $disposition,
-                    ])
-                    : response()->file($localPath, [
-                        'Content-Type' => $mimeType,
-                        'Content-Disposition' => $disposition,
-                    ]);
+        if ($media->disk === 's3') {
+            $fileUrl = $this->signedMediaUrl($media, $download, $fileName);
+
+            if ($fileUrl === '') {
+                abort(404, $label.' file not found');
             }
+
+            return redirect()->away($fileUrl);
+        }
+
+        $localPath = $media->getPath();
+        if (is_string($localPath) && $localPath !== '' && file_exists($localPath)) {
+            return $download
+                ? response()->download($localPath, $fileName, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => $disposition,
+                ])
+                : response()->file($localPath, [
+                    'Content-Type' => $mimeType,
+                    'Content-Disposition' => $disposition,
+                ]);
         }
 
         $fileUrl = media_public_url($media);
@@ -123,6 +141,32 @@ class UsersController extends Controller
         }
 
         return redirect()->away($fileUrl);
+    }
+
+    private function signedMediaUrl(Media $media, bool $download, string $fileName): string
+    {
+        $disposition = ($download ? 'attachment' : 'inline').'; filename="'.$fileName.'"';
+
+        try {
+            return $media->getTemporaryUrl(now()->addHours(12), '', [
+                'ResponseContentDisposition' => $disposition,
+            ]);
+        } catch (\Throwable) {
+            $key = ltrim((string) $media->getPathRelativeToRoot(), '/');
+
+            if ($key === '') {
+                $key = ltrim($media->id.'/'.$media->file_name, '/');
+            }
+
+            return $download
+                ? S3CompatibleStorage::temporaryObjectUrl($key, downloadName: $fileName)
+                : (S3CompatibleStorage::temporaryObjectUrl($key) ?: '');
+        }
+    }
+
+    private function safeDownloadFilename(string $fileName): string
+    {
+        return str_replace(['"', '\\', "\r", "\n"], '', $fileName);
     }
 
     /**
