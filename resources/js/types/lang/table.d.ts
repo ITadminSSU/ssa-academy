@@ -12,6 +12,7 @@ interface TableLang {
    showing_results: string;
    total_results: string;
    delete_instructor_warning: string;
+   delete_user_warning: string;
    delete_course_warning: string;
 
    // Table Headers Management

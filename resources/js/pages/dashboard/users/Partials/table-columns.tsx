@@ -331,7 +331,10 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
                               <span>
                                  <DeleteModal
                                     routePath={route('users.destroy', user.id)}
-                                    message={table.delete_instructor_warning}
+                                    message={text(
+                                       table.delete_user_warning,
+                                       'This permanently deletes the account, including their CV/resume and government ID. Enrollments and related records will also be removed. This cannot be undone. This does not cancel Stripe subscriptions. Cancel billing in Stripe if they were paying for a course.',
+                                    )}
                                     actionComponent={
                                        <Button size="icon" variant="ghost" className="bg-destructive/8 hover:bg-destructive/6 h-8 w-8 p-0">
                                           <Trash2 className="text-destructive text-sm" />

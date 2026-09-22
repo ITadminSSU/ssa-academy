@@ -24,7 +24,7 @@ return [
             'network_error' => 'Network error. Please check your connection.',
             'invalid_file_type' => 'Invalid file type. Please select a valid file.',
             'no_element_available' => 'No element available',
-            'delete_warning' => 'Are you sure to delete?',
+            'delete_warning' => 'Are you sure you want to delete this?',
         ]
     ],
 

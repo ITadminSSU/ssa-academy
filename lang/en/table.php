@@ -23,7 +23,8 @@ return [
     'previous' => 'Prev',
     'showing_results' => 'Showing results',
     'total_results' => 'Total results',
-    'delete_instructor_warning' => 'After deleting the instructor, the admin will be the assign as a new instructor, of this instructor all the courses.',
+    'delete_instructor_warning' => 'This trainer will be removed. Their courses will be reassigned to the admin. The person will remain as a student account; they will not be deleted.',
+    'delete_user_warning' => 'This permanently deletes the account, including their CV/resume and government ID. Enrollments and related records will also be removed. This cannot be undone. This does not cancel Stripe subscriptions. Cancel billing in Stripe if they were paying for a course.',
     'delete_course_warning' => 'After deleting the course, all the related data, like, course sections, lessons, quizzes, enrollments, etc will be deleted automatically.',
 
     // Table Headers Management

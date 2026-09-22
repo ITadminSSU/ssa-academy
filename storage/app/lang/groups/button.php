@@ -107,7 +107,7 @@ return [
             'subscribe' => 'Subscribe',
             'become_an_instructor' => 'Become an Instructor',
             'delete_account' => 'Delete account',
-            'are_you_sure_to_delete' => 'Are you sure to delete?',
+            'are_you_sure_to_delete' => 'Are you sure you want to delete this?',
             'add_section' => 'Add Section',
             'sort_section' => 'Sort Section',
             'add_quiz' => 'Add Quiz',
