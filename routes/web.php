@@ -16,6 +16,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('about-us', [HomeController::class, 'about'])->name('about');
 Route::redirect('our-team', '/about-us', 301);
 Route::get('faqs', [HomeController::class, 'faqs'])->name('faqs');
+Route::get('connect-with-us', [HomeController::class, 'connect'])->name('connect');
 
 Route::get('fraud-training-tipline', [FraudTrainingTiplineController::class, 'show'])->name('fraud-training-tipline');
 Route::post('fraud-training-tipline', [FraudTrainingTiplineController::class, 'store'])

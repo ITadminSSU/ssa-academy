@@ -81,6 +81,15 @@ class HomeController extends Controller
       ]);
    }
 
+   public function connect()
+   {
+      return Inertia::render('intro/ssu-connect', [
+         'type' => 'intro',
+         'facebookAcademyUrl' => config('branding.facebook_group_url'),
+         'facebookVaUrl' => config('branding.facebook_va_group_url'),
+      ]);
+   }
+
    public function demo(Request $request, string $slug)
    {
       return redirect()->route('home');

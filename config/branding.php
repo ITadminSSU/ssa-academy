@@ -14,6 +14,7 @@ return [
     'contact_email' => env('BRAND_CONTACT_EMAIL', 'info@smartsourcingusa.com'),
     'facebook_group_url' => env('BRAND_FACEBOOK_GROUP_URL', 'https://www.facebook.com/share/g/14ttXqLttek/'),
     'facebook_page_url' => env('BRAND_FACEBOOK_PAGE_URL', 'https://www.facebook.com/smartsourcingusa'),
+    'facebook_va_group_url' => env('BRAND_FACEBOOK_VA_GROUP_URL', 'https://www.facebook.com/groups/constructionvaacademy'),
 
     'logos' => [
         'icon' => '/assets/branding/favicon-ssa.png',

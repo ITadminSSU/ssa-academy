@@ -29,6 +29,7 @@ class FooterSeeder extends Seeder
                 'items' => [
                     ['title' => 'About Us', 'url' => '/about-us'],
                     ['title' => 'FAQs', 'url' => '/faqs'],
+                    ['title' => 'Connect with us', 'url' => '/connect-with-us'],
                     ['title' => 'Our Team', 'url' => '/about-us'],
                     ['title' => 'Careers', 'url' => '/careers'],
                     ['title' => 'Contact Us', 'url' => '/contact-us'],

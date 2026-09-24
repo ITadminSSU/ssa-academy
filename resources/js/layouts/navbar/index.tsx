@@ -96,7 +96,8 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
          const title = item.title?.trim().toLowerCase() || '';
          const value = (item.value || '').trim().toLowerCase();
 
-         return title !== 'faqs' && title !== 'faq' && !value.includes('/faqs');
+         return title !== 'faqs' && title !== 'faq' && !value.includes('/faqs')
+            && title !== 'connect with us' && !value.includes('/connect-with-us');
       })
       .filter((item, index, items) => {
          if (item.type !== 'url') {
@@ -149,6 +150,9 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                   {sortedItems.map((item) => (
                      <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                   ))}
+                  <Link href={route('connect')} className="hover:text-primary text-sm font-medium transition-colors">
+                     Connect with us
+                  </Link>
                   <Link href={route('faqs')} className="hover:text-primary text-sm font-medium transition-colors">
                      FAQs
                   </Link>
@@ -171,6 +175,9 @@ const Navbar = ({ language = false, heightCover = true }: NavbarProps) => {
                      {sortedItems.map((item) => (
                         <Fragment key={item.id}>{renderNavItems(item)}</Fragment>
                      ))}
+                     <Link href={route('connect')} className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
+                        Connect with us
+                     </Link>
                      <Link href={route('faqs')} className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
                         FAQs
                      </Link>
