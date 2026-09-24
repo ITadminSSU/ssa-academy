@@ -62,3 +62,49 @@ test('temporaryObjectUrl adds attachment content disposition for downloads', fun
         ->toContain('response-content-disposition=attachment; filename="resume.pdf"')
         ->and($url)->toContain('X-Amz-Signature=');
 });
+
+test('mapArrayMediaUrls signs nested page-section image fields and leaves instagram links alone', function () {
+    config([
+        'filesystems.disks.s3.region' => 'us-east-1',
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+    ]);
+
+    $stored = 'https://ssa-academy-files.662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/12/academy.jpg';
+    $instagram = 'https://www.instagram.com/reel/abc';
+
+    $signed = S3CompatibleStorage::mapArrayMediaUrls([
+        'array' => [
+            ['image' => $stored, 'link' => $instagram, 'views' => '906'],
+            ['image' => '', 'link' => '', 'views' => ''],
+        ],
+    ], 'get');
+
+    expect($signed['array'][0]['image'])->toContain('X-Amz-Signature=')
+        ->and($signed['array'][0]['link'])->toBe($instagram)
+        ->and($signed['array'][0]['views'])->toBe('906')
+        ->and($signed['array'][1]['image'])->toBe('');
+});
+
+test('page section properties persist unsigned r2 urls and sign them on read', function () {
+    config([
+        'filesystems.disks.s3.region' => 'us-east-1',
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+    ]);
+
+    $stored = 'https://ssa-academy-files.662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/12/academy.jpg';
+
+    $section = new \App\Models\PageSection;
+    $section->properties = [
+        'array' => [
+            ['image' => $stored, 'link' => 'https://www.instagram.com/p/abc', 'views' => '1,611'],
+        ],
+    ];
+
+    $raw = $section->getAttributes()['properties'];
+
+    expect($raw)->not->toContain('X-Amz-Signature')
+        ->and($section->properties['array'][0]['image'])->toContain('X-Amz-Signature=')
+        ->and($section->properties['array'][0]['link'])->toBe('https://www.instagram.com/p/abc');
+});

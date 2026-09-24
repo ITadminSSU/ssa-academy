@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SignedMediaProperties;
 use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -42,7 +43,7 @@ class PageSection extends Model implements HasMedia
         'active' => 'boolean',
         'sort' => 'integer',
         'flags' => 'array',
-        'properties' => 'array',
+        'properties' => SignedMediaProperties::class,
     ];
 
     /**

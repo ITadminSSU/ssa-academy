@@ -171,6 +171,68 @@ class S3CompatibleStorage
     }
 
     /**
+     * JSON keys on page sections (and similar arrays) that store media URLs.
+     *
+     * @var list<string>
+     */
+    private const ARRAY_MEDIA_KEYS = [
+        'image',
+        'thumbnail',
+        'avatar',
+        'logo',
+        'photo',
+        'background_image',
+        'poster',
+        'banner',
+        'video_url',
+    ];
+
+    /**
+     * Sign or normalize media URLs nested under known keys in a properties array.
+     * Instagram/external links are left untouched.
+     *
+     * @param  'get'|'set'  $direction
+     */
+    public static function mapArrayMediaUrls(mixed $data, string $direction = 'get'): mixed
+    {
+        $mapper = $direction === 'set'
+            ? fn (?string $url) => trim((string) $url) === '' ? $url : (static::attributeSet($url) ?? $url)
+            : fn (?string $url) => trim((string) $url) === '' ? $url : (static::attributeGet($url) ?? $url);
+
+        return static::walkMediaUrlKeys($data, $mapper);
+    }
+
+    /**
+     * @param  callable(?string): mixed  $mapper
+     */
+    public static function walkMediaUrlKeys(mixed $data, callable $mapper): mixed
+    {
+        if (! is_array($data)) {
+            return $data;
+        }
+
+        $out = [];
+
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $out[$key] = static::walkMediaUrlKeys($value, $mapper);
+
+                continue;
+            }
+
+            if (is_string($key) && is_string($value) && in_array(strtolower($key), self::ARRAY_MEDIA_KEYS, true)) {
+                $out[$key] = $mapper($value);
+
+                continue;
+            }
+
+            $out[$key] = $value;
+        }
+
+        return $out;
+    }
+
+    /**
      * Persist a stable (unsigned) object URL / path instead of a short-lived signed URL.
      */
     public static function normalizeStoredUrl(?string $url): ?string
