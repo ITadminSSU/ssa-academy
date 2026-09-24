@@ -11,12 +11,16 @@ import { useEffect, useRef, useState } from 'react';
 
 const FeaturedCourses = () => {
    const { props } = usePage<IntroPageProps>();
-   const coursesSection = getPageSection(props.page, 'top_courses');
+   const coursesSection = props.page?.sections ? getPageSection(props.page, 'top_courses') : undefined;
    const { topCourses } = props;
    const courses = topCourses ?? [];
    const [api, setApi] = useState<CarouselApi>();
    const [currentSlide, setCurrentSlide] = useState(0);
    const autoplay = useRef(Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }));
+   const heading = coursesSection?.title?.trim() || 'START LEARNING TODAY';
+   const tagline =
+      coursesSection?.description?.trim() ||
+      'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA teams and partners.';
 
    useEffect(() => {
       if (!api) {
@@ -36,20 +40,14 @@ const FeaturedCourses = () => {
 
    return (
       <section className="border-border/60 border-y bg-[color:var(--brand-grey)] py-20 dark:bg-muted/20">
-         <div className="container space-y-8 px-4">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-               <div className="space-y-2">
-                  <p className="ssu-kicker">{coursesSection?.sub_title || 'Start learning today'}</p>
-                  <h2 className="font-display text-primary text-2xl font-bold md:text-3xl">{coursesSection?.title || 'Featured Programs'}</h2>
-                  <p className="text-muted-foreground max-w-2xl text-sm md:text-base">
-                     {coursesSection?.description ||
-                        'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA ACADEMY teams and partners.'}
-                  </p>
+         <div className="container space-y-10 px-4">
+            <div className="mx-auto max-w-4xl space-y-3 text-center">
+               <div className="flex items-center justify-center gap-4 md:gap-6">
+                  <span className="bg-primary h-px w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
+                  <h2 className="font-display text-primary text-2xl font-bold tracking-tight uppercase md:text-3xl">{heading}</h2>
+                  <span className="bg-primary h-px w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
                </div>
-
-               <Button asChild variant="outline" className="rounded-full">
-                  <Link href={route('category.courses', { category: 'all' })}>View all courses</Link>
-               </Button>
+               {tagline ? <p className="text-primary text-base md:text-lg">{tagline}</p> : null}
             </div>
 
             {courses.length > 0 ? (

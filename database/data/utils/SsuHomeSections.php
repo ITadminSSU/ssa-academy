@@ -102,12 +102,10 @@ class SsuHomeSections
             [
                 'name' => 'Featured Courses',
                 'slug' => 'top_courses',
-                'title' => 'Featured Programs',
-                'sub_title' => 'Start learning today',
-                'description' => 'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA ACADEMY teams and partners.',
+                'title' => 'START LEARNING TODAY',
+                'description' => 'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA teams and partners.',
                 'flags' => [
                     'title' => true,
-                    'sub_title' => true,
                     'description' => true,
                 ],
                 'properties' => [

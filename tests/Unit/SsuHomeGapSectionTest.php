@@ -32,6 +32,16 @@ it('adds an admin-editable inside the academy instagram section after the pillar
         ->and($section['properties']['array'][0])->toHaveKeys(['image', 'link', 'views']);
 });
 
+it('uses the start-learning-today header on featured courses', function () {
+    $section = collect(SsuHomeSections::getSections())->firstWhere('slug', 'top_courses');
+
+    expect($section)->not->toBeNull()
+        ->and($section['title'])->toBe('START LEARNING TODAY')
+        ->and($section['description'])->toBe('Explore assigned and open-enrollment courses curated for SMARTSOURCING USA teams and partners.')
+        ->and($section['flags']['title'])->toBeTrue()
+        ->and($section['flags']['description'])->toBeTrue();
+});
+
 it('keeps the circled email copy for the gap section', function () {
     $gap = collect(SsuHomeSections::getSections())->firstWhere('slug', 'gap');
 
