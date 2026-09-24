@@ -54,8 +54,10 @@ class SsuHomeSections
                 'name' => 'Value Pillars',
                 'slug' => 'pillars',
                 'title' => 'WHY SMARTSOURCING USA ACADEMY?',
+                'sub_title' => 'We help you build skills that matter in the real world.',
                 'flags' => [
                     'title' => true,
+                    'sub_title' => true,
                 ],
                 'properties' => [
                     'array' => [

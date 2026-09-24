@@ -29,31 +29,33 @@ const Gap = () => {
    const closingBody = String(properties.closing_body ?? '').trim() || defaults.closingBody;
 
    return (
-      <section className="bg-white py-16 md:py-20 dark:bg-background">
+      <section className="py-16 md:py-20">
          <div className="container px-4">
-            <div className="mx-auto max-w-3xl space-y-8 text-center">
-               <div className="space-y-4">
-                  <p className="text-primary text-[0.7rem] font-semibold tracking-[0.28em] uppercase sm:text-xs">{kicker}</p>
+            <div className="mx-auto max-w-[44rem] text-center">
+               <p className="font-display text-primary text-[11px] font-semibold tracking-[0.22em] uppercase sm:text-xs">
+                  {kicker}
+               </p>
 
-                  <h2 className="font-display text-primary space-y-1 text-[1.65rem] leading-tight font-extrabold tracking-tight sm:text-3xl md:text-4xl">
-                     <span className="block">{headline}</span>
-                     <span className="text-accent block">{accentLine}</span>
-                  </h2>
+               <h2 className="font-display text-primary mt-3 text-[1.65rem] leading-[1.15] font-extrabold tracking-tight sm:text-[1.9rem] md:text-[2.15rem]">
+                  <span className="block">{headline}</span>
+                  <span className="text-accent mt-1 block">{accentLine}</span>
+               </h2>
 
-                  <p className="text-primary/80 mx-auto max-w-2xl text-sm leading-relaxed sm:text-base">{body}</p>
-               </div>
+               <p className="text-primary mx-auto mt-5 max-w-[40rem] text-[0.9375rem] leading-[1.7] italic md:text-[1rem] md:leading-[1.75]">
+                  {body}
+               </p>
 
-               <div className="mx-auto max-w-xl overflow-hidden">
-                  <p className="bg-primary font-display px-5 py-3 text-sm font-bold tracking-[0.12em] text-white uppercase sm:text-base">
+               <div className="mt-8 flex flex-col items-center gap-1.5">
+                  <p className="bg-primary font-display w-fit px-8 py-2.5 text-[0.95rem] font-bold tracking-[0.12em] text-white uppercase sm:px-10 sm:text-[1.05rem]">
                      {bannerName}
                   </p>
-                  <p className="bg-accent font-display px-5 py-3 text-sm font-bold tracking-[0.12em] text-white uppercase sm:text-base">
+                  <p className="bg-accent font-display w-fit px-8 py-2.5 text-[0.95rem] font-bold tracking-[0.12em] text-white uppercase sm:px-10 sm:text-[1.05rem]">
                      {bannerAction}
                   </p>
                </div>
 
-               <div className="text-primary/80 mx-auto max-w-2xl space-y-2 text-sm leading-relaxed sm:text-base">
-                  <p className="font-medium">{closingLead}</p>
+               <div className="text-primary mx-auto mt-8 max-w-[36rem] space-y-1 text-[0.9375rem] leading-[1.7] italic md:text-[1rem] md:leading-[1.75]">
+                  <p>{closingLead}</p>
                   <p>{closingBody}</p>
                </div>
             </div>
