@@ -3,6 +3,7 @@ import { IntroPageProps } from '@/types/page';
 import { Head } from '@inertiajs/react';
 import CallToAction from './partials/ssu-home/call-to-action';
 import FeaturedCourses from './partials/ssu-home/featured-courses';
+import Gap from './partials/ssu-home/gap';
 import Hero from './partials/ssu-home/hero';
 import LandingOverlay from './partials/ssu-home/landing-overlay';
 import Pillars from './partials/ssu-home/pillars';
@@ -16,6 +17,7 @@ const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps
 
          <div className="ssu-page-shell">
             <Hero />
+            <Gap />
             <Pillars />
             <FeaturedCourses />
             <CallToAction />

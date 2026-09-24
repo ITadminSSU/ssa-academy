@@ -32,6 +32,25 @@ class SsuHomeSections
                 ],
             ],
             [
+                'name' => 'The Gap',
+                'slug' => 'gap',
+                'title' => 'THE GAP IS WIDENING',
+                'sub_title' => 'EVERYONE HAS A TALENT.',
+                'description' => 'Global talent is everywhere, but US-specific market expertise is rare. Workflows, compliance, and tools have evolved rapidly. Most companies are trying to bridge this gap with traditional outsourcing that lacks local readiness.',
+                'flags' => [
+                    'title' => true,
+                    'sub_title' => true,
+                    'description' => true,
+                ],
+                'properties' => [
+                    'accent_line' => 'VERY FEW HAS U.S. EXPERIENCE.',
+                    'banner_name' => 'SMARTSOURCING USA ACADEMY',
+                    'banner_action' => 'CLOSES THAT GAP.',
+                    'closing_lead' => '100% focused on U.S. construction readiness.',
+                    'closing_body' => 'Built by industry veterans who spent decades inside U.S. job sites and project management, training global professionals to be plug-and-play on day one.',
+                ],
+            ],
+            [
                 'name' => 'Value Pillars',
                 'slug' => 'pillars',
                 'title' => 'WHY SMARTSOURCING USA ACADEMY?',

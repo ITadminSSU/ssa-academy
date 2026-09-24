@@ -23,6 +23,7 @@ class PageSection extends Model implements HasMedia
         'name',
         'slug',
         'title',
+        'sub_title',
         'description',
         'thumbnail',
         'flags',
