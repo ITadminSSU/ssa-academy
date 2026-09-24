@@ -43,9 +43,9 @@ const FeaturedCourses = () => {
          <div className="container space-y-10 px-4">
             <div className="mx-auto max-w-4xl space-y-3 text-center">
                <div className="flex items-center justify-center gap-4 md:gap-6">
-                  <span className="bg-primary h-px w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
+                  <span className="bg-primary h-[3px] w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
                   <h2 className="font-display text-primary text-2xl font-bold tracking-tight uppercase md:text-3xl">{heading}</h2>
-                  <span className="bg-primary h-px w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
+                  <span className="bg-primary h-[3px] w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
                </div>
                {tagline ? <p className="text-primary text-base md:text-lg">{tagline}</p> : null}
             </div>
