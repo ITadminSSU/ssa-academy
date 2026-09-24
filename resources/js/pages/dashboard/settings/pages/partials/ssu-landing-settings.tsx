@@ -7,7 +7,7 @@ interface Props {
    landingPage?: Page | null;
 }
 
-const editableSlugs = ['hero', 'pillars', 'top_courses', 'call_to_action'];
+const editableSlugs = ['hero', 'gap', 'pillars', 'inside_academy', 'top_courses', 'call_to_action'];
 
 const SsuLandingSettings = ({ landingPage }: Props) => {
    if (!landingPage) {
@@ -28,7 +28,7 @@ const SsuLandingSettings = ({ landingPage }: Props) => {
             <div>
                <h2 className="text-lg font-medium">SSU Academy Landing Page</h2>
                <p className="text-muted-foreground text-sm">
-                  Edit hero copy, hero video/poster, value pillars, featured courses, and the bottom call-to-action. Preview at{' '}
+                  Edit hero copy, The Gap, value pillars, Inside the Academy Instagram posts, featured courses, and the bottom call-to-action. Preview at{' '}
                   <a href={route('home')} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                      the public home page
                   </a>

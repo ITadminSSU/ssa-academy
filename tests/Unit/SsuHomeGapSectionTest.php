@@ -8,7 +8,8 @@ it('places the gap story section immediately after the home hero', function () {
 
     expect($slugs[0])->toBe('hero')
         ->and($slugs[1])->toBe('gap')
-        ->and($slugs[2])->toBe('pillars');
+        ->and($slugs[2])->toBe('pillars')
+        ->and($slugs[3])->toBe('inside_academy');
 });
 
 it('adds the why-academy italic tagline on the pillars section', function () {
@@ -18,6 +19,17 @@ it('adds the why-academy italic tagline on the pillars section', function () {
         ->and($pillars['title'])->toBe('WHY SMARTSOURCING USA ACADEMY?')
         ->and($pillars['sub_title'])->toBe('We help you build skills that matter in the real world.')
         ->and($pillars['flags']['sub_title'])->toBeTrue();
+});
+
+it('adds an admin-editable inside the academy instagram section after the pillars', function () {
+    $section = collect(SsuHomeSections::getSections())->firstWhere('slug', 'inside_academy');
+
+    expect($section)->not->toBeNull()
+        ->and($section['title'])->toBe('INSIDE THE ACADEMY')
+        ->and($section['sub_title'])->toBe('Explore the Learning, Stories, and Opportunities Within')
+        ->and($section['flags']['title'])->toBeTrue()
+        ->and($section['flags']['sub_title'])->toBeTrue()
+        ->and($section['properties']['array'][0])->toHaveKeys(['image', 'link', 'views']);
 });
 
 it('keeps the circled email copy for the gap section', function () {

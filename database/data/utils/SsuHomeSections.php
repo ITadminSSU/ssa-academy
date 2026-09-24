@@ -81,6 +81,25 @@ class SsuHomeSections
                 ],
             ],
             [
+                'name' => 'Inside the Academy',
+                'slug' => 'inside_academy',
+                'title' => 'INSIDE THE ACADEMY',
+                'sub_title' => 'Explore the Learning, Stories, and Opportunities Within',
+                'flags' => [
+                    'title' => true,
+                    'sub_title' => true,
+                ],
+                'properties' => [
+                    'array' => [
+                        ['image' => '', 'link' => '', 'views' => ''],
+                        ['image' => '', 'link' => '', 'views' => ''],
+                        ['image' => '', 'link' => '', 'views' => ''],
+                        ['image' => '', 'link' => '', 'views' => ''],
+                        ['image' => '', 'link' => '', 'views' => ''],
+                    ],
+                ],
+            ],
+            [
                 'name' => 'Featured Courses',
                 'slug' => 'top_courses',
                 'title' => 'Featured Programs',

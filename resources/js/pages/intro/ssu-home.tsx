@@ -5,6 +5,7 @@ import CallToAction from './partials/ssu-home/call-to-action';
 import FeaturedCourses from './partials/ssu-home/featured-courses';
 import Gap from './partials/ssu-home/gap';
 import Hero from './partials/ssu-home/hero';
+import InsideAcademy from './partials/ssu-home/inside-academy';
 import LandingOverlay from './partials/ssu-home/landing-overlay';
 import Pillars from './partials/ssu-home/pillars';
 
@@ -19,6 +20,7 @@ const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps
             <Hero />
             <Gap />
             <Pillars />
+            <InsideAcademy />
             <FeaturedCourses />
             <CallToAction />
          </div>
