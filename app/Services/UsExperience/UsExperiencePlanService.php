@@ -156,13 +156,16 @@ class UsExperiencePlanService
 
     public function removeDrawing(UsExperiencePlan $plan, string $fileUrl): UsExperiencePlan
     {
-        $drawings = array_values(array_filter(
-            $plan->drawingsList(),
-            fn (array $drawing) => ($drawing['file_url'] ?? '') !== $fileUrl
-        ));
-        $plan->update(['drawings' => $drawings]);
+        $drawings = $plan->drawingsList();
+        $kept = S3CompatibleStorage::rejectFirstMatchingMediaUrl($drawings, $fileUrl);
 
-        return $plan->fresh();
+        if (count($kept) === count($drawings)) {
+            return $plan;
+        }
+
+        $plan->update(['drawings' => $kept]);
+
+        return $plan->fresh() ?? $plan;
     }
 
     public function importAnswerKey(UsExperiencePlan $plan, string $fileUrl, string $fileName): array

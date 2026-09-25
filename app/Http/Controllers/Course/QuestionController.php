@@ -75,9 +75,15 @@ class QuestionController extends Controller
     public function removeTakeoffDrawing(Request $request, $id)
     {
         $fileUrl = $request->validate([
-            'file_url' => 'required|string|max:2048',
+            'file_url' => 'required|string|max:4096',
         ])['file_url'];
-        $this->takeoff->removeDrawing($this->takeoffQuestion($id), $fileUrl);
+        $question = $this->takeoffQuestion($id);
+        $before = count($this->takeoff->drawingsFromOptions($question->decodedOptions()));
+        $question = $this->takeoff->removeDrawing($question, $fileUrl);
+
+        if (count($this->takeoff->drawingsFromOptions($question->decodedOptions())) >= $before) {
+            return back()->with('error', 'That reference drawing could not be removed. Refresh the page and try again.');
+        }
 
         return back()->with('success', 'Reference drawing removed.');
     }

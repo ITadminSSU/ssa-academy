@@ -108,3 +108,39 @@ test('page section properties persist unsigned r2 urls and sign them on read', f
         ->and($section->properties['array'][0]['image'])->toContain('X-Amz-Signature=')
         ->and($section->properties['array'][0]['link'])->toBe('https://www.instagram.com/p/abc');
 });
+
+test('sameStoredObject matches a signed r2 url to the unsigned stored object url', function () {
+    config([
+        'filesystems.disks.s3.region' => 'us-east-1',
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+    ]);
+
+    $stored = 'https://ssa-academy-files.662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/12/BL001 - Plans.pdf';
+    $signed = S3CompatibleStorage::temporaryObjectUrl('12/BL001 - Plans.pdf');
+    $other = 'https://ssa-academy-files.662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/12/other.pdf';
+
+    expect(S3CompatibleStorage::sameStoredObject($stored, $signed))->toBeTrue()
+        ->and(S3CompatibleStorage::sameStoredObject($stored, $other))->toBeFalse()
+        ->and(S3CompatibleStorage::sameStoredObject('/storage/plans.pdf', 'https://smartsourcingacademy.com/storage/plans.pdf'))->toBeTrue();
+});
+
+test('rejectFirstMatchingMediaUrl removes only the signed drawing and leaves the rest', function () {
+    config([
+        'filesystems.disks.s3.region' => 'us-east-1',
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+    ]);
+
+    $keep = 'https://ssa-academy-files.662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/12/keep.pdf';
+    $remove = 'https://ssa-academy-files.662e2c7b71c8db5492dbba2e1f6e2a35.r2.cloudflarestorage.com/12/BL001 - Plans.pdf';
+    $signed = S3CompatibleStorage::temporaryObjectUrl('12/BL001 - Plans.pdf');
+
+    $kept = S3CompatibleStorage::rejectFirstMatchingMediaUrl([
+        ['file_url' => $keep, 'file_name' => 'keep.pdf'],
+        ['file_url' => $remove, 'file_name' => 'BL001 - Plans.pdf'],
+    ], $signed);
+
+    expect($kept)->toHaveCount(1)
+        ->and($kept[0]['file_name'])->toBe('keep.pdf');
+});

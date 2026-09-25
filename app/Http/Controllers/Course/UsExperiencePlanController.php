@@ -72,9 +72,14 @@ class UsExperiencePlanController extends Controller
     {
         $this->assertPlan($course, $plan);
         $fileUrl = $request->validate([
-            'file_url' => 'required|string|max:2048',
+            'file_url' => 'required|string|max:4096',
         ])['file_url'];
-        $this->plans->removeDrawing($plan, $fileUrl);
+        $before = count($plan->drawingsList());
+        $plan = $this->plans->removeDrawing($plan, $fileUrl);
+
+        if (count($plan->drawingsList()) >= $before) {
+            return back()->with('error', 'That reference drawing could not be removed. Refresh the page and try again.');
+        }
 
         return back()->with('success', 'Reference drawing removed.');
     }

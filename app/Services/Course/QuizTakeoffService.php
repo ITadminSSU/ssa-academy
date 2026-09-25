@@ -160,12 +160,14 @@ class QuizTakeoffService
     public function removeDrawing(QuizQuestion $question, string $fileUrl): QuizQuestion
     {
         $this->assertTakeoff($question);
-        $drawings = array_values(array_filter(
-            $this->drawingsFromOptions($question->decodedOptions()),
-            fn (array $drawing) => ($drawing['file_url'] ?? '') !== $fileUrl
-        ));
+        $drawings = $this->drawingsFromOptions($question->decodedOptions());
+        $kept = S3CompatibleStorage::rejectFirstMatchingMediaUrl($drawings, $fileUrl);
 
-        return $this->persistOptions($question, ['drawings' => $drawings]);
+        if (count($kept) === count($drawings)) {
+            return $question;
+        }
+
+        return $this->persistOptions($question, ['drawings' => $kept]);
     }
 
     /**

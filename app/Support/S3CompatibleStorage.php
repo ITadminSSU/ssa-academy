@@ -416,6 +416,72 @@ class S3CompatibleStorage
     }
 
     /**
+     * True when two URLs point at the same stored object (signed vs unsigned, query strings ignored).
+     */
+    public static function sameStoredObject(?string $left, ?string $right): bool
+    {
+        $left = trim((string) $left);
+        $right = trim((string) $right);
+
+        if ($left === '' || $right === '') {
+            return false;
+        }
+
+        if ($left === $right) {
+            return true;
+        }
+
+        $leftKey = static::extractObjectKey($left);
+        $rightKey = static::extractObjectKey($right);
+
+        if ($leftKey !== null && $rightKey !== null && $leftKey !== '' && $leftKey === $rightKey) {
+            return true;
+        }
+
+        $leftPath = static::canonicalMediaPath($left);
+        $rightPath = static::canonicalMediaPath($right);
+
+        return $leftPath !== '/' && $leftPath === $rightPath;
+    }
+
+    /**
+     * Drop the first item whose media URL is the same stored object as $url.
+     *
+     * @param  list<array<string, mixed>>  $items
+     * @return list<array<string, mixed>>
+     */
+    public static function rejectFirstMatchingMediaUrl(array $items, string $url, string $attribute = 'file_url'): array
+    {
+        $removed = false;
+        $kept = [];
+
+        foreach ($items as $item) {
+            $candidate = is_array($item) ? (string) ($item[$attribute] ?? '') : '';
+
+            if (! $removed && static::sameStoredObject($candidate, $url)) {
+                $removed = true;
+
+                continue;
+            }
+
+            $kept[] = $item;
+        }
+
+        return array_values($kept);
+    }
+
+    public static function canonicalMediaPath(string $url): string
+    {
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?: '');
+
+        if ($path === '' && ! str_starts_with($url, 'http://') && ! str_starts_with($url, 'https://')) {
+            $path = $url;
+        }
+
+        return '/'.ltrim(static::decodeObjectKey($path), '/');
+    }
+
+    /**
      * @return string|null MIME type for HTML5 <video> playback, or null when the key is not a video.
      */
     public static function videoMimeForKey(string $key): ?string
