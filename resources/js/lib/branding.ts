@@ -5,7 +5,7 @@ export const BRAND_TAGLINE = import.meta.env.VITE_BRAND_TAGLINE || 'Enterprise t
 
 export const BRAND_LOGOS = {
    icon: '/assets/branding/favicon-ssa.png',
-   dark: '/assets/branding/ssa-academy-logo-black.png',
+   dark: '/assets/branding/ssa-academy-logo-navbar.png',
    light: '/assets/branding/ssa-academy-logo-white.png',
    footer: '/assets/branding/ssa-academy-logo-black.png',
    certificate: '/assets/branding/ssa-academy-logo.png',
