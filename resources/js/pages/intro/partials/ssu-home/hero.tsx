@@ -59,9 +59,9 @@ const Hero = () => {
                   </div>
                </div>
 
-               <div className="relative min-w-0 py-3 sm:py-4 lg:-mr-6 lg:py-4 lg:pl-2 xl:-mr-10">
+               <div className="relative min-w-0 py-3 pb-10 sm:py-4 sm:pb-12 lg:-mr-6 lg:py-6 lg:pb-10 lg:pl-2 xl:-mr-10">
                   <span
-                     className="absolute bottom-2 left-0 z-10 text-2xl leading-none text-[color:var(--ssu-gold)] lg:bottom-3"
+                     className="absolute bottom-2 left-1 z-10 text-2xl leading-none text-[color:var(--ssu-gold)] lg:bottom-3 lg:left-0"
                      aria-hidden
                   >
                      +

@@ -231,16 +231,16 @@
    border-color: var(--ssu-line);
 }
 
-/* Canva hero: full 16:9 rectangle, 3D-tilted card (no clip-path). */
+/* Canva hero: 16:9 rectangle with a flat in-plane tilt (not a 3D receding card). */
 .ssu-public .ssu-hero-media {
    position: relative;
    width: 100%;
    overflow: hidden;
    background: rgba(0, 0, 0, 0.28);
    aspect-ratio: 16 / 9;
-   transform: perspective(1000px) rotateY(-8deg) rotateZ(-3deg);
-   transform-origin: 28% 78%;
-   box-shadow: 0 24px 48px rgb(0 0 0 / 38%);
+   transform: rotate(6deg);
+   transform-origin: 50% 55%;
+   box-shadow: 0 22px 40px rgb(0 0 0 / 34%);
 }
 
 .ssu-public .ssu-hero-media .ssu-hero-video,
@@ -256,8 +256,7 @@
 
 @media (min-width: 640px) and (max-width: 1023px) {
    .ssu-public .ssu-hero-media {
-      transform: perspective(1200px) rotateY(-10deg) rotateZ(-4deg);
-      transform-origin: 30% 75%;
+      transform: rotate(7deg);
    }
 }
 
@@ -265,9 +264,8 @@
    .ssu-public .ssu-hero-media {
       width: 118%;
       max-width: none;
-      transform: perspective(1600px) rotateY(-16deg) rotateZ(-7deg);
-      transform-origin: 22% 80%;
-      box-shadow: 0 32px 70px rgb(0 0 0 / 44%);
+      transform: rotate(9deg);
+      box-shadow: 0 28px 56px rgb(0 0 0 / 40%);
    }
 }
 
