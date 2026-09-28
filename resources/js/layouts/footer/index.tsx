@@ -18,7 +18,7 @@ const Index = () => {
    const paymentMethodsItem = sortedItems.find((item) => item.type === 'payment_methods' && item.active);
 
    return (
-      <footer className="ssu-site-footer bg-[color:var(--ssu-navy)] text-[#f8f6f1]">
+      <footer className="ssu-site-footer border-t border-white/10 bg-[color:var(--ssu-navy-deep)] text-[#f8f6f1]">
          <div className="container space-y-10 pt-16 pb-8">
             <div className="flex flex-col items-start gap-12 md:flex-row md:flex-wrap lg:flex-nowrap lg:justify-between">
                <div className="w-max max-w-[280px] shrink-0 space-y-5">

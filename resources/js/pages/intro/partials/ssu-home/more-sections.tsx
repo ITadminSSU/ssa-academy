@@ -1,21 +1,11 @@
 import PublicFaqAccordion from '@/components/ssu-public/faq-accordion';
 import { GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
+import WorkflowRadar from '@/components/ssu-public/workflow-radar';
 import { BRAND_LOGOS } from '@/lib/branding';
 import { homeFaqs } from '@/lib/ssu-faqs';
 import { IntroPageProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { ArrowRight, BadgeCheck, BarChart3, Compass, FileText, Hammer, Hash, Scan } from 'lucide-react';
-
-const workflowItems = [
-   'Construction plans',
-   'PDF plan sets',
-   'Estimating',
-   'Takeoffs',
-   'Terminology',
-   'Project documentation',
-   'Software',
-   'Remote collaboration',
-];
 
 const tools = ['PlanSwift', 'Bluebeam', 'On-Screen Takeoff', 'Primavera', 'ZZ Takeoff', 'AutoCAD', 'Revit', 'Procore'];
 
@@ -49,24 +39,24 @@ const whyItems = [
 
 export const Workflow = () => (
    <section id="how-it-works" className="bg-[color:var(--ssu-navy)] py-20 text-white">
-      <div className="container px-4">
-         <SheetKicker label="Workflow translation" index="05" tone="gold" />
-         <h2 className="ssu-pub-display mt-5 max-w-4xl text-[clamp(2.2rem,5vw,4.4rem)] text-white">
-            Get familiar with how U.S. construction teams work.
-         </h2>
-         <p className="mt-6 max-w-3xl text-sm leading-relaxed text-white/70 md:text-base">
-            The Academy does not simply teach individual software tools. It helps learners understand how plans, PDFs, estimates,
-            takeoffs, terminology, documentation, software, and remote collaboration fit together.
-         </p>
-         <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {workflowItems.map((item, index) => (
-               <div key={item} className="border border-white/15 bg-white/5 px-4 py-5">
-                  <p className="font-mono text-[10px] text-[color:var(--ssu-gold)]">{String(index + 1).padStart(2, '0')}</p>
-                  <p className="ssu-pub-display mt-2 text-lg text-white">{item}</p>
-               </div>
-            ))}
+      <div className="container grid items-center gap-8 px-4 sm:gap-10 lg:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] lg:gap-16">
+         <div>
+            <SheetKicker label="Workflow translation" index="05" tone="gold" />
+            <h2 className="ssu-pub-display mt-5 text-[clamp(2.15rem,8vw,4.6rem)] text-white">
+               Get familiar
+               <br />
+               with how U.S.
+               <br />
+               construction
+               <br />
+               <span className="text-[color:var(--ssu-gold)]">teams work.</span>
+            </h2>
+            <p className="mt-6 max-w-sm text-sm leading-relaxed text-white/70 md:text-base">
+               The Academy does not simply teach individual software tools. It helps learners understand how plans, PDFs, estimates,
+               takeoffs, terminology, documentation, software, and remote collaboration fit together.
+            </p>
          </div>
-         <p className="ssu-pub-display mt-8 text-3xl text-[color:var(--ssu-gold)]">One workflow</p>
+         <WorkflowRadar />
       </div>
    </section>
 );

@@ -20,7 +20,7 @@ const Hero = () => {
                <div className="absolute right-[-2rem] top-8 h-[28rem] w-[28rem] rounded-full border border-[color:var(--ssu-gold)]/35" />
             </div>
 
-            <div className="relative container grid items-center gap-10 px-4 pt-12 pb-6 lg:grid-cols-[1.08fr_0.92fr] lg:pt-16 lg:pb-8">
+            <div className="relative container grid items-center gap-8 px-4 pt-12 pb-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-6 lg:pt-14 lg:pb-6">
                <div className="max-w-3xl">
                   <p className="ssu-pub-kicker ssu-pub-kicker--gold">
                      <span className="ssu-pub-kicker-line" aria-hidden />
@@ -59,9 +59,9 @@ const Hero = () => {
                   </div>
                </div>
 
-               <div className="relative px-2 py-6 lg:px-4 lg:py-10">
+               <div className="relative min-w-0 py-3 sm:py-4 lg:-mr-6 lg:py-4 lg:pl-2 xl:-mr-10">
                   <span
-                     className="absolute bottom-4 left-0 z-10 text-2xl leading-none text-[color:var(--ssu-gold)]"
+                     className="absolute bottom-2 left-0 z-10 text-2xl leading-none text-[color:var(--ssu-gold)] lg:bottom-3"
                      aria-hidden
                   >
                      +
