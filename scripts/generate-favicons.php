@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 $source = $argv[1] ?? '';
-$projectRoot = dirname(__DIR__);
 
 if ($source === '') {
     fwrite(STDERR, "Usage: php scripts/generate-favicons.php <source-image>\n");
@@ -15,78 +14,33 @@ if (!is_file($source)) {
     exit(1);
 }
 
-$targets = [
-    'public/favicon.png' => 512,
-    'public/favicon-32x32.png' => 32,
-    'public/favicon-16x16.png' => 16,
-    'public/apple-touch-icon.png' => 180,
-    'public/assets/branding/favicon-ssa.png' => 512,
-];
+require dirname(__DIR__).'/vendor/autoload.php';
 
-$imageInfo = getimagesize($source);
-if ($imageInfo === false) {
-    fwrite(STDERR, "Unable to read image: {$source}\n");
+/** @var Illuminate\Foundation\Application $app */
+$app = require dirname(__DIR__).'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+try {
+    App\Support\FaviconFiles::writeFromImageFile($source);
+} catch (RuntimeException $exception) {
+    fwrite(STDERR, $exception->getMessage().PHP_EOL);
     exit(1);
 }
 
-[$width, $height, $type] = $imageInfo;
-
-$sourceImage = match ($type) {
-    IMAGETYPE_PNG => imagecreatefrompng($source),
-    IMAGETYPE_JPEG => imagecreatefromjpeg($source),
-    IMAGETYPE_WEBP => imagecreatefromwebp($source),
-    default => null,
-};
-
-if (!$sourceImage) {
-    fwrite(STDERR, "Unsupported image type.\n");
-    exit(1);
+foreach (App\Support\FaviconFiles::pngTargets() as $path => $size) {
+    echo "Wrote {$path} ({$size}x{$size})".PHP_EOL;
 }
 
-imagealphablending($sourceImage, true);
-imagesavealpha($sourceImage, true);
+echo 'Wrote '.public_path('favicon.ico').PHP_EOL;
 
-foreach ($targets as $relativePath => $size) {
-    $destination = $projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-    $directory = dirname($destination);
+$updated = 0;
 
-    if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-        fwrite(STDERR, "Failed to create directory: {$directory}\n");
-        exit(1);
-    }
-
-    $canvas = imagecreatetruecolor($size, $size);
-    imagealphablending($canvas, false);
-    imagesavealpha($canvas, true);
-
-    $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
-    imagefilledrectangle($canvas, 0, 0, $size, $size, $transparent);
-
-    $scale = min($size / $width, $size / $height);
-    $targetWidth = (int) round($width * $scale);
-    $targetHeight = (int) round($height * $scale);
-    $offsetX = (int) round(($size - $targetWidth) / 2);
-    $offsetY = (int) round(($size - $targetHeight) / 2);
-
-    imagecopyresampled(
-        $canvas,
-        $sourceImage,
-        $offsetX,
-        $offsetY,
-        0,
-        0,
-        $targetWidth,
-        $targetHeight,
-        $width,
-        $height
-    );
-
-    imagepng($canvas, $destination);
-    imagedestroy($canvas);
-
-    echo "Wrote {$relativePath} ({$size}x{$size})\n";
+foreach (App\Models\Setting::query()->where('type', 'system')->get() as $setting) {
+    $fields = is_array($setting->fields) ? $setting->fields : [];
+    $fields['favicon'] = '/favicon.png';
+    $setting->update(['fields' => $fields]);
+    $updated++;
 }
 
-imagedestroy($sourceImage);
-
-echo "Done.\n";
+echo "Updated {$updated} system setting row(s) to /favicon.png.".PHP_EOL;
+echo "Done.".PHP_EOL;

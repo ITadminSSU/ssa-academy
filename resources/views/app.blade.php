@@ -76,7 +76,7 @@
       >
       <link
          rel="apple-touch-icon"
-         href="{{ $faviconUrl }}"
+         href="{{ \App\Support\Branding::versionPublicPath('/apple-touch-icon.png') }}"
       >
 
       <meta

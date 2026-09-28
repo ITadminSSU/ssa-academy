@@ -127,7 +127,13 @@ class SettingsService extends MediaService
             ]);
         }
 
-        $this->writePublicFaviconFiles($sourcePath);
+        try {
+            \App\Support\FaviconFiles::writeFromImageFile($sourcePath);
+        } catch (\RuntimeException $exception) {
+            throw ValidationException::withMessages([
+                'new_favicon' => $exception->getMessage(),
+            ]);
+        }
 
         try {
             $this->addNewDeletePrev($setting, $file, 'favicon');
@@ -136,91 +142,6 @@ class SettingsService extends MediaService
         }
 
         return '/favicon.png';
-    }
-
-    private function writePublicFaviconFiles(string $sourcePath): void
-    {
-        $targets = [
-            public_path('favicon.png') => 512,
-            public_path('favicon-32x32.png') => 32,
-            public_path('favicon-16x16.png') => 16,
-            public_path('apple-touch-icon.png') => 180,
-            public_path('assets/branding/favicon-ssa.png') => 512,
-        ];
-
-        $info = @getimagesize($sourcePath);
-
-        if ($info === false) {
-            if (!@copy($sourcePath, public_path('favicon.png'))) {
-                throw ValidationException::withMessages([
-                    'new_favicon' => 'That file is not a readable image. Please upload a PNG.',
-                ]);
-            }
-
-            return;
-        }
-
-        [$width, $height, $type] = $info;
-        $sourceImage = match ($type) {
-            IMAGETYPE_PNG => @imagecreatefrompng($sourcePath),
-            IMAGETYPE_JPEG => @imagecreatefromjpeg($sourcePath),
-            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($sourcePath) : false,
-            default => false,
-        };
-
-        if (!$sourceImage) {
-            if (!@copy($sourcePath, public_path('favicon.png'))) {
-                throw ValidationException::withMessages([
-                    'new_favicon' => 'That image type is not supported. Please upload a PNG.',
-                ]);
-            }
-
-            return;
-        }
-
-        imagealphablending($sourceImage, true);
-        imagesavealpha($sourceImage, true);
-
-        foreach ($targets as $destination => $size) {
-            $directory = dirname($destination);
-
-            if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
-                imagedestroy($sourceImage);
-                throw ValidationException::withMessages([
-                    'new_favicon' => 'Could not save the favicon files on the server.',
-                ]);
-            }
-
-            $canvas = imagecreatetruecolor($size, $size);
-            imagealphablending($canvas, false);
-            imagesavealpha($canvas, true);
-            $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
-            imagefilledrectangle($canvas, 0, 0, $size, $size, $transparent);
-
-            $scale = min($size / max($width, 1), $size / max($height, 1));
-            $targetWidth = (int) round($width * $scale);
-            $targetHeight = (int) round($height * $scale);
-            $offsetX = (int) round(($size - $targetWidth) / 2);
-            $offsetY = (int) round(($size - $targetHeight) / 2);
-
-            imagecopyresampled(
-                $canvas,
-                $sourceImage,
-                $offsetX,
-                $offsetY,
-                0,
-                0,
-                $targetWidth,
-                $targetHeight,
-                $width,
-                $height
-            );
-
-            imagepng($canvas, $destination);
-            imagedestroy($canvas);
-        }
-
-        imagedestroy($sourceImage);
     }
 
     public function paymentUpdate(array $data, string $id)

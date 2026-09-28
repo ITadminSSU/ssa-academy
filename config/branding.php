@@ -22,7 +22,7 @@ return [
         'light' => '/assets/branding/ssa-academy-logo-navy.png',
         'footer' => '/assets/branding/ssa-academy-logo-navy.png',
         'certificate' => '/assets/branding/ssa-academy-logo.png',
-        'favicon' => '/favicon.ico',
+        'favicon' => '/favicon.png',
     ],
 
     'colors' => [

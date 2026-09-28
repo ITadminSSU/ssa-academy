@@ -76,7 +76,7 @@ class Branding
      */
     public static function resolveFavicon(?string $configured): string
     {
-        $fallback = (string) (self::logo('icon') ?: '/favicon.png');
+        $fallback = (string) (self::logo('favicon') ?: self::logo('icon') ?: '/favicon.png');
 
         if (!$configured || self::isLegacyLogo($configured)) {
             return self::versionPublicPath($fallback);
