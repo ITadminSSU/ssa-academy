@@ -19,8 +19,8 @@ return [
     'logos' => [
         'icon' => '/assets/branding/favicon-ssa.png',
         'dark' => '/assets/branding/ssa-academy-logo-navbar.png',
-        'light' => '/assets/branding/ssa-academy-logo-white.png',
-        'footer' => '/assets/branding/ssa-academy-logo-black.png',
+        'light' => '/assets/branding/ssa-academy-logo-navy.png',
+        'footer' => '/assets/branding/ssa-academy-logo-navy.png',
         'certificate' => '/assets/branding/ssa-academy-logo.png',
         'favicon' => '/favicon.ico',
     ],

@@ -11,8 +11,10 @@ use App\Models\Setting;
 use App\Support\DashboardWelcomeOverlay;
 use App\Support\LandingOverlay;
 use App\Support\SiteAlert;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SettingsService extends MediaService
 {
@@ -52,11 +54,15 @@ class SettingsService extends MediaService
             $setting = Setting::find($id);
             $existing = is_array($setting?->fields) ? $setting->fields : [];
 
-            if (array_key_exists('new_favicon', $data) && $data['new_favicon']) {
-                $data['favicon'] = $this->addNewDeletePrev($setting, $data['new_favicon'], 'favicon');
+            if ($this->isUploadedFavicon($data['new_favicon'] ?? null)) {
+                $data['favicon'] = $this->persistUploadedFavicon($setting, $data['new_favicon']);
+            } elseif (($data['new_favicon'] ?? null) instanceof UploadedFile) {
+                throw ValidationException::withMessages([
+                    'new_favicon' => $data['new_favicon']->getErrorMessage()
+                        ?: 'The favicon could not be uploaded. Use a PNG under 4 MB, then click Save Changes.',
+                ]);
             } else {
-                // Keep the stored object URL. The form posts a preview path (PNG fallback or a signed URL)
-                // that must not overwrite the saved favicon on a normal settings save.
+                // Keep the stored path. The form posts a preview URL that must not overwrite a saved favicon.
                 $data['favicon'] = $existing['favicon'] ?? null;
             }
 
@@ -104,6 +110,117 @@ class SettingsService extends MediaService
 
             return $setting;
         }, 5);
+    }
+
+    private function isUploadedFavicon(mixed $value): bool
+    {
+        return $value instanceof UploadedFile && $value->isValid();
+    }
+
+    private function persistUploadedFavicon(Setting $setting, UploadedFile $file): string
+    {
+        $sourcePath = $file->getRealPath();
+
+        if (!$sourcePath || !is_file($sourcePath)) {
+            throw ValidationException::withMessages([
+                'new_favicon' => 'The favicon file could not be read. Please choose it again and click Save Changes.',
+            ]);
+        }
+
+        $this->writePublicFaviconFiles($sourcePath);
+
+        try {
+            $this->addNewDeletePrev($setting, $file, 'favicon');
+        } catch (\Throwable) {
+            // Public files are what the browser tab uses. Cloud storage is optional.
+        }
+
+        return '/favicon.png';
+    }
+
+    private function writePublicFaviconFiles(string $sourcePath): void
+    {
+        $targets = [
+            public_path('favicon.png') => 512,
+            public_path('favicon-32x32.png') => 32,
+            public_path('favicon-16x16.png') => 16,
+            public_path('apple-touch-icon.png') => 180,
+            public_path('assets/branding/favicon-ssa.png') => 512,
+        ];
+
+        $info = @getimagesize($sourcePath);
+
+        if ($info === false) {
+            if (!@copy($sourcePath, public_path('favicon.png'))) {
+                throw ValidationException::withMessages([
+                    'new_favicon' => 'That file is not a readable image. Please upload a PNG.',
+                ]);
+            }
+
+            return;
+        }
+
+        [$width, $height, $type] = $info;
+        $sourceImage = match ($type) {
+            IMAGETYPE_PNG => @imagecreatefrompng($sourcePath),
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($sourcePath),
+            IMAGETYPE_WEBP => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($sourcePath) : false,
+            default => false,
+        };
+
+        if (!$sourceImage) {
+            if (!@copy($sourcePath, public_path('favicon.png'))) {
+                throw ValidationException::withMessages([
+                    'new_favicon' => 'That image type is not supported. Please upload a PNG.',
+                ]);
+            }
+
+            return;
+        }
+
+        imagealphablending($sourceImage, true);
+        imagesavealpha($sourceImage, true);
+
+        foreach ($targets as $destination => $size) {
+            $directory = dirname($destination);
+
+            if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+                imagedestroy($sourceImage);
+                throw ValidationException::withMessages([
+                    'new_favicon' => 'Could not save the favicon files on the server.',
+                ]);
+            }
+
+            $canvas = imagecreatetruecolor($size, $size);
+            imagealphablending($canvas, false);
+            imagesavealpha($canvas, true);
+            $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+            imagefilledrectangle($canvas, 0, 0, $size, $size, $transparent);
+
+            $scale = min($size / max($width, 1), $size / max($height, 1));
+            $targetWidth = (int) round($width * $scale);
+            $targetHeight = (int) round($height * $scale);
+            $offsetX = (int) round(($size - $targetWidth) / 2);
+            $offsetY = (int) round(($size - $targetHeight) / 2);
+
+            imagecopyresampled(
+                $canvas,
+                $sourceImage,
+                $offsetX,
+                $offsetY,
+                0,
+                0,
+                $targetWidth,
+                $targetHeight,
+                $width,
+                $height
+            );
+
+            imagepng($canvas, $destination);
+            imagedestroy($canvas);
+        }
+
+        imagedestroy($sourceImage);
     }
 
     public function paymentUpdate(array $data, string $id)

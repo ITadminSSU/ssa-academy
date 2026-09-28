@@ -28,8 +28,8 @@ export default function FraudTrainingTiplineMark({ className, variant = 'hero' }
             <div className="inline-block w-max max-w-full">
                <p
                   className={cn(
-                     'whitespace-nowrap font-semibold tracking-[0.18em] text-[#01123A] uppercase',
-                     isFooter ? 'text-[9px]' : 'text-[11px] sm:text-xs',
+                     'whitespace-nowrap font-semibold tracking-[0.18em] uppercase',
+                     isFooter ? 'text-[9px] text-[#f8f6f1]' : 'text-[11px] text-[#01123A] sm:text-xs',
                   )}
                >
                   Fraud Training

@@ -67,6 +67,7 @@ const Website = () => {
       post(route('settings.system.update', { id: props.system.id }), {
          forceFormData: true,
          preserveScroll: true,
+         onSuccess: () => setData('new_favicon', null),
       });
    };
 
@@ -293,8 +294,14 @@ const Website = () => {
                         placeholder="Select Favicon"
                      />
                      <p className="text-muted-foreground mt-2 text-xs">
-                        Square PNG works best (512×512). After you choose a file, click Save at the bottom of this page.
+                        Square PNG works best (512×512, under 4 MB). Choosing a file only previews it — click{' '}
+                        <strong>Save Changes</strong> below to keep it after refresh.
                      </p>
+                     {pickedFaviconUrl ? (
+                        <div className="mt-3">
+                           <LoadingButton loading={processing}>Save Changes</LoadingButton>
+                        </div>
+                     ) : null}
                      <InputError message={errors.new_favicon} />
                   </div>
 

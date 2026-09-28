@@ -102,6 +102,19 @@ class SettingController extends Controller
      */
     public function system_update(Request $request, string $id)
     {
+        $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+
+        if ($contentLength > 0 && count($request->all()) === 0 && count($request->allFiles()) === 0) {
+            return back()->withErrors([
+                'new_favicon' => 'The upload was too large for the server. Use a PNG under 4 MB, then click Save Changes.',
+            ]);
+        }
+
+        $request->validate([
+            'new_favicon' => ['nullable', 'file', 'max:4096'],
+            'new_banner' => ['nullable', 'file', 'max:8192'],
+        ]);
+
         $data = $request->all();
 
         if ($request->hasFile('new_favicon')) {
