@@ -231,19 +231,16 @@
    border-color: var(--ssu-line);
 }
 
-/* Canva hero: landscape video inside a parallelogram / rhombus-like card. */
+/* Canva hero: full 16:9 rectangle, 3D-tilted card (no clip-path). */
 .ssu-public .ssu-hero-media {
-   --ssu-hero-clip: polygon(0% 8%, 100% 0%, 100% 92%, 0% 100%);
    position: relative;
    width: 100%;
    overflow: hidden;
    background: rgba(0, 0, 0, 0.28);
    aspect-ratio: 16 / 9;
-   clip-path: var(--ssu-hero-clip);
-   -webkit-clip-path: var(--ssu-hero-clip);
-   transform: rotate(-1.5deg);
-   transform-origin: 50% 55%;
-   filter: drop-shadow(0 22px 36px rgb(0 0 0 / 36%));
+   transform: perspective(1000px) rotateY(-8deg) rotateZ(-3deg);
+   transform-origin: 28% 78%;
+   box-shadow: 0 24px 48px rgb(0 0 0 / 38%);
 }
 
 .ssu-public .ssu-hero-media .ssu-hero-video,
@@ -254,24 +251,23 @@
    height: 100%;
    width: 100%;
    object-fit: cover;
-   object-position: 52% 40%;
+   object-position: 52% 38%;
 }
 
 @media (min-width: 640px) and (max-width: 1023px) {
    .ssu-public .ssu-hero-media {
-      --ssu-hero-clip: polygon(0% 10%, 100% 0%, 99% 88%, 0% 100%);
-      transform: rotate(-2deg);
+      transform: perspective(1200px) rotateY(-10deg) rotateZ(-4deg);
+      transform-origin: 30% 75%;
    }
 }
 
 @media (min-width: 1024px) {
    .ssu-public .ssu-hero-media {
-      --ssu-hero-clip: polygon(0% 16%, 100% 2%, 97% 84%, 0% 100%);
       width: 118%;
       max-width: none;
-      transform: rotate(-3.5deg);
-      transform-origin: 20% 60%;
-      filter: drop-shadow(0 28px 48px rgb(0 0 0 / 42%));
+      transform: perspective(1600px) rotateY(-16deg) rotateZ(-7deg);
+      transform-origin: 22% 80%;
+      box-shadow: 0 32px 70px rgb(0 0 0 / 44%);
    }
 }
 
