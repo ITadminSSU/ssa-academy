@@ -38,8 +38,8 @@ const choiceClass = (selected: boolean) =>
    cn(
       'min-h-11 rounded-md px-4 text-sm font-bold tracking-wide uppercase transition',
       selected
-         ? 'bg-[color:var(--brand-red)] text-white'
-         : 'border-2 border-[color:var(--brand-red)] bg-background text-primary hover:bg-[color:var(--brand-red)]/10',
+         ? 'bg-accent text-accent-foreground'
+         : 'border-2 border-accent bg-background text-primary hover:bg-accent/10',
    );
 
 const pathItemClass =
@@ -220,7 +220,7 @@ const LearningPathGuide = ({ learningPath }: Props) => {
                                        ))}
                                     </div>
                                     <div className="flex min-h-[6.5rem] items-center justify-center">
-                                       <span className="bg-[color:var(--brand-red)] shrink-0 rounded-md px-3 py-1 text-xs font-bold tracking-wide text-white uppercase">
+                                       <span className="bg-accent text-accent-foreground shrink-0 rounded-md px-3 py-1 text-xs font-bold tracking-wide uppercase">
                                           and / or
                                        </span>
                                     </div>

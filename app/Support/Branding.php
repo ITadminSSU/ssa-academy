@@ -69,6 +69,28 @@ class Branding
         return self::versionPublicPath($path);
     }
 
+    /**
+     * Browser-loadable favicon URL for <img> previews and <link rel="icon">.
+     * .ico files often render as a broken image in <img>, so the default is the PNG icon.
+     * Uploaded cloud objects are signed; seeded /favicon.ico paths are treated as unset.
+     */
+    public static function resolveFavicon(?string $configured): string
+    {
+        $fallback = (string) (self::logo('icon') ?: '/favicon.png');
+
+        if (!$configured || self::isLegacyLogo($configured)) {
+            return self::versionPublicPath($fallback);
+        }
+
+        $path = self::versionPublicPath($configured);
+
+        if (str_contains($path, '://')) {
+            return \App\Support\S3CompatibleStorage::attributeGet($path) ?? $path;
+        }
+
+        return $path;
+    }
+
     public static function versionPublicPath(string $path): string
     {
         if ($path === '' || str_contains($path, '?v=')) {
@@ -108,7 +130,7 @@ class Branding
                 'light' => self::versionPublicPath((string) ($logos['light'] ?? '')),
                 'footer' => self::versionPublicPath((string) ($logos['footer'] ?? $logos['light'] ?? $logos['dark'] ?? '')),
                 'certificate' => self::versionPublicPath((string) ($logos['certificate'] ?? $logos['dark'] ?? $logos['light'] ?? '')),
-                'favicon' => self::versionPublicPath((string) ($logos['favicon'] ?? '')),
+                'favicon' => self::resolveFavicon($logos['favicon'] ?? null),
             ],
         ];
     }

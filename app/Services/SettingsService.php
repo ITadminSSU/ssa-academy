@@ -50,13 +50,20 @@ class SettingsService extends MediaService
     {
         return DB::transaction(function () use ($data, $id) {
             $setting = Setting::find($id);
+            $existing = is_array($setting?->fields) ? $setting->fields : [];
 
             if (array_key_exists('new_favicon', $data) && $data['new_favicon']) {
-                $data['favicon'] = $this->addNewDeletePrev($setting, $data['new_favicon'], "favicon");
+                $data['favicon'] = $this->addNewDeletePrev($setting, $data['new_favicon'], 'favicon');
+            } else {
+                // Keep the stored object URL. The form posts a preview path (PNG fallback or a signed URL)
+                // that must not overwrite the saved favicon on a normal settings save.
+                $data['favicon'] = $existing['favicon'] ?? null;
             }
 
             if (array_key_exists('new_banner', $data) && $data['new_banner']) {
-                $data['banner'] = $this->addNewDeletePrev($setting, $data['new_banner'], "banner");
+                $data['banner'] = $this->addNewDeletePrev($setting, $data['new_banner'], 'banner');
+            } else {
+                $data['banner'] = $existing['banner'] ?? ($data['banner'] ?? null);
             }
 
             $filteredData = Arr::except($data, [

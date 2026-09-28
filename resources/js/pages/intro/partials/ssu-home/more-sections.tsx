@@ -40,25 +40,25 @@ const whyItems = [
 ];
 
 export const Workflow = () => (
-   <section id="how-it-works" className="bg-[color:var(--ssu-cream)] py-20">
+   <section id="how-it-works" className="bg-[color:var(--ssu-navy)] py-20 text-white">
       <div className="container px-4">
-         <SheetKicker label="Workflow translation" index="05" />
-         <h2 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
+         <SheetKicker label="Workflow translation" index="05" tone="gold" />
+         <h2 className="ssu-pub-display mt-5 max-w-4xl text-[clamp(2.2rem,5vw,4.4rem)] text-white">
             Get familiar with how U.S. construction teams work.
          </h2>
-         <p className="mt-6 max-w-3xl text-sm leading-relaxed text-[color:var(--ssu-muted)] md:text-base">
+         <p className="mt-6 max-w-3xl text-sm leading-relaxed text-white/70 md:text-base">
             The Academy does not simply teach individual software tools. It helps learners understand how plans, PDFs, estimates,
             takeoffs, terminology, documentation, software, and remote collaboration fit together.
          </p>
          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {workflowItems.map((item, index) => (
-               <div key={item} className="border border-[color:var(--ssu-line)] bg-white px-4 py-5">
+               <div key={item} className="border border-white/15 bg-white/5 px-4 py-5">
                   <p className="font-mono text-[10px] text-[color:var(--ssu-gold)]">{String(index + 1).padStart(2, '0')}</p>
-                  <p className="font-display mt-2 text-sm font-semibold tracking-wide text-[color:var(--ssu-navy)] uppercase">{item}</p>
+                  <p className="ssu-pub-display mt-2 text-lg text-white">{item}</p>
                </div>
             ))}
          </div>
-         <p className="mt-8 font-display text-2xl font-semibold tracking-[0.2em] text-[color:var(--ssu-gold)] uppercase">One workflow</p>
+         <p className="ssu-pub-display mt-8 text-3xl text-[color:var(--ssu-gold)]">One workflow</p>
       </div>
    </section>
 );
@@ -67,7 +67,7 @@ export const Tools = () => (
    <section id="resources" className="border-y border-[color:var(--ssu-line)] bg-[#f3f1ea] py-20">
       <div className="container px-4">
          <SheetKicker label="Toolset" index="06" />
-         <h2 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
+         <h2 className="ssu-pub-display mt-5 max-w-4xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
             Get comfortable with the tools behind the work.
          </h2>
          <p className="mt-6 max-w-3xl text-sm leading-relaxed text-[color:var(--ssu-muted)] md:text-base">
@@ -90,8 +90,8 @@ export const Sequence = () => (
    <section className="bg-[color:var(--ssu-cream)] py-20">
       <div className="container px-4">
          <SheetKicker label="The sequence" index="07" />
-         <h2 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
-            A clear route from interest to practice.
+         <h2 className="ssu-pub-display mt-5 max-w-4xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
+            A clear route from <span className="text-[color:var(--ssu-gold)]">interest to practice.</span>
          </h2>
          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {sequence.map((step, index) => (
@@ -112,8 +112,12 @@ export const Credential = () => (
    <section className="border-y border-[color:var(--ssu-line)] bg-[color:var(--ssu-navy)] py-20 text-white">
       <div className="container grid items-center gap-12 px-4 lg:grid-cols-2">
          <div>
-            <SheetKicker label="Proof of practice" index="08" />
-            <h2 className="ssu-pub-display mt-5 text-4xl md:text-5xl">Learn it. Prove it. Build your credentials.</h2>
+            <SheetKicker label="Proof of practice" index="08" tone="gold" />
+            <h2 className="ssu-pub-display mt-5 text-[clamp(2.2rem,5vw,4.4rem)]">
+               Learn it. Prove it.
+               <br />
+               Build your credentials.
+            </h2>
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/75 md:text-base">
                Complete your program and earn an SSU-verified credential with a unique reference number.
             </p>
@@ -141,7 +145,7 @@ export const Roadmap = () => (
    <section id="roadmap" className="bg-[color:var(--ssu-cream)] py-20">
       <div className="container px-4">
          <SheetKicker label="The roadmap" index="09" />
-         <h2 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
+         <h2 className="ssu-pub-display mt-5 max-w-4xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
             Your path from experience to U.S.-ready skills.
          </h2>
          <div className="mt-12 grid gap-6 md:grid-cols-5">
@@ -161,7 +165,7 @@ export const Why = () => (
    <section id="why" className="border-y border-[color:var(--ssu-line)] bg-[#f3f1ea] py-20">
       <div className="container px-4">
          <SheetKicker label="Why the Academy" index="10" />
-         <h2 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
+         <h2 className="ssu-pub-display mt-5 max-w-4xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
             Built around the way construction professionals actually work.
          </h2>
          <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -208,7 +212,9 @@ export const Stats = () => (
    <section className="bg-[color:var(--ssu-cream)] py-20">
       <div className="container px-4">
          <SheetKicker label="The build" index="12" />
-         <h2 className="ssu-pub-display mt-5 text-4xl text-[color:var(--ssu-ink)]">What learners are building.</h2>
+         <h2 className="ssu-pub-display mt-5 text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
+            What learners are building.
+         </h2>
          <p className="mt-4 max-w-2xl text-sm text-[color:var(--ssu-muted)]">
             A future-ready section for verified Academy data, when it is available.
          </p>
@@ -238,7 +244,9 @@ export const Instructors = () => {
       <section className="border-y border-[color:var(--ssu-line)] bg-[#f3f1ea] py-20">
          <div className="container px-4">
             <SheetKicker label="The practitioners" index="13" />
-            <h2 className="ssu-pub-display mt-5 text-4xl text-[color:var(--ssu-ink)]">Learn from people who know the work.</h2>
+            <h2 className="ssu-pub-display mt-5 text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
+               Learn from people who know the work.
+            </h2>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
                {cards.map((member) => (
                   <article key={member.id} className="overflow-hidden border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
@@ -270,7 +278,9 @@ export const HomeFaqs = () => (
          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
                <SheetKicker label="Field guide" index="14" />
-               <h2 className="ssu-pub-display mt-5 text-4xl text-[color:var(--ssu-ink)]">Questions, answered clearly.</h2>
+               <h2 className="ssu-pub-display mt-5 text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
+                  Questions, answered clearly.
+               </h2>
                <p className="mt-4 max-w-2xl text-sm text-[color:var(--ssu-muted)]">
                   We keep the details direct. As Academy programs expand, this guide will be updated with course-specific
                   information.

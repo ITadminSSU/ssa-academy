@@ -34,7 +34,7 @@ const DashboardHeader = ({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] 
                   <Link href={route('messages.index')} className="hover:text-foreground relative inline-flex items-center gap-1.5 transition-colors">
                      <MessageCircle className="h-4 w-4" />
                      Messages
-                     <MessagesUnreadBadge className="bg-accent" />
+                     <MessagesUnreadBadge className="bg-accent text-primary" />
                   </Link>
                )}
             </nav>

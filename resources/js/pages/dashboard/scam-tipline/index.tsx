@@ -242,7 +242,7 @@ export default function ScamTiplineIndex({ reports, counts, filters, statuses }:
 
          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-               <h1 className="text-2xl font-semibold text-[#01123A]">Fraud Training Tipline</h1>
+               <h1 className="text-2xl font-semibold text-primary">Fraud Training Tipline</h1>
                <p className="mt-1 text-sm text-muted-foreground">
                   Review community tips, investigate, and publish confirmed warnings.
                </p>
@@ -270,8 +270,8 @@ export default function ScamTiplineIndex({ reports, counts, filters, statuses }:
                   className={cn(
                      'rounded-full border px-3 py-1 text-xs font-medium',
                      !filters.archived && filters.status === chip.key
-                        ? 'border-[#01123A] bg-[#01123A] text-white'
-                        : 'border-border bg-white text-[#01123A]',
+                        ? 'border-primary bg-primary text-white'
+                        : 'border-border bg-white text-primary',
                   )}
                >
                   {chip.label}
@@ -282,7 +282,7 @@ export default function ScamTiplineIndex({ reports, counts, filters, statuses }:
                onClick={() => applyFilters({ archived: true, status: 'all' })}
                className={cn(
                   'rounded-full border px-3 py-1 text-xs font-medium',
-                  filters.archived ? 'border-[#01123A] bg-[#01123A] text-white' : 'border-border bg-white text-[#01123A]',
+                  filters.archived ? 'border-primary bg-primary text-white' : 'border-border bg-white text-primary',
                )}
             >
                Archived ({counts.archived ?? 0})
@@ -392,7 +392,7 @@ export default function ScamTiplineIndex({ reports, counts, filters, statuses }:
                         href={link.url}
                         className={cn(
                            'rounded-md border px-3 py-1 text-sm',
-                           link.active ? 'border-[#01123A] bg-[#01123A] text-white' : 'border-border bg-white',
+                           link.active ? 'border-primary bg-primary text-white' : 'border-border bg-white',
                         )}
                         dangerouslySetInnerHTML={{ __html: link.label }}
                      />

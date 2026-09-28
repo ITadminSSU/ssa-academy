@@ -131,7 +131,7 @@ function MessageBubble({
             <div
                className={cn(
                   'rounded-2xl px-3 py-2 text-sm',
-                  message.is_mine ? 'bg-[#01123A] text-white' : 'bg-muted text-foreground',
+                  message.is_mine ? 'bg-primary text-white' : 'bg-muted text-foreground',
                )}
             >
                {!message.is_mine && <p className="mb-1 text-[11px] font-medium opacity-70">{message.sender?.name}</p>}
@@ -617,7 +617,7 @@ export default function MessagesIndex() {
          <Head title="Messages" />
 
          <div className="mb-3 shrink-0">
-            <h1 className="text-2xl font-semibold text-[#01123A]">Messages</h1>
+            <h1 className="text-2xl font-semibold text-primary">Messages</h1>
             <p className="mt-1 text-sm text-muted-foreground">
                {isAdmin
                   ? 'Private Academy messages with any student, plus course and class chats.'
@@ -677,7 +677,7 @@ export default function MessagesIndex() {
                            <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
                                  <div className="flex items-center gap-2">
-                                    <p className={cn('truncate text-sm font-medium', conversation.unread && 'text-[#01123A]')}>
+                                    <p className={cn('truncate text-sm font-medium', conversation.unread && 'text-primary')}>
                                        {conversation.label}
                                     </p>
                                     {conversation.is_resolved && (
@@ -696,7 +696,7 @@ export default function MessagesIndex() {
                                  )}
                               </div>
                               <div className="shrink-0 text-right">
-                                 {conversation.unread && <span className="inline-block h-2 w-2 rounded-full bg-[#8C2A23]" />}
+                                 {conversation.unread && <span className="inline-block h-2 w-2 rounded-full bg-accent" />}
                                  <p className="mt-1 text-[10px] text-muted-foreground">{formatTime(conversation.last_message_at)}</p>
                               </div>
                            </div>
@@ -716,7 +716,7 @@ export default function MessagesIndex() {
                      <div className="shrink-0 border-b border-border/60 px-4 py-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                            <div>
-                              <p className="font-medium text-[#01123A]">{activeConversation.label}</p>
+                              <p className="font-medium text-primary">{activeConversation.label}</p>
                               <p className="text-xs text-muted-foreground">
                                  {activeConversation.type === 'group'
                                     ? `Class chat · ${activeConversation.course_title ?? 'Course'}`

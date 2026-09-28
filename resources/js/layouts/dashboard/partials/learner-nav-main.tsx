@@ -74,7 +74,7 @@ export function LearnerNavMain() {
                   <Link href={route('messages.index')} prefetch>
                      <MessageCircle className="h-4 w-4" />
                      <span className="text-sm">Messages</span>
-                     <MessagesUnreadBadge className="bg-accent ml-auto" />
+                     <MessagesUnreadBadge className="bg-accent text-primary ml-auto" />
                   </Link>
                </SidebarMenuButton>
             </SidebarMenuItem>

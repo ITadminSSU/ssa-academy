@@ -3,8 +3,16 @@ import { Link } from '@inertiajs/react';
 import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
-export const SheetKicker = ({ label, index }: { label: string; index: string }) => (
-   <p className="ssu-pub-kicker">
+export const SheetKicker = ({
+   label,
+   index,
+   tone = 'muted',
+}: {
+   label: string;
+   index: string;
+   tone?: 'muted' | 'gold';
+}) => (
+   <p className={cn('ssu-pub-kicker', tone === 'gold' && 'ssu-pub-kicker--gold')}>
       <span className="ssu-pub-kicker-line" aria-hidden />
       {label} / {index}
    </p>
@@ -42,7 +50,7 @@ export const GoldCta = ({
 
 export const GhostCta = ({ href, children, className }: { href: string; children: ReactNode; className?: string }) => {
    const classes = cn(
-      'inline-flex items-center gap-2 rounded-[2px] border border-white/25 px-4 py-2.5 font-mono text-[0.6875rem] tracking-[0.16em] text-[#eff2ed] uppercase transition hover:bg-white/10',
+      'ssu-pub-ghost inline-flex items-center gap-2 rounded-[2px] px-4 py-2.5 font-[family-name:var(--ssu-font-display)] text-[0.95rem] tracking-[0.08em] text-white uppercase transition',
       className,
    );
 
@@ -76,8 +84,8 @@ export const PublicPageHero = ({
          <div className="absolute -right-8 top-10 h-[28rem] w-[28rem] rounded-full border border-[color:var(--ssu-gold)]/15" />
       </div>
       <div className="relative container px-4 py-16 md:py-24">
-         <SheetKicker label={kicker} index="SSU" />
-         <h1 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-white md:text-5xl">{title}</h1>
+         <SheetKicker label={kicker} index="SSU" tone="gold" />
+         <h1 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-white md:text-6xl">{title}</h1>
          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">{description}</p>
       </div>
    </section>

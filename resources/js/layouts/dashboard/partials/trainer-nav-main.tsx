@@ -110,7 +110,7 @@ export function TrainerNavMain() {
                            >
                               <Link href={item.path}>
                                  <span className="text-sm">{item.name}</span>
-                                 {item.path === messagesPath ? <MessagesUnreadBadge className="bg-accent ml-auto" /> : null}
+                                 {item.path === messagesPath ? <MessagesUnreadBadge className="bg-accent text-primary ml-auto" /> : null}
                               </Link>
                            </SidebarMenuButton>
                         </SidebarMenuItem>

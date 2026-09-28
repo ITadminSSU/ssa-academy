@@ -230,8 +230,9 @@ class HandleInertiaRequests extends Middleware
         }
 
         $fields = $system->fields;
+        $rawFavicon = $fields['favicon'] ?? null;
 
-        foreach (['logo_dark', 'logo_light', 'favicon', 'banner', 'hero_image', 'og_image'] as $key) {
+        foreach (['logo_dark', 'logo_light', 'banner', 'hero_image', 'og_image'] as $key) {
             if (!empty($fields[$key])) {
                 $fields[$key] = public_asset_url($fields[$key]);
             }
@@ -242,7 +243,7 @@ class HandleInertiaRequests extends Middleware
         $fields['author'] = Branding::resolveAuthor($fields['author'] ?? null);
         $fields['logo_dark'] = Branding::resolveLogo($fields['logo_dark'] ?? null, 'dark');
         $fields['logo_light'] = Branding::resolveLogo($fields['logo_light'] ?? null, 'light');
-        $fields['favicon'] = Branding::versionPublicPath('/favicon.ico');
+        $fields['favicon'] = Branding::resolveFavicon(is_string($rawFavicon) ? $rawFavicon : null);
 
         if (empty($fields['keywords']) || Branding::isLegacyName($fields['keywords'])) {
             $fields['keywords'] = Branding::keywords();

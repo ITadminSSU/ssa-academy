@@ -41,7 +41,7 @@ const InsideAcademy = () => {
          <div className="container space-y-10 px-4">
             <div>
                <SheetKicker label="Inside the Academy" index="IG" />
-               <h2 className="ssu-pub-display mt-5 text-4xl text-[color:var(--ssu-ink)]">{title}</h2>
+               <h2 className="ssu-pub-display mt-5 text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">{title}</h2>
                {tagline ? <p className="mt-3 max-w-2xl text-sm text-[color:var(--ssu-muted)] md:text-base">{tagline}</p> : null}
             </div>
 

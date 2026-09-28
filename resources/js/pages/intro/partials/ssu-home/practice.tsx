@@ -17,8 +17,10 @@ const Practice = () => (
       <div className="container grid items-center gap-12 px-4 lg:grid-cols-2">
          <div>
             <SheetKicker label="Inside the work" index="04" />
-            <h2 className="ssu-pub-display mt-5 text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
-               Not just videos. Build skills you can use.
+            <h2 className="ssu-pub-display mt-5 text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
+               Not just videos.
+               <br />
+               <span className="text-[color:var(--ssu-gold)]">Build skills you can use.</span>
             </h2>
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-[color:var(--ssu-muted)] md:text-base">
                The Academy is built around the documents, tools, and decisions that make construction work move. Explore a plan,

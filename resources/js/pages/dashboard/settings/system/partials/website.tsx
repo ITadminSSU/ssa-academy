@@ -10,6 +10,7 @@ import currencies from '@/data/currencies';
 import { onHandleChange } from '@/lib/inertia';
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import { SystemProps } from '..';
 
 interface MediaFields {
@@ -38,10 +39,35 @@ const Website = () => {
       ...(mediaFields as MediaFields),
    });
 
+   const [pickedFaviconUrl, setPickedFaviconUrl] = useState<string | null>(null);
+   const [faviconFailed, setFaviconFailed] = useState(false);
+
+   useEffect(() => {
+      if (!(data.new_favicon instanceof File)) {
+         setPickedFaviconUrl(null);
+         return;
+      }
+
+      const url = URL.createObjectURL(data.new_favicon);
+      setPickedFaviconUrl(url);
+      setFaviconFailed(false);
+
+      return () => URL.revokeObjectURL(url);
+   }, [data.new_favicon]);
+
+   useEffect(() => {
+      setFaviconFailed(false);
+   }, [data.favicon, pickedFaviconUrl]);
+
+   const faviconSrc = pickedFaviconUrl || data.favicon || null;
+
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
-      post(route('settings.system.update', { id: props.system.id }));
+      post(route('settings.system.update', { id: props.system.id }), {
+         forceFormData: true,
+         preserveScroll: true,
+      });
    };
 
    return (
@@ -246,19 +272,29 @@ const Website = () => {
                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div>
                      <Label>Favicon</Label>
-                     {data.favicon ? (
-                        <div className="border-border/60 mb-3 inline-flex rounded-lg border bg-white p-3">
-                           <img src={data.favicon} alt="Current favicon preview" className="h-12 w-12 object-contain" />
+                     {faviconSrc && !faviconFailed ? (
+                        <div className="border-border/60 mb-3 inline-flex flex-col items-center gap-1 rounded-lg border bg-white p-3">
+                           <img
+                              src={faviconSrc}
+                              alt=""
+                              className="h-12 w-12 object-contain"
+                              onError={() => setFaviconFailed(true)}
+                           />
+                           <span className="text-muted-foreground text-[11px]">
+                              {pickedFaviconUrl ? 'New file — save to apply' : 'Current'}
+                           </span>
                         </div>
                      ) : null}
                      <Input
                         type="file"
                         name="new_favicon"
-                        accept="image/*"
+                        accept="image/png,image/jpeg,image/webp,image/x-icon,.png,.jpg,.jpeg,.webp,.ico"
                         onChange={(e) => onHandleChange(e, setData)}
                         placeholder="Select Favicon"
                      />
-                     <p className="text-muted-foreground mt-2 text-xs">Square SSA icon works best. Recommended size: 512x512 PNG.</p>
+                     <p className="text-muted-foreground mt-2 text-xs">
+                        Square PNG works best (512×512). After you choose a file, click Save at the bottom of this page.
+                     </p>
                      <InputError message={errors.new_favicon} />
                   </div>
 

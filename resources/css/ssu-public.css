@@ -1,6 +1,8 @@
 /*
- * Public marketing face — cream / navy / gold.
+ * Public marketing face — cream / navy / gold, matched to Canva Page 1.
  * Scoped to .ssu-public so dashboard, player, and admin stay on the locked LMS palette.
+ *
+ * Display: Bebas Neue (Anton fallback). Body: Manrope.
  */
 
 .ssu-public-root {
@@ -20,8 +22,8 @@
    --ssu-gold-hover: #f0ac3a;
    --ssu-ink: #162131;
    --ssu-muted: #43576c;
-   --ssu-hero-type: #eff2ed;
-   --ssu-font-display: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+   --ssu-hero-type: #ffffff;
+   --ssu-font-display: 'Bebas Neue', Anton, sans-serif;
    --ssu-font-body: Manrope, 'Source Sans 3', sans-serif;
    --ssu-font-mono: 'DM Mono', ui-monospace, monospace;
 
@@ -53,6 +55,8 @@
 .ssu-public h4,
 .ssu-public .font-display {
    font-family: var(--ssu-font-display);
+   font-weight: 400;
+   letter-spacing: 0.02em;
 }
 
 .ssu-public .ssu-page-shell {
@@ -77,26 +81,34 @@
    display: flex;
    align-items: center;
    gap: 0.75rem;
-   font-family: var(--ssu-font-mono);
+   font-family: var(--ssu-font-body);
    font-size: 0.6875rem;
-   font-weight: 500;
+   font-weight: 600;
    letter-spacing: 0.18em;
    text-transform: uppercase;
-   color: var(--ssu-gold);
+   color: var(--ssu-muted);
 }
 
 .ssu-pub-kicker-line {
    display: inline-block;
    height: 1px;
    width: 1.75rem;
+   background: var(--ssu-line);
+}
+
+.ssu-pub-kicker--gold {
+   color: var(--ssu-gold);
+}
+
+.ssu-pub-kicker--gold .ssu-pub-kicker-line {
    background: var(--ssu-gold);
 }
 
 .ssu-pub-display {
    font-family: var(--ssu-font-display);
-   font-weight: 700;
-   letter-spacing: -0.03em;
-   line-height: 0.95;
+   font-weight: 400;
+   letter-spacing: 0.02em;
+   line-height: 0.88;
    text-transform: uppercase;
 }
 
@@ -111,7 +123,8 @@
 
 .ssu-pub-ghost {
    color: var(--ssu-hero-type);
-   border: 1px solid rgb(239 242 237 / 28%);
+   border: 1px solid rgb(255 255 255 / 22%);
+   background: rgb(12 28 46 / 35%);
 }
 
 .ssu-pub-ghost:hover {
@@ -128,12 +141,12 @@
    border-radius: 2px;
    background: var(--ssu-gold);
    color: var(--ssu-navy);
-   font-family: var(--ssu-font-mono);
-   font-size: 0.6875rem;
-   font-weight: 500;
-   letter-spacing: 0.16em;
+   font-family: var(--ssu-font-display);
+   font-size: 0.95rem;
+   font-weight: 400;
+   letter-spacing: 0.08em;
    text-transform: uppercase;
-   padding: 0.7rem 1rem;
+   padding: 0.8rem 1.2rem;
    transition: background-color 150ms ease, transform 150ms ease;
 }
 
@@ -142,9 +155,9 @@
 }
 
 .ssu-pub-login {
-   font-family: var(--ssu-font-mono);
+   font-family: var(--ssu-font-body);
    font-size: 0.6875rem;
-   font-weight: 500;
+   font-weight: 600;
    letter-spacing: 0.16em;
    text-transform: uppercase;
    color: var(--ssu-muted);
@@ -156,10 +169,10 @@
 }
 
 .ssu-pub-nav-link {
-   font-family: var(--ssu-font-mono);
-   font-size: 0.625rem;
-   font-weight: 500;
-   letter-spacing: 0.16em;
+   font-family: var(--ssu-font-body);
+   font-size: 0.6875rem;
+   font-weight: 600;
+   letter-spacing: 0.14em;
    text-transform: uppercase;
    color: var(--ssu-muted);
    transition: color 150ms ease;

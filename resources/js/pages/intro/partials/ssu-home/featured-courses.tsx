@@ -16,7 +16,7 @@ const PublicCourseCard = ({ course, index }: { course: Course; index: number }) 
    const category = course.course_category?.title || 'Course';
 
    return (
-      <article className="flex flex-col border border-[color:var(--ssu-line)] bg-white">
+      <article className="flex flex-col border border-white/10 bg-[#fffcf7]">
          <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--ssu-paper)]">
             <img
                src={course.thumbnail || '/assets/images/blank-image.jpg'}
@@ -32,7 +32,7 @@ const PublicCourseCard = ({ course, index }: { course: Course; index: number }) 
          </div>
          <div className="flex flex-1 flex-col p-5">
             <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">{category}</p>
-            <h3 className="font-display mt-2 text-xl font-semibold text-[color:var(--ssu-navy)]">{course.title}</h3>
+            <h3 className="ssu-pub-display mt-2 text-2xl text-[color:var(--ssu-navy)]">{course.title}</h3>
             <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-[color:var(--ssu-muted)]">
                {course.short_description || 'Construction-focused training with lessons, plans, and practical assessments.'}
             </p>
@@ -64,19 +64,19 @@ const FeaturedCourses = () => {
    }, [catalog, featured, tab]);
 
    return (
-      <section id="courses" className="bg-[color:var(--ssu-cream)] py-20">
+      <section id="courses" className="bg-[color:var(--ssu-navy)] py-20 text-white">
          <div id="course-list" className="container px-4">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
                <div>
-                  <SheetKicker label="The catalog" index="03" />
-                  <h2 className="ssu-pub-display mt-5 max-w-3xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
+                  <SheetKicker label="The catalog" index="03" tone="gold" />
+                  <h2 className="ssu-pub-display mt-5 max-w-3xl text-[clamp(2.2rem,5vw,4.4rem)] text-white">
                      Learn the skills the industry uses.
                   </h2>
                </div>
                <GoldCta href={route('category.courses', { category: 'all' })}>View all courses</GoldCta>
             </div>
 
-            <div className="mt-10 flex flex-wrap gap-2 border-b border-[color:var(--ssu-line)] pb-px" role="tablist">
+            <div className="mt-10 flex flex-wrap gap-2 border-b border-white/15 pb-px" role="tablist">
                {tabs.map((item) => (
                   <button
                      key={item.id}
@@ -84,10 +84,10 @@ const FeaturedCourses = () => {
                      role="tab"
                      aria-selected={tab === item.id}
                      onClick={() => setTab(item.id)}
-                     className={`font-mono px-3 py-3 text-[11px] tracking-[0.16em] uppercase transition ${
+                     className={`px-3 py-3 text-[11px] font-semibold tracking-[0.16em] uppercase transition ${
                         tab === item.id
-                           ? 'border-b-2 border-[color:var(--ssu-gold)] text-[color:var(--ssu-navy)]'
-                           : 'text-[color:var(--ssu-muted)] hover:text-[color:var(--ssu-navy)]'
+                           ? 'border-b-2 border-[color:var(--ssu-gold)] text-white'
+                           : 'text-white/50 hover:text-white'
                      }`}
                   >
                      {item.label}
@@ -102,8 +102,8 @@ const FeaturedCourses = () => {
                   ))}
                </div>
             ) : (
-               <div className="mt-10 border border-[color:var(--ssu-line)] bg-white p-10 text-center">
-                  <p className="text-sm text-[color:var(--ssu-muted)]">New programs are on the way. Browse the catalog for current courses.</p>
+               <div className="mt-10 border border-white/15 bg-white/5 p-10 text-center">
+                  <p className="text-sm text-white/70">New programs are on the way. Browse the catalog for current courses.</p>
                   <GoldCta href={route('category.courses', { category: 'all' })} className="mt-5">
                      Browse course catalog
                   </GoldCta>

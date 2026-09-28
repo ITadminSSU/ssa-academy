@@ -102,7 +102,17 @@ class SettingController extends Controller
      */
     public function system_update(Request $request, string $id)
     {
-        $this->settingsService->systemUpdate($request->all(), $id);
+        $data = $request->all();
+
+        if ($request->hasFile('new_favicon')) {
+            $data['new_favicon'] = $request->file('new_favicon');
+        }
+
+        if ($request->hasFile('new_banner')) {
+            $data['new_banner'] = $request->file('new_banner');
+        }
+
+        $this->settingsService->systemUpdate($data, $id);
 
         return back()->with('success', 'System settings updated successfully');
     }
