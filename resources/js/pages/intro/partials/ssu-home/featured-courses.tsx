@@ -2,7 +2,9 @@ import { GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
 import { courseTabFor } from '@/lib/ssu-public';
 import { IntroPageProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+
+const FALLBACK_THUMB = '/assets/images/blank-image.svg';
 
 const tabs = [
    { id: 'featured' as const, label: 'Featured' },
@@ -11,24 +13,36 @@ const tabs = [
    { id: 'professional' as const, label: 'Professional development' },
 ];
 
-const PublicCourseCard = ({ course, index }: { course: Course; index: number }) => {
-   const detailsUrl = route('course.details', { slug: course.slug, id: course.id });
-   const category = course.course_category?.title || 'Course';
+const usePrefersReducedMotion = () => {
+   const [reduced, setReduced] = useState(false);
 
-   return (
-      <article className="flex flex-col border border-white/10 bg-[#fffcf7]">
-         <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--ssu-paper)]">
+   useEffect(() => {
+      const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const sync = () => setReduced(media.matches);
+      sync();
+      media.addEventListener('change', sync);
+
+      return () => media.removeEventListener('change', sync);
+   }, []);
+
+   return reduced;
+};
+
+const PublicCourseCard = ({ course, echo = false }: { course: Course; echo?: boolean }) => {
+   const detailsUrl = route('course.details', { slug: course.slug, id: course.id });
+   const category = course.course_category?.title || 'Estimating';
+
+   const body = (
+      <>
+         <div className="aspect-[16/10] overflow-hidden bg-[color:var(--ssu-paper)]">
             <img
-               src={course.thumbnail || '/assets/images/blank-image.jpg'}
-               alt={course.title}
+               src={course.thumbnail || FALLBACK_THUMB}
+               alt={echo ? '' : course.title}
                className="h-full w-full object-cover"
                onError={(event) => {
-                  (event.target as HTMLImageElement).src = '/assets/images/blank-image.jpg';
+                  (event.target as HTMLImageElement).src = FALLBACK_THUMB;
                }}
             />
-            <span className="absolute top-3 left-3 font-mono text-[10px] tracking-[0.16em] text-white uppercase">
-               {String(index + 1).padStart(2, '0')}
-            </span>
          </div>
          <div className="flex flex-1 flex-col p-5">
             <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">{category}</p>
@@ -36,15 +50,27 @@ const PublicCourseCard = ({ course, index }: { course: Course; index: number }) 
             <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-[color:var(--ssu-muted)]">
                {course.short_description || 'Construction-focused training with lessons, plans, and practical assessments.'}
             </p>
-            <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-[color:var(--ssu-muted)] uppercase">
-               {course.level ? `${course.level} · ` : ''}
+            <p className="mt-4 font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-muted)] uppercase">Software</p>
+            <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-[color:var(--ssu-muted)] uppercase">
                Credential details on the course page
             </p>
-            <Link href={detailsUrl} className="ssu-pub-cta mt-5 self-start">
-               View course
-            </Link>
+            <span className="ssu-pub-cta mt-5 self-start">View course</span>
          </div>
-      </article>
+      </>
+   );
+
+   if (echo) {
+      return (
+         <div className="ssu-catalog-card" aria-hidden>
+            {body}
+         </div>
+      );
+   }
+
+   return (
+      <Link href={detailsUrl} className="ssu-catalog-card">
+         {body}
+      </Link>
    );
 };
 
@@ -53,6 +79,7 @@ const FeaturedCourses = () => {
    const featured = props.topCourses ?? [];
    const catalog = props.catalogCourses ?? featured;
    const [tab, setTab] = useState<(typeof tabs)[number]['id']>('featured');
+   const prefersReducedMotion = usePrefersReducedMotion();
 
    const visible = useMemo(() => {
       if (tab === 'featured') {
@@ -60,17 +87,23 @@ const FeaturedCourses = () => {
       }
 
       const filtered = catalog.filter((course) => courseTabFor(course) === tab);
+
       return filtered.length ? filtered : catalog;
    }, [catalog, featured, tab]);
 
+   const useMarquee = visible.length >= 3 && !prefersReducedMotion;
+   const marqueeSeconds = Math.max(28, visible.length * 9);
+
    return (
-      <section id="courses" className="bg-[color:var(--ssu-navy)] py-20 text-white">
+      <section id="courses" className="overflow-hidden bg-[color:var(--ssu-navy)] py-20 text-white">
          <div id="course-list" className="container px-4">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
                <div>
                   <SheetKicker label="The catalog" index="03" tone="gold" />
                   <h2 className="ssu-pub-display mt-5 max-w-3xl text-[clamp(2.2rem,5vw,4.4rem)] text-white">
-                     Learn the skills the industry uses.
+                     Learn the skills the industry
+                     <br />
+                     uses.
                   </h2>
                </div>
                <GoldCta href={route('category.courses', { category: 'all' })}>View all courses</GoldCta>
@@ -94,22 +127,46 @@ const FeaturedCourses = () => {
                   </button>
                ))}
             </div>
+         </div>
 
-            {visible.length > 0 ? (
-               <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                  {visible.map((course, index) => (
-                     <PublicCourseCard key={course.id} course={course} index={index} />
-                  ))}
+         {visible.length > 0 ? (
+            useMarquee ? (
+               <div className="ssu-catalog-marquee mt-8">
+                  <div
+                     className="ssu-catalog-marquee__track"
+                     style={{ '--ssu-marquee-duration': `${marqueeSeconds}s` } as CSSProperties}
+                  >
+                     <div className="ssu-catalog-marquee__set">
+                        {visible.map((course) => (
+                           <PublicCourseCard key={course.id} course={course} />
+                        ))}
+                     </div>
+                     <div className="ssu-catalog-marquee__set" aria-hidden>
+                        {visible.map((course) => (
+                           <PublicCourseCard key={`${course.id}-echo`} course={course} echo />
+                        ))}
+                     </div>
+                  </div>
                </div>
             ) : (
+               <div className="container px-4">
+                  <div className="ssu-catalog-grid mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                     {visible.map((course) => (
+                        <PublicCourseCard key={course.id} course={course} />
+                     ))}
+                  </div>
+               </div>
+            )
+         ) : (
+            <div className="container px-4">
                <div className="mt-10 border border-white/15 bg-white/5 p-10 text-center">
                   <p className="text-sm text-white/70">New programs are on the way. Browse the catalog for current courses.</p>
                   <GoldCta href={route('category.courses', { category: 'all' })} className="mt-5">
                      Browse course catalog
                   </GoldCta>
                </div>
-            )}
-         </div>
+            </div>
+         )}
       </section>
    );
 };

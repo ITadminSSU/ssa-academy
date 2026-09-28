@@ -8,7 +8,7 @@ import FieldNote from './partials/ssu-home/field-note';
 import Hero from './partials/ssu-home/hero';
 import InsideAcademy from './partials/ssu-home/inside-academy';
 import LandingOverlay from './partials/ssu-home/landing-overlay';
-import { Credential, HomeFaqs, Instructors, Roadmap, Sequence, Stats, Tools, Why, Workflow } from './partials/ssu-home/more-sections';
+import { Credential, Ecosystem, HomeFaqs, Instructors, Roadmap, Sequence, Stats, Tools, Why, Workflow } from './partials/ssu-home/more-sections';
 import Practice from './partials/ssu-home/practice';
 
 const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps) => {
@@ -31,6 +31,7 @@ const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps
             <Credential />
             <Roadmap />
             <Why />
+            <Ecosystem />
             <Stats />
             <Instructors />
             <HomeFaqs />
