@@ -59,19 +59,19 @@ const Hero = () => {
                   </div>
                </div>
 
-               <div className="relative">
+               <div className="relative px-2 py-6 lg:px-4 lg:py-10">
                   <span
-                     className="absolute -bottom-2 -left-3 z-10 text-2xl leading-none text-[color:var(--ssu-gold)]"
+                     className="absolute bottom-4 left-0 z-10 text-2xl leading-none text-[color:var(--ssu-gold)]"
                      aria-hidden
                   >
                      +
                   </span>
                   {videoUrl ? (
-                     <div className="origin-center rotate-1 overflow-hidden bg-black/30 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-                        <HeroVideoPlayer videoUrl={videoUrl} posterUrl={posterUrl} className="aspect-video h-full w-full rounded-none border-0" />
+                     <div className="ssu-hero-media">
+                        <HeroVideoPlayer videoUrl={videoUrl} posterUrl={posterUrl} className="h-full w-full rounded-none border-0" />
                      </div>
                   ) : (
-                     <SamplePlan className="min-h-[280px] rotate-1" />
+                     <SamplePlan className="ssu-hero-media min-h-[220px] border-0" />
                   )}
                </div>
             </div>

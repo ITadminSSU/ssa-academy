@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
-import { VolumeX } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import Plyr, { APITypes } from 'plyr-react';
 import 'plyr-react/plyr.css';
@@ -239,14 +239,11 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
                type="button"
                onPointerUp={startWithSound}
                onClick={startWithSound}
-               className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/40 transition hover:bg-black/50"
-               aria-label="Tap for sound"
+               className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 transition hover:bg-black/35"
+               aria-label="Play welcome video"
             >
-               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#0a1d37] shadow-lg sm:h-20 sm:w-20">
-                  <VolumeX className="h-7 w-7 sm:h-8 sm:w-8" />
-               </span>
-               <span className="rounded-full bg-black/65 px-4 py-2 text-sm font-semibold tracking-wide text-white sm:px-5 sm:py-2.5 sm:text-base">
-                  Tap for sound
+               <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-black/55 text-white shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:h-20 sm:w-20">
+                  <Play className="ml-1 h-8 w-8 fill-white sm:h-9 sm:w-9" />
                </span>
             </button>
          )}
