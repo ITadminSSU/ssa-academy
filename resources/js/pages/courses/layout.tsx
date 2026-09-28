@@ -48,6 +48,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
             <div className="container space-y-6 py-8">
                <CourseCatalogToolbar
                   variant="hero"
+                  kicker="The catalog"
                   title={pageTitle}
                   description={pageDescription}
                   viewType={viewType}

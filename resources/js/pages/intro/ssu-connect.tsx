@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { GoldCta, PublicPageHero } from '@/components/ssu-public/chrome';
 import LandingLayout from '@/layouts/landing-layout';
 import { IntroPageProps } from '@/types/page';
 import { Head } from '@inertiajs/react';
@@ -29,34 +29,13 @@ const SsuConnect = ({ system, facebookAcademyUrl, facebookVaUrl }: Props) => {
          <Head title={`Connect with us | ${system.fields.name}`} />
 
          <div className="ssu-page-shell">
-            <section className="relative overflow-hidden bg-primary text-white">
-               <div className="absolute inset-0" aria-hidden>
-                  <div
-                     className="absolute inset-0 bg-cover bg-center"
-                     style={{
-                        backgroundImage: `linear-gradient(90deg, rgba(1,18,58,0.88) 0%, rgba(1,18,58,0.72) 45%, rgba(1,18,58,0.82) 100%), url('/assets/images/ssu-about/about-hero.png')`,
-                     }}
-                  />
-                  <div
-                     className="absolute inset-0 opacity-[0.15]"
-                     style={{
-                        backgroundImage:
-                           'linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px)',
-                        backgroundSize: '40px 40px',
-                     }}
-                  />
-               </div>
+            <PublicPageHero
+               kicker="Resources"
+               title="Connect with us"
+               description="Join the SSA Facebook Community — exclusive groups for enrolled Academy students and construction professionals."
+            />
 
-               <div className="relative container flex min-h-[280px] flex-col items-center justify-center px-4 py-16 text-center md:min-h-[340px] md:py-24">
-                  <h1 className="font-display text-3xl font-bold tracking-wide uppercase sm:text-4xl md:text-5xl">Connect with us</h1>
-                  <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/85 sm:text-base md:text-lg">
-                     Join the SSA Facebook Community — exclusive groups for enrolled Academy students and construction
-                     professionals.
-                  </p>
-               </div>
-            </section>
-
-            <section className="bg-[#eef3f8] py-10 md:py-16">
+            <section className="bg-[#f3f1ea] py-10 md:py-16">
                <div className="container px-4">
                   <div className="relative mx-auto max-w-6xl">
                      <img
@@ -81,16 +60,17 @@ const SsuConnect = ({ system, facebookAcademyUrl, facebookVaUrl }: Props) => {
                   </div>
 
                   <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-center gap-3 sm:flex-row">
-                     <Button asChild className="rounded-full px-6">
-                        <a href={academyUrl} target="_blank" rel="noopener noreferrer">
-                           Join SmartSourcing USA Academy
-                        </a>
-                     </Button>
-                     <Button asChild variant="outline" className="rounded-full px-6">
-                        <a href={vaUrl} target="_blank" rel="noopener noreferrer">
-                           Join Construction VA Academy
-                        </a>
-                     </Button>
+                     <GoldCta href={academyUrl} external>
+                        Join SmartSourcing USA Academy
+                     </GoldCta>
+                     <a
+                        href={vaUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center rounded-[2px] border border-[color:var(--ssu-navy)] px-4 py-2.5 font-mono text-[0.6875rem] tracking-[0.16em] text-[color:var(--ssu-navy)] uppercase"
+                     >
+                        Join Construction VA Academy
+                     </a>
                   </div>
 
                   <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-2">

@@ -1,0 +1,219 @@
+/*
+ * Public marketing face — cream / navy / gold.
+ * Scoped to .ssu-public so dashboard, player, and admin stay on the locked LMS palette.
+ */
+
+.ssu-public-root {
+   background-color: #f8f6f1;
+   scroll-behavior: smooth;
+   scroll-padding-top: 5.5rem;
+}
+
+.ssu-public {
+   --ssu-cream: #f8f6f1;
+   --ssu-cream-nav: #f5f2eb;
+   --ssu-paper: #efece4;
+   --ssu-line: #d5d0c4;
+   --ssu-navy: #1a344f;
+   --ssu-navy-deep: #14283d;
+   --ssu-gold: #e89a1b;
+   --ssu-gold-hover: #f0ac3a;
+   --ssu-ink: #162131;
+   --ssu-muted: #43576c;
+   --ssu-hero-type: #eff2ed;
+   --ssu-font-display: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+   --ssu-font-body: Manrope, 'Source Sans 3', sans-serif;
+   --ssu-font-mono: 'DM Mono', ui-monospace, monospace;
+
+   --background: var(--ssu-cream);
+   --foreground: var(--ssu-ink);
+   --card: #fffcf7;
+   --card-foreground: var(--ssu-ink);
+   --primary: var(--ssu-navy);
+   --primary-dark: var(--ssu-navy-deep);
+   --primary-light: #244a6b;
+   --primary-foreground: #ffffff;
+   --accent: var(--ssu-gold);
+   --accent-foreground: var(--ssu-navy);
+   --muted: var(--ssu-paper);
+   --muted-foreground: var(--ssu-muted);
+   --border: var(--ssu-line);
+   --input: var(--ssu-line);
+   --brand-grey: var(--ssu-cream);
+   --font-display: var(--ssu-font-display);
+
+   background-color: var(--ssu-cream);
+   color: var(--ssu-ink);
+   font-family: var(--ssu-font-body);
+}
+
+.ssu-public h1,
+.ssu-public h2,
+.ssu-public h3,
+.ssu-public h4,
+.ssu-public .font-display {
+   font-family: var(--ssu-font-display);
+}
+
+.ssu-public .ssu-page-shell {
+   background-color: var(--ssu-cream);
+}
+
+.ssu-public .ssu-nav-shell {
+   background: rgb(245 242 235 / 92%);
+   backdrop-filter: blur(16px);
+   border-bottom: 1px solid rgb(26 52 79 / 8%);
+}
+
+.ssu-public .ssu-nav-shell--sticky {
+   box-shadow: 0 8px 24px rgb(22 33 49 / 6%);
+}
+
+.ssu-public .ssu-nav-accent {
+   display: none;
+}
+
+.ssu-pub-kicker {
+   display: flex;
+   align-items: center;
+   gap: 0.75rem;
+   font-family: var(--ssu-font-mono);
+   font-size: 0.6875rem;
+   font-weight: 500;
+   letter-spacing: 0.18em;
+   text-transform: uppercase;
+   color: var(--ssu-gold);
+}
+
+.ssu-pub-kicker-line {
+   display: inline-block;
+   height: 1px;
+   width: 1.75rem;
+   background: var(--ssu-gold);
+}
+
+.ssu-pub-display {
+   font-family: var(--ssu-font-display);
+   font-weight: 700;
+   letter-spacing: -0.03em;
+   line-height: 0.95;
+   text-transform: uppercase;
+}
+
+.ssu-pub-gold {
+   background: var(--ssu-gold);
+   color: var(--ssu-navy);
+}
+
+.ssu-pub-gold:hover {
+   background: var(--ssu-gold-hover);
+}
+
+.ssu-pub-ghost {
+   color: var(--ssu-hero-type);
+   border: 1px solid rgb(239 242 237 / 28%);
+}
+
+.ssu-pub-ghost:hover {
+   background: rgb(255 255 255 / 8%);
+}
+
+.ssu-pub-cta,
+.ssu-public a.ssu-pub-cta,
+.ssu-public button.ssu-pub-cta {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 0.5rem;
+   border-radius: 2px;
+   background: var(--ssu-gold);
+   color: var(--ssu-navy);
+   font-family: var(--ssu-font-mono);
+   font-size: 0.6875rem;
+   font-weight: 500;
+   letter-spacing: 0.16em;
+   text-transform: uppercase;
+   padding: 0.7rem 1rem;
+   transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.ssu-pub-cta:hover {
+   background: var(--ssu-gold-hover);
+}
+
+.ssu-pub-login {
+   font-family: var(--ssu-font-mono);
+   font-size: 0.6875rem;
+   font-weight: 500;
+   letter-spacing: 0.16em;
+   text-transform: uppercase;
+   color: var(--ssu-muted);
+   transition: color 150ms ease;
+}
+
+.ssu-pub-login:hover {
+   color: var(--ssu-navy);
+}
+
+.ssu-pub-nav-link {
+   font-family: var(--ssu-font-mono);
+   font-size: 0.625rem;
+   font-weight: 500;
+   letter-spacing: 0.16em;
+   text-transform: uppercase;
+   color: var(--ssu-muted);
+   transition: color 150ms ease;
+}
+
+.ssu-pub-nav-link:hover,
+.ssu-pub-nav-link.is-active {
+   color: var(--ssu-navy);
+}
+
+.ssu-pub-backtop {
+   position: fixed;
+   right: 1.25rem;
+   bottom: 1.25rem;
+   z-index: 40;
+   display: inline-flex;
+   height: 2.75rem;
+   width: 2.75rem;
+   align-items: center;
+   justify-content: center;
+   border-radius: 9999px;
+   background: var(--ssu-navy);
+   color: var(--ssu-cream);
+   box-shadow: 0 10px 24px rgb(22 33 49 / 22%);
+   transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.ssu-pub-backtop:hover {
+   background: var(--ssu-navy-deep);
+   transform: translateY(-2px);
+}
+
+.ssu-public .ssu-catalog-hero {
+   background: var(--ssu-navy);
+   color: var(--ssu-hero-type);
+   border-color: transparent;
+   border-radius: 0;
+}
+
+.ssu-public .ssu-auth-hero {
+   background: var(--ssu-navy);
+}
+
+.ssu-public .ssu-auth-panel {
+   background: #fffcf7;
+   border-color: var(--ssu-line);
+}
+
+.ssu-public .ssu-course-card {
+   background: #fffcf7;
+   border-color: var(--ssu-line);
+}
+
+.ssu-public .ssu-surface-card {
+   background: #fffcf7;
+   border-color: var(--ssu-line);
+}

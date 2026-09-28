@@ -1,121 +1,112 @@
-import CourseCard1 from '@/components/cards/course-card-1';
-import { Button } from '@/components/ui/button';
-import { Carousel, type CarouselApi, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { getPageSection } from '@/lib/page';
-import { cn } from '@/lib/utils';
+import { GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
+import { courseTabFor } from '@/lib/ssu-public';
 import { IntroPageProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
-import Autoplay from 'embla-carousel-autoplay';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+
+const tabs = [
+   { id: 'featured' as const, label: 'Featured' },
+   { id: 'trade' as const, label: 'Trade estimating' },
+   { id: 'software' as const, label: 'Software training' },
+   { id: 'professional' as const, label: 'Professional development' },
+];
+
+const PublicCourseCard = ({ course, index }: { course: Course; index: number }) => {
+   const detailsUrl = route('course.details', { slug: course.slug, id: course.id });
+   const category = course.course_category?.title || 'Course';
+
+   return (
+      <article className="flex flex-col border border-[color:var(--ssu-line)] bg-white">
+         <div className="relative aspect-[16/10] overflow-hidden bg-[color:var(--ssu-paper)]">
+            <img
+               src={course.thumbnail || '/assets/images/blank-image.jpg'}
+               alt={course.title}
+               className="h-full w-full object-cover"
+               onError={(event) => {
+                  (event.target as HTMLImageElement).src = '/assets/images/blank-image.jpg';
+               }}
+            />
+            <span className="absolute top-3 left-3 font-mono text-[10px] tracking-[0.16em] text-white uppercase">
+               {String(index + 1).padStart(2, '0')}
+            </span>
+         </div>
+         <div className="flex flex-1 flex-col p-5">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">{category}</p>
+            <h3 className="font-display mt-2 text-xl font-semibold text-[color:var(--ssu-navy)]">{course.title}</h3>
+            <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-[color:var(--ssu-muted)]">
+               {course.short_description || 'Construction-focused training with lessons, plans, and practical assessments.'}
+            </p>
+            <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-[color:var(--ssu-muted)] uppercase">
+               {course.level ? `${course.level} · ` : ''}
+               Credential details on the course page
+            </p>
+            <Link href={detailsUrl} className="ssu-pub-cta mt-5 self-start">
+               View course
+            </Link>
+         </div>
+      </article>
+   );
+};
 
 const FeaturedCourses = () => {
    const { props } = usePage<IntroPageProps>();
-   const coursesSection = props.page?.sections ? getPageSection(props.page, 'top_courses') : undefined;
-   const { topCourses } = props;
-   const courses = topCourses ?? [];
-   const [api, setApi] = useState<CarouselApi>();
-   const [currentSlide, setCurrentSlide] = useState(0);
-   const autoplay = useRef(Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true }));
-   const heading = coursesSection?.title?.trim() || 'START LEARNING TODAY';
-   const tagline =
-      coursesSection?.description?.trim() ||
-      'Explore assigned and open-enrollment courses curated for SMARTSOURCING USA teams and partners.';
+   const featured = props.topCourses ?? [];
+   const catalog = props.catalogCourses ?? featured;
+   const [tab, setTab] = useState<(typeof tabs)[number]['id']>('featured');
 
-   useEffect(() => {
-      if (!api) {
-         return;
+   const visible = useMemo(() => {
+      if (tab === 'featured') {
+         return featured.length ? featured : catalog.slice(0, 6);
       }
 
-      const handleSelect = () => {
-         setCurrentSlide(api.selectedScrollSnap());
-      };
-
-      api.on('select', handleSelect);
-
-      return () => {
-         api.off('select', handleSelect);
-      };
-   }, [api]);
+      const filtered = catalog.filter((course) => courseTabFor(course) === tab);
+      return filtered.length ? filtered : catalog;
+   }, [catalog, featured, tab]);
 
    return (
-      <section className="border-border/60 border-y bg-[color:var(--brand-grey)] py-20 dark:bg-muted/20">
-         <div className="container space-y-10 px-4">
-            <div className="mx-auto max-w-4xl space-y-3 text-center">
-               <div className="flex items-center justify-center gap-4 md:gap-6">
-                  <span className="bg-primary h-[3px] w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
-                  <h2 className="font-display text-primary text-2xl font-bold tracking-tight uppercase md:text-3xl">{heading}</h2>
-                  <span className="bg-primary h-[3px] w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
+      <section id="courses" className="bg-[color:var(--ssu-cream)] py-20">
+         <div id="course-list" className="container px-4">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+               <div>
+                  <SheetKicker label="The catalog" index="03" />
+                  <h2 className="ssu-pub-display mt-5 max-w-3xl text-4xl text-[color:var(--ssu-ink)] md:text-5xl">
+                     Learn the skills the industry uses.
+                  </h2>
                </div>
-               {tagline ? <p className="text-primary text-base md:text-lg">{tagline}</p> : null}
+               <GoldCta href={route('category.courses', { category: 'all' })}>View all courses</GoldCta>
             </div>
 
-            {courses.length > 0 ? (
-               <div className="space-y-6">
-                  <Carousel
-                     setApi={setApi}
-                     opts={{ align: 'start', loop: courses.length > 1, skipSnaps: false }}
-                     plugins={courses.length > 1 ? [autoplay.current] : []}
-                     className="relative"
+            <div className="mt-10 flex flex-wrap gap-2 border-b border-[color:var(--ssu-line)] pb-px" role="tablist">
+               {tabs.map((item) => (
+                  <button
+                     key={item.id}
+                     type="button"
+                     role="tab"
+                     aria-selected={tab === item.id}
+                     onClick={() => setTab(item.id)}
+                     className={`font-mono px-3 py-3 text-[11px] tracking-[0.16em] uppercase transition ${
+                        tab === item.id
+                           ? 'border-b-2 border-[color:var(--ssu-gold)] text-[color:var(--ssu-navy)]'
+                           : 'text-[color:var(--ssu-muted)] hover:text-[color:var(--ssu-navy)]'
+                     }`}
                   >
-                     <CarouselContent className="-ml-4 items-stretch">
-                        {courses.map((course) => (
-                           <CarouselItem key={course.id} className="flex basis-full pl-4 sm:basis-1/2 lg:basis-1/3">
-                              <CourseCard1 course={course} className="h-full w-full" />
-                           </CarouselItem>
-                        ))}
-                     </CarouselContent>
-                  </Carousel>
+                     {item.label}
+                  </button>
+               ))}
+            </div>
 
-                  {courses.length > 1 ? (
-                     <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                           {courses.map(({ id }, index) => (
-                              <button
-                                 key={id}
-                                 type="button"
-                                 aria-label={`Go to slide ${index + 1}`}
-                                 className={cn(
-                                    'rounded-full transition-all duration-200',
-                                    currentSlide === index ? 'bg-primary h-2 w-6' : 'bg-muted-foreground/30 h-2 w-2',
-                                 )}
-                                 onClick={() => api?.scrollTo(index)}
-                              />
-                           ))}
-                        </div>
-
-                        <div className="flex gap-2">
-                           <Button
-                              size="icon"
-                              variant="outline"
-                              className="rounded-full"
-                              disabled={!api?.canScrollPrev()}
-                              onClick={() => api?.scrollPrev()}
-                           >
-                              <ChevronLeft className="h-4 w-4" />
-                           </Button>
-                           <Button
-                              size="icon"
-                              variant="outline"
-                              className="rounded-full"
-                              disabled={!api?.canScrollNext()}
-                              onClick={() => api?.scrollNext()}
-                           >
-                              <ChevronRight className="h-4 w-4" />
-                           </Button>
-                        </div>
-                     </div>
-                  ) : null}
+            {visible.length > 0 ? (
+               <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {visible.map((course, index) => (
+                     <PublicCourseCard key={course.id} course={course} index={index} />
+                  ))}
                </div>
             ) : (
-               <div className="ssu-surface-card flex flex-col items-center gap-4 p-10 text-center">
-                  <p className="text-muted-foreground max-w-lg text-sm md:text-base">
-                     New programs are on the way. Browse the catalog for upcoming courses or sign up to get notified when they
-                     launch.
-                  </p>
-                  <Button asChild className="rounded-full">
-                     <Link href={route('category.courses', { category: 'all' })}>Browse course catalog</Link>
-                  </Button>
+               <div className="mt-10 border border-[color:var(--ssu-line)] bg-white p-10 text-center">
+                  <p className="text-sm text-[color:var(--ssu-muted)]">New programs are on the way. Browse the catalog for current courses.</p>
+                  <GoldCta href={route('category.courses', { category: 'all' })} className="mt-5">
+                     Browse course catalog
+                  </GoldCta>
                </div>
             )}
          </div>

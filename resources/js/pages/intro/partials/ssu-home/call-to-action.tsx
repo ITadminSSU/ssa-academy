@@ -1,79 +1,22 @@
-import { Button } from '@/components/ui/button';
+import { GhostCta, GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
 
-import { getPageSection } from '@/lib/page';
-
-import { IntroPageProps } from '@/types/page';
-
-import { Link, usePage } from '@inertiajs/react';
-
-
-
-const CallToAction = () => {
-
-   const { props } = usePage<IntroPageProps>();
-
-   const ctaSection = getPageSection(props.page, 'call_to_action');
-
-
-
-   const rawKicker = ctaSection?.sub_title || 'Join SMARTSOURCING USA ACADEMY Today';
-   const kicker = rawKicker.replace(/SSU\s+ACADEMY/gi, 'SMARTSOURCING USA ACADEMY');
-
-   const title = ctaSection?.title || 'Ready to start learning?';
-
-   const description =
-
-      ctaSection?.description || 'Create your free account, explore the catalog, and start your next course today.';
-
-   const buttonText = ctaSection?.properties?.button_text || 'Get Started';
-
-   const buttonLink = ctaSection?.properties?.button_link || route('register');
-
-
-
-   return (
-
-      <section className="py-20">
-
-         <div className="container px-4">
-
-            <div className="border-accent relative overflow-hidden rounded-2xl border-2 bg-primary px-6 py-14 text-center text-white md:px-12">
-
-               <div className="bg-accent/25 pointer-events-none absolute -top-10 right-0 h-40 w-40 rounded-full blur-3xl" />
-
-               <div className="pointer-events-none absolute bottom-0 left-0 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-
-
-
-               <div className="relative mx-auto max-w-2xl space-y-5">
-
-                  <p className="ssu-kicker !text-white/70">{kicker}</p>
-
-                  <h2 className="font-display text-2xl font-bold md:text-3xl">{title}</h2>
-
-                  <p className="text-white/80">{description}</p>
-
-
-
-                  <Button asChild size="lg" className="mt-4 rounded-full px-10">
-
-                     <Link href={buttonLink}>{buttonText}</Link>
-
-                  </Button>
-
-               </div>
-
-            </div>
-
+const CallToAction = () => (
+   <section className="bg-[color:var(--ssu-navy)] py-20 text-white">
+      <div className="container px-4">
+         <SheetKicker label="Next sheet" index="15" />
+         <h2 className="ssu-pub-display mt-5 max-w-4xl text-4xl md:text-5xl">
+            Your experience is the foundation. Build what&apos;s next.
+         </h2>
+         <p className="mt-6 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
+            Keep learning. Strengthen your skills. Become more familiar with U.S. construction workflows and prepare for new
+            professional opportunities.
+         </p>
+         <div className="mt-8 flex flex-wrap gap-3">
+            <GoldCta href={route('category.courses', { category: 'all' })}>Explore courses</GoldCta>
+            <GhostCta href={route('register')}>Create your free account</GhostCta>
          </div>
-
-      </section>
-
-   );
-
-};
-
-
+      </div>
+   </section>
+);
 
 export default CallToAction;
-

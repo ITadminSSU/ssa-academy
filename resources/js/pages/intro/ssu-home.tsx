@@ -1,13 +1,15 @@
 import LandingLayout from '@/layouts/landing-layout';
 import { IntroPageProps } from '@/types/page';
 import { Head } from '@inertiajs/react';
+import Audience from './partials/ssu-home/audience';
 import CallToAction from './partials/ssu-home/call-to-action';
 import FeaturedCourses from './partials/ssu-home/featured-courses';
-import Gap from './partials/ssu-home/gap';
+import FieldNote from './partials/ssu-home/field-note';
 import Hero from './partials/ssu-home/hero';
 import InsideAcademy from './partials/ssu-home/inside-academy';
 import LandingOverlay from './partials/ssu-home/landing-overlay';
-import Pillars from './partials/ssu-home/pillars';
+import { Credential, HomeFaqs, Instructors, Roadmap, Sequence, Stats, Tools, Why, Workflow } from './partials/ssu-home/more-sections';
+import Practice from './partials/ssu-home/practice';
 
 const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps) => {
    return (
@@ -18,10 +20,20 @@ const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps
 
          <div className="ssu-page-shell">
             <Hero />
-            <Gap />
-            <Pillars />
+            <FieldNote />
+            <Audience />
             <InsideAcademy />
             <FeaturedCourses />
+            <Practice />
+            <Workflow />
+            <Tools />
+            <Sequence />
+            <Credential />
+            <Roadmap />
+            <Why />
+            <Stats />
+            <Instructors />
+            <HomeFaqs />
             <CallToAction />
          </div>
       </LandingLayout>

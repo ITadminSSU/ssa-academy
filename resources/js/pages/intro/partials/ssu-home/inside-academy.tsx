@@ -1,10 +1,8 @@
+import { SheetKicker } from '@/components/ssu-public/chrome';
 import { getPageSection, getPropertyArray } from '@/lib/page';
 import { IntroPageProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
-
-const defaultTitle = 'INSIDE THE ACADEMY';
-const defaultTagline = 'Explore the Learning, Stories, and Opportunities Within';
 
 const hrefFor = (link: string): string => {
    const trimmed = link.trim();
@@ -35,19 +33,16 @@ const InsideAcademy = () => {
       return null;
    }
 
-   const title = section?.title?.trim() || defaultTitle;
-   const tagline = section?.sub_title?.trim() || defaultTagline;
+   const title = section?.title?.trim() || 'Inside the Academy';
+   const tagline = section?.sub_title?.trim() || 'Explore the learning, stories, and opportunities within.';
 
    return (
-      <section className="py-16 md:py-20">
+      <section className="bg-[color:var(--ssu-cream)] py-16 md:py-20">
          <div className="container space-y-10 px-4">
-            <div className="mx-auto max-w-4xl space-y-3 text-center">
-               <div className="flex items-center justify-center gap-4 md:gap-6">
-                  <span className="bg-primary h-[3px] w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
-                  <h2 className="font-display text-primary text-2xl font-bold tracking-tight md:text-3xl">{title}</h2>
-                  <span className="bg-primary h-[3px] w-10 shrink-0 sm:w-16 md:w-24" aria-hidden />
-               </div>
-               {tagline ? <p className="text-primary text-base italic md:text-lg">{tagline}</p> : null}
+            <div>
+               <SheetKicker label="Inside the Academy" index="IG" />
+               <h2 className="ssu-pub-display mt-5 text-4xl text-[color:var(--ssu-ink)]">{title}</h2>
+               {tagline ? <p className="mt-3 max-w-2xl text-sm text-[color:var(--ssu-muted)] md:text-base">{tagline}</p> : null}
             </div>
 
             <div className="grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4">
@@ -55,12 +50,11 @@ const InsideAcademy = () => {
                   const image = String(post.image ?? '').trim();
                   const href = hrefFor(String(post.link ?? ''));
                   const views = formatViews(String(post.views ?? ''));
-                  const cardClassName =
-                     'ssu-surface-card group relative block overflow-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none';
+                  const cardClassName = 'group relative block overflow-hidden border border-[color:var(--ssu-line)] bg-white';
 
                   const card = (
                      <>
-                        <div className="aspect-[3/4] overflow-hidden bg-muted">
+                        <div className="aspect-[3/4] overflow-hidden bg-[color:var(--ssu-paper)]">
                            <img
                               src={image}
                               alt={views ? `Academy Instagram post, ${views} views` : 'Academy Instagram post'}
@@ -78,24 +72,14 @@ const InsideAcademy = () => {
                      </>
                   );
 
-                  if (!href) {
-                     return (
-                        <div key={`${image}-${index}`} className={cardClassName}>
-                           {card}
-                        </div>
-                     );
-                  }
-
-                  return (
-                     <a
-                        key={`${href}-${index}`}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cardClassName}
-                     >
+                  return href ? (
+                     <a key={`${image}-${index}`} href={href} target="_blank" rel="noopener noreferrer" className={cardClassName}>
                         {card}
                      </a>
+                  ) : (
+                     <div key={`${image}-${index}`} className={cardClassName}>
+                        {card}
+                     </div>
                   );
                })}
             </div>

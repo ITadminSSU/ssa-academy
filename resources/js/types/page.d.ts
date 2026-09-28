@@ -43,6 +43,13 @@ export interface IntroPageProps extends SharedData {
    blogs: Blog[];
    landingOverlay?: LandingOverlayPublic | null;
    landingOverlayForce?: boolean;
+   catalogCourses?: Course[];
+   teamMembers?: Array<{
+      id: number;
+      name: string;
+      role: string;
+      photo: string | null;
+   }>;
 }
 
 // pages/student/index

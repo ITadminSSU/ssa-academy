@@ -162,7 +162,7 @@
       href="https://fonts.bunny.net"
    >
    <link
-      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700|barlow:400,500,600,700,800"
+      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700|barlow:400,500,600,700,800|space-grotesk:500,600,700|manrope:400,500,600,700|dm-mono:400,500"
       rel="stylesheet"
    />
 

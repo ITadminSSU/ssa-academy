@@ -72,6 +72,10 @@ class PageService extends PageSectionService
          $sections['topCourses'] = $this->getFeaturedCatalogCourses();
       }
 
+      $sections['catalogCourses'] = $page->slug === 'ssu-home'
+         ? $this->getFeaturedCatalogCourses(24)
+         : collect();
+
       $sections['topCategories'] = $this->getTopCategories($idCollection['top_categories']);
       $sections['blogs'] = $this->getTopBlogs($idCollection['blogs']);
 

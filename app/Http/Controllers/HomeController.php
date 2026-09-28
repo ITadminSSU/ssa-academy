@@ -62,6 +62,7 @@ class HomeController extends Controller
          'type' => 'intro',
          'landingOverlay' => LandingOverlay::publicPayload($homeFields, $previewOverlay),
          'landingOverlayForce' => $previewOverlay,
+         'teamMembers' => $this->teamMemberService->listForPublic(),
          ...$sections,
       ]);
    }

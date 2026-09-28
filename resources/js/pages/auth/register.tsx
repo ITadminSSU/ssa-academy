@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Main from '@/layouts/main';
 import { SharedData } from '@/types/global';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler, useRef } from 'react';
+import { FormEventHandler, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 interface ProfessionalType {
@@ -54,6 +54,11 @@ export default function Register({
    const { branding } = props;
    const { auth: authCopy, input: inputCopy, button: buttonCopy } = props.translate;
    const recaptchaRef = useRef<ReCAPTCHA | null>(null);
+
+   useEffect(() => {
+      document.documentElement.classList.add('ssu-public-root');
+      return () => document.documentElement.classList.remove('ssu-public-root');
+   }, []);
 
    const { data, setData, post, processing, errors, reset } = useForm({
       name: '',
@@ -151,8 +156,8 @@ export default function Register({
       <Main>
          <Head title={authCopy.register_title} />
 
-         <div className="ssu-page-shell min-h-svh">
-            <header className="bg-primary px-4 py-8 text-white sm:px-6 sm:py-10">
+         <div className="ssu-public ssu-page-shell min-h-svh">
+            <header className="bg-[color:var(--ssu-navy)] px-4 py-8 text-white sm:px-6 sm:py-10">
                <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
                   <p className="font-display mb-3 text-sm font-semibold tracking-[0.22em] uppercase">Welcome to</p>
                   <Link href={route('home')} className="block">

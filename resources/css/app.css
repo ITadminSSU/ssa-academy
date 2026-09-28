@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './player.css';
 @import './ssu-design-system.css';
+@import './ssu-public.css';
 
 @plugin 'tailwindcss-animate';
 

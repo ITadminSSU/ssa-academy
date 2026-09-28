@@ -28,7 +28,7 @@ const SsuLandingSettings = ({ landingPage }: Props) => {
             <div>
                <h2 className="text-lg font-medium">SSU Academy Landing Page</h2>
                <p className="text-muted-foreground text-sm">
-                  Edit hero copy, The Gap, value pillars, Inside the Academy Instagram posts, featured courses, and the bottom call-to-action. Preview at{' '}
+                  Edit the hero welcome video, featured course picks, and optional Inside the Academy posts. The public homepage copy now follows the cream / navy / gold marketing layout. Preview at{' '}
                   <a href={route('home')} target="_blank" rel="noopener noreferrer" className="text-primary underline">
                      the public home page
                   </a>

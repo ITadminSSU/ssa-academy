@@ -2,24 +2,29 @@ import AppLogo from '@/components/app-logo';
 import { BRAND_TAGLINE } from '@/lib/branding';
 import { SharedData } from '@/types/global';
 import { Link, usePage } from '@inertiajs/react';
+import { useEffect, type ReactNode } from 'react';
 import Main from './main';
 
 interface Props {
    title: string;
    description: string;
-   children: React.ReactNode;
+   children: ReactNode;
 }
 
 const AuthLayout = ({ children, title, description }: Props) => {
    const { branding } = usePage<SharedData>().props;
 
+   useEffect(() => {
+      document.documentElement.classList.add('ssu-public-root');
+      return () => document.documentElement.classList.remove('ssu-public-root');
+   }, []);
+
    return (
       <Main>
-         <div className="ssu-page-shell grid min-h-svh lg:grid-cols-2">
+         <div className="ssu-public ssu-page-shell grid min-h-svh lg:grid-cols-2">
             <div className="ssu-auth-hero">
-               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.14),transparent_50%)]" />
-               <div className="bg-primary/20 pointer-events-none absolute -right-20 -bottom-20 h-64 w-64 rounded-full blur-3xl" />
-               <div className="pointer-events-none absolute -top-16 -left-10 h-48 w-48 rounded-full bg-[color:var(--brand-red)]/25 blur-3xl" />
+               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,154,27,0.18),transparent_50%)]" />
+               <div className="pointer-events-none absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-[color:var(--ssu-gold)]/20 blur-3xl" />
 
                <div className="ssu-auth-hero__logo relative z-10">
                   <Link href={route('home')} className="ssu-auth-logo block">
@@ -42,16 +47,13 @@ const AuthLayout = ({ children, title, description }: Props) => {
             </div>
 
             <div className="flex flex-col items-center justify-center p-6 md:p-10">
-               <Link
-                  href={route('home')}
-                  className="ssu-auth-mobile-brand mb-8 block w-full max-w-sm lg:hidden"
-               >
+               <Link href={route('home')} className="ssu-auth-mobile-brand mb-8 block w-full max-w-sm lg:hidden">
                   <AppLogo className="ssu-auth-logo-mobile ssu-auth-logo-colored w-full" theme="dark" />
                </Link>
 
                <div className="ssu-auth-panel">
                   <div className="space-y-2">
-                     <p className="ssu-kicker">Account</p>
+                     <p className="ssu-pub-kicker">Account</p>
                      <h1 className="font-display text-2xl font-semibold tracking-tight">{title}</h1>
                      <p className="text-muted-foreground text-sm">{description}</p>
                   </div>
