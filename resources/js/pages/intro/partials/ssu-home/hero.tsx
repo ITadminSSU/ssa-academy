@@ -66,13 +66,15 @@ const Hero = () => {
                   >
                      +
                   </span>
-                  {videoUrl ? (
-                     <div className="ssu-hero-media">
-                        <HeroVideoPlayer videoUrl={videoUrl} posterUrl={posterUrl} className="h-full w-full rounded-none border-0" />
-                     </div>
-                  ) : (
-                     <SamplePlan className="ssu-hero-media min-h-[220px] border-0" />
-                  )}
+                  <div className="ssu-hero-media-wrap">
+                     {videoUrl ? (
+                        <div className="ssu-hero-media">
+                           <HeroVideoPlayer videoUrl={videoUrl} posterUrl={posterUrl} className="h-full w-full rounded-none border-0" />
+                        </div>
+                     ) : (
+                        <SamplePlan className="ssu-hero-media border-0" />
+                     )}
+                  </div>
                </div>
             </div>
 

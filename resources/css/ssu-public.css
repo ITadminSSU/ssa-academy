@@ -231,16 +231,23 @@
    border-color: var(--ssu-line);
 }
 
-/* Canva hero: 16:9 rectangle with a flat in-plane tilt (not a 3D receding card). */
+/* Canva hero: landscape video in a parallelogram (vertical sides, slanted top/bottom). */
+.ssu-public .ssu-hero-media-wrap {
+   width: 100%;
+   filter: drop-shadow(0 22px 40px rgb(0 0 0 / 36%));
+}
+
 .ssu-public .ssu-hero-media {
+   --ssu-hero-clip: polygon(0% 8%, 100% 0%, 100% 92%, 0% 100%);
    position: relative;
    width: 100%;
    overflow: hidden;
    background: rgba(0, 0, 0, 0.28);
    aspect-ratio: 16 / 9;
-   transform: rotate(6deg);
-   transform-origin: 50% 55%;
-   box-shadow: 0 22px 40px rgb(0 0 0 / 34%);
+   clip-path: var(--ssu-hero-clip);
+   -webkit-clip-path: var(--ssu-hero-clip);
+   border-radius: 0;
+   transform: none;
 }
 
 .ssu-public .ssu-hero-media .ssu-hero-video,
@@ -252,20 +259,24 @@
    width: 100%;
    object-fit: cover;
    object-position: 52% 38%;
+   transform: none;
 }
 
 @media (min-width: 640px) and (max-width: 1023px) {
    .ssu-public .ssu-hero-media {
-      transform: rotate(7deg);
+      --ssu-hero-clip: polygon(0% 10%, 100% 0%, 100% 90%, 0% 100%);
    }
 }
 
 @media (min-width: 1024px) {
-   .ssu-public .ssu-hero-media {
+   .ssu-public .ssu-hero-media-wrap {
       width: 118%;
       max-width: none;
-      transform: rotate(9deg);
-      box-shadow: 0 28px 56px rgb(0 0 0 / 40%);
+      filter: drop-shadow(0 28px 52px rgb(0 0 0 / 42%));
+   }
+
+   .ssu-public .ssu-hero-media {
+      --ssu-hero-clip: polygon(0% 14%, 100% 0%, 100% 86%, 0% 100%);
    }
 }
 
