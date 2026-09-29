@@ -256,7 +256,7 @@ class PageSectionService extends MediaService
       return $sorted;
    }
 
-   public function getFeaturedCatalogCourses(int $limit = 6)
+   public function getFeaturedCatalogCourses(?int $limit = 6)
    {
       $courses = Course::query()
          ->with([
@@ -267,19 +267,19 @@ class PageSectionService extends MediaService
                   }]);
             },
             'course_category' => function ($query) {
-               $query->select('id', 'title');
+               $query->select('id', 'title', 'slug');
+            },
+            'course_category_child' => function ($query) {
+               $query->select('id', 'title', 'slug', 'course_category_id');
             },
          ])
          ->withCount('enrollments')
          ->listedInCatalog()
          ->visibleInCatalog(Auth::user())
-         ->where(function ($query) {
-            $query->where(function ($approved) {
-               $approved->where('status', 'approved')->launched();
-            })->orWhere('status', 'upcoming');
-         })
          ->orderByDesc('created_at')
-         ->limit($limit)
+         ->when($limit !== null, function ($query) use ($limit) {
+            $query->limit($limit);
+         })
          ->get()
          ->map(function ($course) {
             $course->average_rating = $course->reviews()->avg('rating') ?? 0;

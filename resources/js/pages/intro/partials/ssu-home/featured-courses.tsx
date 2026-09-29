@@ -2,7 +2,7 @@ import { GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
 import { courseTabFor } from '@/lib/ssu-public';
 import { IntroPageProps } from '@/types/page';
 import { Link, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 const FALLBACK_THUMB = '/assets/images/blank-image.svg';
 
@@ -26,6 +26,50 @@ const usePrefersReducedMotion = () => {
    }, []);
 
    return reduced;
+};
+
+const useMarqueeRepeats = (enabled: boolean, itemKey: string) => {
+   const wrapRef = useRef<HTMLDivElement>(null);
+   const unitRef = useRef<HTMLDivElement>(null);
+   const [repeats, setRepeats] = useState(2);
+
+   useLayoutEffect(() => {
+      if (!enabled) {
+         return;
+      }
+
+      const update = () => {
+         const unit = unitRef.current?.scrollWidth ?? 0;
+         const wrap = wrapRef.current?.clientWidth ?? 0;
+
+         if (unit < 1 || wrap < 1) {
+            return;
+         }
+
+         setRepeats(Math.min(8, Math.max(1, Math.ceil(wrap / unit))));
+      };
+
+      update();
+
+      const observer = new ResizeObserver(update);
+
+      if (wrapRef.current) {
+         observer.observe(wrapRef.current);
+      }
+
+      if (unitRef.current) {
+         observer.observe(unitRef.current);
+      }
+
+      window.addEventListener('resize', update);
+
+      return () => {
+         observer.disconnect();
+         window.removeEventListener('resize', update);
+      };
+   }, [enabled, itemKey]);
+
+   return { wrapRef, unitRef, repeats };
 };
 
 const PublicCourseCard = ({ course, echo = false }: { course: Course; echo?: boolean }) => {
@@ -86,13 +130,13 @@ const FeaturedCourses = () => {
          return featured.length ? featured : catalog.slice(0, 6);
       }
 
-      const filtered = catalog.filter((course) => courseTabFor(course) === tab);
-
-      return filtered.length ? filtered : catalog;
+      return catalog.filter((course) => courseTabFor(course) === tab);
    }, [catalog, featured, tab]);
 
-   const useMarquee = visible.length >= 3 && !prefersReducedMotion;
-   const marqueeSeconds = Math.max(28, visible.length * 9);
+   const useMarquee = tab === 'featured' && visible.length >= 3 && !prefersReducedMotion;
+   const marqueeKey = visible.map((course) => course.id).join('-');
+   const { wrapRef, unitRef, repeats } = useMarqueeRepeats(useMarquee, marqueeKey);
+   const marqueeSeconds = Math.max(28, visible.length * repeats * 9);
 
    return (
       <section id="courses" className="overflow-hidden bg-[color:var(--ssu-navy)] py-20 text-white">
@@ -131,21 +175,30 @@ const FeaturedCourses = () => {
 
          {visible.length > 0 ? (
             useMarquee ? (
-               <div className="ssu-catalog-marquee mt-8">
+               <div ref={wrapRef} className="ssu-catalog-marquee mt-8">
                   <div
                      className="ssu-catalog-marquee__track"
                      style={{ '--ssu-marquee-duration': `${marqueeSeconds}s` } as CSSProperties}
                   >
-                     <div className="ssu-catalog-marquee__set">
-                        {visible.map((course) => (
-                           <PublicCourseCard key={course.id} course={course} />
-                        ))}
-                     </div>
-                     <div className="ssu-catalog-marquee__set" aria-hidden>
-                        {visible.map((course) => (
-                           <PublicCourseCard key={`${course.id}-echo`} course={course} echo />
-                        ))}
-                     </div>
+                     {[0, 1].map((copy) => (
+                        <div key={copy} className="ssu-catalog-marquee__set" aria-hidden={copy > 0 || undefined}>
+                           {Array.from({ length: repeats }, (_, repeat) => (
+                              <div
+                                 key={repeat}
+                                 ref={copy === 0 && repeat === 0 ? unitRef : undefined}
+                                 className="ssu-catalog-marquee__unit"
+                              >
+                                 {visible.map((course) => (
+                                    <PublicCourseCard
+                                       key={`${copy}-${repeat}-${course.id}`}
+                                       course={course}
+                                       echo={copy > 0 || repeat > 0}
+                                    />
+                                 ))}
+                              </div>
+                           ))}
+                        </div>
+                     ))}
                   </div>
                </div>
             ) : (

@@ -15,16 +15,45 @@ export const homeSectionHref = (hash: string, pathname?: string) => {
    return path === '/' ? `#${hash}` : `${route('home')}#${hash}`;
 };
 
-export const courseTabFor = (course: Pick<Course, 'title' | 'short_description'> & { course_category?: { title?: string } | null }) => {
-   const hay = `${course.title} ${course.course_category?.title ?? ''} ${course.short_description ?? ''}`.toLowerCase();
-
-   if (/plan.?swift|bluebeam|revit|autocad|auto cad|procore|primavera|on-screen|zz takeoff|software/.test(hay)) {
+const tabFromCatalogLabel = (hay: string) => {
+   if (/software/.test(hay)) {
       return 'software' as const;
    }
 
-   if (/professional|communication|career|leadership|development|soft skill/.test(hay)) {
+   if (/estimating/.test(hay)) {
+      return 'trade' as const;
+   }
+
+   if (
+      /independent.?contractor|career.?readiness|professional.?development|\bcareer\b|\breadiness\b|\bresume\b|\binterview\b/.test(
+         hay,
+      )
+   ) {
       return 'professional' as const;
    }
 
-   return 'trade' as const;
+   return null;
+};
+
+export const courseTabFor = (
+   course: Pick<Course, 'title' | 'short_description'> & {
+      course_category?: { title?: string; slug?: string } | null;
+      course_category_child?: { title?: string; slug?: string } | null;
+   },
+) => {
+   const parent = `${course.course_category?.title ?? ''} ${course.course_category?.slug ?? ''}`.toLowerCase();
+   const fromParent = tabFromCatalogLabel(parent);
+
+   if (fromParent) {
+      return fromParent;
+   }
+
+   const child = `${course.course_category_child?.title ?? ''} ${course.course_category_child?.slug ?? ''}`.toLowerCase();
+   const fromChild = tabFromCatalogLabel(child);
+
+   if (fromChild) {
+      return fromChild;
+   }
+
+   return 'other' as const;
 };

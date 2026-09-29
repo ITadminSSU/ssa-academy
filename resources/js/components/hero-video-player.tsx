@@ -1,7 +1,8 @@
+import { preloadPlayerJs, type PlayerJsInstance } from '@/lib/bunny-player-js';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
-import { Play } from 'lucide-react';
+import { Pause, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import Plyr, { APITypes } from 'plyr-react';
 import 'plyr-react/plyr.css';
@@ -86,7 +87,10 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
    const playerRef = useRef<APITypes>(null);
    const fileVideoRef = useRef<HTMLVideoElement>(null);
    const iframeRef = useRef<HTMLIFrameElement>(null);
+   const bunnyPlayerRef = useRef<PlayerJsInstance | null>(null);
+   const lastToggleAt = useRef(0);
    const [started, setStarted] = useState(false);
+   const [playing, setPlaying] = useState(false);
    const [posterFailed, setPosterFailed] = useState(false);
 
    const poster = (!posterFailed && posterUrl?.trim()) || DEFAULT_POSTER;
@@ -146,12 +150,94 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
 
    useEffect(() => {
       setStarted(false);
+      setPlaying(false);
       setPosterFailed(false);
+      bunnyPlayerRef.current = null;
    }, [videoUrl, posterUrl]);
 
-   const startWithSound = (event: SyntheticEvent) => {
+   useEffect(() => {
+      const video = fileVideoRef.current;
+
+      if (!video) {
+         return;
+      }
+
+      const onPlay = () => setPlaying(true);
+      const onPause = () => setPlaying(false);
+
+      video.addEventListener('play', onPlay);
+      video.addEventListener('pause', onPause);
+
+      return () => {
+         video.removeEventListener('play', onPlay);
+         video.removeEventListener('pause', onPause);
+      };
+   }, [fileSrc]);
+
+   useEffect(() => {
+      if (!started || !isBunnyEmbed || !iframeRef.current) {
+         return;
+      }
+
+      const iframe = iframeRef.current;
+      let cancelled = false;
+
+      const bind = async () => {
+         try {
+            await preloadPlayerJs();
+
+            if (cancelled || !iframe.isConnected || !window.playerjs?.Player) {
+               return;
+            }
+
+            const player = new window.playerjs.Player(iframe);
+            bunnyPlayerRef.current = player;
+            player.on('ready', () => {
+               if (cancelled) {
+                  return;
+               }
+
+               player.on('play', () => setPlaying(true));
+               player.on('pause', () => setPlaying(false));
+            });
+         } catch {
+            // Native overlay still toggles pause/play if player.js is unavailable.
+         }
+      };
+
+      if (iframe.src && iframe.src !== 'about:blank') {
+         void bind();
+      }
+
+      iframe.addEventListener('load', bind);
+
+      return () => {
+         cancelled = true;
+         iframe.removeEventListener('load', bind);
+      };
+   }, [started, isBunnyEmbed, rawUrl]);
+
+   const pausePlayback = () => {
+      fileVideoRef.current?.pause();
+      bunnyPlayerRef.current?.pause?.();
+      playerRef.current?.plyr?.pause?.();
+      setPlaying(false);
+   };
+
+   const togglePlayback = (event: SyntheticEvent) => {
       event.preventDefault();
       event.stopPropagation();
+
+      const now = Date.now();
+      if (now - lastToggleAt.current < 350) {
+         return;
+      }
+      lastToggleAt.current = now;
+
+      if (playing) {
+         pausePlayback();
+         return;
+      }
 
       if (fileSrc && fileVideoRef.current) {
          const video = fileVideoRef.current;
@@ -163,8 +249,16 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
       }
 
       if (isBunnyEmbed && iframeRef.current) {
-         iframeRef.current.src = withSoundAutoplay(rawUrl);
-         setStarted(true);
+         if (!started) {
+            iframeRef.current.src = withSoundAutoplay(rawUrl);
+            setStarted(true);
+            setPlaying(true);
+            return;
+         }
+
+         bunnyPlayerRef.current?.unmute?.();
+         bunnyPlayerRef.current?.play?.();
+         setPlaying(true);
          return;
       }
 
@@ -173,6 +267,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
          player.muted = false;
          player.volume = 1;
          setStarted(true);
+         setPlaying(true);
          const playPromise = player.play?.();
          if (playPromise && typeof playPromise.catch === 'function') {
             playPromise.catch(() => undefined);
@@ -215,7 +310,7 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
                ref={iframeRef}
                src="about:blank"
                title="SSU Academy hero video"
-               className={`h-full w-full border-0 ${!started ? 'pointer-events-none' : ''}`}
+               className="pointer-events-none h-full w-full border-0"
                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
                allowFullScreen
             />
@@ -234,19 +329,29 @@ const HeroVideoPlayer = ({ videoUrl, posterUrl, className }: Props) => {
             />
          )}
 
-         {!started && (
-            <button
-               type="button"
-               onPointerUp={startWithSound}
-               onClick={startWithSound}
-               className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 transition hover:bg-black/35"
-               aria-label="Play welcome video"
+         <button
+            type="button"
+            onPointerUp={togglePlayback}
+            onClick={togglePlayback}
+            className={cn(
+               'absolute inset-0 z-20 flex items-center justify-center transition',
+               playing ? 'bg-transparent hover:bg-black/20' : 'bg-black/25 hover:bg-black/35',
+            )}
+            aria-label={playing ? 'Pause welcome video' : 'Play welcome video'}
+         >
+            <span
+               className={cn(
+                  'flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-black/55 text-white shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:h-20 sm:w-20',
+                  playing && 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+               )}
             >
-               <span className="flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full bg-black/55 text-white shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:h-20 sm:w-20">
+               {playing ? (
+                  <Pause className="h-8 w-8 sm:h-9 sm:w-9" />
+               ) : (
                   <Play className="ml-1 h-8 w-8 fill-white sm:h-9 sm:w-9" />
-               </span>
-            </button>
-         )}
+               )}
+            </span>
+         </button>
       </div>
    );
 };

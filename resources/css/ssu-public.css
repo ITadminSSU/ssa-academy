@@ -294,8 +294,13 @@
    will-change: transform;
 }
 
-.ssu-public .ssu-catalog-marquee__set {
+.ssu-public .ssu-catalog-marquee__set,
+.ssu-public .ssu-catalog-marquee__unit {
    display: flex;
+   flex-shrink: 0;
+}
+
+.ssu-public .ssu-catalog-marquee__unit {
    gap: 1.5rem;
    padding-right: 1.5rem;
 }
