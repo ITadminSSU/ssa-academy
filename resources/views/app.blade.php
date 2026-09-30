@@ -166,7 +166,7 @@
       href="https://fonts.bunny.net"
    >
    <link
-      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700|barlow:400,500,600,700,800|bebas-neue:400|anton:400|manrope:400,500,600,700|dm-mono:400,500"
+      href="https://fonts.bunny.net/css?family=plus-jakarta-sans:500,600,700,800|source-sans-3:400,500,600,700|playfair-display:400,500,600,400i,500i,600i|barlow:400,500,600,700,800|bebas-neue:400|anton:400|manrope:400,500,600,700|dm-mono:400,500"
       rel="stylesheet"
    />
 
