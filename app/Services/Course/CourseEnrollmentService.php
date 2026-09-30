@@ -2,6 +2,7 @@
 
 namespace App\Services\Course;
 
+use App\Enums\CourseStatusType;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Course\SectionLesson;
@@ -196,6 +197,10 @@ class CourseEnrollmentService extends MediaService
 
          $isDepositReservation = ($data['access_status'] ?? null) === \App\Enums\EnrollmentAccessStatus::RESERVED->value
             || ($data['enrollment_type'] ?? null) === 'deposit';
+
+         if ($course->status === CourseStatusType::COMING_SOON->value && !isAdmin()) {
+            throw new \InvalidArgumentException('This course is not available for enrollment yet.');
+         }
 
          if (!$course->isEnrollmentOpen() && !isAdmin() && !$allowBeforeLaunch && !$isDepositReservation) {
             throw new \InvalidArgumentException('This course is not available for enrollment yet.');

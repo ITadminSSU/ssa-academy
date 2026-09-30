@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\CourseAudience;
+use App\Enums\CourseStatusType;
 use App\Enums\CourseBillingModel;
 use App\Enums\CoursePricingType;
 use App\Enums\ExpiryLimitType;
@@ -41,6 +42,10 @@ class UpdateCourseRequest extends FormRequest
         ]);
 
         $this->normalizeLaunchAtInput();
+
+        if ($this->input('status') === CourseStatusType::COMING_SOON->value) {
+            $this->merge(['launch_at' => null]);
+        }
     }
 
     private function preparePricingTab(): void

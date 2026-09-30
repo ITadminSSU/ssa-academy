@@ -65,6 +65,10 @@ class CourseService extends MediaService
             $wasComingSoon = $course->isComingSoon();
             $status = $data['status'] ?? $course->status;
 
+            if ($status === CourseStatusType::COMING_SOON->value) {
+               $data['launch_at'] = null;
+            }
+
             if (! empty($data['launch_at'])) {
                $launchAt = Carbon::parse($data['launch_at']);
 
@@ -165,7 +169,9 @@ class CourseService extends MediaService
             $previousLaunchAt = $course->launch_at?->toIso8601String();
             $payload = collect($data)->only(['status', 'launch_at', 'feedback'])->all();
 
-            if (($payload['status'] ?? null) === CourseStatusType::APPROVED->value && empty($payload['launch_at'])) {
+            if (($payload['status'] ?? null) === CourseStatusType::COMING_SOON->value) {
+               $payload['launch_at'] = null;
+            } elseif (($payload['status'] ?? null) === CourseStatusType::APPROVED->value && empty($payload['launch_at'])) {
                $payload['launch_at'] = null;
             }
 

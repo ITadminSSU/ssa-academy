@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\CourseStatusType;
 use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -12,6 +13,10 @@ class UpdateCourseStatusRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->normalizeLaunchAtInput();
+
+        if ($this->input('status') === CourseStatusType::COMING_SOON->value) {
+            $this->merge(['launch_at' => null]);
+        }
     }
 
     /**
@@ -30,7 +35,7 @@ class UpdateCourseStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|string|in:draft,upcoming,pending,approved,rejected',
+            'status' => 'required|string|in:draft,upcoming,coming_soon,pending,approved,rejected',
             'launch_at' => 'nullable|date|required_if:status,upcoming|after:now',
             'feedback' => 'nullable|string',
         ];

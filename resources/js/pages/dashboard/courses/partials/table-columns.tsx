@@ -56,7 +56,9 @@ const TableColumn = (): ColumnDef<Course>[] => {
                <CourseStatusFilter />
             </div>
          ),
-         cell: ({ row }) => <div className="py-1 text-center capitalize">{row.getValue('status')}</div>,
+         cell: ({ row }) => (
+            <div className="py-1 text-center capitalize">{String(row.getValue('status') ?? '').replaceAll('_', ' ')}</div>
+         ),
       },
       {
          accessorKey: 'audience',

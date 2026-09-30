@@ -147,6 +147,7 @@ class Course extends Model implements HasMedia
         return $query->whereIn('status', [
             CourseStatusType::APPROVED->value,
             CourseStatusType::UPCOMING->value,
+            CourseStatusType::COMING_SOON->value,
         ]);
     }
 
@@ -167,7 +168,10 @@ class Course extends Model implements HasMedia
 
     public function isComingSoon(): bool
     {
-        if ($this->status === CourseStatusType::UPCOMING->value) {
+        if (in_array($this->status, [
+            CourseStatusType::UPCOMING->value,
+            CourseStatusType::COMING_SOON->value,
+        ], true)) {
             return true;
         }
 
@@ -233,6 +237,7 @@ class Course extends Model implements HasMedia
         return in_array($this->status, [
             CourseStatusType::APPROVED->value,
             CourseStatusType::UPCOMING->value,
+            CourseStatusType::COMING_SOON->value,
         ], true);
     }
 
