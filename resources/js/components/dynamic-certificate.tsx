@@ -19,38 +19,28 @@ interface DynamicCertificateProps {
    instructorName?: string | null;
 }
 
-const BLUE = '#2D537C';
-const RED = '#E94448';
-const DARK = '#1A1B1B';
-const FONT = 'Helvetica, Arial, sans-serif';
-const WIDTH = 1200;
-const HEIGHT = 800;
+const GOLD = '#E89A1F';
+const CREAM = '#F7F3EA';
+const NAVY = '#1A2742';
+const WARM = '#5A564E';
+const WIDTH = 1280;
+const HEIGHT = 720;
+const BORDER = 11;
+const SANS = '"Source Sans 3", sans-serif';
+const SERIF = '"Playfair Display", Palatino, "Palatino Linotype", serif';
+const LOCKUP_SRC = '/assets/branding/ssa-certificate-lockup.png';
 
-const FIXED_TEXT = {
-   course: {
-      title: 'CERTIFICATE OF COMPLETION',
-      subtitle: 'Awarded for successfully completing the professional certification program.',
-      connective: 'has successfully completed the requirements for',
-   },
-   exam: {
-      title: 'CERTIFICATE OF EXAMINATION',
-      subtitle: 'This certificate is proudly presented to',
-      connective: 'for outstanding performance in the examination',
-   },
-   footerName: 'SMARTSOURCING USA ACADEMY',
-   footerTagline: 'Construction VA Academy by SMARTSOURCING USA',
-   labels: {
-      certificateId: 'Certificate ID:',
-      dateIssued: 'Date Issued:',
-      trainingHours: 'Training Hours:',
-      instructor: 'Instructor:',
-      verificationCode: 'Verification Code:',
-   },
+const LABELS = {
+   certificateId: 'Certificate ID',
+   completionDate: 'Completion Date',
+   trainingHours: 'Training Hours',
+   instructor: 'Instructor',
+   verificationCode: 'Verification Code',
 };
 
-const COURSE_NAME_MAX_WIDTH = WIDTH - 160;
-const COURSE_NAME_START_Y = 488;
-const COURSE_NAME_MAX_BOTTOM = 590;
+const setLetterSpacing = (ctx: CanvasRenderingContext2D, value: string) => {
+   (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = value;
+};
 
 const wrapCanvasLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
    const words = text.trim().split(/\s+/).filter(Boolean);
@@ -78,34 +68,22 @@ const wrapCanvasLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: 
    return lines;
 };
 
-const preferredCourseNameBlocks = (text: string): string[] => {
-   const colon = text.indexOf(':');
+const fitWrappedText = (
+   ctx: CanvasRenderingContext2D,
+   text: string,
+   maxWidth: number,
+   startSize: number,
+   minSize: number,
+   maxLines: number,
+   font: string,
+): { lines: string[]; fontSize: number; lineHeight: number } => {
+   let fontSize = startSize;
 
-   if (colon <= 0 || colon >= text.length - 1) {
-      return [text];
-   }
-
-   const left = text.slice(0, colon + 1).trim();
-   const right = text.slice(colon + 1).trim();
-
-   return right ? [left, right] : [text];
-};
-
-const fitCourseName = (ctx: CanvasRenderingContext2D, text: string): { lines: string[]; fontSize: number; lineHeight: number } => {
-   const display = (text || '').toUpperCase();
-   const maxLines = 4;
-   let fontSize = 30;
-
-   while (fontSize >= 16) {
-      ctx.font = `bold ${fontSize}px ${FONT}`;
-      const lineHeight = Math.round(fontSize * 1.22);
-      const lines = preferredCourseNameBlocks(display).flatMap((block) => wrapCanvasLines(ctx, block, COURSE_NAME_MAX_WIDTH));
-      const lastLineY = COURSE_NAME_START_Y + (lines.length - 1) * lineHeight;
-      const fits =
-         lines.length > 0 &&
-         lines.length <= maxLines &&
-         lastLineY <= COURSE_NAME_MAX_BOTTOM &&
-         lines.every((line) => ctx.measureText(line).width <= COURSE_NAME_MAX_WIDTH);
+   while (fontSize >= minSize) {
+      ctx.font = font.replace('SIZE', String(fontSize));
+      const lineHeight = Math.round(fontSize * 1.25);
+      const lines = wrapCanvasLines(ctx, text, maxWidth);
+      const fits = lines.length > 0 && lines.length <= maxLines && lines.every((line) => ctx.measureText(line).width <= maxWidth);
 
       if (fits) {
          return { lines, fontSize, lineHeight };
@@ -114,29 +92,56 @@ const fitCourseName = (ctx: CanvasRenderingContext2D, text: string): { lines: st
       fontSize -= 1;
    }
 
-   ctx.font = `bold 16px ${FONT}`;
+   ctx.font = font.replace('SIZE', String(minSize));
 
    return {
-      lines: wrapCanvasLines(ctx, display, COURSE_NAME_MAX_WIDTH).slice(0, maxLines),
-      fontSize: 16,
-      lineHeight: 20,
+      lines: wrapCanvasLines(ctx, text, maxWidth).slice(0, maxLines),
+      fontSize: minSize,
+      lineHeight: Math.round(minSize * 1.25),
    };
 };
 
-const fitSingleLineFontSize = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, startSize: number, minSize: number): number => {
-   let fontSize = startSize;
+const formatTrainingHours = (value?: string | null): string | null => {
+   const text = (value || '').trim();
 
-   while (fontSize > minSize) {
-      ctx.font = `bold ${fontSize}px ${FONT}`;
-
-      if (ctx.measureText(text).width <= maxWidth) {
-         return fontSize;
-      }
-
-      fontSize -= 1;
+   if (!text) {
+      return null;
    }
 
-   return minSize;
+   if (/hour/i.test(text)) {
+      return text.toUpperCase();
+   }
+
+   if (/^\d+(\.\d+)?$/.test(text)) {
+      return `${text} HOURS`;
+   }
+
+   return text.toUpperCase();
+};
+
+const ensureCertificateFonts = async () => {
+   if (typeof document === 'undefined' || !document.fonts) {
+      return;
+   }
+
+   if (!document.getElementById('certificate-playfair')) {
+      const link = document.createElement('link');
+      link.id = 'certificate-playfair';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.bunny.net/css?family=playfair-display:400,500,600,400i,500i,600i';
+      document.head.appendChild(link);
+   }
+
+   try {
+      await Promise.all([
+         document.fonts.load(`italic 500 72px ${SERIF}`),
+         document.fonts.load(`600 36px ${SANS}`),
+         document.fonts.load(`400 30px ${SANS}`),
+         document.fonts.load(`500 20px ${SANS}`),
+      ]);
+   } catch {
+      // Generic serif and sans are used if the webfonts do not load.
+   }
 };
 
 const DynamicCertificate = ({
@@ -151,7 +156,7 @@ const DynamicCertificate = ({
 }: DynamicCertificateProps) => {
    const [downloadFormat, setDownloadFormat] = useState('png');
    const previewRef = useRef<HTMLCanvasElement>(null);
-   const logoUrl = useMemo(() => resolveLogo(template.logo_path, 'certificate'), [template.logo_path]);
+   const fallbackLogo = useMemo(() => resolveLogo(template.logo_path, 'certificate'), [template.logo_path]);
 
    const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
@@ -163,149 +168,109 @@ const DynamicCertificate = ({
       });
    };
 
-   // Draw a "Label: value" line. For left align, label starts at x. For right align,
-   // the whole line ends at x (label printed, then value measured after).
-   const drawMetaLine = (
-      ctx: CanvasRenderingContext2D,
-      label: string,
-      value: string | null | undefined,
-      x: number,
-      y: number,
-      align: 'left' | 'right',
-   ) => {
-      ctx.font = `500 18px ${FONT}`;
+   const drawMetaLine = (ctx: CanvasRenderingContext2D, label: string, value: string | null | undefined, x: number, y: number, align: 'left' | 'right') => {
+      const text = `${label} / ${value || '—'}`.toUpperCase();
+      ctx.font = `500 20px ${SANS}`;
+      ctx.fillStyle = NAVY;
       ctx.textBaseline = 'alphabetic';
-
-      const labelWidth = ctx.measureText(label).width;
-      const gap = 6;
-      const valueText = value || '—';
-      const valueWidth = ctx.measureText(valueText).width;
-      const totalWidth = labelWidth + gap + valueWidth;
-
-      const labelX = align === 'left' ? x : x - totalWidth;
-      const valueX = labelX + labelWidth + gap;
-
-      ctx.textAlign = 'left';
-      ctx.fillStyle = BLUE;
-      ctx.fillText(label, labelX, y);
-
-      ctx.fillStyle = DARK;
-      ctx.fillText(valueText, valueX, y);
+      ctx.textAlign = align;
+      setLetterSpacing(ctx, '1.8px');
+      ctx.fillText(text, x, y);
+      setLetterSpacing(ctx, '0px');
    };
 
-   const drawLCorner = (ctx: CanvasRenderingContext2D, x: number, y: number, dx: number, dy: number) => {
-      const arm = 70;
-      ctx.strokeStyle = BLUE;
-      ctx.lineWidth = 6;
+   const drawCorner = (ctx: CanvasRenderingContext2D) => {
+      const arm = 52;
+      const cornerX = WIDTH - 37;
+      const cornerY = HEIGHT - 38;
+
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 5;
       ctx.lineCap = 'square';
+      ctx.lineJoin = 'miter';
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + dx * arm, y);
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y + dy * arm);
+      ctx.moveTo(cornerX - arm, cornerY);
+      ctx.lineTo(cornerX, cornerY);
+      ctx.lineTo(cornerX, cornerY - arm);
       ctx.stroke();
    };
 
    const drawCertificate = (ctx: CanvasRenderingContext2D, logoImage: HTMLImageElement | null) => {
-      const isExam = template.type === 'exam';
-      const copy = isExam ? FIXED_TEXT.exam : FIXED_TEXT.course;
-
-      // 1. White background
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = GOLD;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = CREAM;
+      ctx.fillRect(BORDER, BORDER, WIDTH - BORDER * 2, HEIGHT - BORDER * 2);
 
-      // 2. Faint watermark circle (no name underline line)
-      const circleCy = 400;
-      ctx.beginPath();
-      ctx.arc(WIDTH / 2, circleCy, 150, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(45, 83, 124, 0.05)';
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(45, 83, 124, 0.12)';
-      ctx.stroke();
-
-      // 3. L-shaped corner accents
-      drawLCorner(ctx, 30, 30, 1, 1); // top-left
-      drawLCorner(ctx, WIDTH - 30, 30, -1, 1); // top-right
-      drawLCorner(ctx, 30, HEIGHT - 30, 1, -1); // bottom-left
-      drawLCorner(ctx, WIDTH - 30, HEIGHT - 30, -1, -1); // bottom-right
-
-      // 4. Logo top-center
       if (logoImage) {
-         const logoMaxHeight = 150;
-         const logoMaxWidth = 280;
+         const targetHeight = 82;
          const aspect = logoImage.width / logoImage.height;
-         let drawWidth = Math.min(logoMaxWidth, logoMaxHeight * aspect);
-         let drawHeight = drawWidth / aspect;
-
-         if (drawHeight > logoMaxHeight) {
-            drawHeight = logoMaxHeight;
-            drawWidth = drawHeight * aspect;
-         }
-
-         const logoX = (WIDTH - drawWidth) / 2;
-         ctx.drawImage(logoImage, logoX, 40, drawWidth, drawHeight);
+         const drawHeight = targetHeight;
+         const drawWidth = drawHeight * aspect;
+         ctx.drawImage(logoImage, (WIDTH - drawWidth) / 2, 88, drawWidth, drawHeight);
       }
 
-      // 5. Text
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
+      setLetterSpacing(ctx, '0.55em');
+      ctx.font = `500 15px ${SANS}`;
+      ctx.fillStyle = WARM;
+      ctx.fillText('CREDENTIAL', WIDTH / 2, 230);
+      setLetterSpacing(ctx, '0px');
 
-      // Title
-      ctx.font = `bold 48px ${FONT}`;
-      ctx.fillStyle = BLUE;
-      ctx.fillText(copy.title, WIDTH / 2, 220);
-
-      // Subtitle / presentation line
-      ctx.font = `20px ${FONT}`;
-      ctx.fillStyle = BLUE;
-      ctx.fillText(copy.subtitle, WIDTH / 2, 258);
-
-      // Recipient name
-      const recipient = (studentName || '').toUpperCase();
-      const recipientSize = fitSingleLineFontSize(ctx, recipient, COURSE_NAME_MAX_WIDTH, 44, 24);
-      ctx.font = `bold ${recipientSize}px ${FONT}`;
-      ctx.fillStyle = BLUE;
-      ctx.fillText(recipient, WIDTH / 2, 408);
-
-      // Connective text
-      ctx.font = `20px ${FONT}`;
-      ctx.fillStyle = BLUE;
-      ctx.fillText(copy.connective, WIDTH / 2, 450);
-
-      // Course / exam name — wrap and shrink so long titles stay inside the frame
-      const courseFit = fitCourseName(ctx, courseName || '');
-      ctx.font = `bold ${courseFit.fontSize}px ${FONT}`;
-      ctx.fillStyle = RED;
-      courseFit.lines.forEach((line, index) => {
-         ctx.fillText(line, WIDTH / 2, COURSE_NAME_START_Y + index * courseFit.lineHeight);
+      const recipient = (studentName || '').trim();
+      const nameFit = fitWrappedText(ctx, recipient, WIDTH - 200, 72, 28, 1, `italic 500 SIZEpx ${SERIF}`);
+      ctx.font = `italic 500 ${nameFit.fontSize}px ${SERIF}`;
+      ctx.fillStyle = NAVY;
+      const nameStart = 356 - ((nameFit.lines.length - 1) * nameFit.lineHeight) / 2;
+      nameFit.lines.forEach((line, index) => {
+         ctx.fillText(line, WIDTH / 2, nameStart + index * nameFit.lineHeight);
       });
 
-      // Metadata — exam certificates use a simplified layout (no training hours or instructor)
-      if (isExam) {
-         drawMetaLine(ctx, FIXED_TEXT.labels.certificateId, certificateId, 90, 620, 'left');
-         drawMetaLine(ctx, FIXED_TEXT.labels.dateIssued, completionDate, 90, 658, 'left');
-         drawMetaLine(ctx, FIXED_TEXT.labels.verificationCode, verificationReference, WIDTH - 90, 620, 'right');
-      } else {
-         drawMetaLine(ctx, FIXED_TEXT.labels.certificateId, certificateId, 90, 620, 'left');
-         drawMetaLine(ctx, FIXED_TEXT.labels.dateIssued, completionDate, 90, 658, 'left');
-         drawMetaLine(ctx, FIXED_TEXT.labels.trainingHours, trainingHours, 90, 696, 'left');
-         drawMetaLine(ctx, FIXED_TEXT.labels.instructor, instructorName, WIDTH - 90, 620, 'right');
-         drawMetaLine(ctx, FIXED_TEXT.labels.verificationCode, verificationReference, WIDTH - 90, 658, 'right');
+      ctx.font = `400 30px ${SANS}`;
+      ctx.fillStyle = WARM;
+      ctx.fillText('has completed', WIDTH / 2, 430);
+
+      const courseFit = fitWrappedText(ctx, courseName || '', WIDTH - 180, 36, 20, 2, `600 SIZEpx ${SANS}`);
+      ctx.font = `600 ${courseFit.fontSize}px ${SANS}`;
+      ctx.fillStyle = NAVY;
+      const courseStart = 502 - ((courseFit.lines.length - 1) * courseFit.lineHeight) / 2;
+      courseFit.lines.forEach((line, index) => {
+         ctx.fillText(line, WIDTH / 2, courseStart + index * courseFit.lineHeight);
+      });
+
+      const hours = formatTrainingHours(trainingHours);
+      const dateLabel = (completionDate || '').toUpperCase();
+      drawMetaLine(ctx, LABELS.certificateId, certificateId, 92, 580, 'left');
+      drawMetaLine(ctx, LABELS.completionDate, dateLabel, 92, 616, 'left');
+
+      if (hours) {
+         drawMetaLine(ctx, LABELS.trainingHours, hours, 92, 650, 'left');
       }
 
-      // Footer
-      ctx.textAlign = 'center';
-      ctx.font = `bold 16px ${FONT}`;
-      ctx.fillStyle = BLUE;
-      ctx.fillText(FIXED_TEXT.footerName, WIDTH / 2, 755);
+      const rightX = WIDTH - 102;
 
-      ctx.font = `13px ${FONT}`;
-      ctx.fillStyle = BLUE;
-      ctx.fillText(FIXED_TEXT.footerTagline, WIDTH / 2, 778);
+      if (instructorName?.trim()) {
+         drawMetaLine(ctx, LABELS.instructor, instructorName, rightX, 580, 'right');
+         drawMetaLine(ctx, LABELS.verificationCode, verificationReference, rightX, 616, 'right');
+      } else {
+         drawMetaLine(ctx, LABELS.verificationCode, verificationReference, rightX, 580, 'right');
+      }
+
+      drawCorner(ctx);
    };
 
-   // Render the on-screen preview canvas whenever inputs change.
+   const loadLogo = async (): Promise<HTMLImageElement | null> => {
+      try {
+         return await loadImage(LOCKUP_SRC);
+      } catch {
+         try {
+            return fallbackLogo ? await loadImage(fallbackLogo) : null;
+         } catch {
+            return null;
+         }
+      }
+   };
+
    useEffect(() => {
       let cancelled = false;
 
@@ -315,12 +280,8 @@ const DynamicCertificate = ({
          const ctx = canvas.getContext('2d');
          if (!ctx) return;
 
-         let logoImage: HTMLImageElement | null = null;
-         try {
-            if (logoUrl) logoImage = await loadImage(logoUrl);
-         } catch {
-            // leave logo null
-         }
+         await ensureCertificateFonts();
+         const logoImage = await loadLogo();
 
          if (cancelled) return;
          drawCertificate(ctx, logoImage);
@@ -331,15 +292,7 @@ const DynamicCertificate = ({
       return () => {
          cancelled = true;
       };
-   }, [logoUrl, template.type, courseName, studentName, completionDate, verificationReference, certificateId, trainingHours, instructorName]);
-
-   const handleDownloadCertificate = async () => {
-      if (downloadFormat === 'pdf') {
-         await downloadAsPDF();
-      } else {
-         await downloadAsPNG();
-      }
-   };
+   }, [fallbackLogo, courseName, studentName, completionDate, verificationReference, certificateId, trainingHours, instructorName]);
 
    const getRenderedCanvas = async (): Promise<HTMLCanvasElement> => {
       const canvas = document.createElement('canvas');
@@ -348,15 +301,17 @@ const DynamicCertificate = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas not supported');
 
-      let logoImage: HTMLImageElement | null = null;
-      try {
-         if (logoUrl) logoImage = await loadImage(logoUrl);
-      } catch {
-         // leave logo null
-      }
-
-      drawCertificate(ctx, logoImage);
+      await ensureCertificateFonts();
+      drawCertificate(ctx, await loadLogo());
       return canvas;
+   };
+
+   const handleDownloadCertificate = async () => {
+      if (downloadFormat === 'pdf') {
+         await downloadAsPDF();
+      } else {
+         await downloadAsPNG();
+      }
    };
 
    const downloadAsPNG = async () => {
@@ -396,12 +351,7 @@ const DynamicCertificate = ({
 
    return (
       <Card className="mx-auto max-w-[900px] space-y-7 p-6">
-         <canvas
-            ref={previewRef}
-            width={WIDTH}
-            height={HEIGHT}
-            className="h-auto w-full rounded-lg shadow-lg"
-         />
+         <canvas ref={previewRef} width={WIDTH} height={HEIGHT} className="h-auto w-full rounded-lg shadow-lg" />
 
          <div className="space-y-4">
             <RadioGroup value={downloadFormat} onValueChange={setDownloadFormat} className="flex justify-center space-x-6">
