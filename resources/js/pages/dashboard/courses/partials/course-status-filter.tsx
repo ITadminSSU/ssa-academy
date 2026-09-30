@@ -34,7 +34,7 @@ const CourseStatusFilter = () => {
                         }
                         className={cn('cursor-pointer text-center capitalize', urlParams['status'] === status && 'bg-muted')}
                     >
-                        {status}
+                        {status.replaceAll('_', ' ')}
                     </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>

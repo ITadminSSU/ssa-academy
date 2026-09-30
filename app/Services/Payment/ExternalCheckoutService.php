@@ -2,8 +2,9 @@
 
 namespace App\Services\Payment;
 
-use App\Enums\EnrollmentAccessStatus;
 use App\Enums\CourseAudience;
+use App\Enums\CourseStatusType;
+use App\Enums\EnrollmentAccessStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
@@ -34,6 +35,10 @@ class ExternalCheckoutService
 
     public function userCanAccessCheckoutCourse(User $user, Course $course): bool
     {
+        if ($course->status === CourseStatusType::COMING_SOON->value) {
+            return false;
+        }
+
         $allowPreLaunchDeposit = $this->launchOffer->allowsDepositCheckout($course);
 
         if (! $course->isEnrollmentOpen() && ! $allowPreLaunchDeposit) {

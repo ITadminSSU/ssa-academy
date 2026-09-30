@@ -212,7 +212,7 @@ class CourseController extends Controller
         if (!$course->isPubliclyViewable($user)) {
             $message = $course->isCatalogListed()
                 ? 'You do not have access to view this course.'
-                : 'This course is not published yet. Set the status to Upcoming or Approved to make it visible.';
+                : 'This course is not published yet. Set the status to Upcoming, Coming Soon, or Approved to make it visible.';
 
             return redirect()
                 ->route('category.courses', ['category' => 'all'])

@@ -200,6 +200,47 @@ const CourseUpdateHeader = () => {
          );
       }
 
+      if (course.status === 'coming_soon') {
+         return (
+            <>
+               <span className="text-muted-foreground text-sm">Coming Soon, no launch date</span>
+               {launchNotificationCount > 0 ? (
+                  <span className="text-muted-foreground text-sm">
+                     {(frontend.launch_notify_count ?? '{count} waiting to be notified').replace(
+                        '{count}',
+                        String(launchNotificationCount),
+                     )}
+                  </span>
+               ) : null}
+               <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'approved' })}>
+                  {button.publish_now ?? 'Publish Now'}
+               </Button>
+               <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                  <DialogTrigger asChild>
+                     <Button variant="outline">{button.schedule_coming_soon ?? 'Schedule Coming Soon'}</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                     <DialogHeader>
+                        <DialogTitle>{button.schedule_coming_soon ?? 'Schedule Coming Soon'}</DialogTitle>
+                     </DialogHeader>
+                     <form onSubmit={handleScheduleSubmit} className="space-y-4">
+                        {scheduleLaunchField}
+                        <LoadingButton loading={scheduleProcessing} className="w-full">
+                           {button.submit}
+                        </LoadingButton>
+                     </form>
+                  </DialogContent>
+               </Dialog>
+               <Button
+                  variant="outline"
+                  onClick={() => router.put(route('course.status', { id: course.id }), { status: 'draft' })}
+               >
+                  {button.unpublish_course ?? 'Unpublish'}
+               </Button>
+            </>
+         );
+      }
+
       return (
          <>
             <Button onClick={() => router.put(route('course.status', { id: course.id }), { status: 'approved' })}>
@@ -283,7 +324,7 @@ const CourseUpdateHeader = () => {
                'capitalize',
                course.status === 'approved'
                   ? 'bg-green-500'
-                  : course.status === 'upcoming'
+                  : course.status === 'upcoming' || course.status === 'coming_soon'
                     ? 'bg-amber-400 text-amber-950'
                     : course.status === 'rejected'
                       ? 'bg-red-500'
@@ -291,7 +332,7 @@ const CourseUpdateHeader = () => {
             )}
             disabled
          >
-            {course.status}
+            {course.status === 'coming_soon' ? 'Coming Soon' : course.status.replaceAll('_', ' ')}
          </Button>
 
          {approve_able ? (
@@ -315,7 +356,7 @@ const CourseUpdateHeader = () => {
                               <SelectContent>
                                  {statuses.map((status) => (
                                     <SelectItem key={status} value={status} className="cursor-pointer capitalize">
-                                       {status}
+                                       {status.replaceAll('_', ' ')}
                                     </SelectItem>
                                  ))}
                               </SelectContent>

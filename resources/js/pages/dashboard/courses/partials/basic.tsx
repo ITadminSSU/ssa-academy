@@ -251,13 +251,23 @@ const Basic = () => {
 
                <div className="md:col-span-2">
                   <Label>{common.status ?? 'Status'}</Label>
-                  <Select value={data.status} onValueChange={(value) => setData('status', value)}>
+                  <Select
+                     value={data.status}
+                     onValueChange={(value) =>
+                        setData({
+                           ...data,
+                           status: value,
+                           launch_at: value === 'coming_soon' ? '' : (data.launch_at as string),
+                        })
+                     }
+                  >
                      <SelectTrigger>
                         <SelectValue placeholder="Select status" />
                      </SelectTrigger>
                      <SelectContent>
                         <SelectItem value="draft">Draft</SelectItem>
                         <SelectItem value="upcoming">Upcoming (Coming Soon)</SelectItem>
+                        <SelectItem value="coming_soon">Coming Soon (no date)</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="approved">Approved</SelectItem>
                         <SelectItem value="rejected">Rejected</SelectItem>
@@ -267,22 +277,32 @@ const Basic = () => {
                </div>
 
                <div className="md:col-span-2">
-                  <Label>Launch date (for Coming Soon courses)</Label>
-                  <Input
-                     type="datetime-local"
-                     name="launch_at"
-                     value={(data.launch_at as string) ?? ''}
-                     min={minDateTimeLocalValue(appTimezone)}
-                     onChange={(e) => setData('launch_at', e.target.value)}
-                  />
-                  <p className="text-muted-foreground mt-1 text-xs">
-                     Set when this course becomes available. Use status <strong>Upcoming</strong> to show it in the catalog before launch.
-                  </p>
-                  <InputError message={errors.launch_at} />
+                  {data.status === 'coming_soon' ? (
+                     <p className="text-muted-foreground text-xs">
+                        This course appears in the catalog with a Coming Soon badge and no launch date. It stays closed until you change the status to Approved.
+                     </p>
+                  ) : (
+                     <>
+                        <Label>Launch date {data.status === 'upcoming' ? '(required for Upcoming)' : '(for Coming Soon courses)'}</Label>
+                        <Input
+                           type="datetime-local"
+                           name="launch_at"
+                           value={(data.launch_at as string) ?? ''}
+                           min={minDateTimeLocalValue(appTimezone)}
+                           onChange={(e) => setData('launch_at', e.target.value)}
+                        />
+                        <p className="text-muted-foreground mt-1 text-xs">
+                           Set when this course becomes available. Use status <strong>Upcoming</strong> to show it in the catalog before that date. Use <strong>Coming Soon (no date)</strong> when the launch date is not set yet.
+                        </p>
+                        <InputError message={errors.launch_at} />
+                     </>
+                  )}
                </div>
 
                {(data.status === 'upcoming' ||
+                  data.status === 'coming_soon' ||
                   course.status === 'upcoming' ||
+                  course.status === 'coming_soon' ||
                   Boolean(data.launch_at) ||
                   Boolean(course.launch_at)) && (
                   <div className="md:col-span-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
@@ -294,8 +314,9 @@ const Basic = () => {
                         )}
                      </p>
                      <p className="text-muted-foreground mt-2 text-xs">
-                        Emails are sent when you click <strong>Notify waitlist now</strong> / Open course now, or
-                        automatically when the launch date passes (requires the Forge scheduler).
+                        {data.status === 'coming_soon'
+                           ? 'Emails are sent when you publish the course or click Notify waitlist now. This status does not open on a date.'
+                           : 'Emails are sent when you click Notify waitlist now / Open course now, or automatically when the launch date passes (requires the Forge scheduler).'}
                      </p>
                      {Number(launchNotificationCount) > 0 ? (
                         <Button

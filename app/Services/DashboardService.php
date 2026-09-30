@@ -238,6 +238,7 @@ class DashboardService extends MediaService
                 $statusLabels = [
                     'approved' => 'Approved',
                     'upcoming' => 'Upcoming',
+                    'coming_soon' => 'Coming Soon',
                     'pending' => 'Pending',
                     'private' => 'Private',
                     'draft' => 'Draft',

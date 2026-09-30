@@ -45,7 +45,7 @@ export function isCourseComingSoon(course: Pick<Course, 'status' | 'launch_at' |
       return course.is_coming_soon;
    }
 
-   if (course.status === 'upcoming') {
+   if (course.status === 'upcoming' || course.status === 'coming_soon') {
       return true;
    }
 

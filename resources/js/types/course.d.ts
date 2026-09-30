@@ -47,7 +47,7 @@ interface Course extends TableCommon {
    slug: string;
    short_description: string;
    course_type: string;
-   status: 'draft' | 'upcoming' | 'pending' | 'rejected' | 'approved';
+   status: 'draft' | 'upcoming' | 'coming_soon' | 'pending' | 'rejected' | 'approved';
    launch_at?: string | null;
    is_coming_soon?: boolean;
    is_enrollment_open?: boolean;

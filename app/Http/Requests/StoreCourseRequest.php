@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\CourseAudience;
 use App\Enums\CoursePricingType;
+use App\Enums\CourseStatusType;
 use App\Enums\ExpiryLimitType;
 use App\Enums\TeachingType;
 use App\Models\Course\CourseCategory;
@@ -30,6 +31,9 @@ class StoreCourseRequest extends FormRequest
             'instructor_id' => $instructorId,
             'course_category_id' => filled($categoryId) && (int) $categoryId > 0 ? (int) $categoryId : null,
             'course_category_child_id' => filled($categoryChildId) && (int) $categoryChildId > 0 ? (int) $categoryChildId : null,
+            'launch_at' => $this->input('status') === CourseStatusType::COMING_SOON->value
+                ? null
+                : $this->input('launch_at'),
         ]);
     }
 
