@@ -31,6 +31,40 @@ class CourseEnrollmentService extends MediaService
       return CourseEnrollment::where('course_id', $courseId)->where('user_id', $userId)->first();
    }
 
+   /**
+    * Distinct enrolled students per course for the same audience as the
+    * enrollment list (admin, one instructor, or one learner). Search and
+    * pagination are intentionally ignored so the chart is not the current page.
+    *
+    * @param  array{instructor_id?: int, user_id?: int}  $scope
+    * @return list<array{course: string, students: int}>
+    */
+   public function enrollmentCountsByCourse(array $scope): array
+   {
+      $enrollments = (new CourseEnrollment())->getTable();
+      $courses = (new Course())->getTable();
+
+      return CourseEnrollment::query()
+         ->join($courses, "{$courses}.id", '=', "{$enrollments}.course_id")
+         ->when(array_key_exists('instructor_id', $scope), function ($query) use ($scope, $courses) {
+            $query->where("{$courses}.instructor_id", $scope['instructor_id']);
+         })
+         ->when(array_key_exists('user_id', $scope), function ($query) use ($scope, $enrollments) {
+            $query->where("{$enrollments}.user_id", $scope['user_id']);
+         })
+         ->groupBy("{$courses}.id", "{$courses}.title")
+         ->select("{$courses}.title as course")
+         ->selectRaw("COUNT(DISTINCT {$enrollments}.user_id) as students")
+         ->orderByDesc('students')
+         ->orderBy("{$courses}.title")
+         ->get()
+         ->map(fn ($row) => [
+            'course' => (string) $row->course,
+            'students' => (int) $row->students,
+         ])
+         ->all();
+   }
+
    function getEnrollments(array $data, bool $paginate = false, bool $withBilling = false): LengthAwarePaginator|Collection
    {
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;

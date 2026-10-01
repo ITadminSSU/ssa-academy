@@ -12,17 +12,19 @@ import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSort
 import * as React from 'react';
 import { ReactNode } from 'react';
 import AdminTableColumn from './partials/admin-table-columns';
+import EnrollmentCourseChart, { EnrollmentChartRow } from './partials/enrollment-course-chart';
 import EnrollmentModal from './partials/enrollment-modal';
 import InstructorTableColumn from './partials/instructor-table-columns';
 
 interface Props extends SharedData {
    enrollments: Pagination<CourseEnrollment>;
+   enrollmentChart?: EnrollmentChartRow[];
 }
 
 const Courses = (props: Props) => {
    const { isAdmin } = useAuth();
    const [sorting, setSorting] = React.useState<SortingState>([]);
-   const { translate, enrollments } = props;
+   const { translate, enrollments, enrollmentChart = [] } = props;
    const { button, dashboard } = translate;
 
    const table = useReactTable({
@@ -40,6 +42,8 @@ const Courses = (props: Props) => {
          <EnrollmentModal type="course" title="Add New Course Enrollment" handler={<Button>{button.add_new_enrollment}</Button>} />
 
          <Separator className="my-6" />
+
+         <EnrollmentCourseChart rows={enrollmentChart} />
 
          <Card>
             <TableFilter
