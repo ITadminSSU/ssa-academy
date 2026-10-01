@@ -43,8 +43,12 @@ class CourseEnrollmentService extends MediaService
    {
       $enrollments = (new CourseEnrollment())->getTable();
       $courses = (new Course())->getTable();
+      $studentCount = "COUNT(DISTINCT {$enrollments}.user_id)";
 
-      return CourseEnrollment::query()
+      // Group only by the course id and aggregate the title. Ordering by the
+      // count expression (not the select alias) stays valid when MySQL runs
+      // with ONLY_FULL_GROUP_BY, which rejects ORDER BY `students`.
+      return DB::table($enrollments)
          ->join($courses, "{$courses}.id", '=', "{$enrollments}.course_id")
          ->when(array_key_exists('instructor_id', $scope), function ($query) use ($scope, $courses) {
             $query->where("{$courses}.instructor_id", $scope['instructor_id']);
@@ -52,15 +56,15 @@ class CourseEnrollmentService extends MediaService
          ->when(array_key_exists('user_id', $scope), function ($query) use ($scope, $enrollments) {
             $query->where("{$enrollments}.user_id", $scope['user_id']);
          })
-         ->groupBy("{$courses}.id", "{$courses}.title")
-         ->select("{$courses}.title as course")
-         ->selectRaw("COUNT(DISTINCT {$enrollments}.user_id) as students")
-         ->orderByDesc('students')
-         ->orderBy("{$courses}.title")
+         ->groupBy("{$courses}.id")
+         ->selectRaw("MIN({$courses}.title) as course_title")
+         ->selectRaw("{$studentCount} as student_count")
+         ->orderByRaw("{$studentCount} DESC")
+         ->orderByRaw("MIN({$courses}.title) ASC")
          ->get()
          ->map(fn ($row) => [
-            'course' => (string) $row->course,
-            'students' => (int) $row->students,
+            'course' => (string) $row->course_title,
+            'students' => (int) $row->student_count,
          ])
          ->all();
    }
