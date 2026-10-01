@@ -76,7 +76,7 @@ export const PublicPageHero = ({
 }: {
    kicker: string;
    title: string;
-   description: string;
+   description?: string;
 }) => (
    <section className="relative overflow-hidden bg-[color:var(--ssu-navy)] text-[color:var(--ssu-hero-type)]">
       <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -86,7 +86,7 @@ export const PublicPageHero = ({
       <div className="relative container px-4 py-16 md:py-24">
          <SheetKicker label={kicker} index="SSU" tone="gold" />
          <h1 className="ssu-pub-display mt-5 max-w-4xl text-4xl text-white md:text-6xl">{title}</h1>
-         <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">{description}</p>
+         {description ? <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">{description}</p> : null}
       </div>
    </section>
 );
