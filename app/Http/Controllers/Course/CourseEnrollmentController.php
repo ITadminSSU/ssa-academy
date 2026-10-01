@@ -38,12 +38,20 @@ class CourseEnrollmentController extends Controller
         $users = $this->user->getEnrollmentPickerUsers();
         $courses = $this->enrollmentCourseOptions($user);
         $enrollments = $this->courseEnrollment->getEnrollments($data, true, true);
+        $chartScope = array_filter(
+            [
+                'instructor_id' => $data['instructor_id'] ?? null,
+                'user_id' => $data['user_id'] ?? null,
+            ],
+            static fn ($value) => $value !== null && $value !== '',
+        );
 
         return Inertia::render('dashboard/enrollments/courses', [
             'prices' => $prices,
             'users' => $users,
             'courses' => $courses,
             'enrollments' => $enrollments,
+            'enrollmentChart' => $this->courseEnrollment->enrollmentCountsByCourse($chartScope),
         ]);
     }
 
