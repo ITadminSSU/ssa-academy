@@ -152,6 +152,7 @@ return [
     'prev' => 'Prev',
     'next' => 'Next',
     'back' => 'Back',
+    'view_progress' => 'View Progress',
     'show_full' => 'Show Full',
     'show_less' => 'Show Less',
 

@@ -340,7 +340,7 @@ const Show = ({ course, students, enrollments, summary, sort_by, translate }: Pr
          <div className="grid gap-4 sm:grid-cols-3">
             <Card>
                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">{dashboard.enrolled_students}</CardTitle>
+                  <CardTitle className="text-sm font-medium">{dashboard.enrolled_students || 'Enrolled Students'}</CardTitle>
                </CardHeader>
                <CardContent className="text-2xl font-bold">{summary.total_enrollments}</CardContent>
             </Card>
