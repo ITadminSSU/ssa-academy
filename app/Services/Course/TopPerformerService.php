@@ -27,6 +27,11 @@ class TopPerformerService
             ->groupBy('user_id')
             ->map(function (Collection $userEnrollments) use (&$courseCache) {
                 $user = $userEnrollments->first()->user;
+
+                if ($user === null) {
+                    return null;
+                }
+
                 $courseScores = [];
                 $weightedSum = 0.0;
                 $totalWeight = 0;
@@ -36,6 +41,10 @@ class TopPerformerService
 
                     if (!isset($courseCache[$courseId])) {
                         $courseCache[$courseId] = $enrollment->course;
+                    }
+
+                    if ($courseCache[$courseId] === null) {
+                        continue;
                     }
 
                     $detail = $this->progressService->computeLearnerCourseScoreDetail(
