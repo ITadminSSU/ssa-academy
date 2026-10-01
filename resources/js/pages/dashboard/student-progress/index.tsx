@@ -59,7 +59,7 @@ const Index = ({ courses, summary, translate, auth }: Props) => {
             </Card>
             <Card>
                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">{dashboard.enrolled_students}</CardTitle>
+                  <CardTitle className="text-sm font-medium">{dashboard.enrolled_students || 'Enrolled Students'}</CardTitle>
                </CardHeader>
                <CardContent className="text-2xl font-bold">{summary.total_enrollments}</CardContent>
             </Card>
@@ -91,7 +91,7 @@ const Index = ({ courses, summary, translate, auth }: Props) => {
                   <TableRow>
                      <TableHead>{table.course_title}</TableHead>
                      <TableHead>{table.instructor}</TableHead>
-                     <TableHead className="text-center">{dashboard.enrolled_students}</TableHead>
+                     <TableHead className="text-center">{dashboard.enrolled_students || 'Enrolled Students'}</TableHead>
                      <TableHead>{dashboard.completion}</TableHead>
                      <TableHead>{dashboard.assignments}</TableHead>
                      <TableHead>{dashboard.quizzes}</TableHead>
@@ -127,7 +127,7 @@ const Index = ({ courses, summary, translate, auth }: Props) => {
                               </TableCell>
                               <TableCell className="text-end">
                                  <Button asChild size="sm" variant="outline">
-                                    <Link href={route(progressShowRoute, course.id)}>{button.view_progress}</Link>
+                                    <Link href={route(progressShowRoute, course.id)}>{button.view_progress || 'View Progress'}</Link>
                                  </Button>
                               </TableCell>
                            </TableRow>

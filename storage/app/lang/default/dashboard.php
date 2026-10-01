@@ -253,6 +253,7 @@ return [
 
     // Course Progress
     'course_progress' => 'Course Progress',
+    'enrolled_students' => 'Enrolled Students',
     'completion_rate' => 'Completion Rate',
     'time_spent' => 'Time Spent',
     'quiz_scores' => 'Quiz Scores',
