@@ -29,6 +29,7 @@ beforeEach(function () {
 afterEach(function () {
     Schema::dropIfExists('course_enrollments');
     Schema::dropIfExists('courses');
+    DB::connection()->setTablePrefix('');
 });
 
 test('enrollment chart counts each student once and sorts by that count', function () {
@@ -79,4 +80,39 @@ test('enrollment chart keeps the instructor and learner scopes', function () {
 
     expect((new Course())->getTable())->toBe('courses')
         ->and((new CourseEnrollment())->getTable())->toBe('course_enrollments');
+});
+
+test('enrollment chart qualifies tables with the database prefix', function () {
+    Schema::dropIfExists('course_enrollments');
+    Schema::dropIfExists('courses');
+    DB::connection()->setTablePrefix('ssa_academy_');
+
+    Schema::create('courses', function (Blueprint $table) {
+        $table->id();
+        $table->string('title');
+        $table->unsignedBigInteger('instructor_id')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::create('course_enrollments', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id');
+        $table->unsignedBigInteger('course_id');
+        $table->timestamps();
+    });
+
+    $now = now();
+
+    DB::table('courses')->insert([
+        ['id' => 1, 'title' => 'Alpha', 'instructor_id' => 10, 'created_at' => $now, 'updated_at' => $now],
+    ]);
+
+    DB::table('course_enrollments')->insert([
+        ['user_id' => 1, 'course_id' => 1, 'created_at' => $now, 'updated_at' => $now],
+        ['user_id' => 2, 'course_id' => 1, 'created_at' => $now, 'updated_at' => $now],
+    ]);
+
+    expect((new CourseEnrollmentService())->enrollmentCountsByCourse([]))->toBe([
+        ['course' => 'Alpha', 'students' => 2],
+    ]);
 });

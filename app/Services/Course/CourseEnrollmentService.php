@@ -43,11 +43,15 @@ class CourseEnrollmentService extends MediaService
    {
       $enrollments = (new CourseEnrollment())->getTable();
       $courses = (new Course())->getTable();
-      $studentCount = "COUNT(DISTINCT {$enrollments}.user_id)";
+      $grammar = DB::connection()->getQueryGrammar();
+      // Raw SQL does not receive the connection prefix. The live database
+      // prefixes every table (ssa_academy_), so qualify these expressions
+      // with the same wrapped names the query builder uses.
+      $enrollmentsSql = $grammar->wrapTable($enrollments);
+      $coursesSql = $grammar->wrapTable($courses);
+      $studentCount = 'COUNT(DISTINCT '.$enrollmentsSql.'.'.$grammar->wrap('user_id').')';
+      $courseTitle = 'MIN('.$coursesSql.'.'.$grammar->wrap('title').')';
 
-      // Group only by the course id and aggregate the title. Ordering by the
-      // count expression (not the select alias) stays valid when MySQL runs
-      // with ONLY_FULL_GROUP_BY, which rejects ORDER BY `students`.
       return DB::table($enrollments)
          ->join($courses, "{$courses}.id", '=', "{$enrollments}.course_id")
          ->when(array_key_exists('instructor_id', $scope), function ($query) use ($scope, $courses) {
@@ -57,10 +61,10 @@ class CourseEnrollmentService extends MediaService
             $query->where("{$enrollments}.user_id", $scope['user_id']);
          })
          ->groupBy("{$courses}.id")
-         ->selectRaw("MIN({$courses}.title) as course_title")
+         ->selectRaw("{$courseTitle} as course_title")
          ->selectRaw("{$studentCount} as student_count")
          ->orderByRaw("{$studentCount} DESC")
-         ->orderByRaw("MIN({$courses}.title) ASC")
+         ->orderByRaw("{$courseTitle} ASC")
          ->get()
          ->map(fn ($row) => [
             'course' => (string) $row->course_title,
