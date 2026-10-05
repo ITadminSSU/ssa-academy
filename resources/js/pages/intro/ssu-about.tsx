@@ -27,6 +27,7 @@ interface TeamMember {
    id: number;
    name: string;
    role: string;
+   short_description?: string | null;
    photo: string | null;
    sort_order: number;
 }
@@ -123,6 +124,9 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
                               <div className="p-4 text-center">
                                  <h3 className="font-display text-base font-semibold text-[color:var(--ssu-navy)]">{member.name}</h3>
                                  <p className="text-sm text-[color:var(--ssu-muted)]">{member.role}</p>
+                                 {member.short_description?.trim() ? (
+                                    <p className="mt-2 text-sm leading-relaxed text-[color:var(--ssu-muted)]">{member.short_description}</p>
+                                 ) : null}
                               </div>
                            </div>
                         ))}

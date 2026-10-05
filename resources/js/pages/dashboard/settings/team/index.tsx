@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useImageCrop } from '@/hooks/use-image-crop';
 import DashboardLayout from '@/layouts/dashboard/layout';
@@ -20,6 +21,7 @@ interface TeamMember {
    id: number;
    name: string;
    role: string;
+   short_description: string | null;
    photo: string | null;
    sort_order: number;
    is_active: boolean;
@@ -32,6 +34,7 @@ interface Props extends SharedData {
 type TeamMemberForm = {
    name: string;
    role: string;
+   short_description: string;
    photo: File | null;
    sort_order: number;
    is_active: boolean;
@@ -40,6 +43,7 @@ type TeamMemberForm = {
 const emptyForm = (members: TeamMember[]): TeamMemberForm => ({
    name: '',
    role: '',
+   short_description: '',
    photo: null,
    sort_order: members.length > 0 ? Math.max(...members.map((member) => member.sort_order)) + 1 : 1,
    is_active: true,
@@ -100,6 +104,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
       editForm.setData({
          name: member.name,
          role: member.role,
+         short_description: member.short_description ?? '',
          photo: null,
          sort_order: member.sort_order,
          is_active: member.is_active,
@@ -148,6 +153,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
          const payload: Record<string, unknown> = {
             name: data.name,
             role: data.role,
+            short_description: data.short_description,
             sort_order: data.sort_order,
             is_active: data.is_active ? 1 : 0,
          };
@@ -204,7 +210,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
                <div>
                   <h1 className="text-2xl font-bold">Our Team</h1>
                   <p className="text-muted-foreground text-sm">
-                     Manage team members shown on the About Us page. Photos are cropped before upload.
+                     Manage team members shown on the homepage and the About page. Photos are cropped before upload.
                   </p>
                </div>
 
@@ -239,6 +245,19 @@ const TeamSettings = ({ teamMembers }: Props) => {
                            <Input id="create-role" value={createForm.data.role} onChange={(e) => createForm.setData('role', e.target.value)} required />
                            <InputError message={createForm.errors.role} />
                         </div>
+                        <div>
+                           <Label htmlFor="create-description">Short description</Label>
+                           <Textarea
+                              id="create-description"
+                              value={createForm.data.short_description}
+                              onChange={(e) => createForm.setData('short_description', e.target.value)}
+                              maxLength={500}
+                              rows={4}
+                              placeholder="A sentence or two about their work."
+                           />
+                           <p className="text-muted-foreground mt-1 text-xs">Shown under the name on the homepage. Leave blank to use the role / title there.</p>
+                           <InputError message={createForm.errors.short_description} />
+                        </div>
                         {renderPhotoField(createForm, createCrop, createPreview)}
                         <div>
                            <Label htmlFor="create-sort">Display order</Label>
@@ -251,7 +270,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
                            />
                         </div>
                         <div className="flex items-center justify-between rounded-lg border p-3">
-                           <Label htmlFor="create-active">Visible on About page</Label>
+                           <Label htmlFor="create-active">Visible on the homepage and About page</Label>
                            <Switch id="create-active" checked={createForm.data.is_active} onCheckedChange={(checked) => createForm.setData('is_active', checked)} />
                         </div>
                         <LoadingButton loading={createForm.processing}>Save team member</LoadingButton>
@@ -362,6 +381,19 @@ const TeamSettings = ({ teamMembers }: Props) => {
                         <Input id="edit-role" value={editForm.data.role} onChange={(e) => editForm.setData('role', e.target.value)} required />
                         <InputError message={editForm.errors.role} />
                      </div>
+                     <div>
+                        <Label htmlFor="edit-description">Short description</Label>
+                        <Textarea
+                           id="edit-description"
+                           value={editForm.data.short_description}
+                           onChange={(e) => editForm.setData('short_description', e.target.value)}
+                           maxLength={500}
+                           rows={4}
+                           placeholder="A sentence or two about their work."
+                        />
+                        <p className="text-muted-foreground mt-1 text-xs">Shown under the name on the homepage. Leave blank to use the role / title there.</p>
+                        <InputError message={editForm.errors.short_description} />
+                     </div>
                      {renderPhotoField(editForm, editCrop, editPreview, editingMember.photo)}
                      <div>
                         <Label htmlFor="edit-sort">Display order</Label>
@@ -374,7 +406,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
                         />
                      </div>
                      <div className="flex items-center justify-between rounded-lg border p-3">
-                        <Label htmlFor="edit-active">Visible on About page</Label>
+                        <Label htmlFor="edit-active">Visible on the homepage and About page</Label>
                         <Switch id="edit-active" checked={editForm.data.is_active} onCheckedChange={(checked) => editForm.setData('is_active', checked)} />
                      </div>
                      <LoadingButton loading={editForm.processing}>Update team member</LoadingButton>

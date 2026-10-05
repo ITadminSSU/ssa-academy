@@ -21,7 +21,7 @@ class TeamMemberService extends MediaService
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
-            ->get(['id', 'name', 'role', 'photo', 'sort_order']);
+            ->get(['id', 'name', 'role', 'short_description', 'photo', 'sort_order']);
     }
 
     public function create(array $data, ?UploadedFile $photo = null): TeamMember
@@ -29,6 +29,7 @@ class TeamMemberService extends MediaService
         $member = TeamMember::create([
             'name' => $data['name'],
             'role' => $data['role'],
+            'short_description' => $this->shortDescription($data['short_description'] ?? null),
             'sort_order' => $data['sort_order'] ?? 0,
             'is_active' => $data['is_active'] ?? true,
         ]);
@@ -45,6 +46,7 @@ class TeamMemberService extends MediaService
         $member->fill([
             'name' => $data['name'],
             'role' => $data['role'],
+            'short_description' => $this->shortDescription($data['short_description'] ?? null),
             'sort_order' => $data['sort_order'] ?? $member->sort_order,
             'is_active' => $data['is_active'] ?? $member->is_active,
         ]);
@@ -56,6 +58,13 @@ class TeamMemberService extends MediaService
         $member->save();
 
         return $member->fresh();
+    }
+
+    private function shortDescription(mixed $value): ?string
+    {
+        $description = trim((string) $value);
+
+        return $description === '' ? null : $description;
     }
 
     private function storePhoto(TeamMember $member, UploadedFile $photo): void

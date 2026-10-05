@@ -307,6 +307,7 @@ export const Instructors = () => {
    const slots = (['A', 'B', 'C'] as const).map((letter, index) => {
       const member = members[index];
       const role = member?.role?.trim() || '';
+      const description = member?.short_description?.trim() || '';
       const hasRealRole = role.length > 0 && !/^instructor profile/i.test(role);
 
       return {
@@ -314,7 +315,7 @@ export const Instructors = () => {
          letter,
          name: member?.name?.trim() || 'Name pending',
          photo: member?.photo || null,
-         bio: hasRealRole ? role : PLACEHOLDER_BIO,
+         bio: description || (hasRealRole ? role : PLACEHOLDER_BIO),
       };
    });
 
