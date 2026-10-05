@@ -48,6 +48,7 @@ export interface IntroPageProps extends SharedData {
       id: number;
       name: string;
       role: string;
+      short_description?: string | null;
       photo: string | null;
    }>;
 }
