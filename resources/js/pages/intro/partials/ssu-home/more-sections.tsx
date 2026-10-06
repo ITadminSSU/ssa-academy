@@ -343,10 +343,7 @@ const InstructorCard = ({ card, onReadMore }: { card: InstructorCardData; onRead
             )}
          </div>
          <div className="flex flex-1 flex-col px-5 py-5">
-            <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">
-               Instructor profile / {card.letter}
-            </p>
-            <h3 className="mt-3 text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
+            <h3 className="text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
             {card.role ? <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{card.role}</p> : null}
             {card.bio ? (
                <p
@@ -393,19 +390,12 @@ export const Instructors = () => {
    return (
       <section className="bg-[color:var(--ssu-cream)] py-20">
          <div className="container px-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-               <div>
-                  <SheetKicker label="The practitioners" index="13" />
-                  <h2 className="ssu-pub-display mt-5 max-w-3xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
-                     Learn from people who
-                     <br />
-                     <span className="text-[color:var(--ssu-gold)]">know the work.</span>
-                  </h2>
-               </div>
-               <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-navy)]/40 uppercase">
-                  Placeholder data / ready to replace
-               </p>
-            </div>
+            <SheetKicker label="The practitioners" index="13" />
+            <h2 className="ssu-pub-display mt-5 max-w-3xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
+               Learn from people who
+               <br />
+               <span className="text-[color:var(--ssu-gold)]">know the work.</span>
+            </h2>
 
             <div className="mt-12 grid items-stretch gap-5 md:grid-cols-3">
                {slots.map((card) => (
