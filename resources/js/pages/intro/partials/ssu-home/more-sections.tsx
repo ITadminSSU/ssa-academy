@@ -329,9 +329,9 @@ const InstructorCard = ({ card, onReadMore }: { card: InstructorCardData; onRead
 
    return (
       <article className="flex h-full flex-col border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
-         <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-[#d5ddd8]">
+         <div className="relative flex aspect-[3/4] items-center justify-center overflow-hidden bg-[#d5ddd8]">
             {card.photo ? (
-               <img src={card.photo} alt={card.name} className="absolute inset-0 h-full w-full object-cover" />
+               <img src={card.photo} alt={card.name} className="absolute inset-0 h-full w-full object-contain object-center" />
             ) : (
                <>
                   <span className="absolute h-[72%] max-h-40 w-[72%] max-w-40 rounded-full border border-[#8fa09a]/55" aria-hidden />
@@ -424,11 +424,13 @@ export const Instructors = () => {
                      </DialogHeader>
                      <div className="flex flex-col gap-5 sm:flex-row">
                         {selected.photo ? (
-                           <img
-                              src={selected.photo}
-                              alt={selected.name}
-                              className="h-48 w-36 shrink-0 object-cover"
-                           />
+                           <div className="aspect-[3/4] w-36 shrink-0 overflow-hidden bg-[#efece4]">
+                              <img
+                                 src={selected.photo}
+                                 alt={selected.name}
+                                 className="h-full w-full object-contain object-center"
+                              />
+                           </div>
                         ) : null}
                         <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-[#43576c]">
                            {selected.bio}

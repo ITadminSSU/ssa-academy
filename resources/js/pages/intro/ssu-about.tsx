@@ -112,14 +112,14 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
                            <article
                               key={member.id}
                               id={`team-member-${member.id}`}
-                              className="overflow-hidden border border-[color:var(--ssu-line)] bg-white md:grid md:grid-cols-[180px_minmax(0,1fr)]"
+                              className="overflow-hidden border border-[color:var(--ssu-line)] bg-white md:grid md:grid-cols-[180px_minmax(0,1fr)] md:items-start"
                            >
-                              <div className="relative aspect-[3/4] w-full overflow-hidden bg-[color:var(--ssu-paper)] md:aspect-auto md:min-h-full">
+                              <div className="relative aspect-[3/4] w-full overflow-hidden bg-[color:var(--ssu-paper)]">
                                  {member.photo ? (
                                     <img
                                        src={member.photo}
                                        alt={member.name}
-                                       className="absolute inset-0 block h-full w-full object-cover object-center"
+                                       className="absolute inset-0 block h-full w-full object-contain object-center"
                                     />
                                  ) : (
                                     <div className="absolute inset-0 bg-[color:var(--ssu-paper)]" />

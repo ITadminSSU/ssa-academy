@@ -203,9 +203,9 @@ const TeamSettings = ({ teamMembers }: Props) => {
       <div className="space-y-3">
          <Label>Photo</Label>
          <div className="flex items-center gap-4">
-            <div className="bg-muted h-28 w-20 overflow-hidden rounded-lg border">
+            <div className="bg-muted aspect-[3/4] w-20 overflow-hidden rounded-lg border">
                {(preview || fallbackPhoto) && (
-                  <img src={preview || fallbackPhoto || ''} alt="Team member preview" className="h-full w-full object-cover" />
+                  <img src={preview || fallbackPhoto || ''} alt="Team member preview" className="h-full w-full object-contain object-center" />
                )}
             </div>
             <div>
@@ -316,7 +316,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
                            <TableRow key={member.id}>
                               <TableCell>
                                  {member.photo ? (
-                                    <img src={member.photo} alt={member.name} className="h-14 w-10 rounded object-cover" />
+                                    <img src={member.photo} alt={member.name} className="aspect-[3/4] h-14 w-auto rounded object-contain object-center" />
                                  ) : (
                                     <div className="bg-muted h-14 w-10 rounded" />
                                  )}
