@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TeamMemberRequest;
 use App\Models\TeamMember;
 use App\Services\TeamMemberService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,43 +21,18 @@ class TeamMemberController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(TeamMemberRequest $request): RedirectResponse
     {
-        $validated = $this->validatedMember($request, photoRequired: true);
-
-        $this->teamMembers->create($validated, $request->file('photo'));
+        $this->teamMembers->create($request->validated(), $request->file('photo'));
 
         return back()->with('success', 'Team member added successfully.');
     }
 
-    public function update(Request $request, TeamMember $teamMember): RedirectResponse
+    public function update(TeamMemberRequest $request, TeamMember $teamMember): RedirectResponse
     {
-        $validated = $this->validatedMember($request, photoRequired: false);
-
-        $this->teamMembers->update($teamMember, $validated, $request->file('photo'));
+        $this->teamMembers->update($teamMember, $request->validated(), $request->file('photo'));
 
         return back()->with('success', 'Team member updated successfully.');
-    }
-
-    private function validatedMember(Request $request, bool $photoRequired): array
-    {
-        $request->merge([
-            'is_active' => $request->boolean('is_active'),
-            'sort_order' => (int) $request->input('sort_order', 0),
-        ]);
-
-        if (! $request->hasFile('photo')) {
-            $request->request->remove('photo');
-        }
-
-        return $request->validate([
-            'name' => 'required|string|max:255',
-            'role' => 'required|string|max:255',
-            'short_description' => 'nullable|string|max:500',
-            'photo' => ($photoRequired ? 'required' : 'nullable').'|image|mimes:jpeg,png,jpg|max:15360',
-            'sort_order' => 'integer|min:0',
-            'is_active' => 'boolean',
-        ]);
     }
 
     public function destroy(TeamMember $teamMember): RedirectResponse
