@@ -346,6 +346,118 @@
    }
 }
 
+/* Practitioners / 13 — looping profile marquee + card flip */
+.ssu-public .ssu-practitioners-marquee {
+   overflow: hidden;
+   width: 100%;
+   mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+}
+
+.ssu-public .ssu-practitioners-marquee__track {
+   display: flex;
+   width: max-content;
+   animation: ssu-practitioners-marquee var(--ssu-marquee-duration, 48s) linear infinite;
+   will-change: transform;
+}
+
+.ssu-public .ssu-practitioners-marquee__set,
+.ssu-public .ssu-practitioners-marquee__unit {
+   display: flex;
+   flex-shrink: 0;
+   align-items: stretch;
+}
+
+.ssu-public .ssu-practitioners-marquee__unit {
+   gap: 1.25rem;
+   padding-right: 1.25rem;
+}
+
+.ssu-public .ssu-practitioners-marquee:hover .ssu-practitioners-marquee__track,
+.ssu-public .ssu-practitioners-marquee:focus-within .ssu-practitioners-marquee__track,
+.ssu-public .ssu-practitioners-marquee.is-paused .ssu-practitioners-marquee__track {
+   animation-play-state: paused;
+}
+
+@keyframes ssu-practitioners-marquee {
+   from {
+      transform: translateX(0);
+   }
+
+   to {
+      transform: translateX(-50%);
+   }
+}
+
+@media (max-width: 767px) {
+   .ssu-public .ssu-practitioners-marquee__track {
+      animation-duration: calc(var(--ssu-marquee-duration, 48s) * 1.45);
+   }
+}
+
+.ssu-public .ssu-practitioner-flip {
+   perspective: 1400px;
+   flex: 0 0 min(22.5rem, 82vw);
+   width: min(22.5rem, 82vw);
+}
+
+.ssu-public .ssu-practitioners-grid .ssu-practitioner-flip {
+   flex: 1 1 auto;
+   width: auto;
+   max-width: none;
+}
+
+.ssu-public .ssu-practitioner-flip__inner {
+   position: relative;
+   height: 100%;
+   transform-style: preserve-3d;
+   transition: transform 0.6s ease;
+}
+
+.ssu-public .ssu-practitioner-flip.is-flipped .ssu-practitioner-flip__inner {
+   transform: rotateY(180deg);
+}
+
+.ssu-public .ssu-practitioner-flip__face {
+   border: 1px solid var(--ssu-line);
+   background: var(--ssu-cream);
+   backface-visibility: hidden;
+   -webkit-backface-visibility: hidden;
+}
+
+.ssu-public .ssu-practitioner-flip__front {
+   display: flex;
+   height: 100%;
+   flex-direction: column;
+   transform: rotateY(0deg);
+}
+
+.ssu-public .ssu-practitioner-flip__back {
+   position: absolute;
+   inset: 0;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
+   transform: rotateY(180deg);
+}
+
+.ssu-public .ssu-practitioner-flip.is-flipped .ssu-practitioner-flip__front {
+   pointer-events: none;
+}
+
+.ssu-public .ssu-practitioner-flip:not(.is-flipped) .ssu-practitioner-flip__back {
+   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .ssu-public .ssu-practitioners-marquee__track {
+      animation: none;
+   }
+
+   .ssu-public .ssu-practitioner-flip__inner {
+      transition: none;
+   }
+}
+
 /* Sequence / 07 — Canva timeline */
 .ssu-public .ssu-sequence {
    position: relative;

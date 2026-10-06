@@ -1,13 +1,12 @@
 import PublicFaqAccordion from '@/components/ssu-public/faq-accordion';
 import { GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
 import WorkflowRadar from '@/components/ssu-public/workflow-radar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BRAND_LOGOS } from '@/lib/branding';
 import { homeFaqs } from '@/lib/ssu-faqs';
 import { IntroPageProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { ArrowRight, BadgeCheck, BarChart3, Compass, FileText, Hammer, Hash, Scan } from 'lucide-react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type Ref } from 'react';
 
 const tools = ['PlanSwift', 'Bluebeam', 'On-Screen Takeoff', 'Primavera', 'ZZ Takeoff', 'AutoCAD', 'Revit', 'Procore'];
 
@@ -303,16 +302,110 @@ export const Stats = () => (
 const PLACEHOLDER_BIO =
    'Role, construction specialization, short bio, and courses taught will be added from verified practitioner details.';
 
+type PublicTeamMember = NonNullable<IntroPageProps['teamMembers']>[number];
+
 type InstructorCardData = {
    id: number | string;
-   letter: 'A' | 'B' | 'C';
    name: string;
    photo: string | null;
    role: string;
    bio: string;
 };
 
-const InstructorCard = ({ card, onReadMore }: { card: InstructorCardData; onReadMore: () => void }) => {
+const PENDING_CARDS: InstructorCardData[] = (['A', 'B', 'C'] as const).map((letter) => ({
+   id: letter,
+   name: 'Name pending',
+   photo: null,
+   role: '',
+   bio: PLACEHOLDER_BIO,
+}));
+
+const cardFromMember = (member: PublicTeamMember): InstructorCardData => {
+   const role = member.role?.trim() || '';
+   const description = member.short_description?.trim() || '';
+   const hasRealRole = role.length > 0 && !/^instructor profile/i.test(role);
+
+   return {
+      id: member.id,
+      name: member.name?.trim() || 'Name pending',
+      photo: member.photo || null,
+      role: hasRealRole ? role : '',
+      bio: description,
+   };
+};
+
+const usePrefersReducedMotion = () => {
+   const [reduced, setReduced] = useState(false);
+
+   useEffect(() => {
+      const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const sync = () => setReduced(media.matches);
+      sync();
+      media.addEventListener('change', sync);
+
+      return () => media.removeEventListener('change', sync);
+   }, []);
+
+   return reduced;
+};
+
+const useMarqueeRepeats = (enabled: boolean, itemKey: string) => {
+   const wrapRef = useRef<HTMLDivElement>(null);
+   const unitRef = useRef<HTMLDivElement>(null);
+   const [repeats, setRepeats] = useState(2);
+
+   useLayoutEffect(() => {
+      if (!enabled) {
+         return;
+      }
+
+      const update = () => {
+         const unit = unitRef.current?.scrollWidth ?? 0;
+         const wrap = wrapRef.current?.clientWidth ?? 0;
+
+         if (unit < 1 || wrap < 1) {
+            return;
+         }
+
+         setRepeats(Math.min(8, Math.max(1, Math.ceil(wrap / unit))));
+      };
+
+      update();
+
+      const observer = new ResizeObserver(update);
+
+      if (wrapRef.current) {
+         observer.observe(wrapRef.current);
+      }
+
+      if (unitRef.current) {
+         observer.observe(unitRef.current);
+      }
+
+      window.addEventListener('resize', update);
+
+      return () => {
+         observer.disconnect();
+         window.removeEventListener('resize', update);
+      };
+   }, [enabled, itemKey]);
+
+   return { wrapRef, unitRef, repeats };
+};
+
+const InstructorCard = ({
+   card,
+   flipped,
+   interactive,
+   onFlip,
+   onUnflip,
+}: {
+   card: InstructorCardData;
+   flipped: boolean;
+   interactive: boolean;
+   onFlip: () => void;
+   onUnflip: () => void;
+}) => {
    const bioRef = useRef<HTMLParagraphElement>(null);
    const [isClamped, setIsClamped] = useState(false);
 
@@ -327,68 +420,181 @@ const InstructorCard = ({ card, onReadMore }: { card: InstructorCardData; onRead
       setIsClamped(el.scrollHeight > el.clientHeight + 1);
    }, [card.bio]);
 
+   const handleCardKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
+      if (!interactive) {
+         return;
+      }
+
+      if (event.key !== 'Enter' && event.key !== ' ') {
+         return;
+      }
+
+      if ((event.target as HTMLElement).closest('button')) {
+         return;
+      }
+
+      event.preventDefault();
+      flipped ? onUnflip() : onFlip();
+   };
+
    return (
-      <article className="flex h-full flex-col border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
-         <div className="relative flex aspect-[3/4] items-center justify-center overflow-hidden bg-[#d5ddd8]">
-            {card.photo ? (
-               <img src={card.photo} alt={card.name} className="absolute inset-0 h-full w-full object-contain object-center" />
-            ) : (
-               <>
-                  <span className="absolute h-[72%] max-h-40 w-[72%] max-w-40 rounded-full border border-[#8fa09a]/55" aria-hidden />
-                  <span className="absolute h-[48%] max-h-[6.75rem] w-[48%] max-w-[6.75rem] rounded-full border border-[#8fa09a]/80" aria-hidden />
-                  <p className="relative font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-navy)]/45 uppercase">
-                     Photo pending
-                  </p>
-               </>
-            )}
-         </div>
-         <div className="flex flex-1 flex-col px-5 py-5">
-            <h3 className="text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
-            {card.role ? <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{card.role}</p> : null}
-            {card.bio ? (
-               <p
-                  ref={bioRef}
-                  className="mt-2 line-clamp-4 min-h-[5.5rem] text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]"
-               >
-                  {card.bio}
-               </p>
-            ) : null}
-            {isClamped ? (
+      <article
+         className={`ssu-practitioner-flip h-full ${flipped ? 'is-flipped' : ''}`}
+         aria-hidden={interactive ? undefined : true}
+         aria-expanded={interactive ? flipped : undefined}
+         aria-label={interactive ? `${card.name} biography card` : undefined}
+         tabIndex={interactive ? 0 : -1}
+         onKeyDown={handleCardKeyDown}
+      >
+         <div className="ssu-practitioner-flip__inner">
+            <div className="ssu-practitioner-flip__face ssu-practitioner-flip__front">
                <button
                   type="button"
-                  onClick={onReadMore}
-                  className="mt-auto pt-3 text-left text-[11px] font-semibold tracking-[0.16em] text-[color:var(--ssu-navy)] uppercase"
+                  tabIndex={interactive ? 0 : -1}
+                  aria-label={`Show full biography for ${card.name}`}
+                  onClick={onFlip}
+                  className="relative flex aspect-[3/4] w-full items-center justify-center overflow-hidden bg-[#d5ddd8]"
                >
-                  Read more
+                  {card.photo ? (
+                     <img
+                        src={card.photo}
+                        alt={interactive ? card.name : ''}
+                        className="absolute inset-0 h-full w-full object-contain object-center"
+                     />
+                  ) : (
+                     <>
+                        <span className="absolute h-[72%] max-h-40 w-[72%] max-w-40 rounded-full border border-[#8fa09a]/55" aria-hidden />
+                        <span className="absolute h-[48%] max-h-[6.75rem] w-[48%] max-w-[6.75rem] rounded-full border border-[#8fa09a]/80" aria-hidden />
+                        <p className="relative font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-navy)]/45 uppercase">
+                           Photo pending
+                        </p>
+                     </>
+                  )}
                </button>
-            ) : null}
+               <div className="flex flex-1 flex-col px-5 py-5">
+                  <h3 className="text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
+                  {card.role ? <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{card.role}</p> : null}
+                  {card.bio ? (
+                     <p
+                        ref={bioRef}
+                        className="mt-2 line-clamp-4 min-h-[5.5rem] text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]"
+                     >
+                        {card.bio}
+                     </p>
+                  ) : null}
+                  {isClamped ? (
+                     <button
+                        type="button"
+                        tabIndex={interactive ? 0 : -1}
+                        onClick={onFlip}
+                        className="mt-auto pt-3 text-left text-[11px] font-semibold tracking-[0.16em] text-[color:var(--ssu-navy)] uppercase"
+                     >
+                        Read more
+                     </button>
+                  ) : null}
+               </div>
+            </div>
+
+            <div className="ssu-practitioner-flip__face ssu-practitioner-flip__back">
+               <div className="flex h-full min-h-0 flex-col px-5 py-5">
+                  <h3 className="text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
+                  {card.role ? <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{card.role}</p> : null}
+                  <p className="mt-4 min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]">
+                     {card.bio || 'Biography pending.'}
+                  </p>
+                  <button
+                     type="button"
+                     tabIndex={interactive ? 0 : -1}
+                     onClick={onUnflip}
+                     className="mt-4 text-left text-[11px] font-semibold tracking-[0.16em] text-[color:var(--ssu-navy)] uppercase"
+                  >
+                     Flip back
+                  </button>
+               </div>
+            </div>
          </div>
       </article>
    );
 };
 
+const InstructorSet = ({
+   cards,
+   repeatKey,
+   unitRef,
+   flippedKey,
+   interactive,
+   onFlip,
+   onUnflip,
+}: {
+   cards: InstructorCardData[];
+   repeatKey: string;
+   unitRef?: Ref<HTMLDivElement>;
+   flippedKey: string | null;
+   interactive: boolean;
+   onFlip: (instanceKey: string) => void;
+   onUnflip: () => void;
+}) => (
+   <div ref={unitRef} className="ssu-practitioners-marquee__unit">
+      {cards.map((card, index) => {
+         const instanceKey = interactive ? String(card.id) : `${card.id}-clone-${repeatKey}-${index}`;
+
+         return (
+            <InstructorCard
+               key={instanceKey}
+               card={card}
+               flipped={flippedKey === instanceKey}
+               interactive={interactive}
+               onFlip={() => onFlip(instanceKey)}
+               onUnflip={onUnflip}
+            />
+         );
+      })}
+   </div>
+);
+
 export const Instructors = () => {
    const { props } = usePage<IntroPageProps>();
    const members = props.teamMembers ?? [];
-   const [selected, setSelected] = useState<InstructorCardData | null>(null);
-   const slots = (['A', 'B', 'C'] as const).map((letter, index) => {
-      const member = members[index];
-      const role = member?.role?.trim() || '';
-      const description = member?.short_description?.trim() || '';
-      const hasRealRole = role.length > 0 && !/^instructor profile/i.test(role);
+   const prefersReducedMotion = usePrefersReducedMotion();
+   const [flippedKey, setFlippedKey] = useState<string | null>(null);
+   const cards = useMemo(
+      () => (members.length > 0 ? members.map(cardFromMember) : PENDING_CARDS),
+      [members],
+   );
+   const useMarquee = members.length >= 3 && !prefersReducedMotion;
+   const marqueeKey = cards.map((card) => card.id).join('-');
+   const { wrapRef, unitRef, repeats } = useMarqueeRepeats(useMarquee, marqueeKey);
+   const marqueeSeconds = Math.max(36, cards.length * repeats * 8);
 
-      return {
-         id: member?.id ?? letter,
-         letter,
-         name: member?.name?.trim() || 'Name pending',
-         photo: member?.photo || null,
-         role: hasRealRole ? role : '',
-         bio: description || (member && hasRealRole ? '' : PLACEHOLDER_BIO),
-      } satisfies InstructorCardData;
-   });
+   useEffect(() => {
+      if (!flippedKey) {
+         return;
+      }
+
+      const onKeyDown = (event: KeyboardEvent) => {
+         if (event.key === 'Escape') {
+            setFlippedKey(null);
+         }
+      };
+
+      window.addEventListener('keydown', onKeyDown);
+
+      return () => window.removeEventListener('keydown', onKeyDown);
+   }, [flippedKey]);
+
+   const renderCard = (card: InstructorCardData, instanceKey: string, interactive: boolean) => (
+      <InstructorCard
+         key={instanceKey}
+         card={card}
+         flipped={flippedKey === instanceKey}
+         interactive={interactive}
+         onFlip={() => setFlippedKey(instanceKey)}
+         onUnflip={() => setFlippedKey(null)}
+      />
+   );
 
    return (
-      <section className="bg-[color:var(--ssu-cream)] py-20">
+      <section className="overflow-x-hidden bg-[color:var(--ssu-cream)] py-20">
          <div className="container px-4">
             <SheetKicker label="The practitioners" index="13" />
             <h2 className="ssu-pub-display mt-5 max-w-3xl text-[clamp(2.2rem,5vw,4.4rem)] text-[color:var(--ssu-ink)]">
@@ -396,44 +602,42 @@ export const Instructors = () => {
                <br />
                <span className="text-[color:var(--ssu-gold)]">know the work.</span>
             </h2>
-
-            <div className="mt-12 grid items-stretch gap-5 md:grid-cols-3">
-               {slots.map((card) => (
-                  <InstructorCard key={card.id} card={card} onReadMore={() => setSelected(card)} />
-               ))}
-            </div>
          </div>
 
-         <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-            <DialogContent className="ssu-public max-h-[85vh] overflow-y-auto border-[#d5d0c4] bg-[#f8f6f1] text-[#162131] sm:max-w-2xl">
-               {selected ? (
-                  <>
-                     <DialogHeader>
-                        <DialogTitle className="text-[#1a344f]">{selected.name}</DialogTitle>
-                        {selected.role ? <DialogDescription className="text-[#43576c]">{selected.role}</DialogDescription> : null}
-                     </DialogHeader>
-                     <div className="flex flex-col gap-5 sm:flex-row">
-                        {selected.photo ? (
-                           <div className="aspect-[3/4] w-36 shrink-0 overflow-hidden bg-[#efece4]">
-                              <img
-                                 src={selected.photo}
-                                 alt={selected.name}
-                                 className="h-full w-full object-contain object-center"
-                              />
-                           </div>
-                        ) : null}
-                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-[#43576c]">
-                           {selected.bio}
-                        </p>
+         {useMarquee ? (
+            <div
+               ref={wrapRef}
+               className={`ssu-practitioners-marquee mt-12 ${flippedKey ? 'is-paused' : ''}`}
+            >
+               <div
+                  className="ssu-practitioners-marquee__track"
+                  style={{ '--ssu-marquee-duration': `${marqueeSeconds}s` } as CSSProperties}
+               >
+                  {[0, 1].map((copy) => (
+                     <div key={copy} className="ssu-practitioners-marquee__set" aria-hidden={copy > 0 || undefined}>
+                        {Array.from({ length: repeats }, (_, repeat) => (
+                           <InstructorSet
+                              key={`${copy}-${repeat}`}
+                              cards={cards}
+                              repeatKey={`${copy}-${repeat}`}
+                              unitRef={copy === 0 && repeat === 0 ? unitRef : undefined}
+                              flippedKey={flippedKey}
+                              interactive={copy === 0 && repeat === 0}
+                              onFlip={setFlippedKey}
+                              onUnflip={() => setFlippedKey(null)}
+                           />
+                        ))}
                      </div>
-                  </>
-               ) : (
-                  <DialogHeader>
-                     <DialogTitle>Instructor</DialogTitle>
-                  </DialogHeader>
-               )}
-            </DialogContent>
-         </Dialog>
+                  ))}
+               </div>
+            </div>
+         ) : (
+            <div className="container px-4">
+               <div className="ssu-practitioners-grid mt-12 grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {cards.map((card) => renderCard(card, String(card.id), true))}
+               </div>
+            </div>
+         )}
       </section>
    );
 };
