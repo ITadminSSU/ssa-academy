@@ -17,6 +17,16 @@ import { Head, useForm } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, Upload } from 'lucide-react';
 import { FormEvent, ReactNode, useState } from 'react';
 
+const TEAM_MEMBER_DESCRIPTION_MAX_WORDS = 1000;
+
+const countWords = (value: string): number => {
+   const trimmed = value.trim();
+
+   return trimmed === '' ? 0 : trimmed.split(/\s+/).length;
+};
+
+const descriptionOverLimitMessage = `The description field must not be greater than ${TEAM_MEMBER_DESCRIPTION_MAX_WORDS} words.`;
+
 interface TeamMember {
    id: number;
    name: string;
@@ -121,6 +131,11 @@ const TeamSettings = ({ teamMembers }: Props) => {
    const submitCreate = (event: FormEvent) => {
       event.preventDefault();
 
+      if (countWords(createForm.data.short_description) > TEAM_MEMBER_DESCRIPTION_MAX_WORDS) {
+         createForm.setError('short_description', descriptionOverLimitMessage);
+         return;
+      }
+
       if (!createForm.data.photo) {
          createForm.setError('photo', 'Please upload and crop a team photo.');
          return;
@@ -146,6 +161,11 @@ const TeamSettings = ({ teamMembers }: Props) => {
       event.preventDefault();
 
       if (!editingMember) {
+         return;
+      }
+
+      if (countWords(editForm.data.short_description) > TEAM_MEMBER_DESCRIPTION_MAX_WORDS) {
+         editForm.setError('short_description', descriptionOverLimitMessage);
          return;
       }
 
@@ -230,7 +250,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
                         Add team member
                      </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                      <DialogHeader>
                         <DialogTitle>Add team member</DialogTitle>
                      </DialogHeader>
@@ -245,19 +265,12 @@ const TeamSettings = ({ teamMembers }: Props) => {
                            <Input id="create-role" value={createForm.data.role} onChange={(e) => createForm.setData('role', e.target.value)} required />
                            <InputError message={createForm.errors.role} />
                         </div>
-                        <div>
-                           <Label htmlFor="create-description">Short description</Label>
-                           <Textarea
-                              id="create-description"
-                              value={createForm.data.short_description}
-                              onChange={(e) => createForm.setData('short_description', e.target.value)}
-                              maxLength={500}
-                              rows={4}
-                              placeholder="A sentence or two about their work."
-                           />
-                           <p className="text-muted-foreground mt-1 text-xs">Shown under the name on the homepage. Leave blank to use the role / title there.</p>
-                           <InputError message={createForm.errors.short_description} />
-                        </div>
+                        <DescriptionField
+                           id="create-description"
+                           value={createForm.data.short_description}
+                           onChange={(value) => createForm.setData('short_description', value)}
+                           error={createForm.errors.short_description}
+                        />
                         {renderPhotoField(createForm, createCrop, createPreview)}
                         <div>
                            <Label htmlFor="create-sort">Display order</Label>
@@ -365,7 +378,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
          />
 
          <Dialog open={Boolean(editingMember)} onOpenChange={(open) => !open && closeEdit()}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                <DialogHeader>
                   <DialogTitle>Edit team member</DialogTitle>
                </DialogHeader>
@@ -381,19 +394,12 @@ const TeamSettings = ({ teamMembers }: Props) => {
                         <Input id="edit-role" value={editForm.data.role} onChange={(e) => editForm.setData('role', e.target.value)} required />
                         <InputError message={editForm.errors.role} />
                      </div>
-                     <div>
-                        <Label htmlFor="edit-description">Short description</Label>
-                        <Textarea
-                           id="edit-description"
-                           value={editForm.data.short_description}
-                           onChange={(e) => editForm.setData('short_description', e.target.value)}
-                           maxLength={500}
-                           rows={4}
-                           placeholder="A sentence or two about their work."
-                        />
-                        <p className="text-muted-foreground mt-1 text-xs">Shown under the name on the homepage. Leave blank to use the role / title there.</p>
-                        <InputError message={editForm.errors.short_description} />
-                     </div>
+                     <DescriptionField
+                        id="edit-description"
+                        value={editForm.data.short_description}
+                        onChange={(value) => editForm.setData('short_description', value)}
+                        error={editForm.errors.short_description}
+                     />
                      {renderPhotoField(editForm, editCrop, editPreview, editingMember.photo)}
                      <div>
                         <Label htmlFor="edit-sort">Display order</Label>
@@ -415,6 +421,45 @@ const TeamSettings = ({ teamMembers }: Props) => {
             </DialogContent>
          </Dialog>
       </>
+   );
+};
+
+const DescriptionField = ({
+   id,
+   value,
+   onChange,
+   error,
+}: {
+   id: string;
+   value: string;
+   onChange: (value: string) => void;
+   error?: string;
+}) => {
+   const words = countWords(value);
+   const overLimit = words > TEAM_MEMBER_DESCRIPTION_MAX_WORDS;
+
+   return (
+      <div>
+         <Label htmlFor={id}>Description</Label>
+         <Textarea
+            id={id}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            rows={10}
+            className="min-h-[12rem]"
+            placeholder="A bio shown on the homepage and About page."
+         />
+         <div className="mt-1 flex items-start justify-between gap-3">
+            <p className="text-muted-foreground text-xs">
+               Shown under the name on the homepage. Up to {TEAM_MEMBER_DESCRIPTION_MAX_WORDS} words. The homepage keeps a short
+               preview so longer bios stay readable. Leave blank to use the role / title there.
+            </p>
+            <p className={`shrink-0 text-xs ${overLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
+               {words} / {TEAM_MEMBER_DESCRIPTION_MAX_WORDS} words
+            </p>
+         </div>
+         <InputError message={error} />
+      </div>
    );
 };
 

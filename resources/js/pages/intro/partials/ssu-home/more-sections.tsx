@@ -1,11 +1,13 @@
 import PublicFaqAccordion from '@/components/ssu-public/faq-accordion';
 import { GoldCta, SheetKicker } from '@/components/ssu-public/chrome';
 import WorkflowRadar from '@/components/ssu-public/workflow-radar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BRAND_LOGOS } from '@/lib/branding';
 import { homeFaqs } from '@/lib/ssu-faqs';
 import { IntroPageProps } from '@/types/page';
 import { usePage } from '@inertiajs/react';
 import { ArrowRight, BadgeCheck, BarChart3, Compass, FileText, Hammer, Hash, Scan } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 const tools = ['PlanSwift', 'Bluebeam', 'On-Screen Takeoff', 'Primavera', 'ZZ Takeoff', 'AutoCAD', 'Revit', 'Procore'];
 
@@ -301,9 +303,77 @@ export const Stats = () => (
 const PLACEHOLDER_BIO =
    'Role, construction specialization, short bio, and courses taught will be added from verified practitioner details.';
 
+type InstructorCardData = {
+   id: number | string;
+   letter: 'A' | 'B' | 'C';
+   name: string;
+   photo: string | null;
+   role: string;
+   bio: string;
+};
+
+const InstructorCard = ({ card, onReadMore }: { card: InstructorCardData; onReadMore: () => void }) => {
+   const bioRef = useRef<HTMLParagraphElement>(null);
+   const [isClamped, setIsClamped] = useState(false);
+
+   useLayoutEffect(() => {
+      const el = bioRef.current;
+
+      if (!el) {
+         setIsClamped(false);
+         return;
+      }
+
+      setIsClamped(el.scrollHeight > el.clientHeight + 1);
+   }, [card.bio]);
+
+   return (
+      <article className="flex h-full flex-col border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
+         <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-[#d5ddd8]">
+            {card.photo ? (
+               <img src={card.photo} alt={card.name} className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+               <>
+                  <span className="absolute h-[72%] max-h-40 w-[72%] max-w-40 rounded-full border border-[#8fa09a]/55" aria-hidden />
+                  <span className="absolute h-[48%] max-h-[6.75rem] w-[48%] max-w-[6.75rem] rounded-full border border-[#8fa09a]/80" aria-hidden />
+                  <p className="relative font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-navy)]/45 uppercase">
+                     Photo pending
+                  </p>
+               </>
+            )}
+         </div>
+         <div className="flex flex-1 flex-col px-5 py-5">
+            <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">
+               Instructor profile / {card.letter}
+            </p>
+            <h3 className="mt-3 text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
+            {card.role ? <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{card.role}</p> : null}
+            {card.bio ? (
+               <p
+                  ref={bioRef}
+                  className="mt-2 line-clamp-4 min-h-[5.5rem] text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]"
+               >
+                  {card.bio}
+               </p>
+            ) : null}
+            {isClamped ? (
+               <button
+                  type="button"
+                  onClick={onReadMore}
+                  className="mt-auto pt-3 text-left text-[11px] font-semibold tracking-[0.16em] text-[color:var(--ssu-navy)] uppercase"
+               >
+                  Read more
+               </button>
+            ) : null}
+         </div>
+      </article>
+   );
+};
+
 export const Instructors = () => {
    const { props } = usePage<IntroPageProps>();
    const members = props.teamMembers ?? [];
+   const [selected, setSelected] = useState<InstructorCardData | null>(null);
    const slots = (['A', 'B', 'C'] as const).map((letter, index) => {
       const member = members[index];
       const role = member?.role?.trim() || '';
@@ -315,8 +385,9 @@ export const Instructors = () => {
          letter,
          name: member?.name?.trim() || 'Name pending',
          photo: member?.photo || null,
-         bio: description || (hasRealRole ? role : PLACEHOLDER_BIO),
-      };
+         role: hasRealRole ? role : '',
+         bio: description || (member && hasRealRole ? '' : PLACEHOLDER_BIO),
+      } satisfies InstructorCardData;
    });
 
    return (
@@ -336,33 +407,37 @@ export const Instructors = () => {
                </p>
             </div>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <div className="mt-12 grid items-stretch gap-5 md:grid-cols-3">
                {slots.map((card) => (
-                  <article key={card.id} className="border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
-                     <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-[#d5ddd8]">
-                        {card.photo ? (
-                           <img src={card.photo} alt={card.name} className="absolute inset-0 h-full w-full object-cover" />
-                        ) : (
-                           <>
-                              <span className="absolute h-[72%] max-h-40 w-[72%] max-w-40 rounded-full border border-[#8fa09a]/55" aria-hidden />
-                              <span className="absolute h-[48%] max-h-[6.75rem] w-[48%] max-w-[6.75rem] rounded-full border border-[#8fa09a]/80" aria-hidden />
-                              <p className="relative font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-navy)]/45 uppercase">
-                                 Photo pending
-                              </p>
-                           </>
-                        )}
-                     </div>
-                     <div className="px-5 py-5">
-                        <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">
-                           Instructor profile / {card.letter}
-                        </p>
-                        <h3 className="mt-3 text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-[color:var(--ssu-muted)]">{card.bio}</p>
-                     </div>
-                  </article>
+                  <InstructorCard key={card.id} card={card} onReadMore={() => setSelected(card)} />
                ))}
             </div>
          </div>
+
+         <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
+            <DialogContent className="max-h-[85vh] overflow-y-auto border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)] sm:max-w-2xl">
+               {selected ? (
+                  <>
+                     <DialogHeader>
+                        <DialogTitle className="text-[color:var(--ssu-navy)]">{selected.name}</DialogTitle>
+                        {selected.role ? <DialogDescription>{selected.role}</DialogDescription> : null}
+                     </DialogHeader>
+                     <div className="flex flex-col gap-5 sm:flex-row">
+                        {selected.photo ? (
+                           <img
+                              src={selected.photo}
+                              alt={selected.name}
+                              className="h-48 w-36 shrink-0 object-cover"
+                           />
+                        ) : null}
+                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]">
+                           {selected.bio}
+                        </p>
+                     </div>
+                  </>
+               ) : null}
+            </DialogContent>
+         </Dialog>
       </section>
    );
 };

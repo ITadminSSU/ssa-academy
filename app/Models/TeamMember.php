@@ -11,6 +11,8 @@ class TeamMember extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
+    public const DESCRIPTION_MAX_WORDS = 1000;
+
     protected $fillable = [
         'name',
         'role',

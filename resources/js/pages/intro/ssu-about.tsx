@@ -107,10 +107,14 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
                   </div>
 
                   {teamMembers.length > 0 && (
-                     <div className="mx-auto flex max-w-5xl flex-wrap justify-center gap-6">
+                     <div className="space-y-6">
                         {teamMembers.map((member) => (
-                           <div key={member.id} className="w-full max-w-[220px] shrink-0 overflow-hidden border border-[color:var(--ssu-line)] bg-white">
-                              <div className="relative aspect-[3/4] w-full overflow-hidden bg-[color:var(--ssu-paper)]">
+                           <article
+                              key={member.id}
+                              id={`team-member-${member.id}`}
+                              className="overflow-hidden border border-[color:var(--ssu-line)] bg-white md:grid md:grid-cols-[180px_minmax(0,1fr)]"
+                           >
+                              <div className="relative aspect-[3/4] w-full overflow-hidden bg-[color:var(--ssu-paper)] md:aspect-auto md:min-h-full">
                                  {member.photo ? (
                                     <img
                                        src={member.photo}
@@ -121,14 +125,16 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
                                     <div className="absolute inset-0 bg-[color:var(--ssu-paper)]" />
                                  )}
                               </div>
-                              <div className="p-4 text-center">
-                                 <h3 className="font-display text-base font-semibold text-[color:var(--ssu-navy)]">{member.name}</h3>
-                                 <p className="text-sm text-[color:var(--ssu-muted)]">{member.role}</p>
+                              <div className="p-5 md:p-8">
+                                 <h3 className="font-display text-xl font-semibold text-[color:var(--ssu-navy)]">{member.name}</h3>
+                                 <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{member.role}</p>
                                  {member.short_description?.trim() ? (
-                                    <p className="mt-2 text-sm leading-relaxed text-[color:var(--ssu-muted)]">{member.short_description}</p>
+                                    <p className="mt-4 max-w-prose text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]">
+                                       {member.short_description}
+                                    </p>
                                  ) : null}
                               </div>
-                           </div>
+                           </article>
                         ))}
                      </div>
                   )}
