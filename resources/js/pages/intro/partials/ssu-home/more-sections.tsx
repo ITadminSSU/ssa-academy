@@ -335,7 +335,9 @@ const cardFromMember = (member: PublicTeamMember): InstructorCardData => {
 };
 
 const usePrefersReducedMotion = () => {
-   const [reduced, setReduced] = useState(false);
+   const [reduced, setReduced] = useState(() =>
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+   );
 
    useEffect(() => {
       const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -499,9 +501,13 @@ const InstructorCard = ({
                <div className="flex h-full min-h-0 flex-col px-5 py-5">
                   <h3 className="text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
                   {card.role ? <p className="mt-1 text-sm text-[color:var(--ssu-muted)]">{card.role}</p> : null}
-                  <p className="mt-4 min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]">
-                     {card.bio || 'Biography pending.'}
-                  </p>
+                  {card.bio ? (
+                     <p className="mt-4 min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]">
+                        {card.bio}
+                     </p>
+                  ) : (
+                     <div className="min-h-0 flex-1" />
+                  )}
                   <button
                      type="button"
                      tabIndex={interactive ? 0 : -1}
