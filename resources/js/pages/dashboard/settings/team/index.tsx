@@ -318,7 +318,7 @@ const TeamSettings = ({ teamMembers }: Props) => {
                                  {member.photo ? (
                                     <img src={member.photo} alt={member.name} className="aspect-[3/4] h-14 w-auto rounded object-contain object-center" />
                                  ) : (
-                                    <div className="bg-muted h-14 w-10 rounded" />
+                                    <div className="bg-muted aspect-[3/4] h-14 rounded" />
                                  )}
                               </TableCell>
                               <TableCell className="font-medium">{member.name}</TableCell>
