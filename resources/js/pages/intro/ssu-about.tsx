@@ -125,7 +125,9 @@ const SsuAbout = ({ system, teamMembers }: AboutProps) => {
                                  <h3 className="font-display text-base font-semibold text-[color:var(--ssu-navy)]">{member.name}</h3>
                                  <p className="text-sm text-[color:var(--ssu-muted)]">{member.role}</p>
                                  {member.short_description?.trim() ? (
-                                    <p className="mt-2 text-sm leading-relaxed text-[color:var(--ssu-muted)]">{member.short_description}</p>
+                                    <p className="mt-2 whitespace-pre-line break-words text-left text-sm leading-6 text-[color:var(--ssu-muted)]">
+                                       {member.short_description}
+                                    </p>
                                  ) : null}
                               </div>
                            </div>

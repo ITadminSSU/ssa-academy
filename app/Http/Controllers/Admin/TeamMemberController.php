@@ -53,7 +53,7 @@ class TeamMemberController extends Controller
         return $request->validate([
             'name' => 'required|string|max:255',
             'role' => 'required|string|max:255',
-            'short_description' => 'nullable|string|max:500',
+            'short_description' => 'nullable|string|max:1000',
             'photo' => ($photoRequired ? 'required' : 'nullable').'|image|mimes:jpeg,png,jpg|max:15360',
             'sort_order' => 'integer|min:0',
             'is_active' => 'boolean',

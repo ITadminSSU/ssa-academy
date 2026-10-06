@@ -336,10 +336,10 @@ export const Instructors = () => {
                </p>
             </div>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <div className="mt-12 grid items-stretch gap-5 md:grid-cols-3">
                {slots.map((card) => (
-                  <article key={card.id} className="border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
-                     <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-[#d5ddd8]">
+                  <article key={card.id} className="flex h-full flex-col border border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)]">
+                     <div className="relative flex aspect-[16/10] shrink-0 items-center justify-center overflow-hidden bg-[#d5ddd8]">
                         {card.photo ? (
                            <img src={card.photo} alt={card.name} className="absolute inset-0 h-full w-full object-cover" />
                         ) : (
@@ -352,12 +352,12 @@ export const Instructors = () => {
                            </>
                         )}
                      </div>
-                     <div className="px-5 py-5">
+                     <div className="flex flex-1 flex-col px-5 py-5">
                         <p className="font-mono text-[10px] tracking-[0.16em] text-[color:var(--ssu-gold)] uppercase">
                            Instructor profile / {card.letter}
                         </p>
                         <h3 className="mt-3 text-xl font-semibold text-[color:var(--ssu-navy)]">{card.name}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-[color:var(--ssu-muted)]">{card.bio}</p>
+                        <p className="mt-3 whitespace-pre-line break-words text-sm leading-7 text-[color:var(--ssu-muted)]">{card.bio}</p>
                      </div>
                   </article>
                ))}

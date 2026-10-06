@@ -251,11 +251,13 @@ const TeamSettings = ({ teamMembers }: Props) => {
                               id="create-description"
                               value={createForm.data.short_description}
                               onChange={(e) => createForm.setData('short_description', e.target.value)}
-                              maxLength={500}
-                              rows={4}
+                              maxLength={1000}
+                              rows={6}
                               placeholder="A sentence or two about their work."
                            />
-                           <p className="text-muted-foreground mt-1 text-xs">Shown under the name on the homepage. Leave blank to use the role / title there.</p>
+                           <p className="text-muted-foreground mt-1 text-xs">
+                              {createForm.data.short_description.length}/1000. Shown under the name on the homepage. Leave blank to use the role / title there.
+                           </p>
                            <InputError message={createForm.errors.short_description} />
                         </div>
                         {renderPhotoField(createForm, createCrop, createPreview)}
@@ -387,11 +389,13 @@ const TeamSettings = ({ teamMembers }: Props) => {
                            id="edit-description"
                            value={editForm.data.short_description}
                            onChange={(e) => editForm.setData('short_description', e.target.value)}
-                           maxLength={500}
-                           rows={4}
+                           maxLength={1000}
+                           rows={6}
                            placeholder="A sentence or two about their work."
                         />
-                        <p className="text-muted-foreground mt-1 text-xs">Shown under the name on the homepage. Leave blank to use the role / title there.</p>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                           {editForm.data.short_description.length}/1000. Shown under the name on the homepage. Leave blank to use the role / title there.
+                        </p>
                         <InputError message={editForm.errors.short_description} />
                      </div>
                      {renderPhotoField(editForm, editCrop, editPreview, editingMember.photo)}
