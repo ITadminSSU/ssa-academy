@@ -415,12 +415,12 @@ export const Instructors = () => {
          </div>
 
          <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-            <DialogContent className="max-h-[85vh] overflow-y-auto border-[color:var(--ssu-line)] bg-[color:var(--ssu-cream)] sm:max-w-2xl">
+            <DialogContent className="ssu-public max-h-[85vh] overflow-y-auto border-[#d5d0c4] bg-[#f8f6f1] text-[#162131] sm:max-w-2xl">
                {selected ? (
                   <>
                      <DialogHeader>
-                        <DialogTitle className="text-[color:var(--ssu-navy)]">{selected.name}</DialogTitle>
-                        {selected.role ? <DialogDescription>{selected.role}</DialogDescription> : null}
+                        <DialogTitle className="text-[#1a344f]">{selected.name}</DialogTitle>
+                        {selected.role ? <DialogDescription className="text-[#43576c]">{selected.role}</DialogDescription> : null}
                      </DialogHeader>
                      <div className="flex flex-col gap-5 sm:flex-row">
                         {selected.photo ? (
@@ -430,12 +430,16 @@ export const Instructors = () => {
                               className="h-48 w-36 shrink-0 object-cover"
                            />
                         ) : null}
-                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-[color:var(--ssu-muted)]">
+                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-[#43576c]">
                            {selected.bio}
                         </p>
                      </div>
                   </>
-               ) : null}
+               ) : (
+                  <DialogHeader>
+                     <DialogTitle>Instructor</DialogTitle>
+                  </DialogHeader>
+               )}
             </DialogContent>
          </Dialog>
       </section>
