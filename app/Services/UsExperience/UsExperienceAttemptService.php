@@ -6,6 +6,7 @@ use App\Models\Course\Course;
 use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
 use App\Models\User;
+use App\Services\AttemptHalfwayAlertService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use InvalidArgumentException;
 use Modules\Exam\Services\QuantityTakeoffGradingService;
@@ -17,6 +18,7 @@ class UsExperienceAttemptService
         private QuantityTakeoffXlsxParser $parser,
         private QuantityTakeoffGradingService $grader,
         private UsExperienceFileService $files,
+        private AttemptHalfwayAlertService $halfwayAlerts,
     ) {}
 
     public function submit(
@@ -63,7 +65,7 @@ class UsExperienceAttemptService
             ->where('user_id', $user->id)
             ->max('attempt_number') + 1;
 
-        return UsExperienceAttempt::query()->create([
+        $attempt = UsExperienceAttempt::query()->create([
             'us_experience_plan_id' => $plan->id,
             'user_id' => $user->id,
             'attempt_number' => $attemptNumber,
@@ -80,6 +82,10 @@ class UsExperienceAttemptService
             'status' => $passed ? UsExperienceAttempt::STATUS_PASSED : UsExperienceAttempt::STATUS_FAILED,
             'submitted_at' => now(),
         ]);
+
+        $this->halfwayAlerts->afterUsExperienceAttempt($attempt);
+
+        return $attempt;
     }
 
     public function paginateForTrainer(Course $course, array $filters = [], ?UsExperiencePlan $plan = null): LengthAwarePaginator

@@ -3,6 +3,7 @@
 namespace Modules\Exam\Services;
 
 use App\Models\User;
+use App\Services\AttemptHalfwayAlertService;
 use Modules\Exam\Models\Exam;
 use App\Support\ReferenceNumberService;
 use Modules\Exam\Models\ExamAttempt;
@@ -14,6 +15,7 @@ class ExamAttemptService
    public function __construct(
       private ReferenceNumberService $referenceNumbers,
       private QuantityTakeoffGradingService $quantityTakeoffGrading,
+      private AttemptHalfwayAlertService $halfwayAlerts,
    ) {}
 
    /**
@@ -71,7 +73,7 @@ class ExamAttemptService
          $attempt = $this->finalizeAttemptGrades($attempt->fresh());
 
          DB::commit();
-         return $attempt;
+         return $this->notifyHalfwayAfterCommit($attempt);
       } catch (\Exception $e) {
          DB::rollBack();
          throw $e;
@@ -91,7 +93,7 @@ class ExamAttemptService
       try {
          $attempt = $this->finalizeAttemptGrades($attempt);
          DB::commit();
-         return $attempt;
+         return $this->notifyHalfwayAfterCommit($attempt);
       } catch (\Exception $e) {
          DB::rollBack();
          throw $e;
@@ -457,7 +459,7 @@ class ExamAttemptService
       try {
          $attempt = $this->finalizeAttemptGrades($attempt, $manualGrades);
          DB::commit();
-         return $attempt;
+         return $this->notifyHalfwayAfterCommit($attempt);
       } catch (\Exception $e) {
          DB::rollBack();
          throw $e;
@@ -480,7 +482,7 @@ class ExamAttemptService
 
          if (!$answer || !$attempt->exam?->isQuantityTakeoff()) {
             DB::commit();
-            return $attempt;
+            return $this->notifyHalfwayAfterCommit($attempt);
          }
 
          $answerData = is_array($answer->answer_data) ? $answer->answer_data : [];
@@ -509,11 +511,18 @@ class ExamAttemptService
          $attempt = $this->finalizeAttemptGrades($attempt->fresh());
          DB::commit();
 
-         return $attempt;
+         return $this->notifyHalfwayAfterCommit($attempt);
       } catch (\Exception $e) {
          DB::rollBack();
          throw $e;
       }
+   }
+
+   private function notifyHalfwayAfterCommit(ExamAttempt $attempt): ExamAttempt
+   {
+      $this->halfwayAlerts->afterExamAttempt($attempt);
+
+      return $attempt;
    }
 
    private function finalizeAttemptGrades(ExamAttempt $attempt, array $manualGrades = []): ExamAttempt
