@@ -8,6 +8,7 @@ use App\Models\Course\QuizQuestion;
 use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionQuiz;
 use App\Models\User;
+use App\Services\AttemptHalfwayAlertService;
 use App\Services\UsExperience\UsExperienceFileService;
 use App\Support\S3CompatibleStorage;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +24,7 @@ class QuizTakeoffService
         private QuantityTakeoffGradingService $grader,
         private QuantityTakeoffTemplateGenerator $templates,
         private UsExperienceFileService $files,
+        private AttemptHalfwayAlertService $halfwayAlerts,
     ) {}
 
     /**
@@ -466,7 +468,10 @@ class QuizTakeoffService
             'is_passed' => $passed,
         ]);
 
-        return $submission->fresh();
+        $submission = $submission->fresh() ?? $submission;
+        $this->halfwayAlerts->afterQuizSubmission($submission);
+
+        return $submission;
     }
 
     /**

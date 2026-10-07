@@ -6,10 +6,16 @@ use App\Models\Course\QuestionAnswer;
 use App\Models\Course\QuizQuestion;
 use App\Models\Course\QuizSubmission;
 use App\Models\Course\SectionQuiz;
+use App\Services\AttemptHalfwayAlertService;
 use App\Support\CurriculumSequence;
 
 class SectionQuizService extends CourseSectionService
 {
+   public function __construct(private AttemptHalfwayAlertService $halfwayAlerts)
+   {
+      parent::__construct();
+   }
+
    public function createQuiz(array $data, string $userId): SectionQuiz
    {
       $hours = $data['hours'] ?? 0;
@@ -117,6 +123,8 @@ class SectionQuizService extends CourseSectionService
          'total_marks' => $score,
          'is_passed' => $score >= $quiz->pass_mark // Assuming 50% is passing score
       ]);
+
+      $this->halfwayAlerts->afterQuizSubmission($submission->fresh() ?? $submission);
 
       return $submission;
    }
