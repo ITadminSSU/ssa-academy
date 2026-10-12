@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { BellOff, FileText, Pin, Plus, Search, Trash2, X } from 'lucide-react';
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { ClipboardEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 type ActiveConversation = ConversationListItem & {
    messages: ChatMessageItem[];
@@ -45,6 +45,61 @@ const INBOX_FILTERS = [
    { value: 'academy', label: 'Academy' },
    { value: 'group', label: 'Class' },
 ] as const;
+
+const MAX_CHAT_ATTACHMENT_BYTES = 50 * 1024 * 1024;
+const GENERIC_CLIPBOARD_NAMES = new Set(['', 'image.png', 'image.jpg', 'image.jpeg', 'image.webp', 'image.gif', 'blob']);
+
+function isChatAttachmentFile(file: File): boolean {
+   return file.type.startsWith('image/')
+      || file.type === 'application/pdf'
+      || file.type === 'video/mp4'
+      || file.type === 'video/webm'
+      || file.type === 'video/quicktime';
+}
+
+function namedClipboardFile(file: File): File {
+   if (!GENERIC_CLIPBOARD_NAMES.has(file.name.toLowerCase())) {
+      return file;
+   }
+
+   const extension = file.type === 'application/pdf'
+      ? 'pdf'
+      : file.type.split('/')[1]?.split(';')[0] || 'png';
+   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+
+   return new File([file], `screenshot-${stamp}.${extension}`, {
+      type: file.type,
+      lastModified: file.lastModified || Date.now(),
+   });
+}
+
+function attachmentFromClipboard(event: ClipboardEvent): File | null {
+   const data = event.clipboardData;
+   if (!data) {
+      return null;
+   }
+
+   const candidates: File[] = [];
+
+   for (const item of Array.from(data.items ?? [])) {
+      if (item.kind !== 'file') {
+         continue;
+      }
+
+      const file = item.getAsFile();
+      if (file) {
+         candidates.push(file);
+      }
+   }
+
+   for (const file of Array.from(data.files ?? [])) {
+      candidates.push(file);
+   }
+
+   const match = candidates.find(isChatAttachmentFile);
+
+   return match ? namedClipboardFile(match) : null;
+}
 
 function formatTime(value?: string | null) {
    if (!value) return '';
@@ -437,6 +492,39 @@ export default function MessagesIndex() {
       attachment: null,
    });
    const [fileKey, setFileKey] = useState(0);
+   const attachmentPreviewUrl = useMemo(() => {
+      if (!data.attachment?.type.startsWith('image/')) {
+         return null;
+      }
+
+      return URL.createObjectURL(data.attachment);
+   }, [data.attachment]);
+
+   useEffect(() => {
+      return () => {
+         if (attachmentPreviewUrl) {
+            URL.revokeObjectURL(attachmentPreviewUrl);
+         }
+      };
+   }, [attachmentPreviewUrl]);
+
+   const attachClipboardFile = (event: ClipboardEvent<HTMLElement>) => {
+      const file = attachmentFromClipboard(event);
+      if (!file) {
+         return;
+      }
+
+      event.preventDefault();
+
+      if (file.size > MAX_CHAT_ATTACHMENT_BYTES) {
+         setError('attachment', 'Images, videos, and PDFs must be 50MB or smaller.');
+         return;
+      }
+
+      clearErrors('attachment');
+      setData('attachment', file);
+      setFileKey((current) => current + 1);
+   };
 
    const applyInboxFilters = (next: Partial<Filters>) => {
       const merged = { ...filters, ...next };
@@ -813,11 +901,16 @@ export default function MessagesIndex() {
                      </div>
 
                      {activeConversation.can_send ? (
-                        <form onSubmit={submit} className="shrink-0 border-t border-border/60 bg-white px-4 py-3" encType="multipart/form-data">
+                        <form
+                           onSubmit={submit}
+                           onPaste={attachClipboardFile}
+                           className="shrink-0 border-t border-border/60 bg-white px-4 py-3"
+                           encType="multipart/form-data"
+                        >
                            <Textarea
                               rows={3}
                               className="max-h-28 resize-none"
-                              placeholder="Write a message…"
+                              placeholder="Write a message… or paste a screenshot"
                               value={data.body}
                               onChange={(e) => setData('body', e.target.value)}
                               onKeyDown={(e) => {
@@ -828,6 +921,38 @@ export default function MessagesIndex() {
                               }}
                            />
                            <InputError message={errors.body} />
+                           {data.attachment && (
+                              <div className="mt-2 flex items-center gap-2 rounded-md border border-border/70 bg-muted/40 p-2">
+                                 {attachmentPreviewUrl ? (
+                                    <img
+                                       src={attachmentPreviewUrl}
+                                       alt=""
+                                       className="h-14 w-14 shrink-0 rounded object-cover"
+                                    />
+                                 ) : (
+                                    <div className="bg-muted text-muted-foreground flex h-14 w-14 shrink-0 items-center justify-center rounded">
+                                       <FileText className="h-5 w-5" />
+                                    </div>
+                                 )}
+                                 <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium">{data.attachment.name}</p>
+                                    <p className="text-muted-foreground text-xs">Ready to send</p>
+                                 </div>
+                                 <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    onClick={() => {
+                                       setData('attachment', null);
+                                       setFileKey((current) => current + 1);
+                                    }}
+                                    aria-label="Remove attachment"
+                                 >
+                                    <X className="h-4 w-4" />
+                                 </Button>
+                              </div>
+                           )}
                            <div className="mt-2 flex flex-wrap items-center gap-2">
                               <Input
                                  key={fileKey}
@@ -837,7 +962,9 @@ export default function MessagesIndex() {
                                  onChange={(e) => setData('attachment', e.target.files?.[0] ?? null)}
                               />
                               <InputError message={errors.attachment} />
-                              <p className="text-xs text-muted-foreground">Images, videos (50MB), or PDFs · Enter to send</p>
+                              <p className="text-xs text-muted-foreground">
+                                 Paste a screenshot, or choose a file · Images, videos (50MB), or PDFs · Enter to send
+                              </p>
                               <Button type="submit">Send</Button>
                            </div>
                         </form>
