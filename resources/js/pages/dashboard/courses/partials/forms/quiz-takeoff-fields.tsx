@@ -57,6 +57,7 @@ const QuizTakeoffFields = ({
 
          <div className="space-y-2">
             <Label>Takeoff PDF</Label>
+            <p className="text-muted-foreground text-xs">PDF plans, maximum 5 GB.</p>
             <ChunkedUploaderInput
                isSubmit={false}
                filetype="document"

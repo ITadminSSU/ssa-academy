@@ -16,7 +16,7 @@ class ChunkInitiateRequest extends FormRequest
         $fileMaxSizes = [
             'audio' => 102400, // 100MB
             'video' => 5242880, // 5GB
-            'document' => 262144,   // 256MB
+            'document' => 5242880, // 5GB
             'image' => 102400,      // 100MB
             'zip' => 262144, // 256MB
             // 'assets' => 262144, // 256MB
@@ -83,11 +83,18 @@ class ChunkInitiateRequest extends FormRequest
      */
     public function messages(): array
     {
-        $maxSizeMB = round(($this->maxSize / 1024), 1);
-
         return [
-            'filesize.max' => 'The filesize may not be greater than ' . $maxSizeMB . ' MB.',
+            'filesize.max' => 'The filesize may not be greater than ' . $this->maxSizeLabel() . '.',
             'mimetype.in' => 'The filetype must be ' . implode(', ', $this->mimeTypes),
         ];
+    }
+
+    private function maxSizeLabel(): string
+    {
+        if ($this->maxSize >= 1024 * 1024) {
+            return round($this->maxSize / 1024 / 1024) . ' GB';
+        }
+
+        return round($this->maxSize / 1024, 1) . ' MB';
     }
 }
