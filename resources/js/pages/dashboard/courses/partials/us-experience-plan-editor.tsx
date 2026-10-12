@@ -194,7 +194,9 @@ const UsExperiencePlanEditor = () => {
          <Card>
             <CardHeader>
                <CardTitle>Reference drawings (PDF plans)</CardTitle>
-               <CardDescription>Students download these with the blank Excel as one pack. Add one PDF at a time.</CardDescription>
+               <CardDescription>
+                  Students download these with the blank Excel as one pack. Add one PDF at a time. Maximum 5 GB.
+               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                {drawings.length > 0 && (

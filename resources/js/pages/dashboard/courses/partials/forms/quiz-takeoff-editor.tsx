@@ -136,7 +136,7 @@ const QuizTakeoffEditor = ({ question, defaultTolerancePercent }: Props) => {
          <div className="rounded-lg border p-4">
             <p className="font-medium">Reference drawings (PDF plans)</p>
             <p className="text-muted-foreground mt-1 text-sm">
-               Students download these with the blank Excel as one pack. Add one PDF at a time.
+               Students download these with the blank Excel as one pack. Add one PDF at a time. Maximum 5 GB.
             </p>
             {drawings.length > 0 && (
                <ul className="mt-3 space-y-2">

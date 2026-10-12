@@ -33,7 +33,7 @@ export interface UploadedFileData {
 const FILETYPE_MAX_BYTES: Record<string, number> = {
    audio: 100 * 1024 * 1024,
    video: 5 * 1024 * 1024 * 1024,
-   document: 256 * 1024 * 1024,
+   document: 5 * 1024 * 1024 * 1024,
    image: 100 * 1024 * 1024,
    zip: 256 * 1024 * 1024,
 };
