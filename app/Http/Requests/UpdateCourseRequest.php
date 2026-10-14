@@ -11,6 +11,7 @@ use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use App\Models\Course\Course;
 use App\Support\DrywallLanding;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
 
 class UpdateCourseRequest extends FormRequest
@@ -137,14 +138,44 @@ class UpdateCourseRequest extends FormRequest
             abort(404);
         }
 
-        $reviews = collect($this->input('reviews', []))
-            ->map(fn ($review) => [
-                'quote' => trim((string) ($review['quote'] ?? '')),
-                'name' => trim((string) ($review['name'] ?? '')),
-            ])
-            ->filter(fn ($review) => $review['quote'] !== '' || $review['name'] !== '')
-            ->values()
-            ->all();
+        $files = $this->file('reviews', []);
+        if (! is_array($files)) {
+            $files = [];
+        }
+
+        $submitted = $this->input('reviews', []);
+        if (! is_array($submitted)) {
+            $submitted = [];
+        }
+
+        $reviews = [];
+
+        foreach ($submitted as $index => $review) {
+            if (! is_array($review)) {
+                continue;
+            }
+
+            $type = ($review['type'] ?? '') === 'image' ? 'image' : 'written';
+            $quote = trim((string) ($review['quote'] ?? ''));
+            $name = trim((string) ($review['name'] ?? ''));
+            $upload = $files[$index]['image'] ?? null;
+
+            if ($type === 'written' && $quote === '' && $name === '') {
+                continue;
+            }
+
+            $reviews[] = [
+                'type' => $type,
+                'quote' => $type === 'written' ? $quote : '',
+                'name' => $name,
+                'existing_image' => $type === 'image'
+                    ? (DrywallLanding::storedReviewImage((string) ($review['existing_image'] ?? '')) ?? '')
+                    : '',
+                'image' => $type === 'image' && $upload instanceof UploadedFile ? $upload : null,
+            ];
+        }
+
+        $this->files->remove('reviews');
 
         $this->merge([
             'reviews' => $reviews,
@@ -171,6 +202,8 @@ class UpdateCourseRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'reviews.*.image.required' => 'Upload a picture for this review.',
+            'reviews.*.image.image' => 'The review picture must be an image file.',
             'launch_at.after' => 'Launch date and time must be in the future.',
             'launch_at.required_if' => 'Launch date is required for Coming Soon courses.',
             'price.required' => 'Please enter a course price.',
@@ -299,7 +332,7 @@ class UpdateCourseRequest extends FormRequest
 
     private function landingTabRules(): array
     {
-        return [
+        $rules = [
             'countdown_ends_at' => 'required|date',
             'hero_photo' => 'nullable|image|max:10240',
             'video_url' => 'nullable|url|max:2048',
@@ -316,8 +349,32 @@ class UpdateCourseRequest extends FormRequest
                 },
             ],
             'reviews' => 'array',
-            'reviews.*.quote' => 'required|string|max:500',
-            'reviews.*.name' => 'required|string|max:120',
         ];
+
+        $reviews = $this->input('reviews', []);
+
+        if (! is_array($reviews)) {
+            return $rules;
+        }
+
+        foreach ($reviews as $index => $review) {
+            if (! is_array($review)) {
+                $rules["reviews.$index"] = 'array';
+
+                continue;
+            }
+
+            $isImage = ($review['type'] ?? '') === 'image';
+
+            $rules["reviews.$index.type"] = 'required|in:written,image';
+            $rules["reviews.$index.quote"] = $isImage ? 'nullable|string|max:500' : 'required|string|max:500';
+            $rules["reviews.$index.name"] = $isImage ? 'nullable|string|max:120' : 'required|string|max:120';
+            $rules["reviews.$index.existing_image"] = 'nullable|string|max:2048';
+            $rules["reviews.$index.image"] = $isImage && ($review['existing_image'] ?? '') === ''
+                ? 'required|image|max:10240'
+                : 'nullable|image|max:10240';
+        }
+
+        return $rules;
     }
 }

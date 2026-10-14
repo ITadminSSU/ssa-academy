@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toDateTimeLocalValue } from '@/lib/course-launch';
 import { onHandleChange } from '@/lib/inertia';
-import { DrywallReview } from '@/pages/drywall-estimating/types';
+import { DrywallReviewDraft, DrywallReviewType, emptyReviewDraft, toReviewDraft } from '@/pages/drywall-estimating/types';
 import { useForm, usePage } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CourseUpdateProps } from '../update';
 
 const Landing = () => {
@@ -27,6 +27,8 @@ const LandingForm = () => {
    const { course, landing, appTimezone } = usePage<CourseUpdateProps>().props;
    const settings = landing!;
    const [heroPreview, setHeroPreview] = useState(settings.hero_photo);
+   const [imagePreviews, setImagePreviews] = useState<(string | null)[]>(() => settings.reviews.map(() => null));
+   const previewsRef = useRef<(string | null)[]>([]);
 
    const { data, setData, post, errors, processing } = useForm({
       tab: 'landing',
@@ -36,13 +38,70 @@ const LandingForm = () => {
       video_duration: settings.video_duration,
       coach_line: settings.coach_line,
       embed_code: settings.embed_html,
-      reviews: (settings.reviews.length ? settings.reviews : []) as DrywallReview[],
+      reviews: (settings.reviews.length ? settings.reviews.map(toReviewDraft) : []) as DrywallReviewDraft[],
    });
 
-   const updateReview = (index: number, field: keyof DrywallReview, value: string) => {
+   useEffect(() => {
+      previewsRef.current = imagePreviews;
+   }, [imagePreviews]);
+
+   useEffect(() => {
+      return () => {
+         previewsRef.current.forEach((url) => {
+            if (url) {
+               URL.revokeObjectURL(url);
+            }
+         });
+      };
+   }, []);
+
+   const updateReview = (index: number, patch: Partial<DrywallReviewDraft>) => {
       setData(
          'reviews',
-         data.reviews.map((review, reviewIndex) => (reviewIndex === index ? { ...review, [field]: value } : review)),
+         data.reviews.map((review, reviewIndex) => (reviewIndex === index ? { ...review, ...patch } : review)),
+      );
+   };
+
+   const setReviewType = (index: number, type: DrywallReviewType) => {
+      updateReview(index, { type });
+   };
+
+   const setReviewImage = (index: number, file: File | null) => {
+      setImagePreviews((current) => {
+         const next = [...current];
+         if (next[index]) {
+            URL.revokeObjectURL(next[index]);
+         }
+         next[index] = file ? URL.createObjectURL(file) : null;
+         previewsRef.current = next;
+
+         return next;
+      });
+
+      setData((current) => ({
+         ...current,
+         reviews: current.reviews.map((review, reviewIndex) => (reviewIndex === index ? { ...review, image: file } : review)),
+      }));
+   };
+
+   const addReview = () => {
+      setImagePreviews((current) => [...current, null]);
+      setData('reviews', [...data.reviews, emptyReviewDraft()]);
+   };
+
+   const removeReview = (index: number) => {
+      setImagePreviews((current) => {
+         if (current[index]) {
+            URL.revokeObjectURL(current[index]);
+         }
+         const next = current.filter((_, previewIndex) => previewIndex !== index);
+         previewsRef.current = next;
+
+         return next;
+      });
+      setData(
+         'reviews',
+         data.reviews.filter((_, reviewIndex) => reviewIndex !== index),
       );
    };
 
@@ -52,6 +111,22 @@ const LandingForm = () => {
       post(route('courses.update', { id: course.id }), {
          forceFormData: true,
          preserveScroll: true,
+         onSuccess: (page) => {
+            const nextLanding = (page.props as unknown as CourseUpdateProps).landing;
+            if (!nextLanding) {
+               return;
+            }
+
+            previewsRef.current.forEach((url) => {
+               if (url) {
+                  URL.revokeObjectURL(url);
+               }
+            });
+            const cleared = nextLanding.reviews.map(() => null);
+            previewsRef.current = cleared;
+            setImagePreviews(cleared);
+            setData('reviews', nextLanding.reviews.map(toReviewDraft));
+         },
       });
    };
 
@@ -117,53 +192,96 @@ const LandingForm = () => {
             <div className="space-y-3">
                <div className="flex items-center justify-between gap-3">
                   <Label>Review carousel</Label>
-                  <Button
-                     type="button"
-                     variant="outline"
-                     size="sm"
-                     onClick={() => setData('reviews', [...data.reviews, { quote: '', name: '' }])}
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={addReview}>
                      <Plus className="h-4 w-4" />
                      Add review
                   </Button>
                </div>
+               <p className="text-muted-foreground text-xs">Each card is either a written quote or an uploaded picture.</p>
 
                {data.reviews.length === 0 ? <p className="text-muted-foreground text-sm">No reviews yet. Add one to show the carousel.</p> : null}
 
-               {data.reviews.map((review, index) => (
-                  <div key={index} className="space-y-2 rounded-lg border p-3">
-                     <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">Review {index + 1}</p>
-                        <Button
-                           type="button"
-                           variant="ghost"
-                           size="sm"
-                           onClick={() =>
-                              setData(
-                                 'reviews',
-                                 data.reviews.filter((_, reviewIndex) => reviewIndex !== index),
-                              )
-                           }
-                        >
-                           <Trash2 className="h-4 w-4" />
-                           Remove
-                        </Button>
+               {data.reviews.map((review, index) => {
+                  const preview = imagePreviews[index] || review.existing_image;
+
+                  return (
+                     <div key={index} className="space-y-3 rounded-lg border p-3">
+                        <div className="flex items-center justify-between gap-3">
+                           <p className="text-sm font-medium">Review {index + 1}</p>
+                           <Button type="button" variant="ghost" size="sm" onClick={() => removeReview(index)}>
+                              <Trash2 className="h-4 w-4" />
+                              Remove
+                           </Button>
+                        </div>
+
+                        <div className="flex gap-2" role="group" aria-label={`Review ${index + 1} type`}>
+                           <Button
+                              type="button"
+                              size="sm"
+                              variant={review.type === 'written' ? 'default' : 'outline'}
+                              aria-pressed={review.type === 'written'}
+                              onClick={() => setReviewType(index, 'written')}
+                           >
+                              Written
+                           </Button>
+                           <Button
+                              type="button"
+                              size="sm"
+                              variant={review.type === 'image' ? 'default' : 'outline'}
+                              aria-pressed={review.type === 'image'}
+                              onClick={() => setReviewType(index, 'image')}
+                           >
+                              Image
+                           </Button>
+                        </div>
+
+                        {review.type === 'image' ? (
+                           <>
+                              <div>
+                                 <Label htmlFor={`review-image-${index}`}>Picture</Label>
+                                 <Input
+                                    id={`review-image-${index}`}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(event) => setReviewImage(index, event.target.files?.[0] ?? null)}
+                                 />
+                                 <p className="text-muted-foreground mt-1 text-xs">Shown in the carousel instead of a quote. Maximum 10 MB.</p>
+                                 <InputError message={errors[`reviews.${index}.image` as 'reviews']} />
+                              </div>
+                              {preview ? (
+                                 <img src={preview} alt="" className="aspect-[4/3] w-full max-w-xs rounded-md object-cover" />
+                              ) : null}
+                              <div>
+                                 <Label htmlFor={`review-caption-${index}`}>Caption</Label>
+                                 <Input
+                                    id={`review-caption-${index}`}
+                                    value={review.name}
+                                    onChange={(event) => updateReview(index, { name: event.target.value })}
+                                    placeholder="Optional name"
+                                 />
+                                 <InputError message={errors[`reviews.${index}.name` as 'reviews']} />
+                              </div>
+                           </>
+                        ) : (
+                           <>
+                              <Textarea
+                                 rows={3}
+                                 value={review.quote}
+                                 onChange={(event) => updateReview(index, { quote: event.target.value })}
+                                 placeholder="Quote"
+                              />
+                              <InputError message={errors[`reviews.${index}.quote` as 'reviews']} />
+                              <Input
+                                 value={review.name}
+                                 onChange={(event) => updateReview(index, { name: event.target.value })}
+                                 placeholder="Name"
+                              />
+                              <InputError message={errors[`reviews.${index}.name` as 'reviews']} />
+                           </>
+                        )}
                      </div>
-                     <Textarea
-                        rows={3}
-                        value={review.quote}
-                        onChange={(event) => updateReview(index, 'quote', event.target.value)}
-                        placeholder="Quote"
-                     />
-                     <InputError message={errors[`reviews.${index}.quote` as 'reviews']} />
-                     <Input
-                        value={review.name}
-                        onChange={(event) => updateReview(index, 'name', event.target.value)}
-                        placeholder="Name"
-                     />
-                     <InputError message={errors[`reviews.${index}.name` as 'reviews']} />
-                  </div>
-               ))}
+                  );
+               })}
             </div>
 
             <div>

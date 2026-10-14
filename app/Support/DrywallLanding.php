@@ -35,24 +35,104 @@ HTML;
     }
 
     /**
-     * @return list<array{quote: string, name: string}>
+     * @return list<array{type: string, quote: string, name: string, image: null}>
      */
     public static function defaultReviews(): array
     {
         return [
             [
+                'type' => 'written',
                 'quote' => 'The lessons walk through a real takeoff. I knew what to do on the first practice set.',
                 'name' => 'Student review',
+                'image' => null,
             ],
             [
+                'type' => 'written',
                 'quote' => 'Clear on framing, openings, and how estimators write assumptions.',
                 'name' => 'Student review',
+                'image' => null,
             ],
             [
+                'type' => 'written',
                 'quote' => 'Short lessons I could finish after work, with files I can reuse.',
                 'name' => 'Student review',
+                'image' => null,
             ],
         ];
+    }
+
+    /**
+     * Accept only an http(s) URL or a site-relative path for a stored review picture.
+     */
+    public static function storedReviewImage(string $value): ?string
+    {
+        $url = trim($value);
+
+        if ($url === '' || strlen($url) > 2048) {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $url) === 1) {
+            return $url;
+        }
+
+        if (preg_match('#^/(?!/)#', $url) === 1) {
+            return $url;
+        }
+
+        return null;
+    }
+
+    /**
+     * Older saved reviews have quote and name only. Those stay written cards.
+     *
+     * @param  array<int, mixed>  $reviews
+     * @return list<array{type: string, quote: string, name: string, image: string|null}>
+     */
+    public static function normalizeReviews(array $reviews): array
+    {
+        $normalized = [];
+
+        foreach ($reviews as $review) {
+            if (! is_array($review)) {
+                continue;
+            }
+
+            $type = ($review['type'] ?? '') === 'image' ? 'image' : 'written';
+            $name = trim((string) ($review['name'] ?? ''));
+            $quote = trim((string) ($review['quote'] ?? ''));
+            $image = is_string($review['image'] ?? null)
+                ? self::storedReviewImage($review['image'])
+                : null;
+
+            if ($type === 'image') {
+                if ($image === null) {
+                    continue;
+                }
+
+                $normalized[] = [
+                    'type' => 'image',
+                    'quote' => '',
+                    'name' => $name,
+                    'image' => $image,
+                ];
+
+                continue;
+            }
+
+            if ($quote === '' && $name === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'type' => 'written',
+                'quote' => $quote,
+                'name' => $name,
+                'image' => null,
+            ];
+        }
+
+        return $normalized;
     }
 
     public static function isDrywallCourse(?Course $course): bool
@@ -206,7 +286,7 @@ HTML;
             'video_duration' => $landing?->video_duration ?: '2:36',
             'coach_line' => $landing?->coach_line ?: 'Your coach · Professional engineer.',
             'embed_html' => $landing?->embed_html ?: self::DEFAULT_EMBED,
-            'reviews' => $reviews,
+            'reviews' => self::normalizeReviews($reviews),
             'overview' => self::overview(),
         ];
     }
