@@ -31,13 +31,16 @@
       })();
    </script>
 
+   @php
+      $seoDescription = \App\Support\SeoMeta::descriptionOverride(request());
+   @endphp
    @if (app('system_settings'))
       <title inertia>
          {{ $metaTitle ?? app('system_settings')->fields['name'] }}
       </title>
       <meta
          name="description"
-         content="{{ $metaDescription ?? app('system_settings')->fields['description'] }}"
+         content="{{ $seoDescription ?? $metaDescription ?? app('system_settings')->fields['description'] }}"
       >
       <meta
          name="keywords"
@@ -160,6 +163,9 @@
          >
       @endif
    @endif
+
+   <link rel="canonical" href="{{ \App\Support\SeoMeta::canonicalUrl(request()) }}">
+   <meta name="robots" content="{{ \App\Support\SeoMeta::robotsContent(request()) }}">
 
    <link
       rel="preconnect"
