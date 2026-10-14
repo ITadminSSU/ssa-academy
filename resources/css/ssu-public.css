@@ -983,3 +983,45 @@
    text-decoration: underline;
    text-underline-offset: 3px;
 }
+
+.ssu-public .drywall-landing h1,
+.ssu-public .drywall-landing h2,
+.ssu-public .drywall-landing h3 {
+   font-family: 'Plus Jakarta Sans', Manrope, sans-serif;
+   font-weight: 800;
+   letter-spacing: -0.03em;
+   line-height: 1.05;
+   text-transform: none;
+}
+
+.ssu-public .drywall-script {
+   font-family: Caveat, 'Segoe Script', cursive;
+   font-weight: 600;
+   letter-spacing: 0;
+}
+
+.ssu-public .drywall-ghl iframe {
+   width: 100% !important;
+   min-height: 569px;
+   border: 0;
+   background: #fff;
+}
+
+.ssu-public a.drywall-enroll {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   border-radius: 8px;
+   background: #f0b429;
+   color: #1c2430;
+   font-family: 'Plus Jakarta Sans', Manrope, sans-serif;
+   font-size: 0.95rem;
+   font-weight: 800;
+   letter-spacing: 0;
+   text-transform: none;
+   padding: 0.85rem 1.25rem;
+}
+
+.ssu-public a.drywall-enroll:hover {
+   background: #f0ac3a;
+}

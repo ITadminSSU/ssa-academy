@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CertificateVerificationController;
+use App\Http\Controllers\DrywallEstimatingController;
 use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\Course\CourseLaunchNotificationController;
 use App\Http\Controllers\FraudTrainingTiplineController;
@@ -11,6 +12,9 @@ use App\Http\Controllers\SignWellWebhookController;
 use App\Http\Controllers\SubscribeController;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
+
+Route::get('drywall-estimating', [DrywallEstimatingController::class, 'show'])->name('drywall-estimating');
+Route::get('drywall-estimating/thank-you', [DrywallEstimatingController::class, 'thanks'])->name('drywall-estimating.thanks');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('about-us', [HomeController::class, 'about'])->name('about');
