@@ -15,6 +15,7 @@ use App\Support\DrywallLanding;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -91,6 +92,33 @@ it('hides the curriculum from guests and shows live instructor reviews', functio
         ->and(json_encode($enrolled['course']['sections']))->not->toContain('secret-video.mp4');
 
     Auth::logout();
+});
+
+it('loads the landing and thank-you pages when academy tables use a prefix', function () {
+    $this->withoutVite();
+
+    $connection = config('database.default');
+    $previous = config("database.connections.{$connection}.prefix");
+    config(["database.connections.{$connection}.prefix" => 'ssu_academy_']);
+    DB::purge($connection);
+    DB::reconnect($connection);
+
+    try {
+        createDrywallCourseContent();
+
+        $page = app(DrywallLanding::class)->publicPage();
+
+        expect($page['course']['instructor']['total_reviews_count'])->toBe(2)
+            ->and((float) $page['course']['instructor']['total_average_rating'])->toBe(4.5)
+            ->and($page['course']['instructor']['courses'][0]['enrollments_count'])->toBe(1);
+
+        $this->get('/drywall-estimating')->assertOk();
+        $this->get('/drywall-estimating/thank-you')->assertOk();
+    } finally {
+        config(["database.connections.{$connection}.prefix" => $previous]);
+        DB::purge($connection);
+        DB::reconnect($connection);
+    }
 });
 
 it('keeps a leadconnector iframe and the official embed script', function () {
