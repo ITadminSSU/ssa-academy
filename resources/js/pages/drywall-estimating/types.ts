@@ -1,6 +1,18 @@
+export type DrywallReviewType = 'written' | 'image';
+
 export interface DrywallReview {
+   type: DrywallReviewType;
    quote: string;
    name: string;
+   image: string | null;
+}
+
+export interface DrywallReviewDraft {
+   type: DrywallReviewType;
+   quote: string;
+   name: string;
+   existing_image: string;
+   image: File | null;
 }
 
 export interface DrywallLandingContent {
@@ -25,3 +37,19 @@ export interface DrywallLandingSettings {
    thanks_url: string;
    using_defaults: boolean;
 }
+
+export const emptyReviewDraft = (): DrywallReviewDraft => ({
+   type: 'written',
+   quote: '',
+   name: '',
+   existing_image: '',
+   image: null,
+});
+
+export const toReviewDraft = (review: DrywallReview): DrywallReviewDraft => ({
+   type: review.type === 'image' ? 'image' : 'written',
+   quote: review.quote ?? '',
+   name: review.name ?? '',
+   existing_image: review.type === 'image' && review.image ? review.image : '',
+   image: null,
+});

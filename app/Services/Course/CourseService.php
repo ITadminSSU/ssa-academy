@@ -17,6 +17,7 @@ use App\Support\Database\SsuAcademyTableRegistry;
 use App\Support\DrywallLanding;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -583,13 +584,92 @@ class CourseService extends MediaService
          'video_duration' => $data['video_duration'] ?? '2:36',
          'coach_line' => $data['coach_line'] ?? 'Your coach · Professional engineer.',
          'embed_html' => $embed,
-         'reviews' => array_values($data['reviews'] ?? []),
       ]);
       $landing->save();
+
+      [$reviews, $keptImageUrls] = $this->storeLandingReviews($landing, $data['reviews'] ?? []);
+      $landing->reviews = $reviews;
+      $landing->save();
+      $this->deleteUnusedReviewImages($landing, $keptImageUrls);
 
       if (! empty($data['hero_photo'])) {
          $landing->hero_photo = $this->addNewDeletePrev($landing, $data['hero_photo'], 'hero');
          $landing->save();
       }
+   }
+
+   /**
+    * @param  array<int, mixed>  $submitted
+    * @return array{0: list<array{type: string, quote: string, name: string, image: string|null}>, 1: list<string>}
+    */
+   private function storeLandingReviews(CourseLandingPage $landing, array $submitted): array
+   {
+      $reviews = [];
+      $keptImageUrls = [];
+
+      foreach (array_values($submitted) as $review) {
+         if (! is_array($review)) {
+            continue;
+         }
+
+         $type = ($review['type'] ?? '') === 'image' ? 'image' : 'written';
+         $name = trim((string) ($review['name'] ?? ''));
+
+         if ($type === 'image') {
+            $upload = $review['image'] ?? null;
+            $imageUrl = $upload instanceof UploadedFile
+               ? $this->addSingleFile($landing, $upload, 'review-'.Str::uuid())
+               : DrywallLanding::storedReviewImage((string) ($review['existing_image'] ?? ''));
+
+            if ($imageUrl === null || $imageUrl === '') {
+               continue;
+            }
+
+            $keptImageUrls[] = $imageUrl;
+            $reviews[] = [
+               'type' => 'image',
+               'quote' => '',
+               'name' => $name,
+               'image' => $imageUrl,
+            ];
+
+            continue;
+         }
+
+         $quote = trim((string) ($review['quote'] ?? ''));
+
+         if ($quote === '' && $name === '') {
+            continue;
+         }
+
+         $reviews[] = [
+            'type' => 'written',
+            'quote' => $quote,
+            'name' => $name,
+            'image' => null,
+         ];
+      }
+
+      return [$reviews, $keptImageUrls];
+   }
+
+   /**
+    * @param  list<string>  $keptImageUrls
+    */
+   private function deleteUnusedReviewImages(CourseLandingPage $landing, array $keptImageUrls): void
+   {
+      $landing->unsetRelation('media');
+
+      $landing->getMedia()->each(function ($media) use ($keptImageUrls) {
+         $name = (string) $media->getCustomProperty('name');
+
+         if (! str_starts_with($name, 'review-')) {
+            return;
+         }
+
+         if (! in_array(media_storage_url($media), $keptImageUrls, true)) {
+            $media->delete();
+         }
+      });
    }
 }
