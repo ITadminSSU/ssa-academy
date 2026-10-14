@@ -27,17 +27,18 @@ const benefits = [
 const ReviewCard = ({ review }: { review: DrywallReview }) => {
    if (review.type === 'image' && review.image) {
       return (
-         <figure className="flex h-full flex-col overflow-hidden rounded-xl border border-[#e4e8ee] bg-white">
-            <img src={review.image} alt={review.name || 'Student review'} className="aspect-[4/3] w-full object-cover" />
-            {review.name ? <figcaption className="px-4 py-3 text-xs font-bold text-[#10243f]">{review.name}</figcaption> : null}
+         <figure className="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#e4e8ee] bg-white">
+            <div className="flex min-h-0 w-full flex-1 items-center justify-center bg-[#f7f6f3]">
+               <img src={review.image} alt={review.name || 'Student review'} className="h-auto max-h-[32rem] w-auto max-w-full object-contain" />
+            </div>
+            {review.name ? <figcaption className="px-4 py-3 text-xs font-bold break-words text-[#10243f]">{review.name}</figcaption> : null}
          </figure>
       );
    }
 
    return (
-      <blockquote className="h-full rounded-xl border border-[#e4e8ee] bg-white p-4 text-[15px] leading-relaxed text-[#344054]">
-         “{review.quote}”
-         <footer className="mt-3 text-xs font-bold text-[#10243f]">{review.name}</footer>
+      <blockquote className="h-full min-w-0 rounded-xl border border-[#e4e8ee] bg-white p-4 text-[15px] leading-relaxed break-words whitespace-normal text-[#344054]">
+         “{review.quote}”<footer className="mt-3 text-xs font-bold break-words text-[#10243f]">{review.name}</footer>
       </blockquote>
    );
 };
@@ -194,18 +195,23 @@ const DrywallEstimating = ({ landing, course }: DrywallPageProps) => {
 
          {landing.reviews.length > 0 ? (
             <section className="container py-10">
-               <Carousel className="px-2 md:px-0" opts={{ align: 'start', loop: landing.reviews.length > 3 }}>
-                  <CarouselContent>
+               <Carousel
+                  className={landing.reviews.length > 3 ? 'px-12' : undefined}
+                  opts={{ align: 'start', containScroll: 'trimSnaps', loop: landing.reviews.length > 3 }}
+               >
+                  <CarouselContent className="ml-0">
                      {landing.reviews.map((review: DrywallReview, index) => (
-                        <CarouselItem key={`${review.type}-${review.name}-${index}`} className="md:basis-1/2 lg:basis-1/3">
-                           <ReviewCard review={review} />
+                        <CarouselItem key={`${review.type}-${review.name}-${index}`} className="basis-full pl-0 md:basis-1/2 lg:basis-1/3">
+                           <div className="h-full px-2">
+                              <ReviewCard review={review} />
+                           </div>
                         </CarouselItem>
                      ))}
                   </CarouselContent>
                   {landing.reviews.length > 3 ? (
                      <>
-                        <CarouselPrevious className="-left-3" />
-                        <CarouselNext className="-right-3" />
+                        <CarouselPrevious className="left-0" />
+                        <CarouselNext className="right-0" />
                      </>
                   ) : null}
                </Carousel>
