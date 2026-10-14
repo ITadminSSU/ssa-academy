@@ -4,9 +4,13 @@ namespace App\Support;
 
 use App\Models\Course\Course;
 use App\Models\Course\CourseLandingPage;
+use App\Services\Course\CourseService;
+use App\Services\Payment\SubscriptionAccessService;
+use App\Support\Database\SsuAcademyTableRegistry;
 use Carbon\Carbon;
 use DOMDocument;
 use DOMElement;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class DrywallLanding
@@ -142,13 +146,31 @@ HTML;
     {
         $course = $this->course();
         $landing = $this->recordFor($course);
+        $canViewCurriculum = $this->viewerCanSeeCurriculum($course);
 
         return [
             'landing' => $this->present($landing),
-            'course' => $course && $course->isPubliclyViewable() ? $this->courseTabs($course) : null,
-            'canViewCurriculum' => $course && $course->isPubliclyViewable(),
+            'course' => $course && $course->isPubliclyViewable() ? $this->courseTabs($course, $canViewCurriculum) : null,
+            'canViewCurriculum' => $canViewCurriculum,
             'enrollUrl' => $this->enrollUrl($course),
         ];
+    }
+
+    /**
+     * Same rule as the course details page: guests and people without access
+     * do not receive the curriculum.
+     */
+    private function viewerCanSeeCurriculum(?Course $course): bool
+    {
+        $user = Auth::user();
+
+        if (! $course || ! $user || ! $course->isPubliclyViewable($user)) {
+            return false;
+        }
+
+        $enrollment = app(CourseService::class)->getCourseEnroll((string) $course->id);
+
+        return app(SubscriptionAccessService::class)->canViewPublicCurriculum($user, $course, $enrollment);
     }
 
     /**
@@ -223,17 +245,38 @@ HTML;
     /**
      * @return array<string, mixed>|null
      */
-    private function courseTabs(Course $course): ?array
+    private function courseTabs(Course $course, bool $includeCurriculum): ?array
     {
         if (! Schema::hasTable('course_faqs') || ! Schema::hasTable('course_sections')) {
             return null;
         }
 
-        $course->load([
+        $with = [
             'faqs',
             'requirements',
             'outcomes',
-            'sections' => function ($query) {
+            'instructor' => function ($query) {
+                $instructors = $query->getModel()->getTable();
+                $courses = SsuAcademyTableRegistry::table('courses');
+                $query->select($instructors.'.*');
+
+                if (Schema::hasTable('course_reviews')) {
+                    $courseReviews = SsuAcademyTableRegistry::table('course_reviews');
+                    $query->selectRaw("(SELECT COUNT(*) FROM {$courseReviews} INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id WHERE {$courses}.instructor_id = {$instructors}.id) as total_reviews_count")
+                        ->selectRaw("(SELECT AVG({$courseReviews}.rating) FROM {$courseReviews} INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id WHERE {$courses}.instructor_id = {$instructors}.id) as total_average_rating");
+                }
+
+                $query->with([
+                    'user',
+                    'courses' => fn ($coursesQuery) => $coursesQuery
+                        ->select($courses.'.id', $courses.'.instructor_id')
+                        ->withCount('enrollments'),
+                ]);
+            },
+        ];
+
+        if ($includeCurriculum) {
+            $with['sections'] = function ($query) {
                 $query->orderBy('sort')->orderBy('id')->with([
                     'section_lessons' => fn ($lessons) => $lessons
                         ->select('id', 'title', 'sort', 'lesson_type', 'duration', 'course_section_id')
@@ -242,12 +285,10 @@ HTML;
                         ->select('id', 'title', 'sort', 'duration', 'course_section_id')
                         ->orderBy('sort'),
                 ]);
-            },
-            'instructor.user',
-            'instructor.courses' => fn ($query) => $query
-                ->select('courses.id', 'courses.instructor_id')
-                ->withCount('enrollments'),
-        ]);
+            };
+        }
+
+        $course->load($with);
 
         return [
             'id' => $course->id,
@@ -266,7 +307,7 @@ HTML;
                 'id' => $outcome->id,
                 'outcome' => $outcome->outcome,
             ])->values(),
-            'sections' => $course->sections->map(fn ($section) => [
+            'sections' => $includeCurriculum ? $course->sections->map(fn ($section) => [
                 'id' => $section->id,
                 'title' => $section->title,
                 'sort' => $section->sort,
@@ -283,7 +324,7 @@ HTML;
                     'sort' => $quiz->sort,
                     'duration' => $quiz->duration,
                 ])->values(),
-            ])->values(),
+            ])->values() : [],
             'instructor' => $this->instructorPayload($course),
         ];
     }
@@ -303,8 +344,8 @@ HTML;
         return [
             'id' => $instructor->id,
             'biography' => $instructor->biography,
-            'total_average_rating' => 0,
-            'total_reviews_count' => 0,
+            'total_average_rating' => $instructor->total_average_rating,
+            'total_reviews_count' => (int) ($instructor->total_reviews_count ?? 0),
             'user' => [
                 'name' => $user->name,
                 'email' => $user->email,
