@@ -7,6 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class ChunkInitiateRequest extends FormRequest
 {
     protected $maxSize;
+
     protected $mimeTypes;
 
     public function __construct()
@@ -23,7 +24,7 @@ class ChunkInitiateRequest extends FormRequest
         ];
         $fileMimeTypes = [
             'audio' => ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/mp3', 'audio/x-wav'],
-            'video' => ['video/mp4', 'video/avi', 'video/mpeg', 'video/ogg', 'video/webm', 'video/3gpp'],
+            'video' => ['video/mp4', 'video/avi', 'video/mpeg', 'video/ogg', 'video/webm', 'video/3gpp', 'video/quicktime', 'video/x-quicktime'],
             'document' => [
                 'text/plain',
                 'application/pdf',
@@ -60,12 +61,12 @@ class ChunkInitiateRequest extends FormRequest
                 'required',
                 'numeric',
                 'min:1',
-                'max:' . $this->maxSize
+                'max:'.$this->maxSize,
             ],
             'mimetype' => [
                 'required',
                 'string',
-                'in:' . implode(',', $this->mimeTypes)
+                'in:'.implode(',', $this->mimeTypes),
             ],
             'filetype' => 'required|string|in:audio,video,document,image,zip',
             'total_chunks' => 'required|integer|min:1',
@@ -84,17 +85,17 @@ class ChunkInitiateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'filesize.max' => 'The filesize may not be greater than ' . $this->maxSizeLabel() . '.',
-            'mimetype.in' => 'The filetype must be ' . implode(', ', $this->mimeTypes),
+            'filesize.max' => 'The filesize may not be greater than '.$this->maxSizeLabel().'.',
+            'mimetype.in' => 'The filetype must be '.implode(', ', $this->mimeTypes),
         ];
     }
 
     private function maxSizeLabel(): string
     {
         if ($this->maxSize >= 1024 * 1024) {
-            return round($this->maxSize / 1024 / 1024) . ' GB';
+            return round($this->maxSize / 1024 / 1024).' GB';
         }
 
-        return round($this->maxSize / 1024, 1) . ' MB';
+        return round($this->maxSize / 1024, 1).' MB';
     }
 }

@@ -1,5 +1,7 @@
 export type DrywallReviewType = 'written' | 'image';
 
+export type DrywallVideoSource = 'link' | 'upload';
+
 export interface DrywallReview {
    type: DrywallReviewType;
    quote: string;
@@ -20,7 +22,9 @@ export interface DrywallReviewDraft {
 export interface DrywallLandingContent {
    countdown_ends_at: string;
    hero_photo: string;
+   video_source?: DrywallVideoSource;
    video_url: string | null;
+   video_stored_url?: string | null;
    video_duration: string;
    coach_line: string;
    embed_html: string;
@@ -31,7 +35,9 @@ export interface DrywallLandingContent {
 export interface DrywallLandingSettings {
    countdown_ends_at: string;
    hero_photo: string;
+   video_source: DrywallVideoSource;
    video_url: string;
+   video_stored_url: string;
    video_duration: string;
    coach_line: string;
    embed_html: string;
