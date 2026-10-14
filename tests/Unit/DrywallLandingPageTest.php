@@ -148,6 +148,107 @@ it('keeps older written reviews and image reviews with a stored picture', functi
     ]);
 });
 
+it('stores a private review picture as a stable address and shows a readable link', function () {
+    config([
+        'filesystems.disks.s3.bucket' => 'academy',
+        'filesystems.disks.s3.endpoint' => 'https://example.r2.cloudflarestorage.com',
+        'filesystems.disks.s3.use_path_style_endpoint' => false,
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+        'filesystems.disks.s3.region' => 'auto',
+    ]);
+
+    $signed = 'https://example.r2.cloudflarestorage.com/1/card.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test&X-Amz-Signature=abc';
+
+    expect(DrywallLanding::storedReviewImage($signed))
+        ->toBe('https://example.r2.cloudflarestorage.com/1/card.jpg');
+    expect(DrywallLanding::storedReviewImage('https://cdn.example.com/card.jpg'))
+        ->toBe('https://cdn.example.com/card.jpg');
+    expect(DrywallLanding::storedReviewImage('/assets/images/card.jpg'))
+        ->toBe('/assets/images/card.jpg');
+    expect(DrywallLanding::storedReviewImage('javascript:alert(1)'))->toBeNull();
+
+    $landing = new CourseLandingPage([
+        'countdown_ends_at' => '2026-11-01 18:00:00',
+        'hero_photo' => 'https://example.r2.cloudflarestorage.com/9/hero.jpg',
+        'video_url' => null,
+        'video_duration' => '2:36',
+        'coach_line' => 'Your coach · Professional engineer.',
+        'embed_html' => DrywallLanding::DEFAULT_EMBED,
+        'reviews' => [
+            ['type' => 'image', 'name' => 'Luis', 'image' => 'https://example.r2.cloudflarestorage.com/1/card.jpg', 'quote' => ''],
+        ],
+    ]);
+
+    $presented = app(DrywallLanding::class)->present($landing);
+
+    expect($presented['reviews'][0]['stored_image'])
+        ->toBe('https://example.r2.cloudflarestorage.com/1/card.jpg')
+        ->and($presented['reviews'][0]['image'])->toContain('1/card.jpg')
+        ->and($presented['reviews'][0]['image'])->toContain('X-Amz-Signature')
+        ->and($presented['hero_photo'])->toContain('9/hero.jpg')
+        ->and($presented['hero_photo'])->toContain('X-Amz-Signature');
+});
+
+it('keeps a review picture when the form sends a signed address for the same file', function () {
+    createDrywallCourseTable();
+    createDrywallLandingTables();
+
+    $course = Course::query()->create([
+        'title' => 'Drywall Estimating',
+        'slug' => 'drywall-estimating',
+        'status' => 'approved',
+        'audience' => 'public',
+    ]);
+
+    $service = app(CourseService::class);
+    $service->updateCourse((string) $course->id, [
+        'tab' => 'landing',
+        'countdown_ends_at' => '2026-11-01 18:00:00',
+        'video_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+        'video_duration' => '2:36',
+        'coach_line' => 'Your coach · Professional engineer.',
+        'embed_code' => DrywallLanding::DEFAULT_EMBED,
+        'reviews' => [
+            [
+                'type' => 'image',
+                'quote' => '',
+                'name' => 'Amina',
+                'existing_image' => '',
+                'image' => tinyJpegUpload('first.jpg'),
+            ],
+        ],
+    ]);
+
+    $landing = CourseLandingPage::query()->where('course_id', $course->id)->firstOrFail();
+    $storedImage = $landing->reviews[0]['image'];
+
+    $service->updateCourse((string) $course->id, [
+        'tab' => 'landing',
+        'countdown_ends_at' => '2026-11-01 18:00:00',
+        'video_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+        'video_duration' => '2:36',
+        'coach_line' => 'Your coach · Professional engineer.',
+        'embed_code' => DrywallLanding::DEFAULT_EMBED,
+        'reviews' => [
+            [
+                'type' => 'image',
+                'quote' => '',
+                'name' => 'Amina',
+                'existing_image' => $storedImage.'?X-Amz-Signature=abc',
+                'image' => null,
+            ],
+        ],
+    ]);
+
+    $landing->refresh();
+    $landing->unsetRelation('media');
+
+    expect($landing->reviews[0]['type'])->toBe('image')
+        ->and($landing->reviews[0]['image'])->toBeString()->not->toBe('')
+        ->and($landing->getMedia()->filter(fn ($media) => str_starts_with((string) $media->getCustomProperty('name'), 'review-')))->toHaveCount(1);
+});
+
 it('requires a picture when an image review has none yet', function () {
     createDrywallCourseTable();
     $course = Course::query()->create([
@@ -533,7 +634,6 @@ function createDrywallCourseContent(): void
         'course_id' => $course->id,
     ]);
 }
-
 
 it('accepts a newly uploaded review picture', function () {
     createDrywallCourseTable();
