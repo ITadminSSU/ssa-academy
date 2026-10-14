@@ -14,7 +14,12 @@ import Practice from './partials/ssu-home/practice';
 const SsuHome = ({ system, landingOverlay, landingOverlayForce }: IntroPageProps) => {
    return (
       <LandingLayout navbarHeight={true} customizable={false}>
-         <Head title={system.fields.name} />
+         <Head title={system.fields.name}>
+            <meta
+               name="description"
+               content="Build practical skills in U.S. construction workflows, estimating, software, and professional development with SMARTSOURCING USA Academy."
+            />
+         </Head>
 
          {landingOverlay && <LandingOverlay overlay={landingOverlay} force={Boolean(landingOverlayForce)} />}
 

@@ -8,7 +8,12 @@ import { Head } from '@inertiajs/react';
 const SsuFaqs = ({ system }: IntroPageProps) => {
    return (
       <LandingLayout navbarHeight={true} customizable={false}>
-         <Head title={`FAQs | ${system.fields.name}`} />
+         <Head title={`FAQs | ${system.fields.name}`}>
+            <meta
+               name="description"
+               content="Answers about SmartSourcing USA Academy courses, training, certification, and career opportunities."
+            />
+         </Head>
 
          <div className="ssu-page-shell">
             <PublicPageHero
