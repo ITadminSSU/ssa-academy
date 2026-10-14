@@ -39,7 +39,12 @@ interface AboutProps extends IntroPageProps {
 const SsuAbout = ({ system, teamMembers }: AboutProps) => {
    return (
       <LandingLayout navbarHeight={true} customizable={false}>
-         <Head title={`About Us | ${system.fields.name}`} />
+         <Head title={`About Us | ${system.fields.name}`}>
+            <meta
+               name="description"
+               content="SMARTSOURCING USA Academy is a professional learning platform for structured training, hands-on practice, and verified certification."
+            />
+         </Head>
 
          <div className="ssu-page-shell">
             <PublicPageHero
