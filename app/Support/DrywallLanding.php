@@ -407,20 +407,20 @@ HTML;
             'requirements',
             'outcomes',
             'instructor' => function ($query) {
-                $instructors = $query->getModel()->getTable();
+                $instructorTable = SsuAcademyTableRegistry::table('instructors');
                 $courses = SsuAcademyTableRegistry::table('courses');
-                $query->select($instructors.'.*');
+                $query->select($query->getModel()->getTable().'.*');
 
                 if (Schema::hasTable('course_reviews')) {
                     $courseReviews = SsuAcademyTableRegistry::table('course_reviews');
-                    $query->selectRaw("(SELECT COUNT(*) FROM {$courseReviews} INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id WHERE {$courses}.instructor_id = {$instructors}.id) as total_reviews_count")
-                        ->selectRaw("(SELECT AVG({$courseReviews}.rating) FROM {$courseReviews} INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id WHERE {$courses}.instructor_id = {$instructors}.id) as total_average_rating");
+                    $query->selectRaw("(SELECT COUNT(*) FROM {$courseReviews} INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id WHERE {$courses}.instructor_id = {$instructorTable}.id) as total_reviews_count")
+                        ->selectRaw("(SELECT AVG({$courseReviews}.rating) FROM {$courseReviews} INNER JOIN {$courses} ON {$courseReviews}.course_id = {$courses}.id WHERE {$courses}.instructor_id = {$instructorTable}.id) as total_average_rating");
                 }
 
                 $query->with([
                     'user',
                     'courses' => fn ($coursesQuery) => $coursesQuery
-                        ->select($courses.'.id', $courses.'.instructor_id')
+                        ->select('id', 'instructor_id')
                         ->withCount('enrollments'),
                 ]);
             },
