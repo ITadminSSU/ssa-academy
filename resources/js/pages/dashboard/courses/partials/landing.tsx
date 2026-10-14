@@ -202,7 +202,7 @@ const LandingForm = () => {
                {data.reviews.length === 0 ? <p className="text-muted-foreground text-sm">No reviews yet. Add one to show the carousel.</p> : null}
 
                {data.reviews.map((review, index) => {
-                  const preview = imagePreviews[index] || review.existing_image;
+                  const preview = imagePreviews[index] || review.preview_url || review.existing_image;
 
                   return (
                      <div key={index} className="space-y-3 rounded-lg border p-3">

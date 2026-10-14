@@ -66,22 +66,32 @@ HTML;
     }
 
     /**
-     * Accept only an http(s) URL or a site-relative path for a stored review picture.
+     * Accept only an http(s) URL or a site-relative path, and persist the stable object address.
+     * A signed private-file link is stored without its signature so the next save still finds the file.
      */
     public static function storedReviewImage(string $value): ?string
     {
         $url = trim($value);
 
-        if ($url === '' || strlen($url) > 2048) {
+        if ($url === '' || strlen($url) > 8192) {
             return null;
         }
 
-        if (preg_match('#^https?://#i', $url) === 1) {
-            return $url;
+        $allowed = preg_match('#^https?://#i', $url) === 1
+            || preg_match('#^/(?!/)#', $url) === 1;
+
+        if (! $allowed) {
+            return null;
         }
 
-        if (preg_match('#^/(?!/)#', $url) === 1) {
-            return $url;
+        $stable = trim((string) (S3CompatibleStorage::attributeSet($url) ?? $url));
+
+        if ($stable === '' || strlen($stable) > 2048) {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $stable) === 1 || preg_match('#^/(?!/)#', $stable) === 1) {
+            return $stable;
         }
 
         return null;
@@ -303,14 +313,43 @@ HTML;
 
         return [
             'countdown_ends_at' => $endsAt->toIso8601String(),
-            'hero_photo' => $landing?->hero_photo ?: asset('assets/images/drywall-estimating-hero.jpg'),
+            'hero_photo' => self::browserPhoto($landing?->hero_photo) ?: asset('assets/images/drywall-estimating-hero.jpg'),
             'video_url' => $landing?->video_url ?: null,
             'video_duration' => $landing?->video_duration ?: '2:36',
             'coach_line' => $landing?->coach_line ?: 'Your coach · Professional engineer.',
             'embed_html' => $landing?->embed_html ?: self::DEFAULT_EMBED,
-            'reviews' => self::normalizeReviews($reviews),
+            'reviews' => self::presentReviews($reviews),
             'overview' => self::overview(),
         ];
+    }
+
+    /**
+     * Sign private review pictures for the browser and keep the stable address for the next save.
+     *
+     * @param  array<int, mixed>  $reviews
+     * @return list<array{type: string, quote: string, name: string, image: string|null, stored_image: string|null}>
+     */
+    public static function presentReviews(array $reviews): array
+    {
+        return array_map(function (array $review): array {
+            $stored = is_string($review['image'] ?? null) && $review['image'] !== ''
+                ? $review['image']
+                : null;
+
+            $review['stored_image'] = $stored;
+            $review['image'] = self::browserPhoto($stored);
+
+            return $review;
+        }, self::normalizeReviews($reviews));
+    }
+
+    private static function browserPhoto(?string $url): ?string
+    {
+        if ($url === null || trim($url) === '') {
+            return null;
+        }
+
+        return S3CompatibleStorage::attributeGet($url) ?: $url;
     }
 
     private function enrollUrl(?Course $course): string

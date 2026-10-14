@@ -15,6 +15,7 @@ use App\Services\MediaService;
 use App\Services\Payment\LaunchOfferService;
 use App\Support\Database\SsuAcademyTableRegistry;
 use App\Support\DrywallLanding;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -667,7 +668,17 @@ class CourseService extends MediaService
             return;
          }
 
-         if (! in_array(media_storage_url($media), $keptImageUrls, true)) {
+         $storedUrl = media_storage_url($media);
+         $kept = false;
+
+         foreach ($keptImageUrls as $url) {
+            if (S3CompatibleStorage::sameStoredObject($storedUrl, $url)) {
+               $kept = true;
+               break;
+            }
+         }
+
+         if (! $kept) {
             $media->delete();
          }
       });

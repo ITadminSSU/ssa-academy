@@ -5,6 +5,7 @@ export interface DrywallReview {
    quote: string;
    name: string;
    image: string | null;
+   stored_image?: string | null;
 }
 
 export interface DrywallReviewDraft {
@@ -12,6 +13,7 @@ export interface DrywallReviewDraft {
    quote: string;
    name: string;
    existing_image: string;
+   preview_url: string;
    image: File | null;
 }
 
@@ -43,6 +45,7 @@ export const emptyReviewDraft = (): DrywallReviewDraft => ({
    quote: '',
    name: '',
    existing_image: '',
+   preview_url: '',
    image: null,
 });
 
@@ -50,6 +53,7 @@ export const toReviewDraft = (review: DrywallReview): DrywallReviewDraft => ({
    type: review.type === 'image' ? 'image' : 'written',
    quote: review.quote ?? '',
    name: review.name ?? '',
-   existing_image: review.type === 'image' && review.image ? review.image : '',
+   existing_image: review.type === 'image' ? review.stored_image || review.image || '' : '',
+   preview_url: review.type === 'image' ? review.image || '' : '',
    image: null,
 });
