@@ -3,9 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\CourseAudience;
-use App\Enums\CourseStatusType;
 use App\Enums\CourseBillingModel;
 use App\Enums\CoursePricingType;
+use App\Enums\CourseStatusType;
 use App\Enums\ExpiryLimitType;
 use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use App\Models\Course\Course;
@@ -180,7 +180,9 @@ class UpdateCourseRequest extends FormRequest
         $this->merge([
             'reviews' => $reviews,
             'countdown_ends_at' => $this->normalizeAppTimezoneDateTime($this->input('countdown_ends_at')),
-            'video_url' => $this->filled('video_url') ? trim((string) $this->input('video_url')) : null,
+            'video_source' => $this->input('video_source') === 'upload' ? 'upload' : 'link',
+            'video_url' => $this->landingVideoUrl(),
+            'video_stored_url' => DrywallLanding::storedReviewImage((string) $this->input('video_stored_url', '')) ?? '',
             'video_duration' => trim((string) $this->input('video_duration', '')),
             'coach_line' => trim((string) $this->input('coach_line', '')),
             'hero_photo' => $this->hasFile('hero_photo') ? $this->file('hero_photo') : null,
@@ -202,6 +204,7 @@ class UpdateCourseRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'video_url.required' => 'Upload a video for the landing page.',
             'reviews.*.image.required' => 'Upload a picture for this review.',
             'reviews.*.image.image' => 'The review picture must be an image file.',
             'launch_at.after' => 'Launch date and time must be in the future.',
@@ -330,12 +333,23 @@ class UpdateCourseRequest extends FormRequest
         ];
     }
 
+    private function landingVideoUrl(): ?string
+    {
+        if ($this->input('video_source') === 'upload') {
+            return DrywallLanding::storedReviewImage((string) $this->input('video_stored_url', '')) ?: null;
+        }
+
+        return $this->filled('video_url') ? trim((string) $this->input('video_url')) : null;
+    }
+
     private function landingTabRules(): array
     {
         $rules = [
             'countdown_ends_at' => 'required|date',
             'hero_photo' => 'nullable|image|max:10240',
-            'video_url' => 'nullable|url|max:2048',
+            'video_source' => 'required|in:link,upload',
+            'video_url' => $this->input('video_source') === 'upload' ? 'required|string|max:2048' : 'nullable|url|max:2048',
+            'video_stored_url' => 'nullable|string|max:2048',
             'video_duration' => 'required|string|max:20',
             'coach_line' => 'required|string|max:160',
             'embed_code' => [

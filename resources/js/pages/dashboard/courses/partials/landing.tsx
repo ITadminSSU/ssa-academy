@@ -1,3 +1,4 @@
+import ChunkedUploaderInput from '@/components/chunked-uploader-input';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toDateTimeLocalValue } from '@/lib/course-launch';
 import { onHandleChange } from '@/lib/inertia';
-import { DrywallReviewDraft, DrywallReviewType, emptyReviewDraft, toReviewDraft } from '@/pages/drywall-estimating/types';
+import { DrywallReviewDraft, DrywallReviewType, DrywallVideoSource, emptyReviewDraft, toReviewDraft } from '@/pages/drywall-estimating/types';
 import { useForm, usePage } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -26,15 +27,25 @@ const Landing = () => {
 const LandingForm = () => {
    const { course, landing, appTimezone } = usePage<CourseUpdateProps>().props;
    const settings = landing!;
+   const initialVideoSource: DrywallVideoSource = settings.video_source === 'upload' ? 'upload' : 'link';
    const [heroPreview, setHeroPreview] = useState(settings.hero_photo);
    const [imagePreviews, setImagePreviews] = useState<(string | null)[]>(() => settings.reviews.map(() => null));
+   const [videoPreview, setVideoPreview] = useState(initialVideoSource === 'upload' ? settings.video_url : '');
+   const [videoFileSelected, setVideoFileSelected] = useState(false);
+   const [startVideoUpload, setStartVideoUpload] = useState(false);
+   const [videoUploaded, setVideoUploaded] = useState(false);
    const previewsRef = useRef<(string | null)[]>([]);
+   const pendingVideoRef = useRef<string | null>(null);
+   const submitAfterUpload = useRef(false);
+   const localVideoRef = useRef<string | null>(null);
 
-   const { data, setData, post, errors, processing } = useForm({
+   const { data, setData, post, transform, errors, processing } = useForm({
       tab: 'landing',
       countdown_ends_at: toDateTimeLocalValue(settings.countdown_ends_at, appTimezone),
       hero_photo: null as File | null,
-      video_url: settings.video_url ?? '',
+      video_source: initialVideoSource,
+      video_url: initialVideoSource === 'link' ? (settings.video_url ?? '') : '',
+      video_stored_url: settings.video_stored_url ?? '',
       video_duration: settings.video_duration,
       coach_line: settings.coach_line,
       embed_code: settings.embed_html,
@@ -105,29 +116,80 @@ const LandingForm = () => {
       );
    };
 
-   const handleSubmit = (event: React.FormEvent) => {
-      event.preventDefault();
+   const syncSavedLanding = (page: { props: unknown }) => {
+      const nextLanding = (page.props as CourseUpdateProps).landing;
+      if (!nextLanding) {
+         return;
+      }
+
+      previewsRef.current.forEach((url) => {
+         if (url) {
+            URL.revokeObjectURL(url);
+         }
+      });
+      const cleared = nextLanding.reviews.map(() => null);
+      previewsRef.current = cleared;
+      setImagePreviews(cleared);
+
+      if (localVideoRef.current) {
+         URL.revokeObjectURL(localVideoRef.current);
+         localVideoRef.current = null;
+      }
+
+      const source: DrywallVideoSource = nextLanding.video_source === 'upload' ? 'upload' : 'link';
+      setVideoPreview(source === 'upload' ? (nextLanding.video_url ?? '') : '');
+      setVideoFileSelected(false);
+      setStartVideoUpload(false);
+      setVideoUploaded(false);
+      submitAfterUpload.current = false;
+      pendingVideoRef.current = null;
+      setData((current) => ({
+         ...current,
+         video_source: source,
+         video_url: source === 'link' ? (nextLanding.video_url ?? '') : '',
+         video_stored_url: nextLanding.video_stored_url ?? '',
+         reviews: nextLanding.reviews.map(toReviewDraft),
+      }));
+   };
+
+   const submitLanding = (storedUrl?: string) => {
+      const stored = storedUrl ?? null;
+      transform((current) => ({
+         ...current,
+         video_source: stored ? 'upload' : current.video_source,
+         video_stored_url: stored ?? current.video_stored_url,
+      }));
 
       post(route('courses.update', { id: course.id }), {
          forceFormData: true,
          preserveScroll: true,
-         onSuccess: (page) => {
-            const nextLanding = (page.props as unknown as CourseUpdateProps).landing;
-            if (!nextLanding) {
-               return;
-            }
-
-            previewsRef.current.forEach((url) => {
-               if (url) {
-                  URL.revokeObjectURL(url);
-               }
-            });
-            const cleared = nextLanding.reviews.map(() => null);
-            previewsRef.current = cleared;
-            setImagePreviews(cleared);
-            setData('reviews', nextLanding.reviews.map(toReviewDraft));
+         onSuccess: syncSavedLanding,
+         onError: () => {
+            submitAfterUpload.current = false;
+            setStartVideoUpload(false);
+            setVideoUploaded(false);
          },
       });
+   };
+
+   useEffect(() => {
+      if (!videoUploaded || submitAfterUpload.current || !pendingVideoRef.current) {
+         return;
+      }
+
+      submitAfterUpload.current = true;
+      submitLanding(pendingVideoRef.current);
+   }, [videoUploaded]);
+
+   const handleSubmit = (event: React.FormEvent) => {
+      event.preventDefault();
+
+      if (data.video_source === 'upload' && videoFileSelected) {
+         setStartVideoUpload(true);
+         return;
+      }
+
+      submitLanding();
    };
 
    return (
@@ -165,15 +227,85 @@ const LandingForm = () => {
                {heroPreview ? <img src={heroPreview} alt="" className="mt-3 aspect-video w-full max-w-md rounded-md object-cover" /> : null}
             </div>
 
-            <div>
-               <Label htmlFor="video_url">Video URL</Label>
-               <Input
-                  id="video_url"
-                  value={data.video_url}
-                  onChange={(event) => setData('video_url', event.target.value)}
-                  placeholder="https://"
-               />
-               <InputError message={errors.video_url} />
+            <div className="space-y-3">
+               <div>
+                  <Label>Video</Label>
+                  <div className="mt-2 flex gap-2" role="group" aria-label="Video source">
+                     <Button
+                        type="button"
+                        size="sm"
+                        variant={data.video_source === 'link' ? 'default' : 'outline'}
+                        aria-pressed={data.video_source === 'link'}
+                        onClick={() => setData('video_source', 'link')}
+                     >
+                        Link
+                     </Button>
+                     <Button
+                        type="button"
+                        size="sm"
+                        variant={data.video_source === 'upload' ? 'default' : 'outline'}
+                        aria-pressed={data.video_source === 'upload'}
+                        onClick={() => setData('video_source', 'upload')}
+                     >
+                        Upload
+                     </Button>
+                  </div>
+               </div>
+
+               {data.video_source === 'link' ? (
+                  <div>
+                     <Label htmlFor="video_url">Video URL</Label>
+                     <Input
+                        id="video_url"
+                        value={data.video_url}
+                        onChange={(event) => setData('video_url', event.target.value)}
+                        placeholder="https://"
+                     />
+                     <InputError message={errors.video_url} />
+                  </div>
+               ) : (
+                  <div>
+                     <Label htmlFor="landing-video">Video file</Label>
+                     <ChunkedUploaderInput
+                        isSubmit={startVideoUpload}
+                        courseId={course.id}
+                        filetype="video"
+                        accept=".mp4,.webm,.mov,video/mp4,video/webm,video/quicktime"
+                        acceptError="Upload an MP4, WEBM, or MOV video."
+                        delayUpload
+                        onFileSelected={(file) => {
+                           setVideoFileSelected(true);
+                           if (localVideoRef.current) {
+                              URL.revokeObjectURL(localVideoRef.current);
+                           }
+                           const previewUrl = URL.createObjectURL(file);
+                           localVideoRef.current = previewUrl;
+                           setVideoPreview(previewUrl);
+                        }}
+                        onFileUploaded={(fileData) => {
+                           pendingVideoRef.current = fileData.file_url;
+                           setData('video_stored_url', fileData.file_url);
+                           setVideoFileSelected(false);
+                           setVideoUploaded(true);
+                        }}
+                        onError={() => {
+                           submitAfterUpload.current = false;
+                           setStartVideoUpload(false);
+                           setVideoUploaded(false);
+                        }}
+                        onCancelUpload={() => {
+                           submitAfterUpload.current = false;
+                           setStartVideoUpload(false);
+                           setVideoUploaded(false);
+                        }}
+                     />
+                     <p className="text-muted-foreground mt-1 text-xs">Shown on the landing page. MP4, WEBM, or MOV. Maximum 5 GB.</p>
+                     <InputError message={errors.video_url} />
+                     {videoPreview ? (
+                        <video src={videoPreview} controls className="mt-3 aspect-video w-full max-w-md rounded-md bg-black" />
+                     ) : null}
+                  </div>
+               )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -296,7 +428,7 @@ const LandingForm = () => {
                <InputError message={errors.embed_code} />
             </div>
 
-            <LoadingButton loading={processing}>Save landing page</LoadingButton>
+            <LoadingButton loading={processing || startVideoUpload}>Save landing page</LoadingButton>
          </form>
       </Card>
    );

@@ -47,6 +47,10 @@ const mimeTypeFromFilename = (filename: string): string => {
          xls: 'application/vnd.ms-excel',
          pdf: 'application/pdf',
          txt: 'text/plain',
+         mp4: 'video/mp4',
+         m4v: 'video/mp4',
+         webm: 'video/webm',
+         mov: 'video/quicktime',
       }[extension ?? ''] ?? ''
    );
 };

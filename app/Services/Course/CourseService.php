@@ -11,8 +11,10 @@ use App\Models\Course\CourseLandingPage;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Notifications\CourseApprovalNotification;
+use App\Services\LocalFileUploadService;
 use App\Services\MediaService;
 use App\Services\Payment\LaunchOfferService;
+use App\Services\S3MultipartUploadService;
 use App\Support\Database\SsuAcademyTableRegistry;
 use App\Support\DrywallLanding;
 use App\Support\S3CompatibleStorage;
@@ -579,14 +581,31 @@ class CourseService extends MediaService
       }
 
       $landing = CourseLandingPage::query()->firstOrNew(['course_id' => $course->id]);
+      $previousVideo = $landing->exists ? $landing->video_url : null;
+      $previousSource = $landing->exists ? (string) $landing->video_source : 'link';
+      $source = ($data['video_source'] ?? 'link') === 'upload' ? 'upload' : 'link';
+      $videoUrl = $source === 'upload'
+         ? DrywallLanding::storedReviewImage((string) ($data['video_url'] ?? ''))
+         : ($data['video_url'] ?: null);
+
+      if ($source === 'upload' && ($videoUrl === null || $videoUrl === '')) {
+         throw new \InvalidArgumentException('Upload a video for the landing page.');
+      }
+
       $landing->fill([
          'countdown_ends_at' => $data['countdown_ends_at'] ?? null,
-         'video_url' => $data['video_url'] ?: null,
+         'video_source' => $source,
+         'video_url' => $videoUrl,
          'video_duration' => $data['video_duration'] ?? '2:36',
          'coach_line' => $data['coach_line'] ?? 'Your coach · Professional engineer.',
          'embed_html' => $embed,
       ]);
       $landing->save();
+
+      if ($previousSource === 'upload' && is_string($previousVideo) && $previousVideo !== ''
+         && ($source !== 'upload' || ! S3CompatibleStorage::sameStoredObject($previousVideo, $videoUrl))) {
+         $this->deleteStoredLandingVideo($previousVideo);
+      }
 
       [$reviews, $keptImageUrls] = $this->storeLandingReviews($landing, $data['reviews'] ?? []);
       $landing->reviews = $reviews;
@@ -652,6 +671,38 @@ class CourseService extends MediaService
       }
 
       return [$reviews, $keptImageUrls];
+   }
+
+   private function deleteStoredLandingVideo(string $url): void
+   {
+      if (! Schema::hasTable('chunked_uploads')) {
+         return;
+      }
+
+      try {
+         $upload = app(ProtectedMediaService::class)->findChunkedUpload($url);
+      } catch (\Throwable $exception) {
+         report($exception);
+
+         return;
+      }
+
+      if (! $upload) {
+         return;
+      }
+
+      try {
+         $service = $upload->disk === 's3'
+            ? new S3MultipartUploadService()
+            : new LocalFileUploadService();
+         $service->deleteFile($upload);
+      } catch (\Throwable $exception) {
+         report($exception);
+      }
+
+      if ($upload->exists) {
+         $upload->delete();
+      }
    }
 
    /**

@@ -16,6 +16,7 @@ class CourseLandingPage extends Model implements HasMedia
         'countdown_ends_at',
         'hero_photo',
         'video_url',
+        'video_source',
         'video_duration',
         'coach_line',
         'embed_html',

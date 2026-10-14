@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Requests\UpdateCourseRequest;
+use App\Models\ChunkedUpload;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Course\CourseLandingPage;
@@ -15,6 +16,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -188,6 +190,160 @@ it('stores a private review picture as a stable address and shows a readable lin
         ->and($presented['reviews'][0]['image'])->toContain('X-Amz-Signature')
         ->and($presented['hero_photo'])->toContain('9/hero.jpg')
         ->and($presented['hero_photo'])->toContain('X-Amz-Signature');
+});
+
+it('plays an uploaded landing video from a readable link and keeps the stable address', function () {
+    config([
+        'filesystems.disks.s3.bucket' => 'academy',
+        'filesystems.disks.s3.endpoint' => 'https://example.r2.cloudflarestorage.com',
+        'filesystems.disks.s3.use_path_style_endpoint' => false,
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+        'filesystems.disks.s3.region' => 'auto',
+    ]);
+
+    $signed = 'https://example.r2.cloudflarestorage.com/1/clip.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=test&X-Amz-Signature=abc';
+    $stable = 'https://example.r2.cloudflarestorage.com/1/clip.mp4';
+
+    createDrywallCourseTable();
+    $course = Course::query()->create([
+        'title' => 'Drywall Estimating',
+        'slug' => 'drywall-estimating',
+        'status' => 'approved',
+        'audience' => 'public',
+    ]);
+
+    $request = landingRequest($course->id, [
+        'video_source' => 'upload',
+        'video_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+        'video_stored_url' => $signed,
+    ]);
+    $request->validateResolved();
+
+    expect($request->validated()['video_source'])->toBe('upload')
+        ->and($request->validated()['video_url'])->toBe($stable);
+
+    $uploaded = new CourseLandingPage([
+        'countdown_ends_at' => '2026-11-01 18:00:00',
+        'video_source' => 'upload',
+        'video_url' => $stable,
+        'video_duration' => '2:36',
+        'coach_line' => 'Your coach · Professional engineer.',
+        'embed_html' => DrywallLanding::DEFAULT_EMBED,
+        'reviews' => [],
+    ]);
+    $presented = app(DrywallLanding::class)->present($uploaded);
+
+    expect($presented['video_source'])->toBe('upload')
+        ->and($presented['video_stored_url'])->toBe($stable)
+        ->and($presented['video_url'])->toContain('1/clip.mp4')
+        ->and($presented['video_url'])->toContain('X-Amz-Signature');
+
+    $linked = new CourseLandingPage([
+        'countdown_ends_at' => '2026-11-01 18:00:00',
+        'video_source' => 'link',
+        'video_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+        'video_duration' => '2:36',
+        'coach_line' => 'Your coach · Professional engineer.',
+        'embed_html' => DrywallLanding::DEFAULT_EMBED,
+        'reviews' => [],
+    ]);
+    $linkedPage = app(DrywallLanding::class)->present($linked);
+
+    expect($linkedPage['video_source'])->toBe('link')
+        ->and($linkedPage['video_url'])->toBe('https://www.youtube.com/watch?v=abcdefghijk')
+        ->and($linkedPage['video_stored_url'])->toBeNull();
+});
+
+it('removes an uploaded landing video when the form switches back to a link', function () {
+    createDrywallCourseTable();
+    createDrywallLandingTables();
+    createDrywallChunkedUploadTable();
+
+    $course = Course::query()->create([
+        'title' => 'Drywall Estimating',
+        'slug' => 'drywall-estimating',
+        'status' => 'approved',
+        'audience' => 'public',
+    ]);
+
+    $key = 'lessons/drywall-landing.mp4';
+    $stored = 'https://cdn.example.com/storage/lessons/drywall-landing.mp4';
+    Storage::disk('public')->put($key, 'video-bytes');
+
+    ChunkedUpload::query()->create([
+        'user_id' => 1,
+        'filename' => $key,
+        'original_filename' => 'walkthrough.mp4',
+        'file_path' => $key,
+        'file_url' => $stored,
+        'disk' => 'public',
+        'mime_type' => 'video/mp4',
+        'size' => 11,
+        'upload_id' => 'local-landing-video',
+        'key' => $key,
+        'status' => 'completed',
+        'chunks_completed' => 1,
+        'total_chunks' => 1,
+    ]);
+
+    $service = app(CourseService::class);
+    $payload = [
+        'tab' => 'landing',
+        'countdown_ends_at' => '2026-11-01 18:00:00',
+        'video_source' => 'upload',
+        'video_url' => $stored,
+        'video_duration' => '2:36',
+        'coach_line' => 'Your coach · Professional engineer.',
+        'embed_code' => DrywallLanding::DEFAULT_EMBED,
+        'reviews' => [],
+    ];
+
+    $service->updateCourse((string) $course->id, $payload);
+
+    $landing = CourseLandingPage::query()->where('course_id', $course->id)->firstOrFail();
+    expect($landing->video_source)->toBe('upload')
+        ->and($landing->video_url)->toBe($stored)
+        ->and(Storage::disk('public')->exists($key))->toBeTrue()
+        ->and(ChunkedUpload::query()->count())->toBe(1);
+
+    $service->updateCourse((string) $course->id, $payload);
+    $landing->refresh();
+
+    expect($landing->video_url)->toBe($stored)
+        ->and(Storage::disk('public')->exists($key))->toBeTrue()
+        ->and(ChunkedUpload::query()->count())->toBe(1);
+
+    $service->updateCourse((string) $course->id, [
+        ...$payload,
+        'video_source' => 'link',
+        'video_url' => 'https://www.youtube.com/watch?v=abcdefghijk',
+    ]);
+
+    $landing->refresh();
+
+    expect($landing->video_source)->toBe('link')
+        ->and($landing->video_url)->toBe('https://www.youtube.com/watch?v=abcdefghijk')
+        ->and(Storage::disk('public')->exists($key))->toBeFalse()
+        ->and(ChunkedUpload::query()->count())->toBe(0);
+});
+
+it('requires an uploaded landing video when upload is selected and none is saved', function () {
+    createDrywallCourseTable();
+    $course = Course::query()->create([
+        'title' => 'Drywall Estimating',
+        'slug' => 'drywall-estimating',
+        'status' => 'approved',
+        'audience' => 'public',
+    ]);
+
+    $request = landingRequest($course->id, [
+        'video_source' => 'upload',
+        'video_url' => '',
+        'video_stored_url' => '',
+    ]);
+
+    expect(fn () => $request->validateResolved())->toThrow(ValidationException::class);
 });
 
 it('keeps a review picture when the form sends a signed address for the same file', function () {
@@ -671,6 +827,30 @@ function tinyJpegUpload(string $name): UploadedFile
     return new UploadedFile($path, $name, 'image/jpeg', null, true);
 }
 
+function createDrywallChunkedUploadTable(): void
+{
+    Schema::dropIfExists('chunked_uploads');
+
+    Schema::create('chunked_uploads', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id');
+        $table->string('filename');
+        $table->string('original_filename');
+        $table->string('file_path')->nullable();
+        $table->string('file_url')->nullable();
+        $table->string('disk')->default('public');
+        $table->string('mime_type')->nullable();
+        $table->bigInteger('size')->default(0);
+        $table->string('upload_id')->nullable();
+        $table->string('key')->nullable();
+        $table->string('status')->default('pending');
+        $table->integer('chunks_completed')->default(0);
+        $table->integer('total_chunks')->default(0);
+        $table->json('metadata')->nullable();
+        $table->timestamps();
+    });
+}
+
 function createDrywallLandingTables(): void
 {
     Schema::dropIfExists('media');
@@ -682,6 +862,7 @@ function createDrywallLandingTables(): void
         $table->timestamp('countdown_ends_at')->nullable();
         $table->text('hero_photo')->nullable();
         $table->string('video_url', 2048)->nullable();
+        $table->string('video_source', 16)->default('link');
         $table->string('video_duration', 20)->nullable();
         $table->string('coach_line')->nullable();
         $table->longText('embed_html')->nullable();

@@ -273,7 +273,9 @@ HTML;
         return [
             'countdown_ends_at' => $presented['countdown_ends_at'],
             'hero_photo' => $presented['hero_photo'],
+            'video_source' => $presented['video_source'] ?? 'link',
             'video_url' => $presented['video_url'] ?? '',
+            'video_stored_url' => $presented['video_stored_url'] ?? '',
             'video_duration' => $presented['video_duration'],
             'coach_line' => $presented['coach_line'],
             'embed_html' => $presented['embed_html'],
@@ -310,11 +312,14 @@ HTML;
             ?? Carbon::parse(self::FALLBACK_COUNTDOWN, (string) config('app.timezone'));
 
         $reviews = $landing ? array_values($landing->reviews ?? []) : self::defaultReviews();
+        $video = self::presentVideo($landing);
 
         return [
             'countdown_ends_at' => $endsAt->toIso8601String(),
             'hero_photo' => self::browserPhoto($landing?->hero_photo) ?: asset('assets/images/drywall-estimating-hero.jpg'),
-            'video_url' => $landing?->video_url ?: null,
+            'video_source' => $video['source'],
+            'video_url' => $video['url'],
+            'video_stored_url' => $video['stored_url'],
             'video_duration' => $landing?->video_duration ?: '2:36',
             'coach_line' => $landing?->coach_line ?: 'Your coach · Professional engineer.',
             'embed_html' => $landing?->embed_html ?: self::DEFAULT_EMBED,
@@ -341,6 +346,33 @@ HTML;
 
             return $review;
         }, self::normalizeReviews($reviews));
+    }
+
+    /**
+     * A link stays as entered. An upload is shown with a readable link and remembered as a stable address.
+     *
+     * @return array{source: string, url: string|null, stored_url: string|null}
+     */
+    public static function presentVideo(?CourseLandingPage $landing): array
+    {
+        $stored = is_string($landing?->video_url) && trim($landing->video_url) !== ''
+            ? trim($landing->video_url)
+            : null;
+        $source = $landing?->video_source === 'upload' ? 'upload' : 'link';
+
+        if ($source === 'upload') {
+            return [
+                'source' => 'upload',
+                'url' => $stored !== null ? (self::browserPhoto($stored) ?: $stored) : null,
+                'stored_url' => $stored,
+            ];
+        }
+
+        return [
+            'source' => 'link',
+            'url' => $stored,
+            'stored_url' => null,
+        ];
     }
 
     private static function browserPhoto(?string $url): ?string
