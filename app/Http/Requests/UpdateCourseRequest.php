@@ -8,6 +8,8 @@ use App\Enums\CourseBillingModel;
 use App\Enums\CoursePricingType;
 use App\Enums\ExpiryLimitType;
 use App\Http\Requests\Concerns\NormalizesLaunchAt;
+use App\Models\Course\Course;
+use App\Support\DrywallLanding;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,6 +26,7 @@ class UpdateCourseRequest extends FormRequest
             'pricing' => $this->preparePricingTab(),
             'media' => $this->prepareMediaTab(),
             'seo' => null,
+            'landing' => $this->prepareLandingTab(),
             default => null,
         };
     }
@@ -126,6 +129,33 @@ class UpdateCourseRequest extends FormRequest
         }
     }
 
+    private function prepareLandingTab(): void
+    {
+        $course = Course::query()->find($this->route('id'));
+
+        if (! DrywallLanding::isDrywallCourse($course)) {
+            abort(404);
+        }
+
+        $reviews = collect($this->input('reviews', []))
+            ->map(fn ($review) => [
+                'quote' => trim((string) ($review['quote'] ?? '')),
+                'name' => trim((string) ($review['name'] ?? '')),
+            ])
+            ->filter(fn ($review) => $review['quote'] !== '' || $review['name'] !== '')
+            ->values()
+            ->all();
+
+        $this->merge([
+            'reviews' => $reviews,
+            'countdown_ends_at' => $this->normalizeAppTimezoneDateTime($this->input('countdown_ends_at')),
+            'video_url' => $this->filled('video_url') ? trim((string) $this->input('video_url')) : null,
+            'video_duration' => trim((string) $this->input('video_duration', '')),
+            'coach_line' => trim((string) $this->input('coach_line', '')),
+            'hero_photo' => $this->hasFile('hero_photo') ? $this->file('hero_photo') : null,
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -134,7 +164,7 @@ class UpdateCourseRequest extends FormRequest
     public function rules(): array
     {
         return array_merge([
-            'tab' => 'required|string|in:basic,pricing,media,seo,info,status',
+            'tab' => 'required|string|in:basic,pricing,media,seo,info,status,landing',
         ], $this->getTabSpecificRules());
     }
 
@@ -157,6 +187,7 @@ class UpdateCourseRequest extends FormRequest
             'pricing' => $this->pricingTabRules(),
             'media' => $this->mediaTabRules(),
             'seo' => $this->seoTabRules(),
+            'landing' => $this->landingTabRules(),
             default => [],
         };
     }
@@ -263,6 +294,30 @@ class UpdateCourseRequest extends FormRequest
             'meta_description' => 'nullable|string',
             'og_title' => 'nullable|string|max:255',
             'og_description' => 'nullable|string',
+        ];
+    }
+
+    private function landingTabRules(): array
+    {
+        return [
+            'countdown_ends_at' => 'required|date',
+            'hero_photo' => 'nullable|image|max:10240',
+            'video_url' => 'nullable|url|max:2048',
+            'video_duration' => 'required|string|max:20',
+            'coach_line' => 'required|string|max:160',
+            'embed_code' => [
+                'required',
+                'string',
+                'max:20000',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (DrywallLanding::sanitizeEmbed((string) $value) === null) {
+                        $fail('Paste the GoHighLevel iframe from api.leadconnectorhq.com.');
+                    }
+                },
+            ],
+            'reviews' => 'array',
+            'reviews.*.quote' => 'required|string|max:500',
+            'reviews.*.name' => 'required|string|max:120',
         ];
     }
 }

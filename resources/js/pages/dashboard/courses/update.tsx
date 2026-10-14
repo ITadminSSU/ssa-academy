@@ -3,7 +3,7 @@ import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
-import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FolderInput, Ruler, Settings, FlaskConical } from 'lucide-react';
+import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FolderInput, LayoutTemplate, Ruler, Settings, FlaskConical } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { ReactNode } from 'react';
 import Basic from './partials/basic';
@@ -15,6 +15,8 @@ import Pricing from './partials/pricing';
 import SEO from './partials/seo';
 import ActivitySubmissions from './partials/activity-submissions';
 import UsExperiencePlans from './partials/us-experience-plans';
+import Landing from './partials/landing';
+import { DrywallLandingSettings } from '@/pages/drywall-estimating/types';
 
 export interface CourseUpdateProps extends SharedData {
    tab?: string;
@@ -45,10 +47,12 @@ export interface CourseUpdateProps extends SharedData {
    usExperienceDefaultTolerancePercent?: number;
    hasUsExperiencePlans?: boolean;
    showUsExperience?: boolean;
+   showLandingPage?: boolean;
+   landing?: DrywallLandingSettings | null;
 }
 
 const Update = (props: CourseUpdateProps) => {
-   const { tab, course, translate, showUsExperience = false } = props;
+   const { tab, course, translate, showUsExperience = false, showLandingPage = false } = props;
    const { button } = translate;
 
    const tabs = [
@@ -108,7 +112,14 @@ const Update = (props: CourseUpdateProps) => {
          Icon: FlaskConical,
          Component: SEO,
       },
-   ].filter((item) => item.slug !== 'us-experience' || showUsExperience);
+      {
+         id: nanoid(),
+         name: 'Landing page',
+         slug: 'landing',
+         Icon: LayoutTemplate,
+         Component: Landing,
+      },
+   ].filter((item) => (item.slug !== 'us-experience' || showUsExperience) && (item.slug !== 'landing' || showLandingPage));
 
    return (
       <section className="space-y-8">

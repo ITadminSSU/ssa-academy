@@ -7,12 +7,14 @@ use App\Enums\CourseStatusType;
 use App\Enums\EnrollmentAccessStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
+use App\Models\Course\CourseLandingPage;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Notifications\CourseApprovalNotification;
 use App\Services\MediaService;
 use App\Services\Payment\LaunchOfferService;
 use App\Support\Database\SsuAcademyTableRegistry;
+use App\Support\DrywallLanding;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -162,6 +164,10 @@ class CourseService extends MediaService
                'og_title',
                'og_description',
             ])->all())->save();
+            break;
+
+         case 'landing':
+            $this->updateLandingPage($course, $data);
             break;
 
          case 'status':
@@ -556,5 +562,34 @@ class CourseService extends MediaService
          ],
          'validation_messages' => []
       ];
+   }
+
+   private function updateLandingPage(Course $course, array $data): void
+   {
+      if (! DrywallLanding::isDrywallCourse($course)) {
+         throw new \InvalidArgumentException('Landing page settings are only available for Drywall Estimating.');
+      }
+
+      $embed = DrywallLanding::sanitizeEmbed((string) ($data['embed_code'] ?? ''));
+
+      if ($embed === null) {
+         throw new \InvalidArgumentException('Paste the GoHighLevel iframe from api.leadconnectorhq.com.');
+      }
+
+      $landing = CourseLandingPage::query()->firstOrNew(['course_id' => $course->id]);
+      $landing->fill([
+         'countdown_ends_at' => $data['countdown_ends_at'] ?? null,
+         'video_url' => $data['video_url'] ?: null,
+         'video_duration' => $data['video_duration'] ?? '2:36',
+         'coach_line' => $data['coach_line'] ?? 'Your coach · Professional engineer.',
+         'embed_html' => $embed,
+         'reviews' => array_values($data['reviews'] ?? []),
+      ]);
+      $landing->save();
+
+      if (! empty($data['hero_photo'])) {
+         $landing->hero_photo = $this->addNewDeletePrev($landing, $data['hero_photo'], 'hero');
+         $landing->save();
+      }
    }
 }

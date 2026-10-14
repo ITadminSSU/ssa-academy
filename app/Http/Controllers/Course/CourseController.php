@@ -31,6 +31,7 @@ use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\UsExperience\UsExperiencePlanService;
 use App\Support\CourseWelcomeEmailCopy;
+use App\Support\DrywallLanding;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -312,6 +313,7 @@ class CourseController extends Controller
             $this->appendLessonMediaPreviews($course);
         }
         $showUsExperience = CourseWelcomeEmailCopy::showsUsExperience($course);
+        $showLandingPage = DrywallLanding::isDrywallCourse($course);
 
         if (($tab === 'us-experience' || $request->plan) && ! $showUsExperience) {
             return redirect()->route('courses.edit', ['course' => $course->id, 'tab' => 'curriculum']);
@@ -388,6 +390,8 @@ class CourseController extends Controller
                 'usExperienceDefaultTolerancePercent' => (float) config('us_experience.default_tolerance_percent', 2),
                 'hasUsExperiencePlans' => $showUsExperience && $course->usExperiencePlans()->exists(),
                 'showUsExperience' => $showUsExperience,
+                'showLandingPage' => $showLandingPage,
+                'landing' => $showLandingPage ? app(DrywallLanding::class)->adminPayload($course) : null,
             ]
         );
     }

@@ -331,6 +331,11 @@ class Course extends Model implements HasMedia
         return $this->hasMany(CourseFaq::class)->orderBy('sort', 'asc');
     }
 
+    public function landingPage(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(CourseLandingPage::class);
+    }
+
     public function requirements(): HasMany
     {
         return $this->hasMany(CourseRequirement::class)->orderBy('sort', 'asc');

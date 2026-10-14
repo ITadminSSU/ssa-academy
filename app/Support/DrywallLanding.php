@@ -1,0 +1,319 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Course\Course;
+use App\Models\Course\CourseLandingPage;
+use Carbon\Carbon;
+use DOMDocument;
+use DOMElement;
+use Illuminate\Support\Facades\Schema;
+
+class DrywallLanding
+{
+    public const COURSE_SLUG = 'drywall-estimating';
+
+    public const FALLBACK_COUNTDOWN = '2026-10-31 23:59:00';
+
+    public const DEFAULT_EMBED = <<<'HTML'
+<iframe src="https://api.leadconnectorhq.com/widget/form/fyFpuL3CCfqs4YWlCe1V" style="width:100%;height:100%;border:none;border-radius:8px" id="inline-fyFpuL3CCfqs4YWlCe1V" data-layout="{'id':'INLINE'}" data-trigger-type="alwaysShow" data-trigger-value="" data-activation-type="alwaysActivated" data-activation-value="" data-deactivation-type="neverDeactivate" data-deactivation-value="" data-form-name="Drywall Estimating" data-height="569" data-layout-iframe-id="inline-fyFpuL3CCfqs4YWlCe1V" data-form-id="fyFpuL3CCfqs4YWlCe1V" data-cookie-consent="true" data-cookie-consent-provider="auto" title="Drywall Estimating"></iframe>
+<script src="https://link.msgsndr.com/js/form_embed.js"></script>
+HTML;
+
+    /**
+     * @return list<string>
+     */
+    public static function overview(): array
+    {
+        return [
+            'This course provides a practical introduction to drywall estimating, starting with the fundamentals and building toward real-world takeoff and estimating workflows.',
+            'You\'ll learn the basics of drywall and metal framing, including materials, types, components, stud sizes, gauges, spacing, ceiling framing, openings, and common framing conditions.',
+            'The course also covers reading construction drawings, identifying wall and ceiling conditions, measuring drywall areas, calculating quantities, handling openings and deductions, and understanding specialty drywall applications.',
+            'You\'ll also learn important estimating practices such as assumptions, clarifications, exclusions, quality control, and final takeoff deliverables to help you develop a complete and organized estimating process.',
+            'By the end of the course, you\'ll have a structured understanding of how drywall estimators review project documents, identify scope, perform takeoffs, calculate material quantities, and prepare estimating deliverables.',
+        ];
+    }
+
+    /**
+     * @return list<array{quote: string, name: string}>
+     */
+    public static function defaultReviews(): array
+    {
+        return [
+            [
+                'quote' => 'The lessons walk through a real takeoff. I knew what to do on the first practice set.',
+                'name' => 'Student review',
+            ],
+            [
+                'quote' => 'Clear on framing, openings, and how estimators write assumptions.',
+                'name' => 'Student review',
+            ],
+            [
+                'quote' => 'Short lessons I could finish after work, with files I can reuse.',
+                'name' => 'Student review',
+            ],
+        ];
+    }
+
+    public static function isDrywallCourse(?Course $course): bool
+    {
+        return $course !== null && $course->slug === self::COURSE_SLUG;
+    }
+
+    /**
+     * Keep a GoHighLevel form iframe and replace any script with the official embed script.
+     */
+    public static function sanitizeEmbed(string $html): ?string
+    {
+        $html = trim($html);
+
+        if ($html === '') {
+            return null;
+        }
+
+        $document = new DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+        $loaded = $document->loadHTML(
+            '<?xml encoding="utf-8" ?><div>'.$html.'</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if (! $loaded) {
+            return null;
+        }
+
+        $iframes = $document->getElementsByTagName('iframe');
+
+        if ($iframes->length !== 1) {
+            return null;
+        }
+
+        $iframe = $iframes->item(0);
+
+        if (! $iframe instanceof DOMElement) {
+            return null;
+        }
+
+        $src = trim($iframe->getAttribute('src'));
+
+        if (! preg_match('#^https://api\.leadconnectorhq\.com/widget/form/[A-Za-z0-9]+$#', $src)) {
+            return null;
+        }
+
+        $attributes = [];
+
+        foreach ($iframe->attributes ?? [] as $attribute) {
+            $name = strtolower($attribute->name);
+
+            if (str_starts_with($name, 'on')) {
+                return null;
+            }
+
+            $allowed = in_array($name, ['src', 'id', 'style', 'title'], true) || str_starts_with($name, 'data-');
+
+            if (! $allowed) {
+                continue;
+            }
+
+            if (preg_match('/javascript\s*:/i', $attribute->value)) {
+                return null;
+            }
+
+            $attributes[$name] = $attribute->value;
+        }
+
+        $attributes['src'] = $src;
+
+        $serialized = '';
+
+        foreach ($attributes as $name => $value) {
+            $serialized .= ' '.$name.'="'.htmlspecialchars($value, ENT_COMPAT, 'UTF-8').'"';
+        }
+
+        return '<iframe'.$serialized.'></iframe>'."\n".'<script src="https://link.msgsndr.com/js/form_embed.js"></script>';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function publicPage(): array
+    {
+        $course = $this->course();
+        $landing = $this->recordFor($course);
+
+        return [
+            'landing' => $this->present($landing),
+            'course' => $course && $course->isPubliclyViewable() ? $this->courseTabs($course) : null,
+            'canViewCurriculum' => $course && $course->isPubliclyViewable(),
+            'enrollUrl' => $this->enrollUrl($course),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function adminPayload(Course $course): array
+    {
+        $presented = $this->present($this->recordFor($course));
+
+        return [
+            'countdown_ends_at' => $presented['countdown_ends_at'],
+            'hero_photo' => $presented['hero_photo'],
+            'video_url' => $presented['video_url'] ?? '',
+            'video_duration' => $presented['video_duration'],
+            'coach_line' => $presented['coach_line'],
+            'embed_html' => $presented['embed_html'],
+            'reviews' => $presented['reviews'],
+            'thanks_url' => route('drywall-estimating.thanks'),
+            'using_defaults' => $this->recordFor($course) === null,
+        ];
+    }
+
+    public function course(): ?Course
+    {
+        if (! Schema::hasTable('courses')) {
+            return null;
+        }
+
+        return Course::query()->where('slug', self::COURSE_SLUG)->first();
+    }
+
+    public function recordFor(?Course $course): ?CourseLandingPage
+    {
+        if (! $course || ! Schema::hasTable('course_landing_pages')) {
+            return null;
+        }
+
+        return CourseLandingPage::query()->where('course_id', $course->id)->first();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function present(?CourseLandingPage $landing): array
+    {
+        $endsAt = $landing?->countdown_ends_at
+            ?? Carbon::parse(self::FALLBACK_COUNTDOWN, (string) config('app.timezone'));
+
+        $reviews = $landing ? array_values($landing->reviews ?? []) : self::defaultReviews();
+
+        return [
+            'countdown_ends_at' => $endsAt->toIso8601String(),
+            'hero_photo' => $landing?->hero_photo ?: asset('assets/images/drywall-estimating-hero.jpg'),
+            'video_url' => $landing?->video_url ?: null,
+            'video_duration' => $landing?->video_duration ?: '2:36',
+            'coach_line' => $landing?->coach_line ?: 'Your coach · Professional engineer.',
+            'embed_html' => $landing?->embed_html ?: self::DEFAULT_EMBED,
+            'reviews' => $reviews,
+            'overview' => self::overview(),
+        ];
+    }
+
+    private function enrollUrl(?Course $course): string
+    {
+        if ($course && $course->isPubliclyViewable()) {
+            return route('course.details', ['slug' => $course->slug, 'id' => $course->id]);
+        }
+
+        return route('category.courses', ['category' => 'all']);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function courseTabs(Course $course): ?array
+    {
+        if (! Schema::hasTable('course_faqs') || ! Schema::hasTable('course_sections')) {
+            return null;
+        }
+
+        $course->load([
+            'faqs',
+            'requirements',
+            'outcomes',
+            'sections' => function ($query) {
+                $query->orderBy('sort')->orderBy('id')->with([
+                    'section_lessons' => fn ($lessons) => $lessons
+                        ->select('id', 'title', 'sort', 'lesson_type', 'duration', 'course_section_id')
+                        ->orderBy('sort'),
+                    'section_quizzes' => fn ($quizzes) => $quizzes
+                        ->select('id', 'title', 'sort', 'duration', 'course_section_id')
+                        ->orderBy('sort'),
+                ]);
+            },
+            'instructor.user',
+            'instructor.courses' => fn ($query) => $query
+                ->select('courses.id', 'courses.instructor_id')
+                ->withCount('enrollments'),
+        ]);
+
+        return [
+            'id' => $course->id,
+            'slug' => $course->slug,
+            'title' => $course->title,
+            'faqs' => $course->faqs->map(fn ($faq) => [
+                'id' => $faq->id,
+                'question' => $faq->question,
+                'answer' => $faq->answer,
+            ])->values(),
+            'requirements' => $course->requirements->map(fn ($requirement) => [
+                'id' => $requirement->id,
+                'requirement' => $requirement->requirement,
+            ])->values(),
+            'outcomes' => $course->outcomes->map(fn ($outcome) => [
+                'id' => $outcome->id,
+                'outcome' => $outcome->outcome,
+            ])->values(),
+            'sections' => $course->sections->map(fn ($section) => [
+                'id' => $section->id,
+                'title' => $section->title,
+                'sort' => $section->sort,
+                'section_lessons' => $section->section_lessons->map(fn ($lesson) => [
+                    'id' => $lesson->id,
+                    'title' => $lesson->title,
+                    'sort' => $lesson->sort,
+                    'lesson_type' => $lesson->lesson_type,
+                    'duration' => $lesson->duration,
+                ])->values(),
+                'section_quizzes' => $section->section_quizzes->map(fn ($quiz) => [
+                    'id' => $quiz->id,
+                    'title' => $quiz->title,
+                    'sort' => $quiz->sort,
+                    'duration' => $quiz->duration,
+                ])->values(),
+            ])->values(),
+            'instructor' => $this->instructorPayload($course),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function instructorPayload(Course $course): ?array
+    {
+        $instructor = $course->instructor;
+        $user = $instructor?->user;
+
+        if (! $instructor || ! $user) {
+            return null;
+        }
+
+        return [
+            'id' => $instructor->id,
+            'biography' => $instructor->biography,
+            'total_average_rating' => 0,
+            'total_reviews_count' => 0,
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'photo' => $user->photo ?? '',
+            ],
+            'courses' => $instructor->courses->map(fn ($item) => [
+                'id' => $item->id,
+                'enrollments_count' => $item->enrollments_count ?? 0,
+            ])->values(),
+        ];
+    }
+}
