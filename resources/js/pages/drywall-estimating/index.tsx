@@ -83,7 +83,6 @@ const DrywallEstimating = ({ landing, course }: DrywallPageProps) => {
    const countdown = useCountdown(landing.countdown_ends_at);
    const [playing, setPlaying] = useState(false);
    const embedUrl = landing.video_url ? videoEmbedUrl(landing.video_url) : null;
-   const sections = course?.sections ?? [];
    const faqs = course?.faqs ?? [];
    const hasDetails = (course?.requirements?.length ?? 0) > 0 || (course?.outcomes?.length ?? 0) > 0;
 
@@ -107,25 +106,25 @@ const DrywallEstimating = ({ landing, course }: DrywallPageProps) => {
             <img
                src={landing.hero_photo}
                alt=""
-               className="absolute inset-y-0 right-0 hidden h-full w-[50%] object-cover object-[62%_center] md:block"
+               className="absolute inset-y-0 right-0 hidden h-full w-[78%] object-cover object-right md:block"
             />
-            <div className="pointer-events-none absolute inset-y-0 left-[46%] z-[1] hidden w-[10%] bg-gradient-to-r from-[#10243f] to-transparent md:block" />
+            <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,#10243f_0%,#10243f_32%,rgba(16,36,63,0.82)_48%,rgba(16,36,63,0.28)_66%,transparent_84%)] md:block" />
 
-            <div className="relative z-10 container grid items-center gap-8 py-10 md:grid-cols-[1.15fr_0.85fr] md:py-14">
+            <div className="relative z-10 container grid items-center gap-10 py-12 md:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.85fr)] md:py-16 lg:py-20">
                <div>
-                  <p className="mb-3 text-[13px] font-extrabold tracking-[0.14em] text-[#f0b429] uppercase">Learn a high-demand skill</p>
-                  <h1 className="max-w-xl text-4xl text-white md:text-5xl">
+                  <p className="mb-4 text-sm font-extrabold tracking-[0.14em] text-[#f0b429] uppercase md:text-base">Learn a high-demand skill</p>
+                  <h1 className="max-w-3xl text-5xl text-white md:text-6xl lg:text-[4.25rem]">
                      Master Drywall Estimating and Get <span className="text-[#f0b429]">Real-World U.S. Experience</span>
                   </h1>
-                  <p className="mt-4 max-w-xl text-base leading-relaxed text-[#e6edf5] md:text-[17px]">
+                  <p className="mt-5 max-w-2xl text-lg leading-relaxed text-[#e6edf5] md:text-xl">
                      A practical, step-by-step course designed for beginners and aspiring Virtual Assistants who want to build valuable skills
                      and prepare for real opportunities.
                   </p>
-                  <div className="mt-6 flex flex-col gap-4 sm:flex-row">
+                  <div className="mt-8 flex flex-col gap-5 sm:flex-row">
                      {benefits.map(({ icon: Icon, label }) => (
-                        <div key={label} className="flex max-w-[180px] items-center gap-2 text-[13px] leading-tight text-white">
-                           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f0b429] text-[#10243f]">
-                              <Icon className="h-4 w-4" strokeWidth={2.4} />
+                        <div key={label} className="flex max-w-[220px] items-center gap-3 text-[15px] leading-tight text-white md:text-base">
+                           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#f0b429] text-[#10243f]">
+                              <Icon className="h-5 w-5" strokeWidth={2.4} />
                            </span>
                            <span>{label}</span>
                         </div>
@@ -181,8 +180,10 @@ const DrywallEstimating = ({ landing, course }: DrywallPageProps) => {
                </div>
 
                <div>
-                  <p className="mb-2 text-xs font-extrabold tracking-[0.08em] text-[#c2410c] uppercase">Video: Real-world U.S. experience</p>
-                  <h2 className="text-3xl text-[#10243f] md:text-4xl">Go Beyond Learning. Understand Real-World U.S. Work Experience.</h2>
+                  <p className="mb-3 inline-block rounded-md bg-[#f8e7a8] px-2.5 py-1 text-sm font-extrabold tracking-[0.08em] text-[#10243f] uppercase">
+                     Video: Real-world U.S. experience
+                  </p>
+                  <h2 className="text-4xl text-[#10243f] md:text-5xl">Go Beyond Learning. Understand Real-World U.S. Work Experience.</h2>
                   <p className="mt-4 text-base leading-relaxed text-[#3d4c5e]">
                      Find out how Drywall Estimating skills are used in real projects and how this course helps you gain practical, job-ready
                      experience that gives you an advantage when applying for opportunities.
@@ -234,7 +235,7 @@ const DrywallEstimating = ({ landing, course }: DrywallPageProps) => {
                </TabsContent>
 
                <TabsContent value="curriculum" className="mt-0 rounded-b-2xl border border-t-0 border-[#e7e1d6] bg-[#f7f6f3] p-6 md:p-8">
-                  {course && sections.length > 0 ? (
+                  {course ? (
                      <Curriculum course={course} />
                   ) : (
                      <p className="text-[#3a4654]">The course outline will appear here when Drywall Estimating is published.</p>
