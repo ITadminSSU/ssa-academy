@@ -58,11 +58,9 @@ class RegisteredUserController extends Controller
             'recaptcha' => 'nullable|captcha|required_if:recaptcha_status,true',
             'accept_terms' => 'accepted',
             'accept_legal_age' => 'accepted',
-            'accept_single_account' => 'accepted',
         ], [
             'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
             'accept_legal_age.accepted' => 'You must confirm that you are of legal age and capable of entering into these Terms.',
-            'accept_single_account.accepted' => 'You must confirm that you understand the one-account / no-sharing rule.',
         ]);
 
         // Profile answers, CV, ID, and the student agreement are collected later.

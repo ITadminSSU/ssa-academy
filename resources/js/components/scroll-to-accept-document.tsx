@@ -7,11 +7,16 @@ interface ScrollToAcceptDocumentProps {
    /** Fired whenever the user can / cannot yet accept (must scroll to bottom). */
    onCanAcceptChange?: (canAccept: boolean) => void;
    children?: React.ReactNode;
+   /**
+    * Account signup places the heading and checkboxes outside this box.
+    * The course-start agreement keeps the framed card.
+    */
+   framed?: boolean;
 }
 
 const SCROLL_THRESHOLD = 8;
 
-const ScrollToAcceptDocument = ({ title, html, onCanAcceptChange, children }: ScrollToAcceptDocumentProps) => {
+const ScrollToAcceptDocument = ({ title, html, onCanAcceptChange, children, framed = true }: ScrollToAcceptDocumentProps) => {
    const scrollRef = useRef<HTMLDivElement>(null);
    const [hasReachedBottom, setHasReachedBottom] = useState(false);
 
@@ -39,6 +44,20 @@ const ScrollToAcceptDocument = ({ title, html, onCanAcceptChange, children }: Sc
       return () => window.removeEventListener('resize', handleResize);
    }, [html, evaluateScroll]);
 
+   const documentBox = (
+      <div
+         ref={scrollRef}
+         onScroll={evaluateScroll}
+         className={cn('bg-background h-56 overflow-y-auto rounded-md border p-4', 'prose prose-sm dark:prose-invert max-w-none')}
+      >
+         <div dangerouslySetInnerHTML={{ __html: html }} />
+      </div>
+   );
+
+   if (!framed) {
+      return documentBox;
+   }
+
    return (
       <div className="space-y-3 rounded-lg border p-4">
          <div className="flex items-center justify-between gap-3">
@@ -46,13 +65,7 @@ const ScrollToAcceptDocument = ({ title, html, onCanAcceptChange, children }: Sc
             {!hasReachedBottom && <span className="text-muted-foreground text-xs">Scroll to the bottom to continue</span>}
          </div>
 
-         <div
-            ref={scrollRef}
-            onScroll={evaluateScroll}
-            className={cn('h-56 overflow-y-auto rounded-md border bg-background p-4', 'prose prose-sm dark:prose-invert max-w-none')}
-         >
-            <div dangerouslySetInnerHTML={{ __html: html }} />
-         </div>
+         {documentBox}
 
          <div className={cn('space-y-3', !hasReachedBottom && 'pointer-events-none opacity-60')}>{children}</div>
       </div>

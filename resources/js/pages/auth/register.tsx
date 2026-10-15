@@ -176,11 +176,11 @@ const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
                         values={legalValues}
                         onChange={setLegalAcknowledgement}
                         disabled={processing}
+                        accountLayout
                         includedKeys={ACCOUNT_LEGAL_ACKNOWLEDGEMENT_KEYS}
                         errors={{
                            accept_terms: errors.accept_terms,
                            accept_legal_age: errors.accept_legal_age,
-                           accept_single_account: errors.accept_single_account,
                         }}
                      />
 
