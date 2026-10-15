@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface DynamicCertificateProps {
-   template: CertificateTemplate;
+   template?: CertificateTemplate | null;
    courseName: string;
    studentName: string;
    completionDate: string;
@@ -17,6 +17,7 @@ interface DynamicCertificateProps {
    certificateId?: string | null;
    trainingHours?: string | null;
    instructorName?: string | null;
+   experienceLevel?: string | null;
 }
 
 const GOLD = '#E89A1F';
@@ -153,10 +154,11 @@ const DynamicCertificate = ({
    certificateId,
    trainingHours,
    instructorName,
+   experienceLevel,
 }: DynamicCertificateProps) => {
    const [downloadFormat, setDownloadFormat] = useState('png');
    const previewRef = useRef<HTMLCanvasElement>(null);
-   const fallbackLogo = useMemo(() => resolveLogo(template.logo_path, 'certificate'), [template.logo_path]);
+   const fallbackLogo = useMemo(() => resolveLogo(template?.logo_path, 'certificate'), [template?.logo_path]);
 
    const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
@@ -226,17 +228,38 @@ const DynamicCertificate = ({
          ctx.fillText(line, WIDTH / 2, nameStart + index * nameFit.lineHeight);
       });
 
-      ctx.font = `400 30px ${SANS}`;
-      ctx.fillStyle = WARM;
-      ctx.fillText('has completed', WIDTH / 2, 430);
+      const level = (experienceLevel || '').trim();
 
-      const courseFit = fitWrappedText(ctx, courseName || '', WIDTH - 180, 36, 20, 2, `600 SIZEpx ${SANS}`);
-      ctx.font = `600 ${courseFit.fontSize}px ${SANS}`;
-      ctx.fillStyle = NAVY;
-      const courseStart = 502 - ((courseFit.lines.length - 1) * courseFit.lineHeight) / 2;
-      courseFit.lines.forEach((line, index) => {
-         ctx.fillText(line, WIDTH / 2, courseStart + index * courseFit.lineHeight);
-      });
+      if (level) {
+         ctx.font = `400 28px ${SANS}`;
+         ctx.fillStyle = WARM;
+         ctx.fillText('has completed', WIDTH / 2, 408);
+
+         ctx.font = `600 30px ${SANS}`;
+         ctx.fillStyle = NAVY;
+         ctx.fillText('Build Your US Experience', WIDTH / 2, 456);
+
+         const levelTitle = `${(courseName || '').trim()}, ${level}`.replace(/^,\s*/, '');
+         const levelFit = fitWrappedText(ctx, levelTitle, WIDTH - 180, 28, 18, 2, `600 SIZEpx ${SANS}`);
+         ctx.font = `600 ${levelFit.fontSize}px ${SANS}`;
+         ctx.fillStyle = NAVY;
+         const levelStart = 508 - ((levelFit.lines.length - 1) * levelFit.lineHeight) / 2;
+         levelFit.lines.forEach((line, index) => {
+            ctx.fillText(line, WIDTH / 2, levelStart + index * levelFit.lineHeight);
+         });
+      } else {
+         ctx.font = `400 30px ${SANS}`;
+         ctx.fillStyle = WARM;
+         ctx.fillText('has completed', WIDTH / 2, 430);
+
+         const courseFit = fitWrappedText(ctx, courseName || '', WIDTH - 180, 36, 20, 2, `600 SIZEpx ${SANS}`);
+         ctx.font = `600 ${courseFit.fontSize}px ${SANS}`;
+         ctx.fillStyle = NAVY;
+         const courseStart = 502 - ((courseFit.lines.length - 1) * courseFit.lineHeight) / 2;
+         courseFit.lines.forEach((line, index) => {
+            ctx.fillText(line, WIDTH / 2, courseStart + index * courseFit.lineHeight);
+         });
+      }
 
       const hours = formatTrainingHours(trainingHours);
       const dateLabel = (completionDate || '').toUpperCase();
@@ -292,7 +315,7 @@ const DynamicCertificate = ({
       return () => {
          cancelled = true;
       };
-   }, [fallbackLogo, courseName, studentName, completionDate, verificationReference, certificateId, trainingHours, instructorName]);
+   }, [fallbackLogo, courseName, studentName, completionDate, verificationReference, certificateId, trainingHours, instructorName, experienceLevel]);
 
    const getRenderedCanvas = async (): Promise<HTMLCanvasElement> => {
       const canvas = document.createElement('canvas');

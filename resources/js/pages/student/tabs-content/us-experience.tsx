@@ -1,3 +1,4 @@
+import DynamicCertificate from '@/components/dynamic-certificate';
 import QuantityTakeoffBreakdown from '@/components/exam/quantity-takeoff-breakdown';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -54,12 +55,14 @@ const groupPlans = (plans: UsExperienceStudentPlan[]) => {
 };
 
 const UsExperience = () => {
-   const { usExperience, subscriptionAccess, courseGates } = usePage<StudentCourseProps>().props;
+   const { usExperience, subscriptionAccess, courseGates, course, auth } = usePage<StudentCourseProps>().props;
    const payload = usExperience;
    const courseComplete = payload?.course_complete ?? courseGates?.us_experience_unlocked ?? courseGates?.certificate_unlocked ?? false;
    const plans = payload?.plans ?? [];
    const groups = groupPlans(plans);
+   const certificates = payload?.certificates ?? [];
    const lapsed = subscriptionAccess?.mode === 'completed_only';
+   const certificateFor = (groupName: string) => certificates.find((certificate) => certificate.group_name === groupName);
 
    if (!courseComplete) {
       const lockMessage =
@@ -103,7 +106,10 @@ const UsExperience = () => {
          </p>
 
          <Accordion type="multiple" defaultValue={groups.slice(0, 1).map((group, index) => `${group.name}-${index}`)} className="w-full">
-            {groups.map((group, groupIndex) => (
+            {groups.map((group, groupIndex) => {
+               const levelCertificate = certificateFor(group.name);
+
+               return (
                <AccordionItem key={`${group.name}-${groupIndex}`} value={`${group.name}-${groupIndex}`}>
                   <AccordionTrigger className="text-base font-semibold">{group.name}</AccordionTrigger>
                   <AccordionContent className="space-y-3">
@@ -172,9 +178,21 @@ const UsExperience = () => {
                            )}
                         </div>
                      ))}
+                     {levelCertificate && (
+                        <DynamicCertificate
+                           courseName={course.title}
+                           experienceLevel={group.name}
+                           studentName={auth.user.name}
+                           completionDate={levelCertificate.issued_at || ''}
+                           verificationReference={levelCertificate.verification_reference}
+                           certificateId={levelCertificate.certificate_id}
+                           instructorName={course.instructor?.user?.name}
+                        />
+                     )}
                   </AccordionContent>
                </AccordionItem>
-            ))}
+               );
+            })}
          </Accordion>
       </div>
    );

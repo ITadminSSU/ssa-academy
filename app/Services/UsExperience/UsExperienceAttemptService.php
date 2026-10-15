@@ -8,6 +8,7 @@ use App\Models\Course\UsExperiencePlan;
 use App\Models\User;
 use App\Services\AttemptHalfwayAlertService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use Modules\Exam\Services\QuantityTakeoffGradingService;
 use Modules\Exam\Services\QuantityTakeoffXlsxParser;
@@ -84,6 +85,18 @@ class UsExperienceAttemptService
         ]);
 
         $this->halfwayAlerts->afterUsExperienceAttempt($attempt);
+
+        if ($passed && Schema::hasTable('us_experience_certificates')) {
+            $course = Course::query()->find($plan->course_id);
+
+            if ($course) {
+                app(UsExperienceCertificateIssuanceService::class)->issueIfGroupPassed(
+                    $user,
+                    $course,
+                    (string) $plan->group_name,
+                );
+            }
+        }
 
         return $attempt;
     }
