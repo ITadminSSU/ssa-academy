@@ -68,6 +68,15 @@ class CourseCouponService
          return ['coupon' => null, 'error' => 'This coupon is not valid for this course.'];
       }
 
+      if (! $coupon->allowsCheckoutBy($userId)) {
+         return [
+            'coupon' => null,
+            'error' => $userId === null
+               ? 'Sign in with the email this coupon is assigned to.'
+               : 'This coupon is assigned to a different email.',
+         ];
+      }
+
       return ['coupon' => $coupon, 'error' => null];
    }
 
@@ -106,6 +115,7 @@ class CourseCouponService
    {
       return CourseCoupon::query()
          ->isValid()
+         ->withoutAssignedEmail()
          ->where(function ($query) use ($courseId) {
             $query->whereNull('course_id')
                ->orWhere('course_id', $courseId);
@@ -251,6 +261,7 @@ class CourseCouponService
 
       $coupons = CourseCoupon::query()
          ->isValid($course->id)
+         ->withoutAssignedEmail()
          ->where('show_on_catalog', true)
          ->where('course_id', $course->id)
          ->get();
@@ -285,6 +296,7 @@ class CourseCouponService
          if ($ids->isNotEmpty()) {
             $couponsByCourse = CourseCoupon::query()
                ->isValid()
+               ->withoutAssignedEmail()
                ->where('show_on_catalog', true)
                ->whereIn('course_id', $ids)
                ->get()

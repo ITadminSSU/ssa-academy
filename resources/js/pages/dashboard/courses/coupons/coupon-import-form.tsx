@@ -69,11 +69,11 @@ const CouponImportForm = ({ handler, courses }: Props) => {
    };
 
    const downloadTemplate = () => {
-      const csv = `code,discount_type,discount,course_id,valid_from,valid_to,is_active
-MARIA20,percentage,20,,2026-08-19,2026-12-31,true
-JOHN15,fixed,15,,2026-08-19,2026-12-31,true
-SARAH10,percentage,10,,2026-08-19,2026-12-31,true
-EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true`;
+      const csv = `code,discount_type,discount,course_id,valid_from,valid_to,is_active,email
+MARIA20,percentage,20,,2026-08-19,2026-12-31,true,
+JOHN15,fixed,15,,2026-08-19,2026-12-31,true,john@example.com
+SARAH10,percentage,10,,2026-08-19,2026-12-31,true,
+EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true,`;
 
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -163,8 +163,8 @@ EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true`;
                      <>
                         <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 p-3 text-xs text-muted-foreground">
                            <p className="mb-1 font-medium">CSV format — required columns: <code>code</code>, <code>discount_type</code>, <code>discount</code></p>
-                           <p>Optional columns: <code>course_id</code>, <code>valid_from</code>, <code>valid_to</code>, <code>is_active</code></p>
-                           <p className="mt-1">Leave <code>course_id</code> empty for global coupons. Dates in <code>YYYY-MM-DD</code> format.</p>
+                           <p>Optional columns: <code>course_id</code>, <code>valid_from</code>, <code>valid_to</code>, <code>is_active</code>, <code>email</code></p>
+                           <p className="mt-1">Leave <code>course_id</code> empty for global coupons. Dates in <code>YYYY-MM-DD</code> format. Leave <code>email</code> blank so any student can use the code. A file without the email column still imports, and those codes stay open to any student.</p>
                         </div>
 
                         <div>
@@ -173,7 +173,7 @@ EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true`;
                               id="csv_content"
                               value={data.csv_content}
                               onChange={(e) => setData('csv_content', e.target.value)}
-                              placeholder={`code,discount_type,discount,course_id,valid_from,valid_to,is_active\nMARIA20,percentage,20,,2026-08-19,2026-12-31,true\nJOHN15,fixed,15,,2026-08-19,2026-12-31,true`}
+                              placeholder={`code,discount_type,discount,course_id,valid_from,valid_to,is_active,email\nMARIA20,percentage,20,,2026-08-19,2026-12-31,true,\nJOHN15,fixed,15,,2026-08-19,2026-12-31,true,john@example.com`}
                               rows={7}
                               className="font-mono text-xs"
                               required

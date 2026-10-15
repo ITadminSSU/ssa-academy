@@ -11,6 +11,8 @@ use App\Models\Course\CourseCoupon;
 use App\Services\Course\CourseCouponService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCouponController extends Controller
@@ -169,6 +171,10 @@ class CourseCouponController extends Controller
             return back()->withErrors(['csv_content' => 'Missing required columns: ' . implode(', ', $missing)]);
          }
 
+         $emailColumn = in_array('assigned_email', $header, true)
+            ? 'assigned_email'
+            : (in_array('email', $header, true) ? 'email' : null);
+
          $validCourseIds = \App\Models\Course\Course::pluck('id')->toArray();
 
          foreach ($lines as $i => $line) {
@@ -203,8 +209,7 @@ class CourseCouponController extends Controller
             try { $validFrom = !empty($data['valid_from']) ? Carbon::parse($data['valid_from'])->format('Y-m-d H:i:s') : null; } catch (\Exception $e) {}
             try { $validTo = !empty($data['valid_to']) ? Carbon::parse($data['valid_to'])->format('Y-m-d H:i:s') : null; } catch (\Exception $e) {}
 
-            $allCodes[] = $code;
-            $records[] = [
+            $record = [
                'code' => $code,
                'course_id' => $courseId,
                'discount_type' => $data['discount_type'],
@@ -216,6 +221,19 @@ class CourseCouponController extends Controller
                'created_at' => $now,
                'updated_at' => $now,
             ];
+
+            if ($emailColumn !== null) {
+               $parsedEmail = $this->parseImportedAssignedEmail($data[$emailColumn] ?? null);
+               if ($parsedEmail['invalid']) {
+                  $errors[] = "Row " . ($i + 2) . ": invalid email.";
+                  continue;
+               }
+
+               $record['assigned_email'] = $parsedEmail['email'];
+            }
+
+            $allCodes[] = $code;
+            $records[] = $record;
          }
       } else {
          // Simple mode: codes only, shared settings
@@ -266,14 +284,23 @@ class CourseCouponController extends Controller
       if (!empty($duplicateRecords)) {
          if ($request->on_duplicate === 'update') {
             foreach ($duplicateRecords as $record) {
-               $existingCoupons[$record['code']]->update([
+               $changes = [
                   'course_id' => $record['course_id'],
                   'discount_type' => $record['discount_type'],
                   'discount' => $record['discount'],
                   'valid_from' => $record['valid_from'],
                   'valid_to' => $record['valid_to'],
                   'is_active' => $record['is_active'],
-               ]);
+               ];
+
+               if (array_key_exists('assigned_email', $record)) {
+                  $changes['assigned_email'] = $record['assigned_email'];
+                  if ($record['assigned_email'] !== null && Schema::hasColumn('course_coupons', 'show_on_catalog')) {
+                     $changes['show_on_catalog'] = false;
+                  }
+               }
+
+               $existingCoupons[$record['code']]->update($changes);
             }
             $updated = count($duplicateRecords);
          } else {
@@ -345,6 +372,38 @@ class CourseCouponController extends Controller
          $payload['show_on_catalog'] = false;
       }
 
+      if (array_key_exists('assigned_email', $payload)) {
+         $email = strtolower(trim((string) ($payload['assigned_email'] ?? '')));
+         $payload['assigned_email'] = $email === '' ? null : $email;
+
+         if ($payload['assigned_email'] !== null) {
+            $payload['show_on_catalog'] = false;
+         }
+      }
+
       return $payload;
+   }
+
+   /**
+    * @return array{email: ?string, invalid: bool}
+    */
+   private function parseImportedAssignedEmail(mixed $value): array
+   {
+      $email = strtolower(trim((string) $value));
+
+      if ($email === '') {
+         return ['email' => null, 'invalid' => false];
+      }
+
+      $validator = Validator::make(
+         ['assigned_email' => $email],
+         ['assigned_email' => 'email|max:255'],
+      );
+
+      if ($validator->fails()) {
+         return ['email' => null, 'invalid' => true];
+      }
+
+      return ['email' => $email, 'invalid' => false];
    }
 }

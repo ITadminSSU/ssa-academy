@@ -88,6 +88,15 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
             ),
       },
       {
+         accessorKey: 'assigned_email',
+         header: 'Assigned email',
+         cell: ({ row }) => {
+            const email = row.original.assigned_email?.trim();
+
+            return email ? <span>{email}</span> : <span className="text-muted-foreground">Any student</span>;
+         },
+      },
+      {
          accessorKey: 'usage',
          header: 'Usage',
          cell: ({ row }) => {
