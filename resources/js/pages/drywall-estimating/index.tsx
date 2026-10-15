@@ -2,8 +2,9 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LandingLayout from '@/layouts/landing-layout';
 import { Head } from '@inertiajs/react';
-import { BarChart3, BookOpen, Globe } from 'lucide-react';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { BarChart3, BookOpen, Globe, X } from 'lucide-react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Curriculum from '../courses/partials/curriculum';
 import Details from '../courses/partials/details';
 import Faqs from '../courses/partials/faqs';
@@ -24,12 +25,113 @@ const benefits = [
    { icon: Globe, label: 'Build skills for global opportunities' },
 ];
 
+const ReviewPicture = ({ src, name }: { src: string; name: string }) => {
+   const triggerRef = useRef<HTMLButtonElement>(null);
+   const closeRef = useRef<HTMLButtonElement>(null);
+   const [hovered, setHovered] = useState(false);
+   const [open, setOpen] = useState(false);
+   const label = name ? `View larger review from ${name}` : 'View larger review picture';
+
+   const close = () => {
+      setOpen(false);
+      triggerRef.current?.focus();
+   };
+
+   useEffect(() => {
+      if (!open) {
+         return;
+      }
+
+      closeRef.current?.focus();
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+
+      const onKeyDown = (event: KeyboardEvent) => {
+         if (event.key === 'Escape') {
+            setOpen(false);
+            triggerRef.current?.focus();
+         }
+      };
+
+      document.addEventListener('keydown', onKeyDown);
+
+      return () => {
+         document.body.style.overflow = previousOverflow;
+         document.removeEventListener('keydown', onKeyDown);
+      };
+   }, [open]);
+
+   return (
+      <>
+         <button
+            ref={triggerRef}
+            type="button"
+            className="flex max-w-full cursor-zoom-in items-center justify-center border-0 bg-transparent p-0"
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            aria-label={label}
+            onPointerEnter={(event) => event.pointerType === 'mouse' && setHovered(true)}
+            onPointerLeave={(event) => event.pointerType === 'mouse' && setHovered(false)}
+            onClick={() => {
+               setHovered(false);
+               setOpen(true);
+            }}
+         >
+            <img src={src} alt={name || 'Student review'} className="h-auto max-h-[32rem] w-auto max-w-full object-contain" />
+         </button>
+         {hovered && !open
+            ? createPortal(
+                 <div className="pointer-events-none fixed top-1/2 left-1/2 z-[70] -translate-x-1/2 -translate-y-1/2">
+                    <img
+                       src={src}
+                       alt=""
+                       className="pointer-events-none h-auto max-h-[70vh] w-auto max-w-[min(960px,92vw)] bg-[#f7f6f3] object-contain shadow-2xl"
+                    />
+                 </div>,
+                 document.body,
+              )
+            : null}
+         {open
+            ? createPortal(
+                 <div
+                    className="fixed inset-0 z-[80] flex items-center justify-center bg-[#f7f6f3] p-6"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={label}
+                    onClick={close}
+                 >
+                    <button
+                       ref={closeRef}
+                       type="button"
+                       className="absolute top-4 right-4 grid h-10 w-10 place-items-center rounded-full bg-white text-[#10243f] shadow"
+                       aria-label="Close review picture"
+                       onClick={(event) => {
+                          event.stopPropagation();
+                          close();
+                       }}
+                    >
+                       <X className="h-5 w-5" />
+                    </button>
+                    <img
+                       src={src}
+                       alt={name || 'Student review'}
+                       className="max-h-[85vh] w-auto max-w-[min(1100px,92vw)] object-contain"
+                       onClick={(event) => event.stopPropagation()}
+                    />
+                 </div>,
+                 document.body,
+              )
+            : null}
+      </>
+   );
+};
+
 const ReviewCard = ({ review }: { review: DrywallReview }) => {
    if (review.type === 'image' && review.image) {
       return (
          <figure className="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[#e4e8ee] bg-white">
             <div className="flex min-h-0 w-full flex-1 items-center justify-center bg-[#f7f6f3]">
-               <img src={review.image} alt={review.name || 'Student review'} className="h-auto max-h-[32rem] w-auto max-w-full object-contain" />
+               <ReviewPicture src={review.image} name={review.name} />
             </div>
             {review.name ? <figcaption className="px-4 py-3 text-xs font-bold break-words text-[#10243f]">{review.name}</figcaption> : null}
          </figure>
