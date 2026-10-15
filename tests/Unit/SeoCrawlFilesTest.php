@@ -141,6 +141,42 @@ test('sitemap lists public pages and leaves out private or unpublished ones', fu
         ->not->toContain('https://academy.test/dashboard');
 });
 
+test('a missing sitemap section still returns the static urls', function () {
+    createSeoTables();
+    Schema::drop('blogs');
+
+    DB::table('courses')->insert([
+        'id' => 12,
+        'slug' => 'drywall-estimating',
+        'status' => 'approved',
+        'audience' => 'public',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('courses')->insert([
+        'id' => 15,
+        'slug' => '',
+        'status' => 'approved',
+        'audience' => 'public',
+        'created_at' => now(),
+        'updated_at' => 'not-a-date',
+    ]);
+
+    $response = $this->get('/sitemap.xml');
+
+    $response->assertOk();
+    $response->assertHeader('content-type', 'application/xml; charset=UTF-8');
+
+    expect($response->getContent())
+        ->toContain('https://academy.test/')
+        ->toContain('https://academy.test/about-us')
+        ->toContain('https://academy.test/courses/all')
+        ->toContain('https://academy.test/courses/details/drywall-estimating/12')
+        ->not->toContain('https://academy.test/read/blogs/')
+        ->not->toContain('courses/details//15')
+        ->not->toContain('https://academy.test/login');
+});
+
 test('canonical urls and robots tags follow the public and private paths', function () {
     $faqs = Request::create('/faqs', 'GET');
     $faqs->setRouteResolver(fn () => Route::getRoutes()->match($faqs));
