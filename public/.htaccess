@@ -5,6 +5,11 @@
 
     RewriteEngine On
 
+    # LiteSpeed keeps a 404 when a rewritten URL looks like a missing file.
+    # Send the SEO routes to Laravel before that missing-file check.
+    RewriteRule ^robots\.txt$ index.php [L]
+    RewriteRule ^sitemap\.xml$ index.php [L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

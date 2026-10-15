@@ -3,13 +3,11 @@
 namespace App\Services\Seo;
 
 use App\Enums\CourseAudience;
-use App\Models\Course\Course;
-use App\Models\Instructor;
-use App\Models\Page;
+use App\Enums\CourseStatusType;
 use Illuminate\Support\Carbon;
-use Modules\Blog\Models\Blog;
-use Modules\Blog\Models\BlogCategory;
-use Modules\Exam\Models\Exam;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class SitemapBuilder
 {
@@ -34,38 +32,85 @@ class SitemapBuilder
         $urls = [];
 
         foreach ($this->staticPaths() as $path) {
-            $urls[$this->absolute($path)] = ['loc' => $this->absolute($path), 'lastmod' => null];
+            $this->remember($urls, $path, null, allowBlank: true);
         }
 
-        foreach ($this->courses() as $course) {
-            $loc = $this->absolute('courses/details/'.$course->slug.'/'.$course->id);
-            $urls[$loc] = ['loc' => $loc, 'lastmod' => $this->lastmod($course->updated_at)];
-        }
+        $this->addSection($urls, 'courses', 'courses', ['id', 'slug', 'updated_at', 'status', 'audience'], function () {
+            return DB::table('courses')
+                ->whereIn('status', [
+                    CourseStatusType::APPROVED->value,
+                    CourseStatusType::UPCOMING->value,
+                    CourseStatusType::COMING_SOON->value,
+                ])
+                ->whereIn('audience', [
+                    CourseAudience::PUBLIC->value,
+                    CourseAudience::BOTH->value,
+                ])
+                ->get(['id', 'slug', 'updated_at'])
+                ->map(fn ($row) => $this->entry(
+                    filled($row->slug) && filled($row->id) ? 'courses/details/'.$row->slug.'/'.$row->id : null,
+                    $row->updated_at ?? null,
+                ))
+                ->all();
+        });
 
-        foreach ($this->blogs() as $blog) {
-            $loc = $this->absolute('read/blogs/'.$blog->id);
-            $urls[$loc] = ['loc' => $loc, 'lastmod' => $this->lastmod($blog->updated_at)];
-        }
+        $this->addSection($urls, 'blogs', 'blogs', ['id', 'updated_at', 'status'], function () {
+            return DB::table('blogs')
+                ->where('status', 'published')
+                ->get(['id', 'updated_at'])
+                ->map(fn ($row) => $this->entry(
+                    filled($row->id) ? 'read/blogs/'.$row->id : null,
+                    $row->updated_at ?? null,
+                ))
+                ->all();
+        });
 
-        foreach ($this->blogCategories() as $category) {
-            $loc = $this->absolute('blogs/'.$category->slug);
-            $urls[$loc] = ['loc' => $loc, 'lastmod' => $this->lastmod($category->updated_at)];
-        }
+        $this->addSection($urls, 'blog categories', 'blog_categories', ['slug', 'updated_at', 'status'], function () {
+            return DB::table('blog_categories')
+                ->where('status', 'active')
+                ->where('slug', '!=', 'all')
+                ->get(['slug', 'updated_at'])
+                ->map(fn ($row) => $this->entry(
+                    filled($row->slug) ? 'blogs/'.$row->slug : null,
+                    $row->updated_at ?? null,
+                ))
+                ->all();
+        });
 
-        foreach ($this->exams() as $exam) {
-            $loc = $this->absolute('exams/details/'.$exam->slug.'/'.$exam->id);
-            $urls[$loc] = ['loc' => $loc, 'lastmod' => $this->lastmod($exam->updated_at)];
-        }
+        $this->addSection($urls, 'exams', 'exams', ['id', 'slug', 'updated_at', 'status'], function () {
+            return DB::table('exams')
+                ->where('status', 'published')
+                ->get(['id', 'slug', 'updated_at'])
+                ->map(fn ($row) => $this->entry(
+                    filled($row->slug) && filled($row->id) ? 'exams/details/'.$row->slug.'/'.$row->id : null,
+                    $row->updated_at ?? null,
+                ))
+                ->all();
+        });
 
-        foreach ($this->instructors() as $instructor) {
-            $loc = $this->absolute('instructors/'.$instructor->id);
-            $urls[$loc] = ['loc' => $loc, 'lastmod' => $this->lastmod($instructor->updated_at)];
-        }
+        $this->addSection($urls, 'instructors', 'instructors', ['id', 'updated_at', 'status'], function () {
+            return DB::table('instructors')
+                ->where('status', 'approved')
+                ->get(['id', 'updated_at'])
+                ->map(fn ($row) => $this->entry(
+                    filled($row->id) ? 'instructors/'.$row->id : null,
+                    $row->updated_at ?? null,
+                ))
+                ->all();
+        });
 
-        foreach ($this->pages() as $page) {
-            $loc = $this->absolute($page->slug);
-            $urls[$loc] = ['loc' => $loc, 'lastmod' => $this->lastmod($page->updated_at)];
-        }
+        $this->addSection($urls, 'pages', 'pages', ['slug', 'updated_at', 'type', 'active'], function () {
+            return DB::table('pages')
+                ->where('type', 'inner_page')
+                ->where('active', true)
+                ->whereNotIn('slug', self::SKIP_PAGE_SLUGS)
+                ->get(['slug', 'updated_at'])
+                ->map(fn ($row) => $this->entry(
+                    filled($row->slug) ? (string) $row->slug : null,
+                    $row->updated_at ?? null,
+                ))
+                ->all();
+        });
 
         return array_values($urls);
     }
@@ -78,8 +123,14 @@ class SitemapBuilder
         ];
 
         foreach ($this->urls() as $url) {
+            $loc = htmlspecialchars($url['loc'], ENT_XML1 | ENT_SUBSTITUTE, 'UTF-8');
+
+            if ($loc === '') {
+                continue;
+            }
+
             $lines[] = '  <url>';
-            $lines[] = '    <loc>'.htmlspecialchars($url['loc'], ENT_XML1).'</loc>';
+            $lines[] = '    <loc>'.$loc.'</loc>';
             if ($url['lastmod']) {
                 $lines[] = '    <lastmod>'.$url['lastmod'].'</lastmod>';
             }
@@ -106,53 +157,78 @@ class SitemapBuilder
         ];
     }
 
-    private function courses()
+    /**
+     * @param  array<string, array{loc: string, lastmod: ?string}>  $urls
+     * @param  list<string>  $columns
+     * @param  callable(): list<array{path: ?string, updated_at: mixed}>  $rows
+     */
+    private function addSection(array &$urls, string $section, string $table, array $columns, callable $rows): void
     {
-        return Course::query()
-            ->listedInCatalog()
-            ->whereIn('audience', [
-                CourseAudience::PUBLIC->value,
-                CourseAudience::BOTH->value,
-            ])
-            ->get(['id', 'slug', 'updated_at']);
+        try {
+            if (! $this->tableReady($table, $columns)) {
+                $this->reportSkipped($section, 'The '.$table.' table or one of its sitemap columns is missing.');
+
+                return;
+            }
+
+            foreach ($rows() as $row) {
+                $this->remember($urls, $row['path'] ?? null, $row['updated_at'] ?? null);
+            }
+        } catch (\Throwable $exception) {
+            $this->reportSkipped($section, $exception->getMessage());
+        }
     }
 
-    private function blogs()
+    /**
+     * @param  list<string>  $columns
+     */
+    private function tableReady(string $table, array $columns): bool
     {
-        return Blog::query()
-            ->published()
-            ->get(['id', 'updated_at']);
+        if (! Schema::hasTable($table)) {
+            return false;
+        }
+
+        foreach ($columns as $column) {
+            if (! Schema::hasColumn($table, $column)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    private function blogCategories()
+    /**
+     * @param  array<string, array{loc: string, lastmod: ?string}>  $urls
+     */
+    private function remember(array &$urls, ?string $path, mixed $updatedAt, bool $allowBlank = false): void
     {
-        return BlogCategory::query()
-            ->where('status', 'active')
-            ->where('slug', '!=', 'all')
-            ->get(['slug', 'updated_at']);
+        $path = trim((string) $path);
+
+        if ($path === '' && ! $allowBlank) {
+            return;
+        }
+
+        $loc = $this->absolute($allowBlank && $path === '' ? '/' : $path);
+
+        if ($loc === '') {
+            return;
+        }
+
+        $urls[$loc] = [
+            'loc' => $loc,
+            'lastmod' => $this->lastmod($updatedAt),
+        ];
     }
 
-    private function exams()
+    /**
+     * @return array{path: ?string, updated_at: mixed}
+     */
+    private function entry(?string $path, mixed $updatedAt): array
     {
-        return Exam::query()
-            ->where('status', 'published')
-            ->get(['id', 'slug', 'updated_at']);
-    }
-
-    private function instructors()
-    {
-        return Instructor::query()
-            ->where('status', 'approved')
-            ->get(['id', 'updated_at']);
-    }
-
-    private function pages()
-    {
-        return Page::query()
-            ->where('type', 'inner_page')
-            ->where('active', true)
-            ->whereNotIn('slug', self::SKIP_PAGE_SLUGS)
-            ->get(['slug', 'updated_at']);
+        return [
+            'path' => $path,
+            'updated_at' => $updatedAt,
+        ];
     }
 
     private function absolute(string $path): string
@@ -169,6 +245,22 @@ class SitemapBuilder
             return null;
         }
 
-        return Carbon::parse($value)->toDateString();
+        try {
+            return Carbon::parse($value)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function reportSkipped(string $section, string $reason): void
+    {
+        try {
+            Log::warning('Sitemap section skipped', [
+                'section' => $section,
+                'reason' => $reason,
+            ]);
+        } catch (\Throwable) {
+            // A logging failure must not turn the sitemap into an error page.
+        }
     }
 }
