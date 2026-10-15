@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course\CourseCertificate;
+use App\Models\Course\UsExperienceCertificate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Modules\Exam\Models\ExamAttempt;
 
@@ -25,6 +27,7 @@ class CertificateVerificationController extends Controller
 
         if (!empty($reference)) {
             $result = $this->lookupCourseCertificate($reference)
+                ?? $this->lookupUsExperienceCertificate($reference)
                 ?? $this->lookupExamCertificate($reference)
                 ?? [
                     'valid' => false,
@@ -58,6 +61,36 @@ class CertificateVerificationController extends Controller
             'reference' => $certificate->verification_reference ?: $certificate->identifier,
             'recipient_name' => $certificate->user->name,
             'title' => $certificate->course->title ?? null,
+            'issued_at' => optional($certificate->created_at)->format('F j, Y'),
+        ];
+    }
+
+    private function lookupUsExperienceCertificate(string $reference): ?array
+    {
+        if (! Schema::hasTable('us_experience_certificates')) {
+            return null;
+        }
+
+        $certificate = UsExperienceCertificate::query()
+            ->with(['user', 'course'])
+            ->where(function ($query) use ($reference) {
+                $query->where('verification_reference', $reference)
+                    ->orWhere('identifier', $reference);
+            })
+            ->first();
+
+        if (! $certificate) {
+            return null;
+        }
+
+        return [
+            'valid' => true,
+            'type' => 'us_experience',
+            'reference' => $certificate->verification_reference ?: $certificate->identifier,
+            'recipient_name' => $certificate->user->name,
+            'title' => 'Build Your US Experience',
+            'course_title' => $certificate->course->title ?? null,
+            'group_name' => $certificate->group_name,
             'issued_at' => optional($certificate->created_at)->format('F j, Y'),
         ];
     }

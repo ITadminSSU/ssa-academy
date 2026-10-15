@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use App\Models\Course\CourseCertificate;
+use App\Models\Course\UsExperienceCertificate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Modules\Exam\Models\ExamAttempt;
 
@@ -10,11 +12,11 @@ class ReferenceNumberService
 {
     public function generateCertificateVerificationReference(): string
     {
-        return $this->generateUnique(
-            'SSU-VRN-',
-            CourseCertificate::class,
-            'verification_reference'
-        );
+        do {
+            $reference = 'SSU-VRN-'.strtoupper(Str::random(12));
+        } while ($this->verificationReferenceTaken($reference));
+
+        return $reference;
     }
 
     public function generateCertificateId(): string
@@ -24,25 +26,22 @@ class ReferenceNumberService
 
         do {
             $next = $this->maxCertificateSequence($prefix) + 1;
-            $certificateId = $prefix . str_pad((string) $next, 5, '0', STR_PAD_LEFT);
-        } while (
-            CourseCertificate::query()->where('certificate_id', $certificateId)->exists()
-            || ExamAttempt::query()->where('certificate_id', $certificateId)->exists()
-        );
+            $certificateId = $prefix.str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+        } while ($this->certificateIdTaken($certificateId));
 
         return $certificateId;
     }
 
     /**
-     * Highest numeric sequence already used for the given prefix across both
-     * course and exam certificates, so the SSU-YYYY-XXXXX namespace stays
-     * globally unique and sequential.
+     * Highest numeric sequence already used for the given prefix across
+     * course, exam, and US Experience certificates, so the SSU-YYYY-XXXXX
+     * namespace stays globally unique and sequential.
      */
     private function maxCertificateSequence(string $prefix): int
     {
         $max = 0;
 
-        foreach ([CourseCertificate::class, ExamAttempt::class] as $model) {
+        foreach ($this->certificateIdModels() as $model) {
             $latest = $model::query()
                 ->where('certificate_id', 'like', $prefix . '%')
                 ->orderByDesc('certificate_id')
@@ -63,6 +62,48 @@ class ReferenceNumberService
             ExamAttempt::class,
             'tracking_reference'
         );
+    }
+
+    /**
+     * @return list<class-string>
+     */
+    private function certificateIdModels(): array
+    {
+        $models = [CourseCertificate::class, ExamAttempt::class];
+
+        if (Schema::hasTable('us_experience_certificates')) {
+            $models[] = UsExperienceCertificate::class;
+        }
+
+        return $models;
+    }
+
+    private function certificateIdTaken(string $certificateId): bool
+    {
+        foreach ($this->certificateIdModels() as $model) {
+            if ($model::query()->where('certificate_id', $certificateId)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function verificationReferenceTaken(string $reference): bool
+    {
+        $taken = CourseCertificate::query()
+            ->where('verification_reference', $reference)
+            ->orWhere('identifier', $reference)
+            ->exists();
+
+        if ($taken || ! Schema::hasTable('us_experience_certificates')) {
+            return $taken;
+        }
+
+        return UsExperienceCertificate::query()
+            ->where('verification_reference', $reference)
+            ->orWhere('identifier', $reference)
+            ->exists();
     }
 
     private function generateUnique(string $prefix, string $modelClass, string $column): string

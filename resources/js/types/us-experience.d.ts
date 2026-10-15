@@ -83,6 +83,13 @@ interface UsExperienceStudentPlan {
    tutorial_video?: { url: string; name: string } | null;
 }
 
+interface UsExperienceLevelCertificate {
+   group_name: string;
+   certificate_id?: string | null;
+   verification_reference?: string | null;
+   issued_at?: string | null;
+}
+
 interface UsExperienceStudentPayload {
    plans: UsExperienceStudentPlan[];
    can_use_files: boolean;
@@ -91,6 +98,7 @@ interface UsExperienceStudentPayload {
    pass_mark_hint: number;
    course_complete: boolean;
    lock_message?: string | null;
+   certificates?: UsExperienceLevelCertificate[];
 }
 
 interface UsExperiencePublicGroup {

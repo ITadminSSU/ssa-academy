@@ -15,6 +15,7 @@ use App\Services\Course\CourseService;
 use App\Services\Course\CourseWishlistService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\StudentService;
+use App\Services\UsExperience\UsExperienceCertificateIssuanceService;
 use App\Services\UsExperience\UsExperienceUnlockService;
 use App\Support\CourseWelcomeEmailCopy;
 use Illuminate\Http\Request;
@@ -42,6 +43,7 @@ class StudentController extends Controller
         protected CourseFinalExamService $courseFinalExamService,
         protected SubscriptionAccessService $subscriptionAccess,
         protected UsExperienceUnlockService $usExperienceUnlock,
+        protected UsExperienceCertificateIssuanceService $usExperienceCertificates,
     ) {}
 
     /**
@@ -173,6 +175,15 @@ class StudentController extends Controller
             $certificate = $this->certificateIssuance->issueForCourse($course, $user);
         }
 
+        $usExperience = null;
+        if ($tab === 'us-experience' && $showUsExperience) {
+            $usExperience = $this->usExperienceUnlock->studentOverview($course, $user);
+
+            if (! empty($usExperience['course_complete'])) {
+                $usExperience['certificates'] = $this->usExperienceCertificates->forStudent($course, $user);
+            }
+        }
+
         return Inertia::render('student/course', [
             ...$props,
             'tab' => $tab,
@@ -183,9 +194,7 @@ class StudentController extends Controller
             'certificate' => $certificate,
             'subscriptionAccess' => $subscriptionAccess,
             'showUsExperience' => $showUsExperience,
-            'usExperience' => $tab === 'us-experience' && $showUsExperience
-                ? $this->usExperienceUnlock->studentOverview($course, $user)
-                : null,
+            'usExperience' => $usExperience,
         ]);
     }
 

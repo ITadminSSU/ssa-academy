@@ -9,10 +9,11 @@ import { FormEvent, ReactNode, useState } from 'react';
 interface VerificationResult {
    valid: boolean;
    reference: string;
-   type?: 'course' | 'exam';
+   type?: 'course' | 'exam' | 'us_experience';
    recipient_name?: string | null;
    title?: string | null;
    course_title?: string | null;
+   group_name?: string | null;
    issued_at?: string | null;
    score?: number | null;
 }
@@ -82,14 +83,27 @@ const CertificateVerify = ({ reference, result }: CertificateVerifyProps) => {
                            <ResultRow
                               icon={<ShieldCheck className="h-4 w-4" />}
                               label="Type"
-                              value={result.type === 'exam' ? 'Exam certificate' : 'Course certificate'}
+                              value={
+                                 result.type === 'exam'
+                                    ? 'Exam certificate'
+                                    : result.type === 'us_experience'
+                                      ? 'Build Your US Experience'
+                                      : 'Course certificate'
+                              }
                            />
                            <ResultRow icon={<User className="h-4 w-4" />} label="Issued to" value={result.recipient_name} />
                            <ResultRow
                               icon={<GraduationCap className="h-4 w-4" />}
                               label={result.type === 'exam' ? 'Exam' : 'Course'}
-                              value={result.title ?? result.course_title}
+                              value={
+                                 result.type === 'us_experience'
+                                    ? result.course_title
+                                    : (result.title ?? result.course_title)
+                              }
                            />
+                           {result.type === 'us_experience' && (
+                              <ResultRow icon={<GraduationCap className="h-4 w-4" />} label="Level" value={result.group_name} />
+                           )}
                            <ResultRow icon={<CalendarDays className="h-4 w-4" />} label="Issued on" value={result.issued_at} />
                            {result.type === 'exam' && result.score != null && (
                               <ResultRow icon={<BadgeCheck className="h-4 w-4" />} label="Score" value={`${result.score}%`} />
