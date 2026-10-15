@@ -23,7 +23,6 @@ test('new users can register with name email and password and must verify email'
         'recaptcha_status' => false,
         'accept_terms' => true,
         'accept_legal_age' => true,
-        'accept_single_account' => true,
     ]);
 
     $this->assertAuthenticated();
@@ -55,7 +54,6 @@ test('registration does not require a cv or government id', function () {
         'recaptcha_status' => false,
         'accept_terms' => true,
         'accept_legal_age' => true,
-        'accept_single_account' => true,
     ]);
 
     $this->assertAuthenticated();
