@@ -11,9 +11,23 @@ class CourseCouponRequest extends FormRequest
       return true;
    }
 
+   protected function prepareForValidation(): void
+   {
+      if (! $this->exists('assigned_email')) {
+         return;
+      }
+
+      $email = strtolower(trim((string) $this->input('assigned_email')));
+
+      $this->merge([
+         'assigned_email' => $email === '' ? null : $email,
+      ]);
+   }
+
    public function rules(): array
    {
-      $couponId = $this->route('coupon') ? $this->route('coupon')->id ?? '' : '';
+      $coupon = $this->route('coupon');
+      $couponId = $coupon instanceof \App\Models\Course\CourseCoupon ? $coupon->id : ($coupon ?? '');
 
       return [
          'course_id' => 'nullable|exists:courses,id',
@@ -25,6 +39,7 @@ class CourseCouponRequest extends FormRequest
          'usage_limit' => 'nullable|integer|min:1',
          'is_active' => 'boolean',
          'show_on_catalog' => 'boolean',
+         'assigned_email' => 'nullable|email|max:255',
       ];
    }
 

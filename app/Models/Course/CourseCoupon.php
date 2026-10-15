@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCoupon extends Model
@@ -26,6 +27,7 @@ class CourseCoupon extends Model
         'used_count',
         'is_active',
         'show_on_catalog',
+        'assigned_email',
     ];
 
     protected $casts = [
@@ -165,6 +167,51 @@ class CourseCoupon extends Model
             return false;
         }
 
-        return true;
+        return $this->allowsCheckoutBy($userId);
+    }
+
+    public function assignedEmail(): ?string
+    {
+        $email = strtolower(trim((string) ($this->assigned_email ?? '')));
+
+        return $email === '' ? null : $email;
+    }
+
+    public function matchesAssignedEmail(?string $email): bool
+    {
+        $assigned = $this->assignedEmail();
+
+        if ($assigned === null) {
+            return true;
+        }
+
+        return strtolower(trim((string) $email)) === $assigned;
+    }
+
+    public function allowsCheckoutBy(int|string|null $userId): bool
+    {
+        if ($this->assignedEmail() === null) {
+            return true;
+        }
+
+        if ($userId === null) {
+            return false;
+        }
+
+        $email = User::query()->whereKey($userId)->value('email');
+
+        return $this->matchesAssignedEmail(is_string($email) ? $email : null);
+    }
+
+    public function scopeWithoutAssignedEmail($query)
+    {
+        if (! Schema::hasColumn($this->getTable(), 'assigned_email')) {
+            return $query;
+        }
+
+        return $query->where(function ($inner) {
+            $inner->whereNull('assigned_email')
+                ->orWhereRaw('TRIM(assigned_email) = ?', ['']);
+        });
     }
 }

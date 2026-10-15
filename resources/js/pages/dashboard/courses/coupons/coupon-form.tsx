@@ -37,10 +37,12 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
       usage_limit: coupon?.usage_limit ?? '',
       is_active: coupon?.is_active ?? true,
       show_on_catalog: coupon?.show_on_catalog ?? false,
+      assigned_email: coupon?.assigned_email || '',
    });
 
    transform((form) => ({
       ...form,
+      assigned_email: form.assigned_email.trim() === '' ? null : form.assigned_email.trim(),
       usage_limit:
          form.usage_limit === '' || form.usage_limit === null || form.usage_limit === undefined
             ? null
@@ -86,6 +88,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
             usage_limit: coupon.usage_limit ?? '',
             is_active: coupon.is_active ?? true,
             show_on_catalog: coupon.show_on_catalog ?? false,
+            assigned_email: coupon.assigned_email || '',
          });
       } else if (!open) {
          reset();
@@ -179,6 +182,31 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                         <InputError message={errors.course_id} />
                      </div>
 
+                     <div className="col-span-2">
+                        <Label htmlFor="assigned_email">Assigned email</Label>
+                        <Input
+                           id="assigned_email"
+                           name="assigned_email"
+                           type="email"
+                           value={data.assigned_email}
+                           onChange={(e) => {
+                              const value = e.target.value;
+                              setData({
+                                 ...data,
+                                 assigned_email: value,
+                                 show_on_catalog: value.trim() === '' ? data.show_on_catalog : false,
+                              });
+                           }}
+                           placeholder="student@example.com"
+                        />
+                        <p className="text-muted-foreground mt-1 text-xs">
+                           Leave blank and any student can use this code. When an email is set, only a signed-in account
+                           with that exact email can use it, and the code stays off the catalog. Clear the email to remove
+                           the restriction.
+                        </p>
+                        <InputError message={errors.assigned_email} />
+                     </div>
+
                      <div>
                         <Label htmlFor="valid_from">Valid From</Label>
                         <Input
@@ -234,13 +262,13 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                            <p className="text-muted-foreground mt-1 text-xs">
                               Use Pricing → Show coupon price on catalog card instead. This switch is only a fallback if
                               that display promo is off. Does not change charged prices. Students still enter the code at
-                              checkout. Coupons never apply to the deposit.
+                              checkout. Coupons never apply to the deposit. An email-locked code stays off the catalog.
                            </p>
                         </div>
                         <Switch
                            id="show_on_catalog"
-                           checked={Boolean(data.show_on_catalog) && Boolean(data.course_id)}
-                           disabled={!data.course_id}
+                           checked={Boolean(data.show_on_catalog) && Boolean(data.course_id) && data.assigned_email.trim() === ''}
+                           disabled={!data.course_id || data.assigned_email.trim() !== ''}
                            onCheckedChange={(checked) => setData('show_on_catalog', checked)}
                         />
                      </div>
