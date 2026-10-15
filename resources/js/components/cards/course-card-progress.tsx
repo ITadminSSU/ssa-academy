@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { enrollmentBlocksPlayerAccess, enrollmentCourseDetailsUrl } from '@/lib/enrollment-access';
 import { cn } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { Award, Eye, PlayCircle } from 'lucide-react';
 
 interface Props {
@@ -148,12 +148,22 @@ const CourseCardProgress = ({ enrollment, className }: Props) => {
                         View Course
                      </Link>
                   </Button>
-               ) : (
+               ) : canContinueInPlayer ? (
                   <ButtonGradientPrimary asChild shadow={false} containerClass="w-full" className="to-primary-light hover:to-primary-light h-9 w-full">
                      <Link href={continueUrl}>
                         <PlayCircle className="h-4 w-4" />
                         Continue Learning
                      </Link>
+                  </ButtonGradientPrimary>
+               ) : (
+                  <ButtonGradientPrimary
+                     shadow={false}
+                     containerClass="w-full"
+                     className="to-primary-light hover:to-primary-light h-9 w-full"
+                     onClick={() => router.post(route('player.init.watch-history'), { course_id: course.id })}
+                  >
+                     <PlayCircle className="h-4 w-4" />
+                     Continue Learning
                   </ButtonGradientPrimary>
                )}
             </div>

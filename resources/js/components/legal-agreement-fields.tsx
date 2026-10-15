@@ -35,6 +35,12 @@ export const LEGAL_ACKNOWLEDGEMENT_KEYS: LegalAcknowledgementKey[] = [
    'accept_student_integrity',
 ];
 
+export const ACCOUNT_LEGAL_ACKNOWLEDGEMENT_KEYS: LegalAcknowledgementKey[] = [
+   'accept_terms',
+   'accept_legal_age',
+   'accept_single_account',
+];
+
 export const emptyLegalAcknowledgements = (): LegalAcknowledgements => ({
    accept_terms: false,
    accept_legal_age: false,
@@ -42,8 +48,10 @@ export const emptyLegalAcknowledgements = (): LegalAcknowledgements => ({
    accept_student_integrity: false,
 });
 
-export const allLegalAcknowledgementsAccepted = (values: LegalAcknowledgements): boolean =>
-   LEGAL_ACKNOWLEDGEMENT_KEYS.every((key) => values[key]);
+export const allLegalAcknowledgementsAccepted = (
+   values: LegalAcknowledgements,
+   keys: LegalAcknowledgementKey[] = LEGAL_ACKNOWLEDGEMENT_KEYS,
+): boolean => keys.every((key) => values[key]);
 
 const ACKNOWLEDGEMENT_LABELS: Record<LegalAcknowledgementKey, string> = {
    accept_terms: 'I agree to these website Terms and Conditions.',
@@ -61,6 +69,7 @@ interface Props {
    disabled?: boolean;
    errors?: Partial<Record<LegalAcknowledgementKey, string>>;
    signwellEnabled?: boolean;
+   includedKeys?: LegalAcknowledgementKey[];
 }
 
 const LegalAgreementFields = ({
@@ -70,26 +79,26 @@ const LegalAgreementFields = ({
    disabled,
    errors,
    signwellEnabled = false,
+   includedKeys = LEGAL_ACKNOWLEDGEMENT_KEYS,
 }: Props) => {
    const [canAccept, setCanAccept] = useState(false);
    const checkboxesDisabled = disabled || !canAccept;
+   const accountOnly = !includedKeys.includes('accept_student_integrity');
 
    return (
       <div className="space-y-4">
          <div className="text-muted-foreground space-y-3 text-sm">
-            {signwellEnabled ? (
-               <>
-                  <p>
-                     Read the Terms & Conditions in full, confirm each statement below, then create your account. You must
-                     register using your official, real legal name—aliases, pseudonyms, or nicknames are strictly
-                     prohibited. Accounts created with fake, modified, or suspicious names will be immediately disabled,
-                     blocked, and permanently banned from the site. Please verify your email.
-                  </p>
-                  <p>
-                     You will be redirected to SignWell to electronically sign the Student Agreement under your real
-                     name before accessing the dashboard.
-                  </p>
-               </>
+            {accountOnly ? (
+               <p>
+                  Read the Terms & Conditions, then confirm each statement. Scroll to the bottom before the checkboxes
+                  are enabled. After you create your account, you will verify your email and open your dashboard. The
+                  student agreement is signed the first time you start a course. Use your official, real legal name.
+               </p>
+            ) : signwellEnabled ? (
+               <p>
+                  Sign the student agreement before you start this course. After you finish signing, you will return to
+                  the course you were starting.
+               </p>
             ) : (
                <p>
                   Read the document in full and confirm each statement below before continuing. You must scroll to the
@@ -100,7 +109,7 @@ const LegalAgreementFields = ({
 
          <ScrollToAcceptDocument title={document.terms.title} html={document.terms.html} onCanAcceptChange={setCanAccept}>
             <div className="space-y-3">
-               {LEGAL_ACKNOWLEDGEMENT_KEYS.map((key) => (
+               {includedKeys.map((key) => (
                   <div key={key} className="space-y-1">
                      <div className="flex items-start gap-3">
                         <Checkbox

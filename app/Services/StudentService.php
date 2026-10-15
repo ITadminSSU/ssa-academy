@@ -426,6 +426,49 @@ class StudentService extends MediaService
                : $data['social_links'];
          }
 
+         if (array_key_exists('professional_type_id', $data)) {
+            $user->professional_type_id = $data['professional_type_id'] ?: null;
+            $type = $user->professional_type_id
+               ? \App\Models\ProfessionalType::query()->find($user->professional_type_id)
+               : null;
+            $typeIsOther = $type && strcasecmp((string) $type->name, 'other') === 0;
+            $user->professional_type_other = $typeIsOther && filled($data['professional_type_other'] ?? null)
+               ? trim((string) $data['professional_type_other'])
+               : null;
+         }
+
+         if (array_key_exists('estimating_software', $data)) {
+            $selected = array_values(array_filter((array) $data['estimating_software']));
+
+            if (in_array('None', $selected, true)) {
+               $selected = ['None'];
+            }
+
+            $user->estimating_software = $selected;
+            $user->estimating_software_other = in_array('Others', $selected, true) && filled($data['estimating_software_other'] ?? null)
+               ? trim((string) $data['estimating_software_other'])
+               : null;
+         }
+
+         if (array_key_exists('construction_experience', $data)) {
+            $user->construction_experience = $data['construction_experience'] ?: null;
+         }
+
+         if (array_key_exists('worked_as_construction_va', $data)) {
+            $user->worked_as_construction_va = (bool) $data['worked_as_construction_va'];
+         }
+
+         if (array_key_exists('referred_by', $data)) {
+            $referred = filled($data['referred_by'] ?? null) ? trim((string) $data['referred_by']) : null;
+            $user->referred_by = $referred;
+            $user->referrer_is_employee = $referred !== null
+               && array_key_exists('referrer_is_employee', $data)
+               && $data['referrer_is_employee'] !== null
+               && $data['referrer_is_employee'] !== ''
+                  ? (bool) $data['referrer_is_employee']
+                  : null;
+         }
+
          if (! empty($data['photo'])) {
             // Spatie media is the source of truth for the avatar URL (esp. on S3).
             $this->addNewDeletePrev($user, $data['photo'], 'profile');

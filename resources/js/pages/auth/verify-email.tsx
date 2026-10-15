@@ -46,9 +46,9 @@ export default function VerifyEmail({
 
    useEffect(() => {
       if (props.auth.user?.email_verified_at && props.auth.dashboardUrl) {
-         router.visit(props.auth.legalAgreementRequired ? props.auth.legalAgreementUrl : props.auth.dashboardUrl);
+         router.visit(props.auth.dashboardUrl);
       }
-   }, [props.auth.dashboardUrl, props.auth.legalAgreementRequired, props.auth.legalAgreementUrl, props.auth.user?.email_verified_at]);
+   }, [props.auth.dashboardUrl, props.auth.user?.email_verified_at]);
 
    const submitCode: FormEventHandler = (e) => {
       e.preventDefault();

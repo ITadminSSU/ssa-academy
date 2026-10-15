@@ -278,7 +278,9 @@ class CourseEnrollmentService extends MediaService
          ]);
 
          // Reserved deposit seats have no player access yet — skip watch history.
-         if ($isDepositReservation) {
+         // Students who still owe the agreement also stay unstarted until they sign,
+         // then the first Continue or Play creates watch history.
+         if ($isDepositReservation || $this->shouldDeferCourseStart((int) $data['user_id'])) {
             return $enrollment;
          }
 
@@ -311,6 +313,20 @@ class CourseEnrollmentService extends MediaService
       }
 
       return $enrollment;
+   }
+
+   /**
+    * A student who has not accepted the current agreement must not get watch history at enroll time.
+    */
+   private function shouldDeferCourseStart(int $userId): bool
+   {
+      $user = \App\Models\User::query()->find($userId);
+
+      if (! $user || $user->role !== 'student') {
+         return false;
+      }
+
+      return app(\App\Services\LegalAgreementService::class)->requiresAcceptance($user);
    }
 
    function deleteEnrollment(string $id): void

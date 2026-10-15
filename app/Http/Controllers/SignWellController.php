@@ -29,13 +29,12 @@ class SignWellController extends Controller
 
         // Recover stuck users who already signed in SignWell but DB save failed.
         if ($this->signWell->syncCompletionFromSignWell($user->fresh(), $request->ip())) {
-            return redirect()
-                ->intended($this->authService->homeUrlFor($user->fresh()))
-                ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
+            return redirect($this->authService->urlAfterLegalAcceptance($user->fresh()))
+                ->with('success', 'Student agreement signed. You can start your course.');
         }
 
         if (! $this->legalAgreement->requiresAcceptance($user->fresh())) {
-            return redirect($this->authService->homeUrlFor($user));
+            return redirect($this->authService->urlAfterLegalAcceptance($user->fresh()));
         }
 
         if (! $this->signWell->isEnabled()) {
@@ -74,9 +73,8 @@ class SignWellController extends Controller
         $user = $user->fresh();
 
         if (! $this->legalAgreement->requiresAcceptance($user)) {
-            return redirect()
-                ->intended($this->authService->homeUrlFor($user))
-                ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
+            return redirect($this->authService->urlAfterLegalAcceptance($user))
+                ->with('success', 'Student agreement signed. You can start your course.');
         }
 
         $completedHints = [
@@ -125,9 +123,8 @@ class SignWellController extends Controller
         }
 
         if ($synced) {
-            return redirect()
-                ->intended($this->authService->homeUrlFor($user->fresh()))
-                ->with('success', 'Student agreement signed. Welcome to SMARTSOURCING USA Academy.');
+            return redirect($this->authService->urlAfterLegalAcceptance($user->fresh()))
+                ->with('success', 'Student agreement signed. You can start your course.');
         }
 
         return redirect()

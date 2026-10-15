@@ -1,11 +1,12 @@
 import ButtonGradientPrimary from '@/components/button-gradient-primary';
 import DashboardWelcomeOverlay from '@/components/dashboard-welcome-overlay';
+import ProfileSetupBanner from '@/components/profile-setup-banner';
 import LearningPathGuide from '@/components/learning-path-guide';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { enrollmentBlocksPlayerAccess, enrollmentCourseDetailsUrl } from '@/lib/enrollment-access';
 import { LearnerActivity, StudentDashboardProps } from '@/types/page';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { formatDistanceToNow } from 'date-fns';
 import { Award, BookOpen, ClipboardList, Eye, FileQuestion, GraduationCap, ListChecks, PlayCircle } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -74,6 +75,7 @@ const Home = () => {
 
    return (
       <div className="space-y-8">
+         <ProfileSetupBanner />
          {dashboardWelcomeOverlay ? <DashboardWelcomeOverlay overlay={dashboardWelcomeOverlay} /> : null}
 
          <div>
@@ -135,16 +137,23 @@ const Home = () => {
                               <Progress value={Number(continueEnrollment.completion?.completion ?? 0)} className="h-1.5" />
                            </div>
                         )}
-                        <ButtonGradientPrimary asChild shadow={false} className="to-primary-light hover:to-primary-light h-9">
-                           <Link href={continueHref}>
-                              {continueBlocked ? <Eye className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
-                              {continueBlocked
-                                 ? 'View course details'
-                                 : continueEnrollment.watch_history
-                                   ? 'Continue Learning'
-                                   : 'Start Learning'}
-                           </Link>
-                        </ButtonGradientPrimary>
+                        {continueBlocked || continueEnrollment.watch_history ? (
+                           <ButtonGradientPrimary asChild shadow={false} className="to-primary-light hover:to-primary-light h-9">
+                              <Link href={continueHref}>
+                                 {continueBlocked ? <Eye className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+                                 {continueBlocked ? 'View course details' : 'Continue Learning'}
+                              </Link>
+                           </ButtonGradientPrimary>
+                        ) : (
+                           <ButtonGradientPrimary
+                              shadow={false}
+                              className="to-primary-light hover:to-primary-light h-9"
+                              onClick={() => router.post(route('player.init.watch-history'), { course_id: continueEnrollment.course.id })}
+                           >
+                              <PlayCircle className="h-4 w-4" />
+                              Start Learning
+                           </ButtonGradientPrimary>
+                        )}
                      </div>
                   </CardContent>
                </Card>

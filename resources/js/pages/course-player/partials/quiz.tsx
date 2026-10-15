@@ -3,7 +3,7 @@ import PlayerNavLink from '@/components/player-nav-link';
 import { resolveCurriculumAccess, resolveCurriculumLockReason } from '@/lib/curriculum-items';
 import { cn } from '@/lib/utils';
 import { CoursePlayerProps } from '@/types/page';
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { CheckCircle2, Circle, CircleCheck, CirclePause, CirclePlay, FileQuestion, Lock } from 'lucide-react';
 
 interface Props {
@@ -27,7 +27,27 @@ const QuizIcon = ({ quiz }: { quiz: SectionQuiz }) => {
 
 const Quiz = ({ quiz, completed, variant = 'default', index }: Props) => {
    const { props } = usePage<CoursePlayerProps>();
-   const { watchHistory, subscriptionAccess } = props;
+   const { watchHistory, subscriptionAccess, course } = props;
+
+   if (variant === 'simple' && !watchHistory?.id) {
+      const meta = quiz.duration ? `Quiz · ${quiz.duration}` : 'Quiz';
+
+      return (
+         <button
+            type="button"
+            className="hover:bg-muted/70 ssu-curriculum-item block w-full px-4 py-3 text-left transition-colors"
+            onClick={() => router.post(route('player.init.watch-history'), { course_id: course.id })}
+         >
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+               <span className="text-muted-foreground w-6 shrink-0 pt-0.5 text-sm tabular-nums">{index}</span>
+               <div className="min-w-0 flex-1">
+                  <p className="text-sm leading-snug font-semibold">{quiz.title}</p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">{meta}</p>
+               </div>
+            </div>
+         </button>
+      );
+   }
 
    const dripContent = true;
    const subscriptionLocked = subscriptionAccess?.mode === 'completed_only';

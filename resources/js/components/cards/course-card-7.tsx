@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import ButtonGradientPrimary from '../button-gradient-primary';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Progress } from '../ui/progress';
@@ -56,7 +56,7 @@ const CourseCard7 = ({ course, watch_history, completion, className }: Props) =>
                   <Progress value={Number(completion?.completion ?? 0)} className="h-1.5" />
                </div>
 
-               {watch_history && (
+               {watch_history ? (
                   <ButtonGradientPrimary
                      asChild
                      shadow={false}
@@ -72,6 +72,15 @@ const CourseCard7 = ({ course, watch_history, completion, className }: Props) =>
                      >
                         {button.continue}
                      </Link>
+                  </ButtonGradientPrimary>
+               ) : (
+                  <ButtonGradientPrimary
+                     shadow={false}
+                     containerClass="w-full"
+                     className="to-primary-light hover:to-primary-light h-9 w-full"
+                     onClick={() => router.post(route('player.init.watch-history'), { course_id: course.id })}
+                  >
+                     {button.continue}
                   </ButtonGradientPrimary>
                )}
             </div>

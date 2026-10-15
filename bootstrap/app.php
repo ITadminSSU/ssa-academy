@@ -54,7 +54,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:admin,instructor'])->group(base_path('routes/instructor.php'));
 
                 // Student routes
-                Route::middleware(['auth', 'verified', 'twoFactor', 'legalAgreement', 'role:student,instructor,admin'])->group(base_path('routes/student.php'));
+                // The student agreement is required the first time a course starts, not for the dashboard.
+                Route::middleware(['auth', 'verified', 'twoFactor', 'role:student,instructor,admin'])->group(base_path('routes/student.php'));
 
                 Route::get('/{slug}', [HomeController::class, 'inner_page'])->name('inner.page');
             });

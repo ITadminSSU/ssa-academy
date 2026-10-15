@@ -1,6 +1,7 @@
 import AppLogo from '@/components/app-logo';
 import InputError from '@/components/input-error';
 import LegalAgreementFields, {
+   ACCOUNT_LEGAL_ACKNOWLEDGEMENT_KEYS,
    LegalAcknowledgementKey,
    LegalDocumentPayload,
    allLegalAcknowledgementsAccepted,
@@ -9,23 +10,13 @@ import LegalAgreementFields, {
 import LoadingButton from '@/components/loading-button';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Main from '@/layouts/main';
 import { SharedData } from '@/types/global';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useEffect, useRef } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-
-interface ProfessionalType {
-   id: number;
-   name: string;
-   is_active: boolean;
-   sort_order: number;
-}
 
 interface RegisterProps {
    googleLogIn: boolean;
@@ -34,22 +25,10 @@ interface RegisterProps {
       siteKey: string;
       secretKey: string;
    };
-   professionalTypes: ProfessionalType[];
    legalDocument: LegalDocumentPayload;
-   estimatingSoftwareOptions: string[];
-   constructionExperienceOptions: string[];
-   signwellEnabled?: boolean;
 }
 
-export default function Register({
-   googleLogIn,
-   recaptcha,
-   professionalTypes,
-   legalDocument,
-   estimatingSoftwareOptions,
-   constructionExperienceOptions,
-   signwellEnabled = false,
-}: RegisterProps) {
+const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
    const { props } = usePage<SharedData>();
    const { branding } = props;
    const { auth: authCopy, input: inputCopy, button: buttonCopy } = props.translate;
@@ -67,44 +46,8 @@ export default function Register({
       password_confirmation: '',
       recaptcha: '',
       recaptcha_status: recaptcha.status,
-      professional_type_id: '',
-      professional_type_other: '',
-      estimating_software: [] as string[],
-      estimating_software_other: '',
-      construction_experience: '',
-      worked_as_construction_va: '' as '' | '1' | '0',
-      cv_resume: null as File | null,
-      id_document: null as File | null,
-      referred_by: '',
-      referrer_is_employee: '' as '' | '1' | '0',
       ...emptyLegalAcknowledgements(),
    });
-
-   const selectedProfessionalType = professionalTypes.find((type) => type.id.toString() === data.professional_type_id);
-   const isOtherSelected = selectedProfessionalType?.name === 'Other';
-   const hasOthersSoftware = data.estimating_software.includes('Others');
-   const hasNoneSoftware = data.estimating_software.includes('None');
-
-   const toggleSoftware = (option: string, checked: boolean) => {
-      if (option === 'None' && checked) {
-         setData('estimating_software', ['None']);
-         setData('estimating_software_other', '');
-         return;
-      }
-
-      let next = data.estimating_software.filter((item) => item !== 'None');
-
-      if (checked) {
-         next = [...next, option];
-      } else {
-         next = next.filter((item) => item !== option);
-         if (option === 'Others') {
-            setData('estimating_software_other', '');
-         }
-      }
-
-      setData('estimating_software', next);
-   };
 
    const legalValues = {
       accept_terms: data.accept_terms,
@@ -122,27 +65,14 @@ export default function Register({
       Boolean(data.email.trim()) &&
       Boolean(data.password) &&
       Boolean(data.password_confirmation) &&
-      Boolean(data.professional_type_id) &&
-      (!isOtherSelected || Boolean(data.professional_type_other.trim())) &&
-      data.estimating_software.length > 0 &&
-      (!hasOthersSoftware || Boolean(data.estimating_software_other.trim())) &&
-      Boolean(data.construction_experience) &&
-      data.worked_as_construction_va !== '' &&
-      Boolean(data.cv_resume) &&
-      Boolean(data.id_document) &&
-      allLegalAcknowledgementsAccepted(legalValues) &&
+      allLegalAcknowledgementsAccepted(legalValues, ACCOUNT_LEGAL_ACKNOWLEDGEMENT_KEYS) &&
       (!recaptcha.status || Boolean(data.recaptcha));
 
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
 
       post(route('register'), {
-         forceFormData: true,
-         transform: (form) => ({
-            ...form,
-            worked_as_construction_va: form.worked_as_construction_va === '1',
-         }),
-         onSuccess: () => reset('password', 'password_confirmation', 'cv_resume', 'id_document'),
+         onSuccess: () => reset('password', 'password_confirmation'),
          onError: () => {
             if (recaptchaRef.current) {
                recaptchaRef.current.reset();
@@ -169,7 +99,7 @@ export default function Register({
                </div>
             </header>
 
-            <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
+            <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
                <div className="mb-8 space-y-2">
                   <p className="ssu-kicker">Account</p>
                   <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{authCopy.register_title}</h1>
@@ -177,12 +107,8 @@ export default function Register({
                </div>
 
                <form className="space-y-8" onSubmit={submit}>
-                  {/*
-                    Mobile/small: Password → Confirm password → Estimating software (then remaining fields).
-                    Desktop (lg+): keep the original 3-column layout via explicit grid placement.
-                  */}
-                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:items-start lg:gap-x-8 lg:gap-y-5">
-                     <div className="order-1 grid gap-2 lg:col-start-1 lg:row-start-1">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                     <div className="grid gap-2 sm:col-span-2">
                         <Label htmlFor="name">{inputCopy.name}</Label>
                         <Input
                            id="name"
@@ -198,7 +124,7 @@ export default function Register({
                         <InputError message={errors.name} />
                      </div>
 
-                     <div className="order-2 grid gap-2 lg:col-start-1 lg:row-start-2">
+                     <div className="grid gap-2 sm:col-span-2">
                         <Label htmlFor="email">{inputCopy.email}</Label>
                         <Input
                            id="email"
@@ -213,7 +139,7 @@ export default function Register({
                         <InputError message={errors.email} />
                      </div>
 
-                     <div className="order-3 grid gap-2 lg:col-start-2 lg:row-start-1">
+                     <div className="grid gap-2">
                         <Label htmlFor="password">{inputCopy.password}</Label>
                         <Input
                            id="password"
@@ -228,7 +154,7 @@ export default function Register({
                         <InputError message={errors.password} />
                      </div>
 
-                     <div className="order-4 grid gap-2 lg:col-start-3 lg:row-start-1">
+                     <div className="grid gap-2">
                         <Label htmlFor="password_confirmation">{inputCopy.confirm_password}</Label>
                         <Input
                            id="password_confirmation"
@@ -242,233 +168,6 @@ export default function Register({
                         />
                         <InputError message={errors.password_confirmation} />
                      </div>
-
-                     <fieldset className="order-5 space-y-3 lg:col-start-1 lg:row-start-3 lg:row-span-3">
-                        <legend className="text-sm font-medium">
-                           Which estimating software have you used? <span className="text-destructive">*</span>
-                        </legend>
-                        <p className="text-muted-foreground text-xs">Check all that apply</p>
-                        <div className="space-y-2.5">
-                           {estimatingSoftwareOptions.map((option) => {
-                              const id = `software-${option}`;
-                              const checked = data.estimating_software.includes(option);
-                              const disabled = processing || (hasNoneSoftware && option !== 'None');
-
-                              return (
-                                 <div key={option} className="flex items-start gap-2">
-                                    <Checkbox
-                                       id={id}
-                                       checked={checked}
-                                       disabled={disabled}
-                                       onCheckedChange={(value) => toggleSoftware(option, value === true)}
-                                    />
-                                    <Label htmlFor={id} className="font-normal">
-                                       {option}
-                                       {option === 'Others' ? ':' : ''}
-                                    </Label>
-                                 </div>
-                              );
-                           })}
-                        </div>
-                        {hasOthersSoftware && (
-                           <Input
-                              id="estimating_software_other"
-                              type="text"
-                              value={data.estimating_software_other}
-                              onChange={(e) => setData('estimating_software_other', e.target.value)}
-                              disabled={processing}
-                              placeholder="Please specify"
-                           />
-                        )}
-                        <InputError message={errors.estimating_software || errors['estimating_software.0']} />
-                        <InputError message={errors.estimating_software_other} />
-                     </fieldset>
-
-                     <div className="order-6 space-y-5 lg:col-start-2 lg:row-start-2">
-                        <div className="grid gap-2">
-                           <Label htmlFor="professional_type_id">
-                              Professional Type <span className="text-destructive">*</span>
-                           </Label>
-                           <Select
-                              value={data.professional_type_id}
-                              required
-                              onValueChange={(value) => {
-                                 setData('professional_type_id', value);
-                                 if (value && professionalTypes.find((t) => t.id.toString() === value)?.name !== 'Other') {
-                                    setData('professional_type_other', '');
-                                 }
-                              }}
-                              disabled={processing}
-                           >
-                              <SelectTrigger>
-                                 <SelectValue placeholder="Select your professional type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                 {professionalTypes.map((type) => (
-                                    <SelectItem key={type.id} value={type.id.toString()}>
-                                       {type.name}
-                                    </SelectItem>
-                                 ))}
-                              </SelectContent>
-                           </Select>
-                           <InputError message={errors.professional_type_id} />
-                        </div>
-
-                        {isOtherSelected && (
-                           <div className="grid gap-2">
-                              <Label htmlFor="professional_type_other">
-                                 Please specify your professional type <span className="text-destructive">*</span>
-                              </Label>
-                              <Input
-                                 id="professional_type_other"
-                                 type="text"
-                                 required
-                                 value={data.professional_type_other}
-                                 onChange={(e) => setData('professional_type_other', e.target.value)}
-                                 disabled={processing}
-                                 placeholder="Enter your professional type"
-                              />
-                              <InputError message={errors.professional_type_other} />
-                           </div>
-                        )}
-                     </div>
-
-                     <fieldset className="order-7 space-y-3 lg:col-start-2 lg:row-start-3">
-                        <legend className="text-sm font-medium">
-                           Years of Construction Experience <span className="text-destructive">*</span>
-                        </legend>
-                        <RadioGroup
-                           value={data.construction_experience}
-                           onValueChange={(value) => setData('construction_experience', value)}
-                           disabled={processing}
-                           className="space-y-2.5"
-                        >
-                           {constructionExperienceOptions.map((option) => {
-                              const id = `experience-${option}`;
-
-                              return (
-                                 <div key={option} className="flex items-center gap-2">
-                                    <RadioGroupItem value={option} id={id} />
-                                    <Label htmlFor={id} className="font-normal">
-                                       {option}
-                                    </Label>
-                                 </div>
-                              );
-                           })}
-                        </RadioGroup>
-                        <InputError message={errors.construction_experience} />
-                     </fieldset>
-
-                     <fieldset className="order-8 space-y-3 lg:col-start-2 lg:row-start-4">
-                        <legend className="text-sm font-medium">
-                           Have you worked as a Construction Virtual Assistant? <span className="text-destructive">*</span>
-                        </legend>
-                        <RadioGroup
-                           value={data.worked_as_construction_va}
-                           onValueChange={(value) => setData('worked_as_construction_va', value as '1' | '0')}
-                           disabled={processing}
-                           className="space-y-2.5"
-                        >
-                           <div className="flex items-center gap-2">
-                              <RadioGroupItem value="1" id="va-yes" />
-                              <Label htmlFor="va-yes" className="font-normal">
-                                 Yes
-                              </Label>
-                           </div>
-                           <div className="flex items-center gap-2">
-                              <RadioGroupItem value="0" id="va-no" />
-                              <Label htmlFor="va-no" className="font-normal">
-                                 No
-                              </Label>
-                           </div>
-                        </RadioGroup>
-                        <InputError message={errors.worked_as_construction_va} />
-                     </fieldset>
-
-                     <div className="order-9 grid gap-2 lg:col-start-3 lg:row-start-2">
-                        <Label htmlFor="cv_resume">
-                           CV / Resume <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                           id="cv_resume"
-                           type="file"
-                           accept=".pdf,.doc,.docx"
-                           required
-                           onChange={(e) => setData('cv_resume', e.target.files?.[0] || null)}
-                           disabled={processing}
-                        />
-                        <p className="text-muted-foreground text-xs">Accepted formats: PDF, DOC, DOCX (Max 10MB)</p>
-                        {data.cv_resume && (
-                           <p className="text-muted-foreground text-xs">
-                              Selected file: <span className="text-foreground font-medium">{data.cv_resume.name}</span>
-                           </p>
-                        )}
-                        <InputError message={errors.cv_resume} />
-                     </div>
-
-                     <div className="order-10 grid gap-2 lg:col-start-3 lg:row-start-3">
-                        <Label htmlFor="id_document">
-                           Government-issued ID <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                           id="id_document"
-                           type="file"
-                           accept=".jpg,.jpeg,.png,.webp,.pdf"
-                           required
-                           onChange={(e) => setData('id_document', e.target.files?.[0] || null)}
-                           disabled={processing}
-                        />
-                        <p className="text-muted-foreground text-xs">
-                           Upload a clear photo or scan of your passport, driver’s license, or national ID. JPG, PNG, WEBP, or PDF (Max 10MB).
-                        </p>
-                        {data.id_document && (
-                           <p className="text-muted-foreground text-xs">
-                              Selected file: <span className="text-foreground font-medium">{data.id_document.name}</span>
-                           </p>
-                        )}
-                        <InputError message={errors.id_document} />
-                     </div>
-
-                     <div className="order-11 grid gap-2 lg:col-start-3 lg:row-start-4">
-                        <Label htmlFor="referred_by">Who referred you?</Label>
-                        <Input
-                           id="referred_by"
-                           type="text"
-                           autoComplete="off"
-                           value={data.referred_by}
-                           onChange={(e) => {
-                              const value = e.target.value;
-                              setData({
-                                 ...data,
-                                 referred_by: value,
-                                 referrer_is_employee: value.trim() ? data.referrer_is_employee : '',
-                              });
-                           }}
-                           disabled={processing}
-                           placeholder="e.g. Juan Dela Cruz"
-                        />
-                        <p className="text-muted-foreground text-xs">Optional. Enter their full name.</p>
-                        <InputError message={errors.referred_by} />
-
-                        <Label htmlFor="referrer_is_employee" className="mt-2">
-                           Is your referrer part of the SMARTSOURCING USA team?
-                        </Label>
-                        <Select
-                           value={data.referrer_is_employee || undefined}
-                           onValueChange={(value) => setData('referrer_is_employee', value as '1' | '0')}
-                           disabled={processing || !data.referred_by.trim()}
-                        >
-                           <SelectTrigger id="referrer_is_employee">
-                              <SelectValue placeholder="Select an option" />
-                           </SelectTrigger>
-                           <SelectContent>
-                              <SelectItem value="1">Yes</SelectItem>
-                              <SelectItem value="0">No</SelectItem>
-                           </SelectContent>
-                        </Select>
-                        <p className="text-muted-foreground text-xs">Optional. Available after you enter a referrer name.</p>
-                        <InputError message={errors.referrer_is_employee} />
-                     </div>
                   </div>
 
                   <div className="border-border/70 space-y-6 border-t pt-8">
@@ -477,13 +176,12 @@ export default function Register({
                         values={legalValues}
                         onChange={setLegalAcknowledgement}
                         disabled={processing}
+                        includedKeys={ACCOUNT_LEGAL_ACKNOWLEDGEMENT_KEYS}
                         errors={{
                            accept_terms: errors.accept_terms,
                            accept_legal_age: errors.accept_legal_age,
                            accept_single_account: errors.accept_single_account,
-                           accept_student_integrity: errors.accept_student_integrity,
                         }}
-                        signwellEnabled={signwellEnabled}
                      />
 
                      {recaptcha.status && (
@@ -531,4 +229,6 @@ export default function Register({
          </div>
       </Main>
    );
-}
+};
+
+export default Register;
