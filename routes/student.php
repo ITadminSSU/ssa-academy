@@ -34,6 +34,8 @@ Route::get('dashboard/browse/{category}', [StudentController::class, 'browse_cat
 Route::get('student/courses/{id}/{tab}', [StudentController::class, 'show_course'])->name('student.course.show');
 Route::get('student/exams/{id}/{tab}', [StudentController::class, 'show_exam'])->name('student.exam.show');
 Route::post('student/profile', [StudentController::class, 'update_profile'])->name('student.profile.update');
+Route::post('student/courses/{id}/certificate-documents', [StudentController::class, 'storeCertificateDocuments'])
+    ->name('student.certificate-documents.store');
 Route::post('student/dashboard-welcome-overlay/dismiss', [StudentController::class, 'dismiss_dashboard_welcome_overlay'])
     ->middleware('auth')
     ->name('student.dashboard-welcome-overlay.dismiss');
@@ -102,6 +104,9 @@ Route::controller(\App\Http\Controllers\Course\LessonActivitySubmissionControlle
     Route::post('lesson-activity/submission', 'store')->name('lesson-activity.submission.store');
     Route::put('lesson-activity/submission/{id}', 'update')->name('lesson-activity.submission.update');
 });
+
+Route::get('player/resume-start/{course}', [PlayerController::class, 'resumeAfterAgreement'])
+    ->name('player.resume-after-agreement');
 
 Route::controller(PlayerController::class)->middleware(['checkEnroll'])->group(function () {
     Route::post('player/init/watch-history', 'intWatchHistory')->name('player.init.watch-history');

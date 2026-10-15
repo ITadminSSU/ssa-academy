@@ -21,7 +21,7 @@ test('email verification screen can be rendered', function () {
     );
 });
 
-test('email can be verified with a code then continues to the student agreement', function () {
+test('email can be verified with a code then continues to the dashboard', function () {
     $user = User::factory()->unverified()->create();
     $user->forceFill([
         'email_verification_code_hash' => Hash::make('123456'),
@@ -37,7 +37,7 @@ test('email can be verified with a code then continues to the student agreement'
 
     Event::assertDispatched(Verified::class);
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
-    $response->assertRedirect(route('legal.agreement.show', absolute: false));
+    $response->assertRedirect(route('dashboard.external', ['tab' => 'home'], false).'?verified=1');
 });
 
 test('verified users who already accepted the agreement go to the dashboard', function () {

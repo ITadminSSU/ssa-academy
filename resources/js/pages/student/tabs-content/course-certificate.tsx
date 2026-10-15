@@ -1,19 +1,80 @@
 import DynamicCertificate from '@/components/dynamic-certificate';
 import DynamicMarksheet from '@/components/dynamic-marksheet';
+import InputError from '@/components/input-error';
+import LoadingButton from '@/components/loading-button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudentCourseProps } from '@/types/page';
-import { usePage } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { Award, ClipboardList, Lock } from 'lucide-react';
+import { FormEvent } from 'react';
+
+const CertificateReleaseForm = () => {
+   const { course, certificateRelease, errors } = usePage<StudentCourseProps>().props;
+   const { data, setData, post, processing } = useForm({
+      cv_resume: null as File | null,
+      id_document: null as File | null,
+   });
+
+   const submit = (event: FormEvent) => {
+      event.preventDefault();
+      post(route('student.certificate-documents.store', course.id), {
+         forceFormData: true,
+         preserveScroll: true,
+      });
+   };
+
+   return (
+      <Card>
+         <CardContent className="space-y-4 p-6">
+            <div>
+               <h3 className="text-lg font-semibold">Upload documents to release your certificate</h3>
+               <p className="text-muted-foreground text-sm">
+                  This is asked once for your account. After these files are saved, later courses use the same documents.
+               </p>
+            </div>
+            <form onSubmit={submit} className="space-y-4">
+               {certificateRelease?.needs_cv && (
+                  <div className="grid gap-2">
+                     <Label htmlFor="cv_resume">CV / resume</Label>
+                     <input
+                        id="cv_resume"
+                        type="file"
+                        accept=".pdf,.doc,.docx,application/pdf"
+                        onChange={(event) => setData('cv_resume', event.target.files?.[0] ?? null)}
+                     />
+                     <InputError message={errors.cv_resume} />
+                  </div>
+               )}
+               {certificateRelease?.needs_id && (
+                  <div className="grid gap-2">
+                     <Label htmlFor="id_document">Government ID</Label>
+                     <input
+                        id="id_document"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={(event) => setData('id_document', event.target.files?.[0] ?? null)}
+                     />
+                     <InputError message={errors.id_document} />
+                  </div>
+               )}
+               <LoadingButton loading={processing}>Submit for verification</LoadingButton>
+            </form>
+         </CardContent>
+      </Card>
+   );
+};
 
 const CourseCertificate = () => {
    const { props } = usePage<StudentCourseProps>();
-   const { course, watchHistory, completion, courseGates, certificate, certificateTemplate, marksheetTemplate, studentMarks, auth } = props;
+   const { course, watchHistory, completion, courseGates, certificate, certificateRelease, certificateTemplate, marksheetTemplate, studentMarks, auth } = props;
    const verificationReference = certificate?.verification_reference || certificate?.identifier;
 
    const certificateUnlocked = courseGates?.certificate_unlocked ?? (watchHistory?.completion_date || completion?.completion === 100);
+   const certificateHeld = Boolean(certificateUnlocked && !certificate && (certificateRelease?.needs_cv || certificateRelease?.needs_id));
 
    if (!certificateUnlocked) {
       const lockMessage = courseGates?.has_quizzes
@@ -34,7 +95,7 @@ const CourseCertificate = () => {
       : format(new Date(), 'MMMM d, yyyy');
 
    // Check if both are unavailable
-   if (!certificateTemplate && !marksheetTemplate) {
+   if (!certificateTemplate && !marksheetTemplate && !certificateHeld) {
       return (
          <div className="p-6">
             <Card>
@@ -63,7 +124,9 @@ const CourseCertificate = () => {
             </TabsList>
 
             <TabsContent value="certificate">
-               {!certificateTemplate ? (
+               {certificateHeld ? (
+                  <CertificateReleaseForm />
+               ) : !certificateTemplate ? (
                   <Card>
                      <CardContent className="flex flex-col items-center justify-center p-12 text-center">
                         <Award className="text-muted-foreground mb-4 h-16 w-16" />

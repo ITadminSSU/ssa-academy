@@ -5,6 +5,8 @@ interface Auth {
    dashboardRoute?: string | null;
    legalAgreementRequired?: boolean;
    legalAgreementUrl?: string;
+   profileSetupRequired?: boolean;
+   profileUrl?: string | null;
    twoFactorEnabled?: boolean;
    canManageTwoFactor?: boolean;
    canManagePlatformSettings?: boolean;

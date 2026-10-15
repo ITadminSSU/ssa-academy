@@ -63,8 +63,8 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
          title={useSignWell ? 'Student Agreement Required' : 'Legal Agreement Required'}
          description={
             useSignWell
-               ? 'Sign the SMARTSOURCING USA Academy Student Agreement to access your dashboard.'
-               : 'Accept the Terms & Conditions to access the academy.'
+               ? 'Sign the student agreement before you start this course. After you sign, you will return to that course.'
+               : 'Accept the student agreement before you start this course.'
          }
       >
          <Head title="Legal Agreement" />
@@ -82,8 +82,8 @@ const LegalAgreement = ({ document, signwellEnabled = false, signwellStatus = nu
                <div className="bg-muted/40 space-y-3 rounded-lg border p-4 text-sm">
                   <p className="font-medium">Electronic signature required</p>
                   <p className="text-muted-foreground">
-                     After registration you must sign the Student Agreement before you can open the student dashboard
-                     or enroll in courses. You will sign on this site and then continue to your dashboard.
+                     Sign the SMARTSOURCING USA Academy Student Agreement before you start a course. After you finish
+                     signing, you will return to the course you were starting.
                   </p>
                   {signwellStatus === 'pending' ? (
                      <p className="text-muted-foreground text-xs">

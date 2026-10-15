@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateStudentProfileRequest;
+use App\Models\ProfessionalType;
 use App\Services\AuthService;
+use App\Support\RegistrationProfileOptions;
 use App\Models\Course\WatchHistory;
 use App\Services\Course\CourseCategoryService;
 use App\Services\Course\CourseCertificateIssuanceService;
@@ -58,6 +60,18 @@ class StudentController extends Controller
         }
 
         $props = $this->studentService->getStudentData($tab, $request->only(['filter', 'course_id']));
+
+        if ($tab === 'profile') {
+            $props['profileAnswers'] = $request->user()->profileBackgroundAnswers();
+            $props['profileSetup'] = [
+                'professionalTypes' => ProfessionalType::query()
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get(['id', 'name', 'is_active', 'sort_order']),
+                'estimatingSoftwareOptions' => RegistrationProfileOptions::estimatingSoftware(),
+                'constructionExperienceOptions' => RegistrationProfileOptions::constructionExperience(),
+            ];
+        }
 
         return Inertia::render('student/index', [
             ...$props,
@@ -167,12 +181,17 @@ class StudentController extends Controller
         }
 
         $certificate = null;
+        $certificateRelease = null;
         if ($tab === 'certificate' && !$courseGates['certificate_unlocked']) {
             $props['certificateTemplate'] = null;
             $props['marksheetTemplate'] = null;
             $props['studentMarks'] = null;
         } elseif ($tab === 'certificate' && $courseGates['certificate_unlocked']) {
             $certificate = $this->certificateIssuance->issueForCourse($course, $user);
+
+            if (! $certificate) {
+                $certificateRelease = $this->certificateIssuance->missingReleaseDocuments($user);
+            }
         }
 
         $usExperience = null;
@@ -192,6 +211,7 @@ class StudentController extends Controller
             'completion' => $completion,
             'courseGates' => $courseGates,
             'certificate' => $certificate,
+            'certificateRelease' => $certificateRelease,
             'subscriptionAccess' => $subscriptionAccess,
             'showUsExperience' => $showUsExperience,
             'usExperience' => $usExperience,
@@ -258,5 +278,68 @@ class StudentController extends Controller
         Auth::setUser($user);
 
         return redirect()->back()->with('success', 'Profile updated successfully');
+    }
+
+    public function storeCertificateDocuments(Request $request, int $id)
+    {
+        $user = $request->user();
+        $course = $this->studentService->getEnrolledCourse((string) $id, $user);
+        $missing = $this->certificateIssuance->missingReleaseDocuments($user);
+
+        $rules = [];
+
+        if ($missing['needs_cv']) {
+            $rules['cv_resume'] = 'required|file|mimes:pdf,doc,docx|max:10240';
+        } elseif ($request->hasFile('cv_resume')) {
+            $rules['cv_resume'] = 'file|mimes:pdf,doc,docx|max:10240';
+        }
+
+        if ($missing['needs_id']) {
+            $rules['id_document'] = 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240';
+        } elseif ($request->hasFile('id_document')) {
+            $rules['id_document'] = 'file|mimes:jpg,jpeg,png,webp,pdf|max:10240';
+        }
+
+        $request->validate($rules, [
+            'cv_resume.required' => 'Please upload your CV or resume.',
+            'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
+            'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
+            'id_document.required' => 'Please upload a government-issued ID for verification.',
+            'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
+            'id_document.max' => 'ID must not be larger than 10MB.',
+        ]);
+
+        if ($request->hasFile('cv_resume')) {
+            $user->addMediaFromRequest('cv_resume')
+                ->withCustomProperties(['name' => 'cv_resume'])
+                ->toMediaCollection('cv_resume');
+        }
+
+        if ($request->hasFile('id_document')) {
+            $user->addMediaFromRequest('id_document')
+                ->withCustomProperties(['name' => 'id_document'])
+                ->toMediaCollection('id_document');
+        }
+
+        $user = $user->fresh();
+        Auth::setUser($user);
+
+        $watchHistory = $this->coursePlayerService->getWatchHistory($id, $user->id);
+        $completion = $this->coursePlayerService->calculateCompletion($course, $watchHistory);
+        $gates = $this->courseCompletionGateService->getGateStatus($course, $user->id, $completion, $watchHistory);
+        $certificate = $gates['certificate_unlocked']
+            ? $this->certificateIssuance->issueForCourse($course, $user)
+            : null;
+        $stillMissing = $this->certificateIssuance->missingReleaseDocuments($user);
+
+        $message = $certificate
+            ? 'Your certificate is ready.'
+            : (($stillMissing['needs_cv'] || $stillMissing['needs_id'])
+                ? 'File saved. Upload the remaining document to release your certificate.'
+                : 'Your documents are saved. They will be used for every course.');
+
+        return redirect()
+            ->route('student.course.show', ['id' => $id, 'tab' => 'certificate'])
+            ->with('success', $message);
     }
 }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
-use App\Services\LegalAgreementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -19,7 +18,6 @@ class TwoFactorChallengeController extends Controller
     public function __construct(
         private TwoFactorAuthenticationService $twoFactor,
         private AuthService $authService,
-        private LegalAgreementService $legalAgreement,
         private SingleSessionService $singleSession,
     ) {}
 

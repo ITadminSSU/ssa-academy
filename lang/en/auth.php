@@ -44,10 +44,10 @@ return [
 
     // Register Page
     'register_title' => 'Create your account',
-    'register_description' => 'External learners can register here. After you create an account, we email a 6-digit code — enter it on the next screen before the student agreement and dashboard.',
+    'register_description' => 'External learners can register here. After you create an account, we email a 6-digit code — enter it on the next screen, then you land on your dashboard.',
     'have_account' => 'Already have an account?',
     'register_learner_type_note' => 'Company email addresses are recognized automatically for internal access. Other accounts are registered as public learners. Admins can update learner type if needed.',
-    'register_required_fields_note' => 'All fields are required. You must upload a CV/resume, a government-issued ID, and agree to the Terms & Conditions and NDA before creating an account.',
+    'register_required_fields_note' => 'Enter your full name, email, and password, then confirm the website terms to create your account.',
 
     // Forgot Password
     'forgot_description' => 'Enter your email to receive a password reset link',
@@ -64,7 +64,7 @@ return [
     // Verify Email
     'change_email' => 'Change Email',
     'verify_title' => 'Verify your email',
-    'verify_description' => 'Enter the 6-digit code we emailed you to continue to the student agreement and your dashboard.',
+    'verify_description' => 'Enter the 6-digit code we emailed you. After it is accepted, you land on your dashboard.',
     'verification_sent' => 'A new verification code has been sent. Check your inbox and spam folder — the code is valid for 15 minutes.',
 
     // Two-factor authentication

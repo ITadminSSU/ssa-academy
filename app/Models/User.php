@@ -194,6 +194,91 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return (int) $this->status === 1;
     }
 
+    /**
+     * Background questions collected on the student profile, not at signup.
+     * A blank referrer is complete. The team question counts only when a name is entered.
+     */
+    public function hasCompletedProfileSetup(): bool
+    {
+        if (! $this->professional_type_id) {
+            return false;
+        }
+
+        $typeName = $this->professionalType?->name;
+
+        if ($typeName === null && $this->exists && $this->professional_type_id) {
+            try {
+                $typeName = $this->professionalType()->value('name');
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        if (is_string($typeName) && strcasecmp($typeName, 'other') === 0 && ! filled($this->professional_type_other)) {
+            return false;
+        }
+
+        $software = $this->estimating_software;
+
+        if (! is_array($software) || $software === []) {
+            return false;
+        }
+
+        if (in_array('Others', $software, true) && ! filled($this->estimating_software_other)) {
+            return false;
+        }
+
+        if (! filled($this->construction_experience)) {
+            return false;
+        }
+
+        if ($this->rawNullableBoolean('worked_as_construction_va') === null) {
+            return false;
+        }
+
+        if (filled($this->referred_by) && $this->rawNullableBoolean('referrer_is_employee') === null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Values for the profile form. Boolean casts hide a stored null, so read the raw column.
+     *
+     * @return array<string, mixed>
+     */
+    public function profileBackgroundAnswers(): array
+    {
+        return [
+            'professional_type_id' => $this->professional_type_id ? (string) $this->professional_type_id : '',
+            'professional_type_other' => $this->professional_type_other ?? '',
+            'estimating_software' => array_values($this->estimating_software ?? []),
+            'estimating_software_other' => $this->estimating_software_other ?? '',
+            'construction_experience' => $this->construction_experience ?? '',
+            'worked_as_construction_va' => $this->rawNullableBoolean('worked_as_construction_va'),
+            'referred_by' => $this->referred_by ?? '',
+            'referrer_is_employee' => $this->rawNullableBoolean('referrer_is_employee'),
+        ];
+    }
+
+    private function rawNullableBoolean(string $key): ?bool
+    {
+        if (! array_key_exists($key, $this->attributes)) {
+            return null;
+        }
+
+        $value = $this->attributes[$key];
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $parsed ?? (bool) $value;
+    }
+
     public function canManagePlatformSettings(): bool
     {
         if ($this->role !== 'admin') {

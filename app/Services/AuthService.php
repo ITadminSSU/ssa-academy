@@ -12,7 +12,6 @@ class AuthService
 {
     public function __construct(
         private LearnerTypeResolver $learnerTypeResolver,
-        private LegalAgreementService $legalAgreement,
     ) {}
     public function recaptchaStatus()
     {
@@ -151,7 +150,8 @@ class AuthService
     }
 
     /**
-     * Where a signed-in user should go next: verify email, then SignWell/legal, then dashboard.
+     * Where a signed-in user should go next: verify email, then the dashboard.
+     * The student agreement is opened from the first course start, not from login.
      */
     public function continueUrlAfterAuth(?User $user, array $parameters = []): string
     {
@@ -163,19 +163,25 @@ class AuthService
             return route('verification.notice');
         }
 
-        if ($this->legalAgreement->requiresAcceptance($user)) {
-            return route('legal.agreement.show');
-        }
-
         return $this->homeUrlFor($user, $parameters);
     }
 
     public function continueUrlAfterVerification(User $user): string
     {
-        if ($this->legalAgreement->requiresAcceptance($user)) {
-            return route('legal.agreement.show');
+        return $this->homeUrlFor($user).'?verified=1';
+    }
+
+    /**
+     * After the agreement is signed, return to the course the student was starting.
+     */
+    public function urlAfterLegalAcceptance(User $user): string
+    {
+        $courseId = session()->pull('pending_course_start_id');
+
+        if ($courseId) {
+            return route('player.resume-after-agreement', ['course' => $courseId]);
         }
 
-        return $this->homeUrlFor($user).'?verified=1';
+        return $this->homeUrlFor($user);
     }
 }

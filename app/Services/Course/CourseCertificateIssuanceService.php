@@ -22,6 +22,11 @@ class CourseCertificateIssuanceService
             return $this->ensureVerificationReference($existing);
         }
 
+        // CV and government ID are stored once on the account. Hold a new certificate until both are present.
+        if (! $this->hasReleaseDocuments($user)) {
+            return null;
+        }
+
         $verificationReference = $this->referenceNumbers->generateCertificateVerificationReference();
         $certificateId = $this->referenceNumbers->generateCertificateId();
 
@@ -32,6 +37,24 @@ class CourseCertificateIssuanceService
             'certificate_id' => $certificateId,
             'verification_reference' => $verificationReference,
         ]);
+    }
+
+    /**
+     * @return array{needs_cv: bool, needs_id: bool}
+     */
+    public function missingReleaseDocuments(User $user): array
+    {
+        return [
+            'needs_cv' => ! $user->hasMedia('cv_resume'),
+            'needs_id' => ! $user->hasMedia('id_document'),
+        ];
+    }
+
+    public function hasReleaseDocuments(User $user): bool
+    {
+        $missing = $this->missingReleaseDocuments($user);
+
+        return ! $missing['needs_cv'] && ! $missing['needs_id'];
     }
 
     public function getForStudent(Course $course, User $user): ?CourseCertificate

@@ -127,6 +127,10 @@ class HandleInertiaRequests extends Middleware
                 'dashboardRoute' => $user ? app(AuthService::class)->dashboardRouteNameFor($user) : null,
                 'legalAgreementRequired' => $user ? $this->legalAgreement->requiresAcceptance($user) : false,
                 'legalAgreementUrl' => route('legal.agreement.show'),
+                'profileSetupRequired' => $user && $user->role === 'student' && ! $user->hasCompletedProfileSetup(),
+                'profileUrl' => $user && $user->role === 'student'
+                    ? app(AuthService::class)->homeUrlFor($user, ['tab' => 'profile'])
+                    : null,
                 'twoFactorEnabled' => $user ? $this->twoFactor->isEnabled($user) : false,
                 'canManageTwoFactor' => $user ? $this->twoFactor->canUse($user) : false,
                 'canManagePlatformSettings' => $user ? $user->canManagePlatformSettings() : false,

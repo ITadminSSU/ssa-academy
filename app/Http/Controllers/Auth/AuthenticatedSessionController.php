@@ -7,7 +7,6 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
-use App\Services\LegalAgreementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +19,6 @@ class AuthenticatedSessionController extends Controller
 {
     public function __construct(
         private AuthService $authService,
-        private LegalAgreementService $legalAgreement,
         private TwoFactorAuthenticationService $twoFactor,
         private SingleSessionService $singleSession,
     ) {}
@@ -125,12 +123,6 @@ class AuthenticatedSessionController extends Controller
             $request->session()->forget('url.intended');
 
             return route('verification.notice');
-        }
-
-        if ($user && $this->legalAgreement->requiresAcceptance($user)) {
-            $request->session()->forget('url.intended');
-
-            return route('legal.agreement.show');
         }
 
         // Land on the Home tab by default for learners (internal/external).

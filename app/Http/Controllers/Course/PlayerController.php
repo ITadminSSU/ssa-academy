@@ -18,6 +18,7 @@ use App\Services\Course\ProtectedMediaService;
 use App\Services\Course\QuizTakeoffService;
 use App\Services\Course\VideoPlaybackTokenService;
 use App\Services\LiveClass\ZoomLiveService;
+use App\Services\LegalAgreementService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Support\CurriculumSequence;
 use Illuminate\Http\Request;
@@ -38,6 +39,7 @@ class PlayerController extends Controller
         protected CourseCertificateIssuanceService $certificateIssuance,
         protected CourseFinalExamService $courseFinalExamService,
         protected SubscriptionAccessService $subscriptionAccess,
+        protected LegalAgreementService $legalAgreement,
         protected VideoPlaybackTokenService $playbackTokens,
         protected QuizTakeoffService $quizTakeoff,
     ) {}
@@ -104,6 +106,26 @@ class PlayerController extends Controller
         }
 
         return redirect($url);
+    }
+
+    /**
+     * Continue a course start after the student agreement is signed.
+     * Watch history is created here, so leaving the agreement leaves the course unstarted.
+     */
+    public function resumeAfterAgreement(Request $request, Course $course)
+    {
+        $user = $request->user();
+
+        if ($this->legalAgreement->requiresAcceptance($user)) {
+            $request->session()->put('pending_course_start_id', $course->id);
+
+            return redirect()->route('legal.agreement.show');
+        }
+
+        $request->session()->forget('pending_course_start_id');
+        $request->merge(['course_id' => $course->id]);
+
+        return $this->intWatchHistory($request);
     }
 
     public function course_player(Request $request, string $type, WatchHistory $watch_history, string $lesson_id)
@@ -416,12 +438,14 @@ class PlayerController extends Controller
         $watch_history->completion_date = now();
         $watch_history->save();
 
-        $this->certificateIssuance->issueForCourse($course, $user);
+        $certificate = $this->certificateIssuance->issueForCourse($course, $user);
         $this->courseFinalExamService->ensureFinalExamEnrollment($course, $user);
 
         return redirect()
             ->route('student.course.show', ['id' => $course->id, 'tab' => 'certificate'])
-            ->with('success', 'Course completed successfully. Your certificate has been issued.');
+            ->with('success', $certificate
+                ? 'Course completed successfully. Your certificate has been issued.'
+                : 'Course completed successfully. Upload your CV and government ID to release your certificate.');
     }
 
     /**

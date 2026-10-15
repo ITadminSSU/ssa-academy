@@ -79,8 +79,15 @@ class VideoStreamController extends Controller
 
     private function assertPlaybackAllowed($user, SectionLesson $lesson): void
     {
-        if ($this->legalAgreement->requiresAcceptance($user)) {
-            abort(403, 'Accept the Terms & Conditions and NDA before accessing lesson media.');
+        if ($user && $user->role === 'student' && $this->legalAgreement->requiresAcceptance($user)) {
+            $started = \App\Models\Course\WatchHistory::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $lesson->course_id)
+                ->exists();
+
+            if (! $started) {
+                abort(403, 'Sign the student agreement before starting this course.');
+            }
         }
 
         $this->protectedMedia->authorizeLessonAccess($user, $lesson);

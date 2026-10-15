@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Course\WatchHistory;
+use App\Models\User;
 use App\Services\LegalAgreementService;
 use App\Services\Payment\SubscriptionAccessService;
 use Closure;
@@ -28,8 +29,16 @@ class CheckEnroll
     {
         $user = Auth::user();
 
-        if ($this->legalAgreement->requiresAcceptance($user)) {
-            return redirect()->route('legal.agreement.show');
+        if ($user && $this->shouldHoldForAgreement($request, $user)) {
+            $courseId = $this->courseIdFromRequest($request);
+
+            if ($courseId) {
+                $request->session()->put('pending_course_start_id', (int) $courseId);
+            }
+
+            return redirect()
+                ->route('legal.agreement.show')
+                ->with('info', 'Sign the student agreement before starting this course.');
         }
 
         if ($user->role == 'admin') {
@@ -92,5 +101,62 @@ class CheckEnroll
         return redirect()
             ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
             ->with('error', $message);
+    }
+
+    /**
+     * Ask for the agreement only when a student is starting a course they have not opened yet.
+     */
+    private function shouldHoldForAgreement(Request $request, User $user): bool
+    {
+        if ($user->role !== 'student' || ! $this->legalAgreement->requiresAcceptance($user)) {
+            return false;
+        }
+
+        return ! $this->courseAlreadyStarted($request, $user);
+    }
+
+    private function courseAlreadyStarted(Request $request, User $user): bool
+    {
+        $routeWatchHistory = $request->route('watch_history');
+
+        if ($routeWatchHistory instanceof WatchHistory) {
+            return (int) $routeWatchHistory->user_id === (int) $user->id;
+        }
+
+        if ($routeWatchHistory) {
+            $history = WatchHistory::find($routeWatchHistory);
+
+            return $history !== null && (int) $history->user_id === (int) $user->id;
+        }
+
+        $courseId = $request->input('course_id');
+
+        if (! $courseId) {
+            return false;
+        }
+
+        return WatchHistory::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $courseId)
+            ->exists();
+    }
+
+    private function courseIdFromRequest(Request $request): ?int
+    {
+        $routeWatchHistory = $request->route('watch_history');
+
+        if ($routeWatchHistory instanceof WatchHistory) {
+            return (int) $routeWatchHistory->course_id;
+        }
+
+        if ($routeWatchHistory) {
+            $history = WatchHistory::find($routeWatchHistory);
+
+            return $history ? (int) $history->course_id : null;
+        }
+
+        $courseId = $request->input('course_id');
+
+        return $courseId ? (int) $courseId : null;
     }
 }

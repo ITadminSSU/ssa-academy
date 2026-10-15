@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
-use App\Services\LegalAgreementService;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -18,7 +17,6 @@ class GoogleAuthController extends Controller
 {
     public function __construct(
         private AuthService $authService,
-        private LegalAgreementService $legalAgreement,
         private TwoFactorAuthenticationService $twoFactor,
         private SingleSessionService $singleSession,
     ) {}
@@ -73,14 +71,6 @@ class GoogleAuthController extends Controller
 
             if ($this->twoFactor->isEnabled($registered)) {
                 return redirect()->route('two-factor.challenge');
-            }
-
-            if ($this->legalAgreement->requiresAcceptance($registered)) {
-                if (app(\App\Services\SignWellService::class)->isEnabled()) {
-                    return redirect()->route('signwell.start');
-                }
-
-                return redirect()->route('legal.agreement.show');
             }
 
             $dashboardUrl = $this->authService->homeUrlFor($registered);
