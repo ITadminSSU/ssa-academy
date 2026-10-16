@@ -7,12 +7,13 @@ import { Head } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { ReactNode } from 'react';
 import CourseHero from './partials/course-hero';
+import CourseInstructorCard from './partials/course-instructor-card';
 import CoursePreview from './partials/course-preview';
+import CourseReviewStrip from './partials/course-review-strip';
 import CourseReviews from './partials/course-reviews';
 import Curriculum from './partials/curriculum';
 import Details from './partials/details';
 import Faqs from './partials/faqs';
-import Instructor from './partials/instructor';
 import Overview from './partials/overview';
 import UsExperience from './partials/us-experience';
 
@@ -34,8 +35,16 @@ export interface CourseDetailsProps extends SharedData {
    courseHero?: CourseHeroContent;
 }
 
-const Show = ({ course, system, translate, showUsExperience = false, canViewUsExperiencePlans = false }: CourseDetailsProps & { translate: any }) => {
+const Show = ({
+   course,
+   reviews,
+   system,
+   translate,
+   showUsExperience = false,
+   canViewUsExperiencePlans = false,
+}: CourseDetailsProps & { translate: any }) => {
    const { button, frontend } = translate;
+   const hasReviews = (reviews?.data?.length ?? 0) > 0;
 
    const tabs = [
       {
@@ -59,11 +68,6 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
          Component: <Details course={course} />,
       },
       {
-         value: 'instructor',
-         label: button.instructor,
-         Component: <Instructor course={course} />,
-      },
-      {
          value: 'faqs',
          label: button.faqs ?? 'FAQs',
          Component: <Faqs faqs={course.faqs} />,
@@ -76,10 +80,6 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
    ].filter((tab) => {
       if (tab.value === 'us-experience') {
          return showUsExperience;
-      }
-
-      if (tab.value === 'instructor') {
-         return system.sub_type === 'collaborative' ? true : false;
       }
 
       if (tab.value === 'faqs') {
@@ -177,7 +177,9 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
          <CourseHero course={course} />
 
          <div className="ssu-page-shell">
-            <div className="container grid grid-cols-1 gap-7 pb-14 md:grid-cols-3 md:-mt-12">
+            <CourseReviewStrip />
+
+            <div className={`container grid grid-cols-1 gap-7 pb-14 md:grid-cols-3 ${hasReviews ? 'pt-2' : 'md:-mt-12'}`}>
                <div className="min-w-0 space-y-8 md:col-span-2">
                   <Tabs defaultValue="overview" className="ssu-surface-card relative z-10">
                      <div className="border-border/70 overflow-x-auto border-b px-3 py-3">
@@ -205,6 +207,8 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
                         </TabsContent>
                      ))}
                   </Tabs>
+
+                  <CourseInstructorCard course={course} />
                </div>
 
                <div className="relative z-10 min-w-0">
