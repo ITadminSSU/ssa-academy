@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Course\CourseCoupon;
+use App\Models\Course\CourseCouponAssignedEmail;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CourseCouponRequest extends FormRequest
@@ -13,15 +15,53 @@ class CourseCouponRequest extends FormRequest
 
    protected function prepareForValidation(): void
    {
+      if ($this->exists('assigned_emails')) {
+         $parsed = CourseCouponAssignedEmail::parseList($this->input('assigned_emails'));
+
+         $this->merge([
+            'assigned_emails' => $parsed['emails'],
+            'assigned_emails_invalid' => $parsed['invalid'],
+         ]);
+
+         return;
+      }
+
       if (! $this->exists('assigned_email')) {
          return;
       }
 
-      $email = strtolower(trim((string) $this->input('assigned_email')));
+      $parsed = CourseCouponAssignedEmail::parseList($this->input('assigned_email'));
 
       $this->merge([
-         'assigned_email' => $email === '' ? null : $email,
+         'assigned_emails' => $parsed['emails'],
+         'assigned_emails_invalid' => $parsed['invalid'],
+         'assigned_email' => count($parsed['invalid']) === 0 && count($parsed['emails']) === 1
+            ? $parsed['emails'][0]
+            : null,
       ]);
+   }
+
+   public function withValidator($validator): void
+   {
+      $validator->after(function ($validator) {
+         $invalid = $this->input('assigned_emails_invalid', []);
+
+         if (is_array($invalid) && $invalid !== []) {
+            $validator->errors()->add(
+               'assigned_emails',
+               'Enter a valid email address for every person on the list.',
+            );
+         }
+
+         $emails = $this->input('assigned_emails', []);
+
+         if (is_array($emails) && count($emails) > 1 && ! CourseCoupon::assignedEmailTableAvailable()) {
+            $validator->errors()->add(
+               'assigned_emails',
+               'The email list could not be saved.',
+            );
+         }
+      });
    }
 
    public function rules(): array
@@ -40,6 +80,8 @@ class CourseCouponRequest extends FormRequest
          'is_active' => 'boolean',
          'show_on_catalog' => 'boolean',
          'assigned_email' => 'nullable|email|max:255',
+         'assigned_emails' => 'nullable|array',
+         'assigned_emails.*' => 'email|max:255',
       ];
    }
 

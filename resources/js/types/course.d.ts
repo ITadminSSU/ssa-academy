@@ -388,6 +388,7 @@ interface CourseCoupon extends TableCommon {
    is_active: boolean;
    show_on_catalog?: boolean;
    assigned_email?: string | null;
+   assigned_emails?: string[];
    course_id: number;
    course: Course;
 }

@@ -133,7 +133,13 @@ class CourseCouponService
       $prefix = CourseCoupon::query()->getConnection()->getTablePrefix();
       $couponsTable = $prefix.'course_coupons';
 
-      $coupons = CourseCoupon::with('course:id,title')
+      $with = ['course:id,title'];
+
+      if (CourseCoupon::assignedEmailTableAvailable()) {
+         $with[] = 'assignedEmailRecords:id,course_coupon_id,email';
+      }
+
+      $coupons = CourseCoupon::with($with)
          ->select('*')
          ->selectSub(function ($query) use ($couponsTable) {
             $query->from('payment_histories')
@@ -167,19 +173,23 @@ class CourseCouponService
       if ($paginate) {
          $result = $coupons->paginate($page);
          $result->getCollection()->transform(function (CourseCoupon $coupon) {
-            $coupon->used_count = (int) ($coupon->usages_count ?? $coupon->used_count);
-
-            return $coupon;
+            return $this->presentCoupon($coupon);
          });
 
          return $result;
       }
 
       return $coupons->get()->transform(function (CourseCoupon $coupon) {
-         $coupon->used_count = (int) ($coupon->usages_count ?? $coupon->used_count);
-
-         return $coupon;
+         return $this->presentCoupon($coupon);
       });
+   }
+
+   private function presentCoupon(CourseCoupon $coupon): CourseCoupon
+   {
+      $coupon->used_count = (int) ($coupon->usages_count ?? $coupon->used_count);
+      $coupon->presentAssignedEmails();
+
+      return $coupon;
    }
 
    public function discountForAmount(CourseCoupon $coupon, float $subtotal): float

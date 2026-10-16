@@ -73,6 +73,7 @@ const CouponImportForm = ({ handler, courses }: Props) => {
 MARIA20,percentage,20,,2026-08-19,2026-12-31,true,
 JOHN15,fixed,15,,2026-08-19,2026-12-31,true,john@example.com
 SARAH10,percentage,10,,2026-08-19,2026-12-31,true,
+TEAM10,percentage,10,,2026-08-19,2026-12-31,true,"ada@example.com, bea@example.com"
 EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true,`;
 
       const blob = new Blob([csv], { type: 'text/csv' });
@@ -164,7 +165,7 @@ EMPLOYEE50,percentage,50,,2026-08-19,2026-12-31,true,`;
                         <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/30 p-3 text-xs text-muted-foreground">
                            <p className="mb-1 font-medium">CSV format — required columns: <code>code</code>, <code>discount_type</code>, <code>discount</code></p>
                            <p>Optional columns: <code>course_id</code>, <code>valid_from</code>, <code>valid_to</code>, <code>is_active</code>, <code>email</code></p>
-                           <p className="mt-1">Leave <code>course_id</code> empty for global coupons. Dates in <code>YYYY-MM-DD</code> format. Leave <code>email</code> blank so any student can use the code. A file without the email column still imports, and those codes stay open to any student.</p>
+                           <p className="mt-1">Leave <code>course_id</code> empty for global coupons. Dates in <code>YYYY-MM-DD</code> format. Leave <code>email</code> blank so any student can use the code. A file without the email column still imports, and those codes stay open to any student. Put several emails in one <code>email</code> cell, separated by commas or semicolons, to share one code. Quote that cell when it contains commas.</p>
                         </div>
 
                         <div>

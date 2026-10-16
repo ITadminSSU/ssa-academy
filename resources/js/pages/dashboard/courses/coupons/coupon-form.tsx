@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { onHandleChange } from '@/lib/inertia';
 import { useForm } from '@inertiajs/react';
 import { Shuffle } from 'lucide-react';
@@ -17,6 +18,16 @@ interface Props {
    coupon?: CourseCoupon;
    courses: Course[];
 }
+
+const assignedEmailsText = (coupon?: CourseCoupon) => {
+   const list = (coupon?.assigned_emails ?? []).map((email) => email.trim()).filter(Boolean);
+
+   if (list.length > 0) {
+      return list.join('\n');
+   }
+
+   return coupon?.assigned_email?.trim() || '';
+};
 
 const CouponForm = ({ title, handler, coupon, courses }: Props) => {
    const [open, setOpen] = useState(false);
@@ -37,12 +48,14 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
       usage_limit: coupon?.usage_limit ?? '',
       is_active: coupon?.is_active ?? true,
       show_on_catalog: coupon?.show_on_catalog ?? false,
-      assigned_email: coupon?.assigned_email || '',
+      assigned_emails: assignedEmailsText(coupon),
    });
+
+   const hasAssignedEmails = data.assigned_emails.trim() !== '';
 
    transform((form) => ({
       ...form,
-      assigned_email: form.assigned_email.trim() === '' ? null : form.assigned_email.trim(),
+      assigned_emails: form.assigned_emails,
       usage_limit:
          form.usage_limit === '' || form.usage_limit === null || form.usage_limit === undefined
             ? null
@@ -88,7 +101,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
             usage_limit: coupon.usage_limit ?? '',
             is_active: coupon.is_active ?? true,
             show_on_catalog: coupon.show_on_catalog ?? false,
-            assigned_email: coupon.assigned_email || '',
+            assigned_emails: assignedEmailsText(coupon),
          });
       } else if (!open) {
          reset();
@@ -183,28 +196,28 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                      </div>
 
                      <div className="col-span-2">
-                        <Label htmlFor="assigned_email">Assigned email</Label>
-                        <Input
-                           id="assigned_email"
-                           name="assigned_email"
-                           type="email"
-                           value={data.assigned_email}
+                        <Label htmlFor="assigned_emails">Allowed emails</Label>
+                        <Textarea
+                           id="assigned_emails"
+                           name="assigned_emails"
+                           value={data.assigned_emails}
+                           rows={5}
                            onChange={(e) => {
                               const value = e.target.value;
                               setData({
                                  ...data,
-                                 assigned_email: value,
+                                 assigned_emails: value,
                                  show_on_catalog: value.trim() === '' ? data.show_on_catalog : false,
                               });
                            }}
-                           placeholder="student@example.com"
+                           placeholder={'student@example.com\ncolleague@example.com'}
                         />
                         <p className="text-muted-foreground mt-1 text-xs">
-                           Leave blank and any student can use this code. When an email is set, only a signed-in account
-                           with that exact email can use it, and the code stays off the catalog. Clear the email to remove
-                           the restriction.
+                           Leave blank and any student can use this code. Enter one email per line, or separate emails
+                           with commas. Only a signed-in account on the list can use it, and the code stays off the
+                           catalog. The account does not have to exist yet. Clear the list to remove the restriction.
                         </p>
-                        <InputError message={errors.assigned_email} />
+                        <InputError message={errors.assigned_emails} />
                      </div>
 
                      <div>
@@ -267,8 +280,8 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                         </div>
                         <Switch
                            id="show_on_catalog"
-                           checked={Boolean(data.show_on_catalog) && Boolean(data.course_id) && data.assigned_email.trim() === ''}
-                           disabled={!data.course_id || data.assigned_email.trim() !== ''}
+                           checked={Boolean(data.show_on_catalog) && Boolean(data.course_id) && !hasAssignedEmails}
+                           disabled={!data.course_id || hasAssignedEmails}
                            onCheckedChange={(checked) => setData('show_on_catalog', checked)}
                         />
                      </div>

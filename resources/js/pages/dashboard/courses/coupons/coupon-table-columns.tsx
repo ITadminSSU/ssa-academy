@@ -88,12 +88,18 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
             ),
       },
       {
-         accessorKey: 'assigned_email',
-         header: 'Assigned email',
+         accessorKey: 'assigned_emails',
+         header: 'Allowed emails',
          cell: ({ row }) => {
-            const email = row.original.assigned_email?.trim();
+            const listed = (row.original.assigned_emails ?? []).map((email) => email.trim()).filter(Boolean);
+            const fallback = row.original.assigned_email?.trim();
+            const emails = listed.length > 0 ? listed : fallback ? [fallback] : [];
 
-            return email ? <span>{email}</span> : <span className="text-muted-foreground">Any student</span>;
+            return emails.length > 0 ? (
+               <div className="max-w-56 space-y-0.5 text-xs break-all">{emails.join(', ')}</div>
+            ) : (
+               <span className="text-muted-foreground">Any student</span>
+            );
          },
       },
       {
