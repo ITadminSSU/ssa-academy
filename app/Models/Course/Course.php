@@ -33,6 +33,10 @@ class Course extends Model implements HasMedia
         'allow_internal_preview',
         'level',
         'short_description',
+        'hero_eyebrow',
+        'hero_headline',
+        'hero_highlights',
+        'hero_paragraph',
         'description',
         'language',
 
@@ -61,7 +65,9 @@ class Course extends Model implements HasMedia
 
         'thumbnail',
         'banner',
+        'hero_photo',
         'preview',
+        'hero_video',
 
         'expiry_type',
         'expiry_duration',
@@ -98,6 +104,7 @@ class Course extends Model implements HasMedia
         'launch_at' => 'datetime',
         'allow_staff_preview' => 'boolean',
         'allow_internal_preview' => 'boolean',
+        'hero_highlights' => 'array',
     ];
 
     protected $appends = [
@@ -128,6 +135,16 @@ class Course extends Model implements HasMedia
             get: fn (?string $value) => S3CompatibleStorage::attributeGet($value),
             set: fn (?string $value) => S3CompatibleStorage::attributeSet($value),
         );
+    }
+
+    protected function heroPhoto(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
+
+    protected function heroVideo(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
     }
 
     public function scopeVisibleInCatalog(Builder $query, ?User $user = null): Builder

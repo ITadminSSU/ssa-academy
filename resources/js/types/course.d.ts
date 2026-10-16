@@ -46,6 +46,12 @@ interface Course extends TableCommon {
    title: string;
    slug: string;
    short_description: string;
+   hero_eyebrow?: string | null;
+   hero_headline?: string | null;
+   hero_highlights?: string[] | null;
+   hero_paragraph?: string | null;
+   hero_photo?: string | null;
+   hero_video?: string | null;
    course_type: string;
    status: 'draft' | 'upcoming' | 'coming_soon' | 'pending' | 'rejected' | 'approved';
    launch_at?: string | null;

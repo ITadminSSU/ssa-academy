@@ -16,6 +16,7 @@ use App\Services\MediaService;
 use App\Services\Payment\LaunchOfferService;
 use App\Services\S3MultipartUploadService;
 use App\Support\Database\SsuAcademyTableRegistry;
+use App\Support\CourseHero;
 use App\Support\DrywallLanding;
 use App\Support\S3CompatibleStorage;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -158,6 +159,10 @@ class CourseService extends MediaService
             if ($media !== []) {
                $course->forceFill($media)->save();
             }
+            break;
+
+         case 'hero':
+            $this->updateHero($course, $data);
             break;
 
          case 'seo':
@@ -566,6 +571,58 @@ class CourseService extends MediaService
          ],
          'validation_messages' => []
       ];
+   }
+
+   private function updateHero(Course $course, array $data): void
+   {
+      $previousVideo = $course->getRawOriginal('hero_video');
+      $nextVideo = CourseHero::resolveVideo(
+         (string) ($data['hero_video_source'] ?? 'link'),
+         $data['hero_video_url'] ?? null,
+         $data['hero_video_stored'] ?? null,
+         is_string($previousVideo) ? $previousVideo : null,
+      );
+      $highlights = CourseHero::phrasesFromInput($data['hero_highlights'] ?? []);
+
+      $course->forceFill([
+         'hero_eyebrow' => CourseHero::blankToNull($data['hero_eyebrow'] ?? null),
+         'hero_headline' => CourseHero::blankToNull($data['hero_headline'] ?? null),
+         'hero_highlights' => $highlights === [] ? null : $highlights,
+         'hero_paragraph' => CourseHero::blankToNull($data['hero_paragraph'] ?? null),
+         'hero_video' => $nextVideo,
+      ])->save();
+
+      if (is_string($previousVideo) && $previousVideo !== ''
+         && ! S3CompatibleStorage::isExternalEmbedUrl($previousVideo)
+         && ! S3CompatibleStorage::sameStoredObject($previousVideo, $nextVideo)) {
+         $this->deleteStoredLandingVideo($previousVideo);
+      }
+
+      $photo = $data['hero_photo'] ?? null;
+
+      if ($photo instanceof UploadedFile) {
+         $url = $this->addSingleFile($course, $photo, 'hero-photo');
+         $course->hero_photo = $url;
+         $course->save();
+         $this->deleteOlderHeroPhotos($course, $url);
+      }
+   }
+
+   private function deleteOlderHeroPhotos(Course $course, string $keptUrl): void
+   {
+      $course->unsetRelation('media');
+
+      $course->getMedia()->each(function ($media) use ($keptUrl) {
+         if ($media->getCustomProperty('name') !== 'hero-photo') {
+            return;
+         }
+
+         $storedUrl = media_storage_url($media);
+
+         if (! S3CompatibleStorage::sameStoredObject($storedUrl, $keptUrl)) {
+            $media->delete();
+         }
+      });
    }
 
    private function updateLandingPage(Course $course, array $data): void

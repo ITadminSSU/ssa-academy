@@ -9,6 +9,7 @@ use App\Enums\CourseStatusType;
 use App\Enums\ExpiryLimitType;
 use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use App\Models\Course\Course;
+use App\Support\CourseHero;
 use App\Support\DrywallLanding;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -26,6 +27,7 @@ class UpdateCourseRequest extends FormRequest
             'basic' => $this->prepareBasicTab(),
             'pricing' => $this->preparePricingTab(),
             'media' => $this->prepareMediaTab(),
+            'hero' => $this->prepareHeroTab(),
             'seo' => null,
             'landing' => $this->prepareLandingTab(),
             default => null,
@@ -130,6 +132,20 @@ class UpdateCourseRequest extends FormRequest
         }
     }
 
+    private function prepareHeroTab(): void
+    {
+        $this->merge([
+            'hero_eyebrow' => trim((string) $this->input('hero_eyebrow', '')),
+            'hero_headline' => trim((string) $this->input('hero_headline', '')),
+            'hero_paragraph' => trim((string) $this->input('hero_paragraph', '')),
+            'hero_highlights' => CourseHero::phrasesFromInput($this->input('hero_highlights', '')),
+            'hero_video_source' => $this->input('hero_video_source') === 'upload' ? 'upload' : 'link',
+            'hero_video_url' => trim((string) $this->input('hero_video_url', '')),
+            'hero_video_stored' => trim((string) $this->input('hero_video_stored', '')),
+            'hero_photo' => $this->hasFile('hero_photo') ? $this->file('hero_photo') : null,
+        ]);
+    }
+
     private function prepareLandingTab(): void
     {
         $course = Course::query()->find($this->route('id'));
@@ -197,7 +213,7 @@ class UpdateCourseRequest extends FormRequest
     public function rules(): array
     {
         return array_merge([
-            'tab' => 'required|string|in:basic,pricing,media,seo,info,status,landing',
+            'tab' => 'required|string|in:basic,pricing,media,hero,seo,info,status,landing',
         ], $this->getTabSpecificRules());
     }
 
@@ -205,6 +221,9 @@ class UpdateCourseRequest extends FormRequest
     {
         return [
             'video_url.required' => 'Upload a video for the landing page.',
+            'hero_photo.image' => 'The hero photo must be a JPG, PNG, or WebP image.',
+            'hero_photo.mimes' => 'The hero photo must be a JPG, PNG, or WebP image.',
+            'hero_photo.max' => 'The hero photo must be 100 MB or smaller.',
             'reviews.*.image.required' => 'Upload a picture for this review.',
             'reviews.*.image.image' => 'The review picture must be an image file.',
             'launch_at.after' => 'Launch date and time must be in the future.',
@@ -222,6 +241,7 @@ class UpdateCourseRequest extends FormRequest
             'basic' => $this->basicTabRules(),
             'pricing' => $this->pricingTabRules(),
             'media' => $this->mediaTabRules(),
+            'hero' => $this->heroTabRules(),
             'seo' => $this->seoTabRules(),
             'landing' => $this->landingTabRules(),
             default => [],
@@ -319,6 +339,21 @@ class UpdateCourseRequest extends FormRequest
             'banner' => 'nullable|image|max:102400',
             'preview_type' => 'nullable|string|in:video_url,video',
             'preview' => 'nullable|string',
+        ];
+    }
+
+    private function heroTabRules(): array
+    {
+        return [
+            'hero_eyebrow' => 'nullable|string|max:80',
+            'hero_headline' => 'nullable|string|max:200',
+            'hero_paragraph' => 'nullable|string|max:2000',
+            'hero_highlights' => 'array|max:12',
+            'hero_highlights.*' => 'string|max:120',
+            'hero_video_source' => 'required|in:link,upload',
+            'hero_video_url' => 'nullable|string|max:2048',
+            'hero_video_stored' => 'nullable|string|max:8192',
+            'hero_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:102400',
         ];
     }
 

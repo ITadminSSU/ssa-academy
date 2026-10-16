@@ -30,6 +30,7 @@ use App\Services\Payment\CourseStripeSyncService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\UsExperience\UsExperiencePlanService;
+use App\Support\CourseHero;
 use App\Support\CourseWelcomeEmailCopy;
 use App\Support\DrywallLanding;
 use Illuminate\Support\Facades\Auth;
@@ -275,6 +276,7 @@ class CourseController extends Controller
                         : [],
                     'showUsExperience' => $showUsExperience,
                     'canViewUsExperiencePlans' => $canViewUsExperiencePlans,
+                    'courseHero' => CourseHero::present($course),
                 ]
             )->withViewData([
                 'metaTitle' => $pageTitle,

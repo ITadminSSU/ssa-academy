@@ -1,6 +1,7 @@
 import Tabs from '@/components/tabs';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LandingLayout from '@/layouts/landing-layout';
+import { CourseHeroContent } from '@/lib/course-hero-text';
 import { SharedData } from '@/types/global';
 import { Head } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
@@ -30,6 +31,7 @@ export interface CourseDetailsProps extends SharedData {
    usExperiencePreview?: UsExperiencePublicGroup[];
    showUsExperience?: boolean;
    canViewUsExperiencePlans?: boolean;
+   courseHero?: CourseHeroContent;
 }
 
 const Show = ({ course, system, translate, showUsExperience = false, canViewUsExperiencePlans = false }: CourseDetailsProps & { translate: any }) => {
