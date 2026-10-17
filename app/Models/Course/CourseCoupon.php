@@ -50,6 +50,35 @@ class CourseCoupon extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function assignedEmailRecords(): HasMany
+    {
+        return $this->hasMany(CourseCouponAssignedEmail::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (CourseCoupon $coupon) {
+            if (! self::assignedEmailTableAvailable()) {
+                return;
+            }
+
+            try {
+                $coupon->assignedEmailRecords()->delete();
+            } catch (\Throwable) {
+                // Checkout and coupon deletion still proceed from the coupon row.
+            }
+        });
+    }
+
+    public static function assignedEmailTableAvailable(): bool
+    {
+        try {
+            return Schema::hasTable('course_coupon_assigned_emails');
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     public function usages(): HasMany
     {
         return $this->hasMany(PaymentHistory::class, 'coupon', 'code');
@@ -179,18 +208,103 @@ class CourseCoupon extends Model
 
     public function matchesAssignedEmail(?string $email): bool
     {
-        $assigned = $this->assignedEmail();
+        $allowed = $this->checkoutEmailList();
 
-        if ($assigned === null) {
+        if ($allowed === []) {
             return true;
         }
 
-        return strtolower(trim((string) $email)) === $assigned;
+        return in_array(strtolower(trim((string) $email)), $allowed, true);
+    }
+
+    /**
+     * Emails stored for this coupon. Null means the list table could not be read.
+     *
+     * @return list<string>|null
+     */
+    public function assignedEmailList(): ?array
+    {
+        if (! self::assignedEmailTableAvailable()) {
+            return null;
+        }
+
+        try {
+            $records = $this->relationLoaded('assignedEmailRecords')
+                ? $this->assignedEmailRecords
+                : $this->assignedEmailRecords()->get(['email']);
+
+            return $records
+                ->pluck('email')
+                ->map(fn ($email) => strtolower(trim((string) $email)))
+                ->filter(fn ($email) => $email !== '')
+                ->unique()
+                ->values()
+                ->all();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Emails allowed to redeem this code. An empty list means any student.
+     *
+     * @return list<string>
+     */
+    public function checkoutEmailList(): array
+    {
+        $list = $this->assignedEmailList();
+
+        if ($list === null || $list === []) {
+            $legacy = $this->assignedEmail();
+
+            return $legacy ? [$legacy] : [];
+        }
+
+        return $list;
+    }
+
+    /**
+     * @param  list<string>  $emails
+     */
+    public function replaceAssignedEmails(array $emails): void
+    {
+        if (! self::assignedEmailTableAvailable()) {
+            return;
+        }
+
+        $emails = array_values(array_unique(array_filter(array_map(
+            fn ($email) => strtolower(trim((string) $email)),
+            $emails,
+        ))));
+
+        $this->assignedEmailRecords()->delete();
+
+        foreach ($emails as $email) {
+            $this->assignedEmailRecords()->create([
+                'email' => $email,
+            ]);
+        }
+    }
+
+    public function presentAssignedEmails(): void
+    {
+        $list = $this->assignedEmailList();
+
+        if ($list === null || ($list === [] && $this->assignedEmail())) {
+            $legacy = $this->assignedEmail();
+            $emails = $legacy ? [$legacy] : [];
+        } else {
+            $emails = $list;
+        }
+
+        $this->setAttribute('assigned_emails', $emails);
+        $this->syncOriginalAttribute('assigned_emails');
+        $this->makeHidden('assignedEmailRecords');
     }
 
     public function allowsCheckoutBy(int|string|null $userId): bool
     {
-        if ($this->assignedEmail() === null) {
+        if ($this->checkoutEmailList() === []) {
             return true;
         }
 
@@ -205,13 +319,32 @@ class CourseCoupon extends Model
 
     public function scopeWithoutAssignedEmail($query)
     {
-        if (! Schema::hasColumn($this->getTable(), 'assigned_email')) {
+        try {
+            $hasColumn = Schema::hasColumn($this->getTable(), 'assigned_email');
+            $hasList = self::assignedEmailTableAvailable();
+        } catch (\Throwable) {
             return $query;
         }
 
-        return $query->where(function ($inner) {
-            $inner->whereNull('assigned_email')
-                ->orWhereRaw('TRIM(assigned_email) = ?', ['']);
-        });
+        if (! $hasColumn && ! $hasList) {
+            return $query;
+        }
+
+        if ($hasColumn) {
+            $query->where(function ($inner) {
+                $inner->whereNull('assigned_email')
+                    ->orWhereRaw('TRIM(assigned_email) = ?', ['']);
+            });
+        }
+
+        if ($hasList) {
+            $query->whereNotExists(function ($inner) {
+                $inner->selectRaw('1')
+                    ->from('course_coupon_assigned_emails')
+                    ->whereColumn('course_coupon_assigned_emails.course_coupon_id', $this->getTable().'.id');
+            });
+        }
+
+        return $query;
     }
 }

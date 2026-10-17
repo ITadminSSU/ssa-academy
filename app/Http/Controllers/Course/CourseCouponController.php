@@ -8,11 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\CourseCouponRequest;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCoupon;
+use App\Models\Course\CourseCouponAssignedEmail;
 use App\Services\Course\CourseCouponService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
 use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCouponController extends Controller
@@ -39,10 +40,19 @@ class CourseCouponController extends Controller
    public function store(CourseCouponRequest $request)
    {
       $payload = $this->normalizeCouponPayload($request->validated());
+      $emails = $this->pullAssignedEmails($payload);
       $payload['course_id'] = $payload['course_id'] ?? null;
       $payload['created_by'] = $request->user()->id;
 
-      $coupon = CourseCoupon::create($payload);
+      $coupon = DB::transaction(function () use ($payload, $emails) {
+         $coupon = CourseCoupon::create($payload);
+
+         if (is_array($emails)) {
+            $coupon->replaceAssignedEmails($emails);
+         }
+
+         return $coupon;
+      });
       $this->courseCoupon->makeCatalogExclusive($coupon);
 
       return redirect()
@@ -55,7 +65,16 @@ class CourseCouponController extends Controller
     */
    public function update(CourseCouponRequest $request, CourseCoupon $coupon)
    {
-      $coupon->update($this->normalizeCouponPayload($request->validated()));
+      $payload = $this->normalizeCouponPayload($request->validated());
+      $emails = $this->pullAssignedEmails($payload);
+
+      DB::transaction(function () use ($coupon, $payload, $emails) {
+         $coupon->update($payload);
+
+         if (is_array($emails)) {
+            $coupon->replaceAssignedEmails($emails);
+         }
+      });
       $this->courseCoupon->makeCatalogExclusive($coupon->fresh() ?? $coupon);
 
       return redirect()
@@ -84,6 +103,10 @@ class CourseCouponController extends Controller
          'ids' => 'required|array|min:1',
          'ids.*' => 'exists:course_coupons,id',
       ]);
+
+      if (CourseCoupon::assignedEmailTableAvailable()) {
+         CourseCouponAssignedEmail::query()->whereIn('course_coupon_id', $request->ids)->delete();
+      }
 
       $deleted = CourseCoupon::whereIn('id', $request->ids)->delete();
 
@@ -171,9 +194,14 @@ class CourseCouponController extends Controller
             return back()->withErrors(['csv_content' => 'Missing required columns: ' . implode(', ', $missing)]);
          }
 
-         $emailColumn = in_array('assigned_email', $header, true)
-            ? 'assigned_email'
-            : (in_array('email', $header, true) ? 'email' : null);
+         $emailColumn = null;
+
+         foreach (['assigned_emails', 'assigned_email', 'email'] as $candidate) {
+            if (in_array($candidate, $header, true)) {
+               $emailColumn = $candidate;
+               break;
+            }
+         }
 
          $validCourseIds = \App\Models\Course\Course::pluck('id')->toArray();
 
@@ -223,13 +251,14 @@ class CourseCouponController extends Controller
             ];
 
             if ($emailColumn !== null) {
-               $parsedEmail = $this->parseImportedAssignedEmail($data[$emailColumn] ?? null);
-               if ($parsedEmail['invalid']) {
+               $withEmails = $this->attachImportedEmailList($record, $data[$emailColumn] ?? null);
+
+               if ($withEmails['invalid']) {
                   $errors[] = "Row " . ($i + 2) . ": invalid email.";
                   continue;
                }
 
-               $record['assigned_email'] = $parsedEmail['email'];
+               $record = $withEmails['record'];
             }
 
             $allCodes[] = $code;
@@ -277,7 +306,22 @@ class CourseCouponController extends Controller
       $skipped = 0;
 
       if (!empty($newRecords)) {
-         CourseCoupon::insert(array_values($newRecords));
+         $emailLists = [];
+
+         foreach ($newRecords as $record) {
+            if (array_key_exists('assigned_email_list', $record)) {
+               $emailLists[$record['code']] = $record['assigned_email_list'];
+            }
+         }
+
+         DB::transaction(function () use ($newRecords, $emailLists) {
+            CourseCoupon::insert(array_map(function (array $record) {
+               unset($record['assigned_email_list']);
+
+               return $record;
+            }, array_values($newRecords)));
+            $this->syncImportedEmailLists($emailLists);
+         });
          $imported = count($newRecords);
       }
 
@@ -293,14 +337,30 @@ class CourseCouponController extends Controller
                   'is_active' => $record['is_active'],
                ];
 
-               if (array_key_exists('assigned_email', $record)) {
+               if (array_key_exists('assigned_email_list', $record)) {
+                  if (Schema::hasColumn('course_coupons', 'assigned_email')) {
+                     $changes['assigned_email'] = count($record['assigned_email_list']) === 1
+                        ? $record['assigned_email_list'][0]
+                        : null;
+                  }
+
+                  if ($record['assigned_email_list'] !== [] && Schema::hasColumn('course_coupons', 'show_on_catalog')) {
+                     $changes['show_on_catalog'] = false;
+                  }
+               } elseif (array_key_exists('assigned_email', $record)) {
                   $changes['assigned_email'] = $record['assigned_email'];
                   if ($record['assigned_email'] !== null && Schema::hasColumn('course_coupons', 'show_on_catalog')) {
                      $changes['show_on_catalog'] = false;
                   }
                }
 
-               $existingCoupons[$record['code']]->update($changes);
+               DB::transaction(function () use ($existingCoupons, $record, $changes) {
+                  $existingCoupons[$record['code']]->update($changes);
+
+                  if (array_key_exists('assigned_email_list', $record)) {
+                     $existingCoupons[$record['code']]->replaceAssignedEmails($record['assigned_email_list']);
+                  }
+               });
             }
             $updated = count($duplicateRecords);
          } else {
@@ -372,7 +432,18 @@ class CourseCouponController extends Controller
          $payload['show_on_catalog'] = false;
       }
 
-      if (array_key_exists('assigned_email', $payload)) {
+      if (array_key_exists('assigned_emails', $payload) && is_array($payload['assigned_emails'])) {
+         $emails = array_values(array_unique(array_map(
+            fn ($email) => strtolower(trim((string) $email)),
+            $payload['assigned_emails'],
+         )));
+         $payload['assigned_emails'] = $emails;
+         $payload['assigned_email'] = count($emails) === 1 ? $emails[0] : null;
+
+         if ($emails !== []) {
+            $payload['show_on_catalog'] = false;
+         }
+      } elseif (array_key_exists('assigned_email', $payload)) {
          $email = strtolower(trim((string) ($payload['assigned_email'] ?? '')));
          $payload['assigned_email'] = $email === '' ? null : $email;
 
@@ -381,29 +452,73 @@ class CourseCouponController extends Controller
          }
       }
 
+      unset($payload['assigned_emails_invalid']);
+
       return $payload;
    }
 
    /**
-    * @return array{email: ?string, invalid: bool}
+    * @param  array<string, mixed>  $payload
+    * @return list<string>|null
     */
-   private function parseImportedAssignedEmail(mixed $value): array
+   private function pullAssignedEmails(array &$payload): ?array
    {
-      $email = strtolower(trim((string) $value));
-
-      if ($email === '') {
-         return ['email' => null, 'invalid' => false];
+      if (! array_key_exists('assigned_emails', $payload)) {
+         return null;
       }
 
-      $validator = Validator::make(
-         ['assigned_email' => $email],
-         ['assigned_email' => 'email|max:255'],
-      );
+      $emails = is_array($payload['assigned_emails']) ? array_values($payload['assigned_emails']) : [];
+      unset($payload['assigned_emails']);
 
-      if ($validator->fails()) {
-         return ['email' => null, 'invalid' => true];
+      return $emails;
+   }
+
+   /**
+    * @param  array<string, mixed>  $record
+    * @return array{record: array<string, mixed>, invalid: bool}
+    */
+   private function attachImportedEmailList(array $record, mixed $raw): array
+   {
+      $parsed = CourseCouponAssignedEmail::parseList($raw);
+
+      if ($parsed['invalid'] !== []) {
+         return ['record' => $record, 'invalid' => true];
       }
 
-      return ['email' => $email, 'invalid' => false];
+      $emails = $parsed['emails'];
+
+      if (count($emails) > 1 && ! CourseCoupon::assignedEmailTableAvailable()) {
+         return ['record' => $record, 'invalid' => true];
+      }
+
+      $record['assigned_email_list'] = $emails;
+
+      if (Schema::hasColumn('course_coupons', 'assigned_email')) {
+         $record['assigned_email'] = count($emails) === 1 ? $emails[0] : null;
+      }
+
+      if ($emails !== [] && Schema::hasColumn('course_coupons', 'show_on_catalog')) {
+         $record['show_on_catalog'] = false;
+      }
+
+      return ['record' => $record, 'invalid' => false];
+   }
+
+   /**
+    * @param  array<string, list<string>>  $emailLists
+    */
+   private function syncImportedEmailLists(array $emailLists): void
+   {
+      if ($emailLists === [] || ! CourseCoupon::assignedEmailTableAvailable()) {
+         return;
+      }
+
+      CourseCoupon::query()
+         ->whereIn('code', array_keys($emailLists))
+         ->get()
+         ->each(function (CourseCoupon $coupon) use ($emailLists) {
+            $coupon->replaceAssignedEmails($emailLists[$coupon->code] ?? []);
+         });
    }
 }
+
