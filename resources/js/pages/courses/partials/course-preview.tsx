@@ -260,20 +260,9 @@ const CoursePreview = () => {
                <SubscriptionBillingNotice course={course} variant="detail" />
             ) : null}
 
-            <SsuEnrollmentPanel
-               isSubscription={isSubscription && offer.phase !== 'full_price'}
-               enrollmentNote={
-                  offer.enabled && offer.phase === 'full_price'
-                     ? `Pay the full upfront price plus the first ${currency?.symbol ?? '$'}${offer.subscriptionPrice}/mo of Project Plans today (not a free month). Monthly billing continues after that.`
-                     : offer.enabled && offer.phase === 'pre_register'
-                       ? 'Reserve your seat by paying the deposit. Pay the balance by launch day or within the five-day grace period to activate access and get one month free subscription. Monthly billing starts afterward.'
-                       : undefined
-               }
-            >
+            <SsuEnrollmentPanel>
                <EnrollOrPlayerButton />
             </SsuEnrollmentPanel>
-
-            <CourseLaunchNotifyForm />
          </div>
 
          <div className="divide-border/60 mt-1 divide-y border-t pt-1">
@@ -325,6 +314,8 @@ const CoursePreview = () => {
                <span className="font-medium">Yes</span>
             </div>
          </div>
+
+         <CourseLaunchNotifyForm />
       </div>
    );
 };

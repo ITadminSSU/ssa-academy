@@ -1,37 +1,16 @@
 import EnrollOrPlayerButton from '@/pages/courses/partials/course-player-button';
 import { ReactNode } from 'react';
-import { usePage } from '@inertiajs/react';
-import { SharedData } from '@/types/global';
 
 interface Props {
    children?: ReactNode;
-   isSubscription?: boolean;
-   enrollmentNote?: string;
 }
 
 /**
- * SSU-approved enrollment CTA shell for course detail sidebar.
- * Wraps the existing enrollment/play logic with design-system surfaces.
+ * Button row for the course purchase card.
+ * The pay, wishlist, and play actions stay in EnrollOrPlayerButton.
  */
-const SsuEnrollmentPanel = ({ children, isSubscription = false, enrollmentNote }: Props) => {
-   const { translate } = usePage<SharedData>().props;
-   const { frontend } = translate;
-
-   const defaultNote = isSubscription
-      ? (frontend.subscription_enrollment_note ??
-        'Your payment method will be charged monthly until you cancel.')
-      : 'Start learning or continue your assigned path.';
-
-   return (
-      <div className="ssu-enrollment-panel space-y-4">
-         <div>
-            <p className="ssu-kicker mb-1">Enrollment</p>
-            <p className="text-muted-foreground text-left text-sm">{enrollmentNote ?? defaultNote}</p>
-         </div>
-
-         <div className="flex flex-col gap-2.5">{children ?? <EnrollOrPlayerButton />}</div>
-      </div>
-   );
+const SsuEnrollmentPanel = ({ children }: Props) => {
+   return <div className="flex flex-col gap-2.5">{children ?? <EnrollOrPlayerButton />}</div>;
 };
 
 export default SsuEnrollmentPanel;
