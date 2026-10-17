@@ -7,6 +7,7 @@ import { Head } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { ReactNode } from 'react';
 import CourseHero from './partials/course-hero';
+import CourseMetaStrip from './partials/course-meta';
 import CoursePreview from './partials/course-preview';
 import CourseReviews from './partials/course-reviews';
 import Curriculum from './partials/curriculum';
@@ -59,11 +60,6 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
          Component: <Details course={course} />,
       },
       {
-         value: 'instructor',
-         label: button.instructor,
-         Component: <Instructor course={course} />,
-      },
-      {
          value: 'faqs',
          label: button.faqs ?? 'FAQs',
          Component: <Faqs faqs={course.faqs} />,
@@ -76,10 +72,6 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
    ].filter((tab) => {
       if (tab.value === 'us-experience') {
          return showUsExperience;
-      }
-
-      if (tab.value === 'instructor') {
-         return system.sub_type === 'collaborative' ? true : false;
       }
 
       if (tab.value === 'faqs') {
@@ -177,38 +169,44 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
          <CourseHero course={course} />
 
          <div className="ssu-page-shell">
-            <div className="container grid grid-cols-1 gap-7 pb-14 md:grid-cols-3 md:-mt-12">
-               <div className="min-w-0 space-y-8 md:col-span-2">
-                  <Tabs defaultValue="overview" className="ssu-surface-card relative z-10">
-                     <div className="border-border/70 overflow-x-auto border-b px-3 py-3">
-                        <TabsList className="flex h-auto w-max min-w-full justify-start gap-2 rounded-none bg-transparent p-0">
-                           {tabs.map(({ label, value }) => (
-                              <TabsTrigger
-                                 key={value}
-                                 value={value}
-                                 className="relative overflow-hidden rounded-full border border-transparent bg-clip-padding px-4 py-2 text-sm font-medium whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                              >
-                                 <span className="inline-flex items-center gap-2">
-                                    {value === 'us-experience' && !canViewUsExperiencePlans ? (
-                                       <Lock className="h-3.5 w-3.5 shrink-0" />
-                                    ) : null}
-                                    <span>{label}</span>
-                                 </span>
-                              </TabsTrigger>
-                           ))}
-                        </TabsList>
-                     </div>
+            <div className="container pb-14">
+               <CourseMetaStrip course={course} />
 
-                     {tabs.map(({ value, Component }) => (
-                        <TabsContent key={value} value={value} className="m-0 p-5 md:p-6">
-                           {Component}
-                        </TabsContent>
-                     ))}
-                  </Tabs>
-               </div>
+               <div className="grid grid-cols-1 items-start gap-7 md:grid-cols-3">
+                  <div className="min-w-0 space-y-6 md:col-span-2">
+                     <Tabs defaultValue="overview" className="ssu-surface-card relative z-10">
+                        <div className="border-border/70 overflow-x-auto border-b px-3 py-3">
+                           <TabsList className="flex h-auto w-max min-w-full justify-start gap-2 rounded-none bg-transparent p-0">
+                              {tabs.map(({ label, value }) => (
+                                 <TabsTrigger
+                                    key={value}
+                                    value={value}
+                                    className="relative overflow-hidden rounded-full border border-transparent bg-clip-padding px-4 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                                 >
+                                    <span className="inline-flex items-center gap-2">
+                                       {value === 'us-experience' && !canViewUsExperiencePlans ? (
+                                          <Lock className="h-3.5 w-3.5 shrink-0" />
+                                       ) : null}
+                                       <span>{label}</span>
+                                    </span>
+                                 </TabsTrigger>
+                              ))}
+                           </TabsList>
+                        </div>
 
-               <div className="relative z-10 min-w-0">
-                  <CoursePreview />
+                        {tabs.map(({ value, Component }) => (
+                           <TabsContent key={value} value={value} className="m-0 p-5 md:p-6">
+                              {Component}
+                           </TabsContent>
+                        ))}
+                     </Tabs>
+
+                     {course.instructor ? <Instructor course={course} /> : null}
+                  </div>
+
+                  <div className="relative z-10 min-w-0 md:sticky md:top-24 md:self-start">
+                     <CoursePreview />
+                  </div>
                </div>
             </div>
          </div>
