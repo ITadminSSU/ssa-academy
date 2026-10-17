@@ -1,32 +1,18 @@
 import CourseBannerPlaceholder from '@/components/course-banner-placeholder';
 import CourseLaunchCountdown from '@/components/course-launch-countdown';
-import RatingStars from '@/components/rating-stars';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import HeroVideoPlayer from '@/components/hero-video-player';
-import courseLanguages from '@/data/course-languages';
 import { heroHeadlineParts, type CourseHeroContent } from '@/lib/course-hero-text';
 import { canPreviewCourseBeforeLaunch, formatCourseLaunchDate, isCourseComingSoon } from '@/lib/course-launch';
-import { getCourseDuration } from '@/lib/utils';
 import { SharedData } from '@/types/global';
-import { Link, usePage } from '@inertiajs/react';
-import { Clock, GraduationCap, Languages, Users } from 'lucide-react';
-
-const Chip = ({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) => (
-   <span className="inline-flex items-center gap-2 rounded-full bg-card/10 px-3 py-1.5 text-sm font-medium text-white ring-1 ring-white/15 [transform:translateZ(0)]">
-      <Icon className="h-4 w-4 opacity-90" />
-      {children}
-   </span>
-);
+import { usePage } from '@inertiajs/react';
 
 const CourseHero = ({ course }: { course: Course }) => {
    const { props } = usePage<SharedData & { courseHero?: CourseHeroContent }>();
    const { frontend } = props.translate;
    const hero = props.courseHero;
-   const { instructor, average_rating } = course;
    const headline = hero?.headline || course.title;
    const paragraph = hero?.paragraph || course.short_description;
    const eyebrow = hero?.eyebrow || course.course_category?.title;
-   const courseLanguage = courseLanguages.find((language) => language.value === course.language);
    const backdrop = hero?.photo || course.banner || course.thumbnail;
    const video = hero?.video || course.preview;
    const comingSoon = isCourseComingSoon(course);
@@ -51,9 +37,9 @@ const CourseHero = ({ course }: { course: Course }) => {
             />
          )}
 
-         <div className="relative container grid items-center gap-10 py-14 md:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] md:py-20">
+         <div className="relative container grid items-center gap-10 pt-14 pb-20 md:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] md:pt-20 md:pb-24">
             {video ? (
-               <div className="overflow-hidden rounded-2xl border border-white/15 bg-black/40">
+               <div className="overflow-hidden rounded-2xl border border-black/40 bg-black/40 shadow-lg">
                   <HeroVideoPlayer videoUrl={video} posterUrl={backdrop} className="aspect-video" />
                </div>
             ) : null}
@@ -96,30 +82,6 @@ const CourseHero = ({ course }: { course: Course }) => {
                </h1>
 
                {paragraph ? <p className="max-w-2xl text-base text-white/80 md:text-lg">{paragraph}</p> : null}
-
-               <div className="flex flex-wrap items-center gap-4 pt-1">
-                  <Link href={route('instructors.show', instructor.id)} className="group flex items-center gap-2">
-                     <Avatar className="ring-2 ring-white/30">
-                        <AvatarImage src={instructor.user.photo || ''} alt={instructor.user.name} className="object-cover" />
-                        <AvatarFallback className="text-foreground">{instructor.user.name[0]}</AvatarFallback>
-                     </Avatar>
-                     <span className="font-medium text-white group-hover:underline">{instructor.user.name}</span>
-                  </Link>
-
-                  <div className="flex items-center gap-1">
-                     <span className="font-semibold">{average_rating ? Number(average_rating).toFixed(1) : 0}</span>
-                     <RatingStars rating={average_rating || 0} starClass="h-4 w-4" />
-                  </div>
-               </div>
-
-               <div className="flex flex-wrap gap-2.5 pt-2">
-                  <Chip icon={Languages}>{courseLanguage?.label}</Chip>
-                  <Chip icon={Clock}>{getCourseDuration(course)}</Chip>
-                  <Chip icon={Users}>
-                     {course.enrollments_count || 0} {frontend.enrolled_students}
-                  </Chip>
-                  <Chip icon={GraduationCap}>{frontend.course_certificate}</Chip>
-               </div>
             </div>
          </div>
 

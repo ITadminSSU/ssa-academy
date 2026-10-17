@@ -40,8 +40,12 @@ const CoursePreview = () => {
                {course.thumbnail ? (
                   <img className="aspect-video w-full object-cover" src={course.thumbnail} alt={course.title} />
                ) : (
-                  <CourseBannerPlaceholder title={course.title} className="aspect-video w-full" />
+                  <CourseBannerPlaceholder showTitle={false} title={course.title} className="aspect-video w-full" />
                )}
+
+               <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary via-primary/75 to-transparent px-4 pt-12 pb-3">
+                  <p className="font-display text-lg leading-tight font-bold text-white uppercase">{course.title}</p>
+               </div>
 
                {previewVideo && (
                   <Dialog>
