@@ -2,7 +2,9 @@ import CourseBannerPlaceholder from '@/components/course-banner-placeholder';
 import CourseLaunchCountdown from '@/components/course-launch-countdown';
 import RatingStars from '@/components/rating-stars';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import HeroVideoPlayer from '@/components/hero-video-player';
 import courseLanguages from '@/data/course-languages';
+import { heroHeadlineParts, type CourseHeroContent } from '@/lib/course-hero-text';
 import { canPreviewCourseBeforeLaunch, formatCourseLaunchDate, isCourseComingSoon } from '@/lib/course-launch';
 import { getCourseDuration } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -17,21 +19,27 @@ const Chip = ({ icon: Icon, children }: { icon: typeof Clock; children: React.Re
 );
 
 const CourseHero = ({ course }: { course: Course }) => {
-   const { props } = usePage<SharedData>();
+   const { props } = usePage<SharedData & { courseHero?: CourseHeroContent }>();
    const { frontend } = props.translate;
-   const { title, short_description, instructor, average_rating } = course;
+   const hero = props.courseHero;
+   const { instructor, average_rating } = course;
+   const headline = hero?.headline || course.title;
+   const paragraph = hero?.paragraph || course.short_description;
+   const eyebrow = hero?.eyebrow || course.course_category?.title;
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
-   const backdrop = course.banner || course.thumbnail;
+   const backdrop = hero?.photo || course.banner || course.thumbnail;
+   const video = hero?.video || course.preview;
    const comingSoon = isCourseComingSoon(course);
    const launchDate = formatCourseLaunchDate(course);
    const staffPreview = canPreviewCourseBeforeLaunch(course);
+   const headlineParts = heroHeadlineParts(headline, hero?.highlights ?? []);
 
    return (
       <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary text-white">
          {backdrop ? (
             <>
-               <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
-               <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/85 to-primary/60" />
+               <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover" />
+               <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/45" />
             </>
          ) : (
             <div
@@ -43,9 +51,15 @@ const CourseHero = ({ course }: { course: Course }) => {
             />
          )}
 
-         <div className="relative container py-14 md:py-20">
-            <div className="max-w-3xl space-y-5">
-               {course.course_category?.title && <p className="ssu-kicker !text-white/70">{course.course_category.title}</p>}
+         <div className="relative container grid items-center gap-10 py-14 md:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] md:py-20">
+            {video ? (
+               <div className="overflow-hidden rounded-2xl border border-white/15 bg-black/40">
+                  <HeroVideoPlayer videoUrl={video} posterUrl={backdrop} className="aspect-video" />
+               </div>
+            ) : null}
+
+            <div className={video ? 'space-y-5' : 'max-w-3xl space-y-5 md:col-span-2'}>
+               {eyebrow ? <p className="text-accent text-sm font-extrabold tracking-[0.14em] uppercase">{eyebrow}</p> : null}
 
                {comingSoon ? (
                   <div className="space-y-3">
@@ -73,9 +87,15 @@ const CourseHero = ({ course }: { course: Course }) => {
                   </div>
                ) : null}
 
-               <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">{title}</h1>
+               <h1 className="font-display text-3xl leading-tight font-bold md:text-4xl lg:text-5xl">
+                  {headlineParts.map((part, index) => (
+                     <span key={`${part.text}-${index}`} className={part.accent ? 'text-accent' : undefined}>
+                        {part.text}
+                     </span>
+                  ))}
+               </h1>
 
-               {short_description && <p className="max-w-2xl text-base text-white/80 md:text-lg">{short_description}</p>}
+               {paragraph ? <p className="max-w-2xl text-base text-white/80 md:text-lg">{paragraph}</p> : null}
 
                <div className="flex flex-wrap items-center gap-4 pt-1">
                   <Link href={route('instructors.show', instructor.id)} className="group flex items-center gap-2">

@@ -3,13 +3,14 @@ import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
-import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FolderInput, LayoutTemplate, Ruler, Settings, FlaskConical } from 'lucide-react';
+import { BookText, CircleDollarSign, ClipboardCheck, FilePenLine, FolderInput, ImageIcon, LayoutTemplate, Ruler, Settings, FlaskConical } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { ReactNode } from 'react';
 import Basic from './partials/basic';
 import CourseUpdateHeader from './partials/course-update-header';
 import Curriculum from './partials/curriculum';
 import Info from './partials/info';
+import Hero from './partials/hero';
 import Media from './partials/media';
 import Pricing from './partials/pricing';
 import SEO from './partials/seo';
@@ -104,6 +105,13 @@ const Update = (props: CourseUpdateProps) => {
          slug: 'media',
          Icon: FolderInput,
          Component: Media,
+      },
+      {
+         id: nanoid(),
+         name: 'Public hero',
+         slug: 'hero',
+         Icon: ImageIcon,
+         Component: Hero,
       },
       {
          id: nanoid(),

@@ -14,7 +14,13 @@ import CourseLaunchNotifyForm from '@/components/course-launch-notify-form';
 import EnrollOrPlayerButton from './course-player-button';
 
 const CoursePreview = () => {
-   const { course, system, translate, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
+   const { course, system, translate, launchOffer, enrollment, courseHero } = usePage<CourseDetailsProps>().props;
+   const previewVideo = courseHero?.video || course.preview;
+   const previewType = previewVideo?.includes('.webm')
+      ? 'video/webm'
+      : previewVideo?.includes('.mov')
+        ? 'video/quicktime'
+        : 'video/mp4';
    const { frontend } = translate;
    const currency = systemCurrency(system.fields['selling_currency']);
    const courseLanguage = courseLanguages.find((language) => language.value === course.language);
@@ -37,7 +43,7 @@ const CoursePreview = () => {
                   <CourseBannerPlaceholder title={course.title} className="aspect-video w-full" />
                )}
 
-               {course.preview && (
+               {previewVideo && (
                   <Dialog>
                      <DialogTrigger asChild>
                         <button className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-black/70 p-4 transition-transform hover:scale-110">
@@ -51,8 +57,8 @@ const CoursePreview = () => {
                               type: 'video' as const,
                               sources: [
                                  {
-                                    src: course.preview,
-                                    type: 'video/mp4' as const,
+                                    src: previewVideo,
+                                    type: previewType,
                                  },
                               ],
                            }}
