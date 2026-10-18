@@ -37,7 +37,7 @@ const Instructor = ({ course }: { course: Course }) => {
                <Avatar className="h-28 w-28 ring-[3px] ring-white sm:h-36 sm:w-36">
                   <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
                   <AvatarFallback className="bg-[color:var(--ssu-navy,#1a344f)] text-3xl font-semibold text-white">
-                     {user.name.charAt(0)}
+                     {user.name?.charAt(0)}
                   </AvatarFallback>
                </Avatar>
             </Link>
