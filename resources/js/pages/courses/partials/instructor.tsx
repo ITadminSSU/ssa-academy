@@ -6,38 +6,51 @@ const Instructor = ({ course }: { course: Course }) => {
    const { instructor } = course;
    const { user } = instructor;
    const biography = instructor.biography?.trim() || '';
-   const designation = instructor.designation?.trim() || '';
-   const heading = designation ? `${user.name}, ${designation}` : user.name;
-   const rating = instructor.total_average_rating ? Number(instructor.total_average_rating).toFixed(1) : '0';
+   const designation = instructor.designation?.trim() || 'Trainer';
+   const heading = `${user.name}, ${designation}`.toUpperCase();
+   const rating = instructor.total_average_rating ? Number(instructor.total_average_rating).toFixed(1) : '0.0';
+   const paragraphs = biography
+      .split(/\n+/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean);
 
    return (
-      <section className="ssu-surface-card overflow-hidden">
-         <div className="flex flex-wrap items-center justify-between gap-3 bg-primary px-5 py-3 text-white">
-            <h2 className="text-sm font-bold tracking-wide uppercase md:text-base">
-               <Link href={route('instructors.show', instructor.id)} className="hover:underline">
-                  {heading}
-               </Link>
-            </h2>
+      <article className="overflow-hidden rounded-xl border border-[color:var(--ssu-line,#d5d0c4)] bg-[#fffcf7] shadow-sm">
+         <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-[color:var(--ssu-navy,#1a344f)] px-4 py-3 text-white sm:px-5">
+            <Link href={route('instructors.show', instructor.id)} className="min-w-0 hover:underline">
+               <h3 className="text-sm font-bold uppercase tracking-[0.04em] sm:text-[0.95rem]">{heading}</h3>
+            </Link>
 
-            <div className="flex items-center gap-2">
-               <span className="text-sm font-semibold">{rating}</span>
-               <RatingStars rating={instructor.total_average_rating || 0} starClass="h-4 w-4" />
+            <div className="flex shrink-0 items-center gap-2">
+               <span className="text-sm font-semibold tabular-nums sm:text-base">{rating}</span>
+               <RatingStars
+                  rating={instructor.total_average_rating || 0}
+                  starClass="h-4 w-4"
+                  filledClass="fill-[color:var(--ssu-gold,#e89a1b)] text-[color:var(--ssu-gold,#e89a1b)]"
+                  emptyClass="fill-transparent text-white/35"
+               />
             </div>
-         </div>
+         </header>
 
-         <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start md:p-6">
-            <Link href={route('instructors.show', instructor.id)} className="shrink-0">
-               <Avatar className="h-28 w-28">
+         <div className="px-4 py-5 text-sm leading-relaxed text-[#4a5966] sm:px-5 sm:py-6">
+            <Link href={route('instructors.show', instructor.id)} className="float-left mb-2 mr-4 mt-0.5 no-underline sm:mr-5">
+               <Avatar className="h-28 w-28 ring-[3px] ring-white sm:h-36 sm:w-36">
                   <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
-                  <AvatarFallback className="text-2xl">{user.name?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-[color:var(--ssu-navy,#1a344f)] text-3xl font-semibold text-white">
+                     {user.name?.charAt(0)}
+                  </AvatarFallback>
                </Avatar>
             </Link>
 
-            {biography ? (
-               <p className="text-muted-foreground min-w-0 flex-1 text-sm leading-relaxed whitespace-pre-wrap">{biography}</p>
-            ) : null}
+            {paragraphs.map((paragraph, index) => (
+               <p key={index} className="mb-4 last:mb-0">
+                  {paragraph}
+               </p>
+            ))}
+
+            <div className="clear-both" aria-hidden />
          </div>
-      </section>
+      </article>
    );
 };
 

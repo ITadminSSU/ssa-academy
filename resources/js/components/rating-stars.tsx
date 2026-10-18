@@ -5,9 +5,11 @@ interface Props {
    rating: number | string | null | undefined;
    starClass?: string;
    wrapperClass?: string;
+   filledClass?: string;
+   emptyClass?: string;
 }
 
-const RatingStars = ({ rating, starClass, wrapperClass }: Props) => {
+const RatingStars = ({ rating, starClass, wrapperClass, filledClass, emptyClass }: Props) => {
    const numericRating = Number(rating) || 0;
    const fullStars = Math.floor(numericRating);
    const hasHalf = numericRating - fullStars >= 0.5;
@@ -19,7 +21,7 @@ const RatingStars = ({ rating, starClass, wrapperClass }: Props) => {
             key={i}
             className={cn(
                'h-5 w-5',
-               isFilled ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40',
+               isFilled ? (filledClass ?? 'fill-amber-400 text-amber-400') : (emptyClass ?? 'text-muted-foreground/40'),
                starClass,
             )}
          />
