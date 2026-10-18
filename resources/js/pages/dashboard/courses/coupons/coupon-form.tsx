@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { onHandleChange } from '@/lib/inertia';
 import { useForm } from '@inertiajs/react';
 import { Shuffle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
    title: string;
@@ -19,18 +19,42 @@ interface Props {
    courses: Course[];
 }
 
-const assignedEmailsText = (coupon?: CourseCoupon) => {
-   const list = (coupon?.assigned_emails ?? []).map((email) => email.trim()).filter(Boolean);
-
-   if (list.length > 0) {
-      return list.join('\n');
+const addressText = (value: unknown): string => {
+   if (typeof value === 'string') {
+      return value.trim();
    }
 
-   return coupon?.assigned_email?.trim() || '';
+   if (value && typeof value === 'object' && 'email' in value) {
+      const email = (value as { email?: unknown }).email;
+      return typeof email === 'string' ? email.trim() : '';
+   }
+
+   return '';
+};
+
+const assignedEmailsText = (coupon?: CourseCoupon) => {
+   const seen = new Set<string>();
+   const emails: string[] = [];
+   const sources = [...(Array.isArray(coupon?.assigned_emails) ? coupon.assigned_emails : []), coupon?.assigned_email];
+
+   for (const source of sources) {
+      const email = addressText(source);
+      const key = email.toLowerCase();
+
+      if (!email || seen.has(key)) {
+         continue;
+      }
+
+      seen.add(key);
+      emails.push(email);
+   }
+
+   return emails.join('\n');
 };
 
 const CouponForm = ({ title, handler, coupon, courses }: Props) => {
    const [open, setOpen] = useState(false);
+   const hydratedCouponId = useRef<number | null>(null);
 
    // Convert datetime from "2025-11-19 18:00:00" to "2025-11-19T18:00" for datetime-local input
    const formatDatetimeLocal = (datetime?: string) => {
@@ -56,10 +80,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
    transform((form) => ({
       ...form,
       assigned_emails: form.assigned_emails,
-      usage_limit:
-         form.usage_limit === '' || form.usage_limit === null || form.usage_limit === undefined
-            ? null
-            : Number(form.usage_limit),
+      usage_limit: form.usage_limit === '' || form.usage_limit === null || form.usage_limit === undefined ? null : Number(form.usage_limit),
    }));
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -89,23 +110,28 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
    };
 
    useEffect(() => {
-      if (open && coupon) {
-         // When opening for edit, set the form data with properly formatted datetime values
-         setData({
-            course_id: coupon.course_id || '',
-            code: coupon.code || '',
-            discount_type: coupon.discount_type || 'percentage',
-            discount: coupon.discount || 0,
-            valid_from: formatDatetimeLocal(coupon.valid_from),
-            valid_to: formatDatetimeLocal(coupon.valid_to),
-            usage_limit: coupon.usage_limit ?? '',
-            is_active: coupon.is_active ?? true,
-            show_on_catalog: coupon.show_on_catalog ?? false,
-            assigned_emails: assignedEmailsText(coupon),
-         });
-      } else if (!open) {
-         reset();
+      if (!open) {
+         hydratedCouponId.current = null;
+         return;
       }
+
+      if (!coupon || hydratedCouponId.current === coupon.id) {
+         return;
+      }
+
+      hydratedCouponId.current = coupon.id;
+      setData({
+         course_id: coupon.course_id || '',
+         code: coupon.code || '',
+         discount_type: coupon.discount_type || 'percentage',
+         discount: coupon.discount || 0,
+         valid_from: formatDatetimeLocal(coupon.valid_from),
+         valid_to: formatDatetimeLocal(coupon.valid_to),
+         usage_limit: coupon.usage_limit ?? '',
+         is_active: coupon.is_active ?? true,
+         show_on_catalog: coupon.show_on_catalog ?? false,
+         assigned_emails: assignedEmailsText(coupon),
+      });
    }, [open, coupon]);
 
    return (
@@ -213,9 +239,9 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                            placeholder={'student@example.com\ncolleague@example.com'}
                         />
                         <p className="text-muted-foreground mt-1 text-xs">
-                           Leave blank and any student can use this code. Enter one email per line, or separate emails
-                           with commas. Only a signed-in account on the list can use it, and the code stays off the
-                           catalog. The account does not have to exist yet. Clear the list to remove the restriction.
+                           Leave blank and any student can use this code. Enter one email per line, or separate emails with commas. Only a signed-in
+                           account on the list can use it, and the code stays off the catalog. The account does not have to exist yet. Clear the list
+                           to remove the restriction.
                         </p>
                         <InputError message={errors.assigned_emails} />
                      </div>
@@ -259,7 +285,8 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                            placeholder="Unlimited"
                         />
                         <p className="text-muted-foreground mt-1 text-xs">
-                           Leave blank for unlimited total redemptions. Each student can use a code only once. Set 1 for a single checkout across all students.
+                           Leave blank for unlimited total redemptions. Each student can use a code only once. Set 1 for a single checkout across all
+                           students.
                         </p>
                         <InputError message={errors.usage_limit} />
                      </div>
@@ -273,9 +300,9 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                         <div>
                            <Label htmlFor="show_on_catalog">Fallback: show on catalog card</Label>
                            <p className="text-muted-foreground mt-1 text-xs">
-                              Use Pricing → Show coupon price on catalog card instead. This switch is only a fallback if
-                              that display promo is off. Does not change charged prices. Students still enter the code at
-                              checkout. Coupons never apply to the deposit. An email-locked code stays off the catalog.
+                              Use Pricing → Show coupon price on catalog card instead. This switch is only a fallback if that display promo is off.
+                              Does not change charged prices. Students still enter the code at checkout. Coupons never apply to the deposit. An
+                              email-locked code stays off the catalog.
                            </p>
                         </div>
                         <Switch

@@ -339,9 +339,7 @@ class CourseCouponController extends Controller
 
                if (array_key_exists('assigned_email_list', $record)) {
                   if (Schema::hasColumn('course_coupons', 'assigned_email')) {
-                     $changes['assigned_email'] = count($record['assigned_email_list']) === 1
-                        ? $record['assigned_email_list'][0]
-                        : null;
+                     $changes['assigned_email'] = $record['assigned_email_list'][0] ?? null;
                   }
 
                   if ($record['assigned_email_list'] !== [] && Schema::hasColumn('course_coupons', 'show_on_catalog')) {
@@ -438,7 +436,7 @@ class CourseCouponController extends Controller
             $payload['assigned_emails'],
          )));
          $payload['assigned_emails'] = $emails;
-         $payload['assigned_email'] = count($emails) === 1 ? $emails[0] : null;
+         $payload['assigned_email'] = $emails[0] ?? null;
 
          if ($emails !== []) {
             $payload['show_on_catalog'] = false;
@@ -494,7 +492,7 @@ class CourseCouponController extends Controller
       $record['assigned_email_list'] = $emails;
 
       if (Schema::hasColumn('course_coupons', 'assigned_email')) {
-         $record['assigned_email'] = count($emails) === 1 ? $emails[0] : null;
+         $record['assigned_email'] = $emails[0] ?? null;
       }
 
       if ($emails !== [] && Schema::hasColumn('course_coupons', 'show_on_catalog')) {

@@ -252,15 +252,30 @@ class CourseCoupon extends Model
      */
     public function checkoutEmailList(): array
     {
+        $emails = [];
         $list = $this->assignedEmailList();
 
-        if ($list === null || $list === []) {
-            $legacy = $this->assignedEmail();
-
-            return $legacy ? [$legacy] : [];
+        if (is_array($list)) {
+            $emails = $list;
         }
 
-        return $list;
+        $legacy = $this->assignedEmail();
+        if ($legacy !== null) {
+            $emails[] = $legacy;
+        }
+
+        $unique = [];
+        foreach ($emails as $email) {
+            $normalized = strtolower(trim((string) $email));
+
+            if ($normalized === '' || isset($unique[$normalized])) {
+                continue;
+            }
+
+            $unique[$normalized] = $normalized;
+        }
+
+        return array_values($unique);
     }
 
     /**
@@ -284,20 +299,13 @@ class CourseCoupon extends Model
                 'email' => $email,
             ]);
         }
+
+        $this->unsetRelation('assignedEmailRecords');
     }
 
     public function presentAssignedEmails(): void
     {
-        $list = $this->assignedEmailList();
-
-        if ($list === null || ($list === [] && $this->assignedEmail())) {
-            $legacy = $this->assignedEmail();
-            $emails = $legacy ? [$legacy] : [];
-        } else {
-            $emails = $list;
-        }
-
-        $this->setAttribute('assigned_emails', $emails);
+        $this->setAttribute('assigned_emails', $this->checkoutEmailList());
         $this->syncOriginalAttribute('assigned_emails');
         $this->makeHidden('assignedEmailRecords');
     }

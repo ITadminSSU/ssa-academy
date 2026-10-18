@@ -40,11 +40,7 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
          ),
          cell: ({ row }) => (
             <div className="pl-4">
-               <Checkbox
-                  checked={row.getIsSelected()}
-                  onCheckedChange={(value) => row.toggleSelected(!!value)}
-                  aria-label="Select row"
-               />
+               <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
             </div>
          ),
          enableSorting: false,
@@ -54,7 +50,7 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
          header: 'Coupon Code',
          cell: ({ row }) => (
             <div className="flex items-center gap-2">
-               <code className="rounded bg-muted px-2 py-1 font-bold">{row.original.code}</code>
+               <code className="bg-muted rounded px-2 py-1 font-bold">{row.original.code}</code>
                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyCouponCode(row.original.code)}>
                   <Copy className="h-3 w-3" />
                </Button>
@@ -91,12 +87,20 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
          accessorKey: 'assigned_emails',
          header: 'Allowed emails',
          cell: ({ row }) => {
-            const listed = (row.original.assigned_emails ?? []).map((email) => email.trim()).filter(Boolean);
-            const fallback = row.original.assigned_email?.trim();
-            const emails = listed.length > 0 ? listed : fallback ? [fallback] : [];
+            const seen = new Set<string>();
+            const emails = [...(row.original.assigned_emails ?? []), row.original.assigned_email]
+               .map((email) => (typeof email === 'string' ? email.trim() : ''))
+               .filter((email) => {
+                  const key = email.toLowerCase();
+                  if (!email || seen.has(key)) {
+                     return false;
+                  }
+                  seen.add(key);
+                  return true;
+               });
 
             return emails.length > 0 ? (
-               <div className="max-w-56 space-y-0.5 text-xs break-all">{emails.join(', ')}</div>
+               <div className="max-w-56 space-y-0.5 break-all text-xs">{emails.join(', ')}</div>
             ) : (
                <span className="text-muted-foreground">Any student</span>
             );
@@ -165,7 +169,7 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
                   <Button
                      size="icon"
                      variant="ghost"
-                     className="h-8 w-8 text-destructive hover:text-destructive"
+                     className="text-destructive hover:text-destructive h-8 w-8"
                      title="Delete"
                      onClick={() => onDelete(coupon.id)}
                   >
