@@ -203,16 +203,20 @@ const EnrollmentButton = () => {
 
    return (
       <>
-         <Button className="w-full px-1 sm:px-3" variant="outline" size="lg" onClick={handleWishlist}>
+         <Button className="w-full px-1 sm:px-3" size="lg" onClick={handleWishlist}>
             {isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}
          </Button>
 
          {requiresCoursePayment(auth.user, course) || canResubscribe || offer.canPreRegister || offer.canFullEnroll ? (
-            <SsuCheckoutButton item="course" item_id={course.id}>
+            <SsuCheckoutButton
+               item="course"
+               item_id={course.id}
+               className="!bg-primary !text-primary-foreground uppercase hover:!bg-primary-dark"
+            >
                {checkoutText ?? frontend.buy_now}
             </SsuCheckoutButton>
          ) : canEnrollCourseWithoutPayment(auth.user, course) ? (
-            <Button size="lg" className="w-full" onClick={() => enrollmentHandler(course)}>
+            <Button size="lg" variant="brand" className="w-full uppercase" onClick={() => enrollmentHandler(course)}>
                {frontend.enroll_now}
             </Button>
          ) : null}
