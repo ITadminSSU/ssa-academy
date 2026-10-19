@@ -15,40 +15,43 @@ const Instructor = ({ course }: { course: Course }) => {
       .filter(Boolean);
 
    return (
-      <article className="overflow-hidden rounded-xl border border-[color:var(--ssu-line,#d5d0c4)] bg-[#fffcf7] shadow-sm">
-         <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-[color:var(--ssu-navy,#1a344f)] px-4 py-3 text-white sm:px-5">
-            <Link href={route('instructors.show', instructor.id)} className="min-w-0 hover:underline">
-               <h3 className="text-sm font-bold uppercase tracking-[0.04em] sm:text-[0.95rem]">{heading}</h3>
+      <article className="rounded-xl border border-[color:var(--ssu-line,#d5d0c4)] bg-[#fffcf7] px-5 py-6 shadow-sm sm:px-7 sm:py-7">
+         <div className="flex justify-center">
+            <Link
+               href={route('instructors.show', instructor.id)}
+               className="max-w-full rounded-full bg-[color:var(--ssu-navy,#1a344f)] px-5 py-2 text-center hover:underline sm:px-8"
+            >
+               <h3 className="text-sm font-bold uppercase tracking-[0.06em] text-white sm:text-[0.95rem]">{heading}</h3>
             </Link>
+         </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-               <span className="text-sm font-semibold tabular-nums sm:text-base">{rating}</span>
-               <RatingStars
-                  rating={instructor.total_average_rating || 0}
-                  starClass="h-4 w-4"
-                  filledClass="fill-[color:var(--ssu-gold,#e89a1b)] text-[color:var(--ssu-gold,#e89a1b)]"
-                  emptyClass="fill-transparent text-white/35"
-               />
-            </div>
-         </header>
-
-         <div className="px-4 py-5 text-sm leading-relaxed text-[#4a5966] sm:px-5 sm:py-6">
-            <Link href={route('instructors.show', instructor.id)} className="float-left mb-2 mr-4 mt-0.5 no-underline sm:mr-5">
-               <Avatar className="h-28 w-28 ring-[3px] ring-white sm:h-36 sm:w-36">
+         <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+            <Link href={route('instructors.show', instructor.id)} className="shrink-0 no-underline">
+               <Avatar className="h-40 w-40 sm:h-44 sm:w-44">
                   <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
-                  <AvatarFallback className="bg-[color:var(--ssu-navy,#1a344f)] text-3xl font-semibold text-white">
+                  <AvatarFallback className="bg-[color:var(--ssu-navy,#1a344f)] text-4xl font-semibold text-white">
                      {user.name?.charAt(0)}
                   </AvatarFallback>
                </Avatar>
             </Link>
 
-            {paragraphs.map((paragraph, index) => (
-               <p key={index} className="mb-4 last:mb-0">
-                  {paragraph}
-               </p>
-            ))}
+            <div className="min-w-0 flex-1">
+               <div className="mb-4 flex items-center justify-center gap-2 text-[color:var(--ssu-navy,#1a344f)]">
+                  <span className="text-lg font-semibold tabular-nums">{rating}</span>
+                  <RatingStars
+                     rating={instructor.total_average_rating || 0}
+                     starClass="h-5 w-5"
+                     filledClass="fill-[color:var(--ssu-gold,#e89a1b)] text-[color:var(--ssu-gold,#e89a1b)]"
+                     emptyClass="fill-transparent text-[color:var(--ssu-gold,#e89a1b)]/40"
+                  />
+               </div>
 
-            <div className="clear-both" aria-hidden />
+               {paragraphs.map((paragraph, index) => (
+                  <p key={index} className="mb-4 text-sm leading-relaxed text-[#4a5966] last:mb-0">
+                     {paragraph}
+                  </p>
+               ))}
+            </div>
          </div>
       </article>
    );
