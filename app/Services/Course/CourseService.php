@@ -165,6 +165,10 @@ class CourseService extends MediaService
             $this->updateHero($course, $data);
             break;
 
+         case 'instructor-card':
+            $this->updateInstructorCard($course, $data);
+            break;
+
          case 'seo':
             $course->forceFill(collect($data)->only([
                'meta_title',
@@ -606,6 +610,50 @@ class CourseService extends MediaService
          $course->save();
          $this->deleteOlderHeroPhotos($course, $url);
       }
+   }
+
+   private function updateInstructorCard(Course $course, array $data): void
+   {
+      $course->forceFill([
+         'instructor_card_name' => CourseHero::blankToNull($data['instructor_card_name'] ?? null),
+         'instructor_card_biography' => CourseHero::blankToNull($data['instructor_card_biography'] ?? null),
+      ])->save();
+
+      $photo = $data['instructor_card_photo'] ?? null;
+
+      if ($photo instanceof UploadedFile) {
+         $url = $this->addSingleFile($course, $photo, 'instructor-card-photo');
+         $course->instructor_card_photo = $url;
+         $course->save();
+         $this->deleteInstructorCardPhotos($course, $url);
+
+         return;
+      }
+
+      if (! empty($data['instructor_card_remove_photo'])) {
+         $course->instructor_card_photo = null;
+         $course->save();
+         $this->deleteInstructorCardPhotos($course);
+      }
+   }
+
+   private function deleteInstructorCardPhotos(Course $course, ?string $keptUrl = null): void
+   {
+      $course->unsetRelation('media');
+
+      $course->getMedia()->each(function ($media) use ($keptUrl) {
+         if ($media->getCustomProperty('name') !== 'instructor-card-photo') {
+            return;
+         }
+
+         $storedUrl = media_storage_url($media);
+
+         if ($keptUrl !== null && S3CompatibleStorage::sameStoredObject($storedUrl, $keptUrl)) {
+            return;
+         }
+
+         $media->delete();
+      });
    }
 
    private function deleteOlderHeroPhotos(Course $course, string $keptUrl): void

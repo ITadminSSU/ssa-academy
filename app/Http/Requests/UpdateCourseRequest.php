@@ -28,6 +28,7 @@ class UpdateCourseRequest extends FormRequest
             'pricing' => $this->preparePricingTab(),
             'media' => $this->prepareMediaTab(),
             'hero' => $this->prepareHeroTab(),
+            'instructor-card' => $this->prepareInstructorCardTab(),
             'seo' => null,
             'landing' => $this->prepareLandingTab(),
             default => null,
@@ -146,6 +147,16 @@ class UpdateCourseRequest extends FormRequest
         ]);
     }
 
+    private function prepareInstructorCardTab(): void
+    {
+        $this->merge([
+            'instructor_card_name' => trim((string) $this->input('instructor_card_name', '')),
+            'instructor_card_biography' => trim((string) $this->input('instructor_card_biography', '')),
+            'instructor_card_remove_photo' => filter_var($this->input('instructor_card_remove_photo', false), FILTER_VALIDATE_BOOLEAN),
+            'instructor_card_photo' => $this->hasFile('instructor_card_photo') ? $this->file('instructor_card_photo') : null,
+        ]);
+    }
+
     private function prepareLandingTab(): void
     {
         $course = Course::query()->find($this->route('id'));
@@ -213,7 +224,7 @@ class UpdateCourseRequest extends FormRequest
     public function rules(): array
     {
         return array_merge([
-            'tab' => 'required|string|in:basic,pricing,media,hero,seo,info,status,landing',
+            'tab' => 'required|string|in:basic,pricing,media,hero,instructor-card,seo,info,status,landing',
         ], $this->getTabSpecificRules());
     }
 
@@ -224,6 +235,9 @@ class UpdateCourseRequest extends FormRequest
             'hero_photo.image' => 'The hero photo must be a JPG, PNG, or WebP image.',
             'hero_photo.mimes' => 'The hero photo must be a JPG, PNG, or WebP image.',
             'hero_photo.max' => 'The hero photo must be 100 MB or smaller.',
+            'instructor_card_photo.image' => 'The instructor photo must be a JPG, PNG, or WebP image.',
+            'instructor_card_photo.mimes' => 'The instructor photo must be a JPG, PNG, or WebP image.',
+            'instructor_card_photo.max' => 'The instructor photo must be 100 MB or smaller.',
             'reviews.*.image.required' => 'Upload a picture for this review.',
             'reviews.*.image.image' => 'The review picture must be an image file.',
             'launch_at.after' => 'Launch date and time must be in the future.',
@@ -242,6 +256,7 @@ class UpdateCourseRequest extends FormRequest
             'pricing' => $this->pricingTabRules(),
             'media' => $this->mediaTabRules(),
             'hero' => $this->heroTabRules(),
+            'instructor-card' => $this->instructorCardTabRules(),
             'seo' => $this->seoTabRules(),
             'landing' => $this->landingTabRules(),
             default => [],
@@ -354,6 +369,16 @@ class UpdateCourseRequest extends FormRequest
             'hero_video_url' => 'nullable|string|max:2048',
             'hero_video_stored' => 'nullable|string|max:8192',
             'hero_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:102400',
+        ];
+    }
+
+    private function instructorCardTabRules(): array
+    {
+        return [
+            'instructor_card_name' => 'nullable|string|max:255',
+            'instructor_card_biography' => 'nullable|string|max:5000',
+            'instructor_card_remove_photo' => 'boolean',
+            'instructor_card_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:102400',
         ];
     }
 
