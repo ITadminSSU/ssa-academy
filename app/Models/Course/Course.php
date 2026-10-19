@@ -7,6 +7,7 @@ use App\Enums\CourseBillingModel;
 use App\Enums\CourseStatusType;
 use App\Models\Instructor;
 use App\Models\User;
+use App\Support\CourseReviewCarousel;
 use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -71,6 +72,7 @@ class Course extends Model implements HasMedia
         'instructor_card_name',
         'instructor_card_biography',
         'instructor_card_photo',
+        'review_carousel',
 
         'expiry_type',
         'expiry_duration',
@@ -153,6 +155,18 @@ class Course extends Model implements HasMedia
     protected function instructorCardPhoto(): Attribute
     {
         return S3CompatibleStorage::eloquentAttribute();
+    }
+
+    protected function reviewCarousel(): Attribute
+    {
+        return Attribute::make(
+            get: fn (mixed $value) => CourseReviewCarousel::browserUrls($value),
+            set: function (mixed $value) {
+                $urls = CourseReviewCarousel::storedUrls($value);
+
+                return $urls === [] ? null : json_encode($urls, JSON_UNESCAPED_SLASHES);
+            },
+        );
     }
 
     public function scopeVisibleInCatalog(Builder $query, ?User $user = null): Builder

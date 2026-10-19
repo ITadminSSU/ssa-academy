@@ -7,8 +7,8 @@ import { Head } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { ReactNode } from 'react';
 import CourseHero from './partials/course-hero';
-import CourseMetaStrip from './partials/course-meta';
 import CoursePreview from './partials/course-preview';
+import CourseReviewCarousel from './partials/course-review-carousel';
 import CourseReviews from './partials/course-reviews';
 import Curriculum from './partials/curriculum';
 import Details from './partials/details';
@@ -84,7 +84,8 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
    // Generate meta information for the course
    const pageTitle = course.meta_title || `${course.title} | ${system.fields?.name}`;
    const pageDescription = course.meta_description || course.short_description || course.description || frontend.learn_comprehensive_course;
-   const pageKeywords = course.meta_keywords || `${course.title}, ${frontend.online_course_learning_lms}, ${system.fields?.keywords || 'SSU Academy'}`;
+   const pageKeywords =
+      course.meta_keywords || `${course.title}, ${frontend.online_course_learning_lms}, ${system.fields?.keywords || 'SSU Academy'}`;
    const ogTitle = course.og_title || course.title;
    const ogDescription = course.og_description || pageDescription;
    const courseImage = course.thumbnail || '';
@@ -169,8 +170,12 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
          <CourseHero course={course} />
 
          <div className="ssu-page-shell">
-            <div className="container pb-14">
-               <CourseMetaStrip course={course} />
+            <div className="container pt-8 pb-14">
+               {(course.review_carousel?.length ?? 0) > 0 ? (
+                  <div className="mb-8">
+                     <CourseReviewCarousel images={course.review_carousel ?? []} />
+                  </div>
+               ) : null}
 
                <div className="grid grid-cols-1 items-start gap-7 md:grid-cols-3">
                   <div className="min-w-0 space-y-6 md:col-span-2">
@@ -181,12 +186,10 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
                                  <TabsTrigger
                                     key={value}
                                     value={value}
-                                    className="relative overflow-hidden rounded-full border border-transparent bg-clip-padding px-4 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+                                    className="text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground relative overflow-hidden rounded-full border border-transparent bg-clip-padding px-4 py-2 text-sm font-medium whitespace-nowrap shadow-none data-[state=active]:shadow-none"
                                  >
                                     <span className="inline-flex items-center gap-2">
-                                       {value === 'us-experience' && !canViewUsExperiencePlans ? (
-                                          <Lock className="h-3.5 w-3.5 shrink-0" />
-                                       ) : null}
+                                       {value === 'us-experience' && !canViewUsExperiencePlans ? <Lock className="h-3.5 w-3.5 shrink-0" /> : null}
                                        <span>{label}</span>
                                     </span>
                                  </TabsTrigger>

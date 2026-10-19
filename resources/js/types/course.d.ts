@@ -55,6 +55,7 @@ interface Course extends TableCommon {
    instructor_card_name?: string | null;
    instructor_card_biography?: string | null;
    instructor_card_photo?: string | null;
+   review_carousel?: string[] | null;
    course_type: string;
    status: 'draft' | 'upcoming' | 'coming_soon' | 'pending' | 'rejected' | 'approved';
    launch_at?: string | null;
