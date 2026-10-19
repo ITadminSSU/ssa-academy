@@ -424,7 +424,7 @@ it('lets every listed email share one code and stores each address once', functi
     $coupon = CourseCoupon::query()->where('code', 'TEAM10')->first();
 
     expect($coupon)->not->toBeNull()
-        ->and($coupon->assigned_email)->toBeNull()
+        ->and($coupon->assigned_email)->toBe('ada@example.com')
         ->and($coupon->checkoutEmailList())->toBe(['ada@example.com', 'bea@example.com'])
         ->and($coupon->show_on_catalog)->toBeFalse()
         ->and($coupon->code)->toBe('TEAM10')
@@ -579,7 +579,7 @@ it('imports several emails onto one existing code', function () {
     expect(CourseCoupon::query()->where('code', 'TEAM10')->count())->toBe(1)
         ->and(CourseCoupon::query()->where('code', 'BROKEN')->exists())->toBeFalse()
         ->and($fresh->checkoutEmailList())->toBe(['ada@example.com', 'bea@example.com'])
-        ->and($fresh->assigned_email)->toBeNull()
+        ->and($fresh->assigned_email)->toBe('ada@example.com')
         ->and((float) $fresh->discount)->toBe(10.0)
         ->and($fresh->usage_limit)->toBe(3)
         ->and($fresh->course_id)->toBe($course->id)
@@ -601,6 +601,90 @@ it('keeps the overall usage limit ahead of the email list', function () {
 
     expect(app(CourseCouponService::class)->resolveCouponForCheckout((string) $course->id, 'ONCE', $bea->id)['error'])
         ->toBe('This coupon is not valid or has expired.');
+});
+
+it('keeps one or many allowed emails after update and lets each address redeem', function () {
+    $admin = couponAdmin();
+    $course = couponCourse();
+    $ada = couponStudent('Ada@Example.com');
+    $bea = couponStudent('bea@example.com');
+    $cara = couponStudent('cara@example.com');
+    $other = couponStudent('other@example.com');
+    $coupon = openCoupon([
+        'code' => 'KEEPMAIL',
+        'course_id' => $course->id,
+        'discount_type' => 'fixed',
+        'discount' => 25,
+        'is_active' => true,
+    ]);
+    $service = app(CourseCouponService::class);
+
+    expect(submitCouponUpdate($admin, $coupon, [
+        'code' => 'KEEPMAIL',
+        'course_id' => $course->id,
+        'discount_type' => 'fixed',
+        'discount' => 25,
+        'is_active' => true,
+        'assigned_emails' => " Ada@Example.com \n",
+    ]))->toBeNull();
+
+    $single = $coupon->fresh();
+    $single->presentAssignedEmails();
+
+    expect($single->assigned_email)->toBe('ada@example.com')
+        ->and($single->checkoutEmailList())->toBe(['ada@example.com'])
+        ->and($single->assigned_emails)->toBe(['ada@example.com'])
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'KEEPMAIL', $ada->id)['error'])->toBeNull()
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'KEEPMAIL', $bea->id)['error'])->toBe('This coupon is assigned to a different email.');
+
+    expect(submitCouponUpdate($admin, $single, [
+        'code' => 'KEEPMAIL',
+        'course_id' => $course->id,
+        'discount_type' => 'fixed',
+        'discount' => 25,
+        'is_active' => true,
+        'assigned_emails' => "ada@example.com\nbea@example.com",
+    ]))->toBeNull();
+
+    $shared = $coupon->fresh();
+    $shared->presentAssignedEmails();
+
+    expect($shared->assigned_email)->toBe('ada@example.com')
+        ->and($shared->checkoutEmailList())->toBe(['ada@example.com', 'bea@example.com'])
+        ->and($shared->assigned_emails)->toBe(['ada@example.com', 'bea@example.com'])
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'KEEPMAIL', $ada->id)['error'])->toBeNull()
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'KEEPMAIL', $bea->id)['error'])->toBeNull()
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'KEEPMAIL', $other->id)['error'])->toBe('This coupon is assigned to a different email.');
+
+    expect(submitCouponUpdate($admin, $shared, [
+        'code' => 'KEEPMAIL',
+        'course_id' => $course->id,
+        'discount_type' => 'fixed',
+        'discount' => 25,
+        'is_active' => true,
+        'assigned_emails' => "ada@example.com\nbea@example.com",
+    ]))->toBeNull();
+
+    $again = $coupon->fresh();
+    $again->presentAssignedEmails();
+
+    expect($again->assigned_emails)->toBe(['ada@example.com', 'bea@example.com'])
+        ->and($again->assigned_email)->toBe('ada@example.com');
+
+    $split = openCoupon([
+        'code' => 'SPLIT',
+        'course_id' => $course->id,
+        'discount' => 10,
+        'assigned_email' => 'cara@example.com',
+    ]);
+    $split->replaceAssignedEmails(['ada@example.com', 'bea@example.com']);
+    $split = $split->fresh();
+
+    expect($split->checkoutEmailList())->toBe(['ada@example.com', 'bea@example.com', 'cara@example.com'])
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'SPLIT', $ada->id)['error'])->toBeNull()
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'SPLIT', $bea->id)['error'])->toBeNull()
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'SPLIT', $cara->id)['error'])->toBeNull()
+        ->and($service->resolveCouponForCheckout((string) $course->id, 'SPLIT', $other->id)['error'])->toBe('This coupon is assigned to a different email.');
 });
 
 it('falls back to the single assigned email when the list table cannot be read', function () {
