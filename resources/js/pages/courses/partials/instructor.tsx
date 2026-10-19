@@ -16,18 +16,9 @@ const Instructor = ({ course }: { course: Course }) => {
 
    return (
       <article className="rounded-xl border border-[color:var(--ssu-line,#d5d0c4)] bg-[#fffcf7] px-5 py-6 shadow-sm sm:px-7 sm:py-7">
-         <div className="flex justify-center">
-            <Link
-               href={route('instructors.show', instructor.id)}
-               className="max-w-full rounded-full bg-[color:var(--ssu-navy,#1a344f)] px-5 py-2 text-center hover:underline sm:px-8"
-            >
-               <h3 className="text-sm font-bold uppercase tracking-[0.06em] text-white sm:text-[0.95rem]">{heading}</h3>
-            </Link>
-         </div>
-
-         <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-            <Link href={route('instructors.show', instructor.id)} className="shrink-0 no-underline">
-               <Avatar className="h-40 w-40 sm:h-44 sm:w-44">
+         <div className="flex flex-col items-center gap-5 sm:grid sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-x-6 sm:gap-y-0">
+            <Link href={route('instructors.show', instructor.id)} className="shrink-0 no-underline sm:col-start-1 sm:row-start-2 sm:mt-3">
+               <Avatar className="h-44 w-44 sm:h-52 sm:w-52">
                   <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
                   <AvatarFallback className="bg-[color:var(--ssu-navy,#1a344f)] text-4xl font-semibold text-white">
                      {user.name?.charAt(0)}
@@ -35,8 +26,15 @@ const Instructor = ({ course }: { course: Course }) => {
                </Avatar>
             </Link>
 
-            <div className="min-w-0 flex-1">
-               <div className="mb-4 flex items-center justify-center gap-2 text-[color:var(--ssu-navy,#1a344f)]">
+            <Link
+               href={route('instructors.show', instructor.id)}
+               className="block w-full rounded-full bg-[color:var(--ssu-navy,#1a344f)] px-4 py-2.5 text-center no-underline hover:bg-[color:var(--ssu-navy-deep,#14283d)] sm:col-start-2 sm:row-start-1"
+            >
+               <h3 className="text-sm font-bold uppercase tracking-[0.06em] text-white sm:text-[0.95rem]">{heading}</h3>
+            </Link>
+
+            <div className="w-full min-w-0 sm:col-start-2 sm:row-start-2">
+               <div className="mt-3 flex items-center justify-center gap-2 text-[color:var(--ssu-navy,#1a344f)]">
                   <span className="text-lg font-semibold tabular-nums">{rating}</span>
                   <RatingStars
                      rating={instructor.total_average_rating || 0}
@@ -46,11 +44,15 @@ const Instructor = ({ course }: { course: Course }) => {
                   />
                </div>
 
-               {paragraphs.map((paragraph, index) => (
-                  <p key={index} className="mb-4 text-sm leading-relaxed text-[#4a5966] last:mb-0">
-                     {paragraph}
-                  </p>
-               ))}
+               {paragraphs.length > 0 ? (
+                  <div className="mt-3">
+                     {paragraphs.map((paragraph, index) => (
+                        <p key={index} className="mb-3 text-[13px] leading-relaxed text-[#4a5966] last:mb-0">
+                           {paragraph}
+                        </p>
+                     ))}
+                  </div>
+               ) : null}
             </div>
          </div>
       </article>
