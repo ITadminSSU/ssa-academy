@@ -68,6 +68,9 @@ class Course extends Model implements HasMedia
         'hero_photo',
         'preview',
         'hero_video',
+        'instructor_card_name',
+        'instructor_card_biography',
+        'instructor_card_photo',
 
         'expiry_type',
         'expiry_duration',
@@ -143,6 +146,11 @@ class Course extends Model implements HasMedia
     }
 
     protected function heroVideo(): Attribute
+    {
+        return S3CompatibleStorage::eloquentAttribute();
+    }
+
+    protected function instructorCardPhoto(): Attribute
     {
         return S3CompatibleStorage::eloquentAttribute();
     }

@@ -477,6 +477,9 @@ HTML;
                 ])->values(),
             ])->values() : [],
             'instructor' => $this->instructorPayload($course),
+            'instructor_card_name' => $course->instructor_card_name,
+            'instructor_card_biography' => $course->instructor_card_biography,
+            'instructor_card_photo' => $course->instructor_card_photo,
         ];
     }
 

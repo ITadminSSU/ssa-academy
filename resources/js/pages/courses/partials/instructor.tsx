@@ -5,9 +5,10 @@ import { Link } from '@inertiajs/react';
 const Instructor = ({ course }: { course: Course }) => {
    const { instructor } = course;
    const { user } = instructor;
-   const biography = instructor.biography?.trim() || '';
    const designation = instructor.designation?.trim() || 'Trainer';
-   const heading = `${user.name}, ${designation}`.toUpperCase();
+   const heading = (course.instructor_card_name?.trim() || `${user.name}, ${designation}`).toUpperCase();
+   const biography = course.instructor_card_biography?.trim() || instructor.biography?.trim() || '';
+   const photo = course.instructor_card_photo?.trim() || user.photo || '';
    const rating = instructor.total_average_rating ? Number(instructor.total_average_rating).toFixed(1) : '0.0';
    const paragraphs = biography
       .split(/\n+/)
@@ -19,7 +20,7 @@ const Instructor = ({ course }: { course: Course }) => {
          <div className="flex flex-col items-center gap-5 sm:grid sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-x-6 sm:gap-y-0">
             <Link href={route('instructors.show', instructor.id)} className="shrink-0 no-underline sm:col-start-1 sm:row-start-2 sm:mt-3">
                <Avatar className="h-44 w-44 sm:h-52 sm:w-52">
-                  <AvatarImage src={user.photo || ''} alt={user.name} className="object-cover" />
+                  <AvatarImage src={photo} alt={user.name} className="object-cover" />
                   <AvatarFallback className="bg-[color:var(--ssu-navy,#1a344f)] text-4xl font-semibold text-white">
                      {user.name?.charAt(0)}
                   </AvatarFallback>
