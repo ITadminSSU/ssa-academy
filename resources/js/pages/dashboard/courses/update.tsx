@@ -1,6 +1,7 @@
 import Tabs from '@/components/tabs';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DashboardLayout from '@/layouts/dashboard/layout';
+import { DrywallLandingSettings } from '@/pages/drywall-estimating/types';
 import { SharedData } from '@/types/global';
 import { router } from '@inertiajs/react';
 import {
@@ -8,29 +9,30 @@ import {
    CircleDollarSign,
    ClipboardCheck,
    FilePenLine,
+   FlaskConical,
    FolderInput,
    ImageIcon,
+   Images,
    LayoutTemplate,
    Ruler,
    Settings,
-   FlaskConical,
    UserRound,
 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { ReactNode } from 'react';
+import ActivitySubmissions from './partials/activity-submissions';
 import Basic from './partials/basic';
 import CourseUpdateHeader from './partials/course-update-header';
 import Curriculum from './partials/curriculum';
-import Info from './partials/info';
 import Hero from './partials/hero';
+import Info from './partials/info';
 import InstructorCard from './partials/instructor-card';
+import Landing from './partials/landing';
 import Media from './partials/media';
 import Pricing from './partials/pricing';
+import ReviewCarousel from './partials/review-carousel';
 import SEO from './partials/seo';
-import ActivitySubmissions from './partials/activity-submissions';
 import UsExperiencePlans from './partials/us-experience-plans';
-import Landing from './partials/landing';
-import { DrywallLandingSettings } from '@/pages/drywall-estimating/types';
 
 export interface CourseUpdateProps extends SharedData {
    tab?: string;
@@ -125,6 +127,13 @@ const Update = (props: CourseUpdateProps) => {
          slug: 'hero',
          Icon: ImageIcon,
          Component: Hero,
+      },
+      {
+         id: nanoid(),
+         name: 'Review carousel',
+         slug: 'review-carousel',
+         Icon: Images,
+         Component: ReviewCarousel,
       },
       {
          id: nanoid(),

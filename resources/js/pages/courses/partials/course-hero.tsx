@@ -1,10 +1,20 @@
 import CourseBannerPlaceholder from '@/components/course-banner-placeholder';
 import CourseLaunchCountdown from '@/components/course-launch-countdown';
 import HeroVideoPlayer from '@/components/hero-video-player';
+import courseLanguages from '@/data/course-languages';
 import { heroHeadlineParts, type CourseHeroContent } from '@/lib/course-hero-text';
 import { canPreviewCourseBeforeLaunch, formatCourseLaunchDate, isCourseComingSoon } from '@/lib/course-launch';
+import { getCourseDuration } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
+import { Clock, GraduationCap, Languages, Users } from 'lucide-react';
+import { ReactNode } from 'react';
+
+const HeroFact = ({ children }: { children: ReactNode }) => (
+   <li className="sm:border-border/70 flex min-w-0 items-center gap-2 sm:flex-1 sm:justify-center sm:border-l sm:px-4 sm:first:border-l-0">
+      {children}
+   </li>
+);
 
 const CourseHero = ({ course }: { course: Course }) => {
    const { props } = usePage<SharedData & { courseHero?: CourseHeroContent }>();
@@ -19,13 +29,14 @@ const CourseHero = ({ course }: { course: Course }) => {
    const launchDate = formatCourseLaunchDate(course);
    const staffPreview = canPreviewCourseBeforeLaunch(course);
    const headlineParts = heroHeadlineParts(headline, hero?.highlights ?? []);
+   const courseLanguage = courseLanguages.find((language) => language.value === course.language);
 
    return (
-      <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary text-white">
+      <section className="from-primary via-primary-light to-primary relative isolate overflow-hidden bg-gradient-to-br text-white">
          {backdrop ? (
             <>
                <img src={backdrop} alt="" className="absolute inset-0 h-full w-full object-cover" />
-               <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary/45" />
+               <div className="from-primary via-primary/90 to-primary/45 absolute inset-0 bg-gradient-to-r" />
             </>
          ) : (
             <div
@@ -37,7 +48,7 @@ const CourseHero = ({ course }: { course: Course }) => {
             />
          )}
 
-         <div className="relative container grid items-center gap-10 pt-14 pb-20 md:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] md:pt-20 md:pb-24">
+         <div className="relative container grid items-center gap-10 pt-14 pb-12 md:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)] md:pt-20 md:pb-16">
             {video ? (
                <div className="overflow-hidden rounded-2xl border border-black/40 bg-black/40 shadow-lg">
                   <HeroVideoPlayer videoUrl={video} posterUrl={backdrop} className="aspect-video" />
@@ -83,14 +94,42 @@ const CourseHero = ({ course }: { course: Course }) => {
 
                {paragraph ? <p className="max-w-2xl text-base text-white/80 md:text-lg">{paragraph}</p> : null}
             </div>
+
+            {!backdrop && (
+               <CourseBannerPlaceholder
+                  showTitle={false}
+                  className="pointer-events-none absolute right-0 bottom-0 hidden h-40 w-40 rounded-tl-[3rem] opacity-40 lg:block"
+               />
+            )}
          </div>
 
-         {!backdrop && (
-            <CourseBannerPlaceholder
-               showTitle={false}
-               className="pointer-events-none absolute right-0 bottom-0 hidden h-40 w-40 rounded-tl-[3rem] opacity-40 lg:block"
-            />
-         )}
+         <div className="text-foreground relative z-10 border-t border-white/15 bg-white">
+            <ul className="container flex flex-col gap-3 py-4 sm:flex-row sm:flex-wrap sm:items-center md:flex-nowrap">
+               {courseLanguage?.label ? (
+                  <HeroFact>
+                     <Languages className="text-primary h-4 w-4 shrink-0" />
+                     <span className="text-sm font-medium">{courseLanguage.label}</span>
+                  </HeroFact>
+               ) : null}
+
+               <HeroFact>
+                  <Clock className="text-primary h-4 w-4 shrink-0" />
+                  <span className="text-sm font-medium">{getCourseDuration(course)}</span>
+               </HeroFact>
+
+               <HeroFact>
+                  <Users className="text-primary h-4 w-4 shrink-0" />
+                  <span className="text-sm font-medium">
+                     {course.enrollments_count || 0} {frontend.enrolled_students}
+                  </span>
+               </HeroFact>
+
+               <HeroFact>
+                  <GraduationCap className="text-primary h-4 w-4 shrink-0" />
+                  <span className="text-sm font-medium">{frontend.course_certificate}</span>
+               </HeroFact>
+            </ul>
+         </div>
       </section>
    );
 };

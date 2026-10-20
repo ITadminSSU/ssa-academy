@@ -10,6 +10,7 @@ use App\Enums\ExpiryLimitType;
 use App\Http\Requests\Concerns\NormalizesLaunchAt;
 use App\Models\Course\Course;
 use App\Support\CourseHero;
+use App\Support\CourseReviewCarousel;
 use App\Support\DrywallLanding;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
@@ -28,6 +29,7 @@ class UpdateCourseRequest extends FormRequest
             'pricing' => $this->preparePricingTab(),
             'media' => $this->prepareMediaTab(),
             'hero' => $this->prepareHeroTab(),
+            'review-carousel' => $this->prepareReviewCarouselTab(),
             'instructor-card' => $this->prepareInstructorCardTab(),
             'seo' => null,
             'landing' => $this->prepareLandingTab(),
@@ -147,6 +149,43 @@ class UpdateCourseRequest extends FormRequest
         ]);
     }
 
+    private function prepareReviewCarouselTab(): void
+    {
+        $files = $this->file('slides', []);
+        if (! is_array($files)) {
+            $files = [];
+        }
+
+        $submitted = $this->input('slides', []);
+        if (! is_array($submitted)) {
+            $submitted = [];
+        }
+
+        $slides = [];
+
+        foreach ($submitted as $index => $slide) {
+            if (! is_array($slide)) {
+                continue;
+            }
+
+            $upload = $files[$index]['image'] ?? null;
+            $rawExisting = trim((string) ($slide['existing_url'] ?? ''));
+            $existing = $rawExisting === '' ? '' : (DrywallLanding::storedReviewImage($rawExisting) ?? '');
+
+            $slides[] = [
+                'existing_url' => $existing,
+                'image' => $upload instanceof UploadedFile ? $upload : null,
+                'rejected_existing' => $rawExisting !== '' && $existing === '',
+            ];
+        }
+
+        $this->files->remove('slides');
+
+        $this->merge([
+            'slides' => $slides,
+        ]);
+    }
+
     private function prepareInstructorCardTab(): void
     {
         $this->merge([
@@ -216,6 +255,51 @@ class UpdateCourseRequest extends FormRequest
         ]);
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ((string) $this->input('tab') !== 'review-carousel') {
+                return;
+            }
+
+            $slides = $this->input('slides', []);
+            if (! is_array($slides)) {
+                return;
+            }
+
+            $course = Course::query()->find($this->route('id'));
+            $known = CourseReviewCarousel::storedUrls($course?->getRawOriginal('review_carousel'));
+
+            foreach ($slides as $index => $slide) {
+                if (! is_array($slide)) {
+                    continue;
+                }
+
+                if (! empty($slide['rejected_existing'])) {
+                    $validator->errors()->add("slides.$index.existing_url", 'That review image is not saved on this course.');
+
+                    continue;
+                }
+
+                $existing = (string) ($slide['existing_url'] ?? '');
+                $upload = $slide['image'] ?? null;
+
+                if ($existing !== '') {
+                    $match = CourseReviewCarousel::matchingIndex($known, $existing);
+
+                    if ($match === null) {
+                        $validator->errors()->add("slides.$index.existing_url", 'That review image is not saved on this course.');
+                    } else {
+                        unset($known[$match]);
+                        $known = array_values($known);
+                    }
+                } elseif (! $upload instanceof UploadedFile) {
+                    $validator->errors()->add("slides.$index.image", 'Upload a JPG, PNG, or WebP image for this review.');
+                }
+            }
+        });
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -224,7 +308,7 @@ class UpdateCourseRequest extends FormRequest
     public function rules(): array
     {
         return array_merge([
-            'tab' => 'required|string|in:basic,pricing,media,hero,instructor-card,seo,info,status,landing',
+            'tab' => 'required|string|in:basic,pricing,media,hero,review-carousel,instructor-card,seo,info,status,landing',
         ], $this->getTabSpecificRules());
     }
 
@@ -238,6 +322,9 @@ class UpdateCourseRequest extends FormRequest
             'instructor_card_photo.image' => 'The instructor photo must be a JPG, PNG, or WebP image.',
             'instructor_card_photo.mimes' => 'The instructor photo must be a JPG, PNG, or WebP image.',
             'instructor_card_photo.max' => 'The instructor photo must be 100 MB or smaller.',
+            'slides.*.image.image' => 'The review image must be a JPG, PNG, or WebP image.',
+            'slides.*.image.mimes' => 'The review image must be a JPG, PNG, or WebP image.',
+            'slides.*.image.max' => 'The review image must be 100 MB or smaller.',
             'reviews.*.image.required' => 'Upload a picture for this review.',
             'reviews.*.image.image' => 'The review picture must be an image file.',
             'launch_at.after' => 'Launch date and time must be in the future.',
@@ -256,6 +343,7 @@ class UpdateCourseRequest extends FormRequest
             'pricing' => $this->pricingTabRules(),
             'media' => $this->mediaTabRules(),
             'hero' => $this->heroTabRules(),
+            'review-carousel' => $this->reviewCarouselTabRules(),
             'instructor-card' => $this->instructorCardTabRules(),
             'seo' => $this->seoTabRules(),
             'landing' => $this->landingTabRules(),
@@ -369,6 +457,15 @@ class UpdateCourseRequest extends FormRequest
             'hero_video_url' => 'nullable|string|max:2048',
             'hero_video_stored' => 'nullable|string|max:8192',
             'hero_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:102400',
+        ];
+    }
+
+    private function reviewCarouselTabRules(): array
+    {
+        return [
+            'slides' => 'array|max:'.CourseReviewCarousel::MAX_SLIDES,
+            'slides.*.existing_url' => 'nullable|string|max:2048',
+            'slides.*.image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:102400',
         ];
     }
 

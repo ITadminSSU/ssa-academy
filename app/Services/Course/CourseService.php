@@ -17,6 +17,7 @@ use App\Services\Payment\LaunchOfferService;
 use App\Services\S3MultipartUploadService;
 use App\Support\Database\SsuAcademyTableRegistry;
 use App\Support\CourseHero;
+use App\Support\CourseReviewCarousel;
 use App\Support\DrywallLanding;
 use App\Support\S3CompatibleStorage;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -163,6 +164,10 @@ class CourseService extends MediaService
 
          case 'hero':
             $this->updateHero($course, $data);
+            break;
+
+         case 'review-carousel':
+            $this->updateReviewCarousel($course, $data);
             break;
 
          case 'instructor-card':
@@ -610,6 +615,71 @@ class CourseService extends MediaService
          $course->save();
          $this->deleteOlderHeroPhotos($course, $url);
       }
+   }
+
+   private function updateReviewCarousel(Course $course, array $data): void
+   {
+      $slides = array_values(is_array($data['slides'] ?? null) ? $data['slides'] : []);
+      $known = CourseReviewCarousel::storedUrls($course->getRawOriginal('review_carousel'));
+      $kept = [];
+
+      foreach ($slides as $slide) {
+         if (! is_array($slide)) {
+            continue;
+         }
+
+         $upload = $slide['image'] ?? null;
+         $existing = (string) ($slide['existing_url'] ?? '');
+         $match = $existing !== '' ? CourseReviewCarousel::matchingIndex($known, $existing) : null;
+         $matchedUrl = $match === null ? null : $known[$match];
+
+         if ($match !== null) {
+            unset($known[$match]);
+            $known = array_values($known);
+         }
+
+         if ($upload instanceof UploadedFile) {
+            $kept[] = $this->addSingleFile($course, $upload, 'review-carousel-'.Str::uuid());
+
+            continue;
+         }
+
+         if ($matchedUrl === null) {
+            continue;
+         }
+
+         $kept[] = $matchedUrl;
+      }
+
+      $course->review_carousel = $kept;
+      $course->save();
+      $this->deleteUnusedReviewCarouselImages($course, $kept);
+   }
+
+   /**
+    * @param  list<string>  $keptUrls
+    */
+   private function deleteUnusedReviewCarouselImages(Course $course, array $keptUrls): void
+   {
+      $course->unsetRelation('media');
+
+      $course->getMedia()->each(function ($media) use ($keptUrls) {
+         $name = (string) $media->getCustomProperty('name');
+
+         if (! str_starts_with($name, 'review-carousel-')) {
+            return;
+         }
+
+         $storedUrl = media_storage_url($media);
+
+         foreach ($keptUrls as $url) {
+            if (S3CompatibleStorage::sameStoredObject($storedUrl, $url)) {
+               return;
+            }
+         }
+
+         $media->delete();
+      });
    }
 
    private function updateInstructorCard(Course $course, array $data): void
