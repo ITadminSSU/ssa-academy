@@ -31,7 +31,9 @@ const Instructor = ({ course }: { course: Course }) => {
                href={route('instructors.show', instructor.id)}
                className="block w-full rounded-full bg-[color:var(--ssu-navy,#1a344f)] px-4 py-2.5 text-center no-underline hover:bg-[color:var(--ssu-navy-deep,#14283d)] sm:col-start-2 sm:row-start-1"
             >
-               <h3 className="text-sm font-bold uppercase tracking-[0.06em] text-white sm:text-[0.95rem]">{heading}</h3>
+               <h3 className="text-[18px] leading-snug font-bold! tracking-[0.06em]! break-words whitespace-normal text-white uppercase sm:text-[20px]">
+                  {heading}
+               </h3>
             </Link>
 
             <div className="w-full min-w-0 sm:col-start-2 sm:row-start-2">
