@@ -11,6 +11,8 @@
                   {{ __('Launch balance') }}
                @elseif (($checkoutMode ?? null) === 'full_launch')
                   {{ __('Enrollment price') }}
+               @elseif (($checkoutMode ?? null) === 'resubscribe')
+                  {{ __('Project Plans') }}
                @else
                   {{ __('Price') }}
                @endif
@@ -33,6 +35,10 @@
          @elseif (($checkoutMode ?? null) === 'balance')
             <p class="text-muted-foreground text-xs">
                {{ __('Pay your launch balance now to unlock the course. Your subscription is free for one month, then the first monthly charge is billed the following month.') }}
+            </p>
+         @elseif (($checkoutMode ?? null) === 'resubscribe')
+            <p class="text-muted-foreground text-xs">
+               {{ __('Pay the monthly Project Plans price today to restore full access. Monthly billing continues after this payment. Your saved lessons and progress stay on this course.') }}
             </p>
          @endif
 

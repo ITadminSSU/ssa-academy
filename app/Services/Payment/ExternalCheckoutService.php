@@ -14,6 +14,7 @@ class ExternalCheckoutService
 {
     public function __construct(
         private LaunchOfferService $launchOffer,
+        private SubscriptionAccessService $subscriptionAccess,
     ) {}
 
     public function requiresPaidCheckout(User $user, Course $course): bool
@@ -73,6 +74,12 @@ class ExternalCheckoutService
         }
 
         if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+            return false;
+        }
+
+        $enrollment->loadMissing('subscription');
+
+        if ($this->subscriptionAccess->toFrontendPayload($user, $course, $enrollment)['can_resubscribe'] ?? false) {
             return false;
         }
 
@@ -143,5 +150,20 @@ class ExternalCheckoutService
     public function hasActiveGateway(Collection $payments): bool
     {
         return $payments->contains(fn ($payment) => $payment->fields['active'] ?? false);
+    }
+
+    /**
+     * Resubscribe reactivates the existing enrollment through Stripe.
+     * Bank and wire transfers stay available on first-time and one-time checkouts.
+     */
+    public function gatewaysForCheckoutMode(Collection $payments, ?string $checkoutMode): Collection
+    {
+        if ($checkoutMode !== 'resubscribe') {
+            return $payments;
+        }
+
+        return $payments
+            ->filter(fn ($payment) => ($payment->sub_type ?? null) === 'stripe')
+            ->values();
     }
 }
