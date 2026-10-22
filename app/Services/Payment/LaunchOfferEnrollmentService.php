@@ -21,10 +21,11 @@ class LaunchOfferEnrollmentService
         private CourseEnrollmentService $courseEnrollment,
         private PaymentService $paymentService,
         private LaunchOfferMailService $launchOfferMail,
+        private SubscriptionAccessService $subscriptionAccess,
     ) {}
 
     /**
-     * @return 'deposit'|'balance'|'full_launch'|'upfront_subscription'|'legacy_subscription'|'legacy_one_time'|null
+     * @return 'deposit'|'balance'|'full_launch'|'upfront_subscription'|'legacy_subscription'|'legacy_one_time'|'resubscribe'|null
      */
     public function resolveCheckoutMode(User $user, Course $course): ?string
     {
@@ -35,10 +36,15 @@ class LaunchOfferEnrollmentService
         $enrollment = CourseEnrollment::query()
             ->where('user_id', $user->id)
             ->where('course_id', $course->id)
+            ->with('subscription')
             ->first();
 
         if ($enrollment?->hasFullAccess()) {
             return null;
+        }
+
+        if ($enrollment && ($this->subscriptionAccess->toFrontendPayload($user, $course, $enrollment)['can_resubscribe'] ?? false)) {
+            return 'resubscribe';
         }
 
         if ($enrollment?->isReservedSeat()) {

@@ -5,6 +5,7 @@
    $isDepositCheckout = $resolvedCheckoutMode === 'deposit';
    $isBalanceCheckout = $resolvedCheckoutMode === 'balance';
    $isFullLaunchCheckout = $resolvedCheckoutMode === 'full_launch';
+   $isResubscribeCheckout = $resolvedCheckoutMode === 'resubscribe';
    $isLaunchCheckout = $isDepositCheckout || $isBalanceCheckout || $isFullLaunchCheckout;
    $offer = is_array($launchOffer ?? null) ? $launchOffer : [];
    $listPrice = (float) ($offer['list_price'] ?? 0);
@@ -148,6 +149,14 @@
                   Paying this balance unlocks the course and starts one free subscription month. The first monthly charge is billed the following month.
                </p>
             @endif
+         @elseif ($isResubscribeCheckout)
+            <div class="flex items-center justify-between text-sm font-medium">
+               <span>Project Plans</span>
+               <span class="text-base font-semibold">{{ $formatMoney($subtotal) }} / month</span>
+            </div>
+            <p class="text-muted-foreground text-xs leading-relaxed">
+               Pay the monthly Project Plans price today to restore full access. Monthly billing continues after this payment. Your saved lessons and progress stay on this course.
+            </p>
          @else
             <div class="flex items-center justify-between text-sm font-medium">
                <span>Course Price</span>

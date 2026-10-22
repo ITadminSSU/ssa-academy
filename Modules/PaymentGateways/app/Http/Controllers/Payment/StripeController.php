@@ -99,7 +99,7 @@ class StripeController extends Controller
                 'balance' => $this->startBalanceWithSubscriptionCheckout($request, $user, $course),
                 'full_launch' => $this->startFullLaunchCheckout($request, $user, $course),
                 'upfront_subscription' => $this->startUpfrontSubscriptionCheckout($request, $user, $course),
-                'legacy_subscription' => $this->startSubscriptionCheckout($request, $user, $course),
+                'resubscribe', 'legacy_subscription' => $this->startSubscriptionCheckout($request, $user, $course),
                 default => $this->startOneTimeCheckout($request, $user),
             };
         }

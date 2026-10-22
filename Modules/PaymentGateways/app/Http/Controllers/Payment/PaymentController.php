@@ -32,6 +32,7 @@ class PaymentController extends Controller
         $user = Auth::user();
         $launchOfferPayload = null;
         $checkoutMode = null;
+        $course = null;
 
         if ($item_type === 'course') {
             $course = Course::find($id);
@@ -77,9 +78,12 @@ class PaymentController extends Controller
             }
         }
 
-        $payments = $this->externalCheckout->filterGatewaysForCheckout(
-            $this->settings->getSettings(['type' => 'payment']),
-            $user
+        $payments = $this->externalCheckout->gatewaysForCheckoutMode(
+            $this->externalCheckout->filterGatewaysForCheckout(
+                $this->settings->getSettings(['type' => 'payment']),
+                $user
+            ),
+            $checkoutMode,
         );
 
         if (! $this->externalCheckout->hasActiveGateway($payments)) {
@@ -93,7 +97,7 @@ class PaymentController extends Controller
         $coupon = null;
         $couponError = null;
 
-        if ($submittedCouponCode && $item_type === 'course') {
+        if ($submittedCouponCode && $item_type === 'course' && $checkoutMode !== 'resubscribe') {
             $resolved = $this->courseCoupon->resolveCouponForCheckout($id, $submittedCouponCode, $user->id);
             $coupon = $resolved['coupon'];
             $couponError = $resolved['error'];
@@ -106,7 +110,16 @@ class PaymentController extends Controller
             $couponError = 'Coupons cannot be applied to pre-registration deposits.';
         }
 
-        if ($checkoutMode === 'deposit' && $launchOfferPayload) {
+        if ($checkoutMode === 'resubscribe' && $course) {
+            $coupon = null;
+            $couponError = null;
+            $amount = $this->launchOffer->subscriptionPrice($course);
+            $checkoutItem = [
+                ...$checkoutItem,
+                ...$this->payment->calculateCustomPrice($amount, null),
+                'coupon' => null,
+            ];
+        } elseif ($checkoutMode === 'deposit' && $launchOfferPayload) {
             $amount = (float) $launchOfferPayload['deposit_amount'];
             $checkoutItem = [
                 ...$checkoutItem,
