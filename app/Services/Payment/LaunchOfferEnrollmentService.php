@@ -9,8 +9,10 @@ use App\Models\Course\CourseEnrollment;
 use App\Models\User;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
+use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\PaymentGateways\Models\PaymentHistory;
 use Modules\PaymentGateways\Services\PaymentService;
 
@@ -148,8 +150,9 @@ class LaunchOfferEnrollmentService
         ?float $couponDiscount = null,
     ): CourseEnrollment {
         $couponNewlyApplied = false;
+        $activated = false;
 
-        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode, $couponDiscount, &$couponNewlyApplied) {
+        $enrollment = DB::transaction(function () use ($user, $course, $paymentMethod, $transactionId, $amount, $couponCode, $couponDiscount, &$couponNewlyApplied, &$activated) {
             $enrollment = CourseEnrollment::query()
                 ->where('user_id', $user->id)
                 ->where('course_id', $course->id)
@@ -170,12 +173,14 @@ class LaunchOfferEnrollmentService
                 $couponNewlyApplied = ! $hadCoupon && trim((string) $history->fresh()->coupon) !== '';
 
                 if ($canRecordBalance || empty($enrollment->balance_paid_at)) {
+                    $wasActive = $enrollment->access_status === EnrollmentAccessStatus::ACTIVE;
                     $enrollment->update([
                         'balance_paid_at' => now(),
                         'balance_payment_history_id' => $history->id,
                         'access_status' => EnrollmentAccessStatus::ACTIVE,
                         'enrollment_type' => 'paid',
                     ]);
+                    $activated = ! $wasActive;
                 }
 
                 return $enrollment->fresh(['user', 'course']);
@@ -200,12 +205,14 @@ class LaunchOfferEnrollmentService
 
             $couponNewlyApplied = trim((string) ($couponCode ?: $history->coupon)) !== '';
 
+            $wasActive = $enrollment->access_status === EnrollmentAccessStatus::ACTIVE;
             $enrollment->update([
                 'balance_paid_at' => now(),
                 'balance_payment_history_id' => $history->id,
                 'access_status' => EnrollmentAccessStatus::ACTIVE,
                 'enrollment_type' => 'paid',
             ]);
+            $activated = ! $wasActive;
 
             return $enrollment->fresh(['user', 'course']);
         });
@@ -216,6 +223,17 @@ class LaunchOfferEnrollmentService
         // Welcome email is the full enrollment confirmation (includes payment breakdown).
         if ($fresh) {
             app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($fresh, $force);
+        }
+
+        if ($activated && $fresh) {
+            try {
+                app(GoHighLevelEnrollmentWebhook::class)->queueForEnrollment($fresh);
+            } catch (\Throwable) {
+                Log::warning('Go High Level enrollment webhook failed', [
+                    'enrollment_id' => $fresh->id,
+                    'http_status' => null,
+                ]);
+            }
         }
 
         return $enrollment;

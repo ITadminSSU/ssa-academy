@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Services\StudentService;
 use App\Services\SettingsService;
 use App\Services\InstructorService;
+use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
 use App\Services\PageService;
 use App\Http\Requests\FooterItemRequest;
 use App\Http\Requests\NavbarItemRequest;
@@ -21,6 +22,7 @@ use App\Http\Requests\UpdateCustomPageRequest;
 use App\Http\Requests\UpdateInstructorProfileRequest;
 use App\Http\Requests\UpdateSmtpSettingsRequest;
 use App\Http\Requests\UpdateBunnyStreamRequest;
+use App\Http\Requests\UpdateGoHighLevelSettingsRequest;
 use App\Http\Requests\UpdateStorageRequest;
 use App\Http\Requests\UpdateZoomConfigRequest;
 use App\Http\Requests\UpdateLandingOverlayRequest;
@@ -313,6 +315,36 @@ class SettingController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+    }
+
+    public function go_high_level()
+    {
+        $webhook = app(GoHighLevelEnrollmentWebhook::class);
+        $goHighLevel = $webhook->adminPayload($webhook->setting());
+
+        return Inertia::render('dashboard/settings/go-high-level', [
+            'goHighLevel' => $goHighLevel,
+        ]);
+    }
+
+    public function go_high_level_update(UpdateGoHighLevelSettingsRequest $request, string $id)
+    {
+        $setting = Setting::query()->where('type', GoHighLevelEnrollmentWebhook::SETTING_TYPE)->findOrFail($id);
+        app(GoHighLevelEnrollmentWebhook::class)->update(
+            $setting,
+            $request->boolean('enabled'),
+            $request->input('webhook_url'),
+        );
+
+        return back()->with('success', 'Go High Level settings updated successfully.');
+    }
+
+    public function go_high_level_clear(string $id)
+    {
+        $setting = Setting::query()->where('type', GoHighLevelEnrollmentWebhook::SETTING_TYPE)->findOrFail($id);
+        app(GoHighLevelEnrollmentWebhook::class)->clear($setting);
+
+        return back()->with('success', 'Go High Level webhook URL removed.');
     }
 
     /**
