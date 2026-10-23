@@ -124,6 +124,10 @@ Route::prefix('dashboard/admin')->group(function () {
         Route::get('smtp', 'smtp')->name('settings.smtp');
         Route::post('smtp/{id}', 'smtp_update')->name('settings.smtp.update');
 
+        Route::get('go-high-level', 'go_high_level')->name('settings.go-high-level');
+        Route::post('go-high-level/{id}/clear', 'go_high_level_clear')->name('settings.go-high-level.clear');
+        Route::post('go-high-level/{id}', 'go_high_level_update')->name('settings.go-high-level.update');
+
         Route::get('platform-tools', [PlatformToolsController::class, 'index'])->name('settings.platform-tools');
         Route::post('platform-tools/clear-cache', [PlatformToolsController::class, 'clearCache'])->name('settings.platform-tools.clear-cache');
         Route::post('platform-tools/storage-link', [PlatformToolsController::class, 'storageLink'])->name('settings.platform-tools.storage-link');

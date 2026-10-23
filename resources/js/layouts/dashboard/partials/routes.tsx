@@ -396,6 +396,13 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   requiresPlatformSettings: true,
                },
                {
+                  name: 'Go High Level',
+                  slug: routeLastSegment(route('settings.go-high-level')),
+                  path: route('settings.go-high-level'),
+                  access: ['admin', 'collaborative', 'administrative'],
+                  requiresPlatformSettings: true,
+               },
+               {
                   name: 'Auth',
                   slug: routeLastSegment(route('settings.auth0')),
                   path: route('settings.auth0'),

@@ -196,6 +196,15 @@ class SettingsSeeder extends Seeder
                 ],
             ],
             [
+                'type' => 'go_high_level',
+                'sub_type' => null,
+                'title' => 'Go High Level',
+                'fields' => [
+                    'enabled' => false,
+                    'webhook_url' => '',
+                ],
+            ],
+            [
                 'type' => 'live_class',
                 'sub_type' => null,
                 'title' => 'Live Class Settings',

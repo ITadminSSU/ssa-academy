@@ -8,6 +8,7 @@ use App\Models\Course\CourseEnrollment;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
 use App\Services\Course\CourseSectionService;
+use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
 use App\Services\MediaService;
 use App\Support\EnrollmentListBilling;
 use Illuminate\Support\Facades\DB;
@@ -310,6 +311,15 @@ class CourseEnrollmentService extends MediaService
                'error' => $exception->getMessage(),
             ]);
          }
+      }
+
+      try {
+         app(GoHighLevelEnrollmentWebhook::class)->queueForEnrollment($enrollment);
+      } catch (\Throwable) {
+         Log::warning('Go High Level enrollment webhook failed', [
+            'enrollment_id' => $enrollment->id ?? null,
+            'http_status' => null,
+         ]);
       }
 
       return $enrollment;
