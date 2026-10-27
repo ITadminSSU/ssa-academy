@@ -43,6 +43,33 @@ class StripeInvoiceIds
         return StripeCheckoutIds::objectId($invoice->id ?? null);
     }
 
+    public static function recurringPriceId(?object $invoice): string
+    {
+        if (! $invoice) {
+            return '';
+        }
+
+        $lines = data_get($invoice, 'lines.data', []);
+
+        if (! is_array($lines) && ! is_iterable($lines)) {
+            return '';
+        }
+
+        foreach ($lines as $line) {
+            $priceId = StripeCheckoutIds::objectId(data_get($line, 'price.id'));
+
+            if ($priceId === '') {
+                $priceId = StripeCheckoutIds::objectId(data_get($line, 'pricing.price_details.price'));
+            }
+
+            if ($priceId !== '') {
+                return $priceId;
+            }
+        }
+
+        return '';
+    }
+
     public static function billingReason(?object $invoice): string
     {
         if (! $invoice) {

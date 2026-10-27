@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import SubscriptionBillingNotice from '@/components/subscription-billing-notice';
 import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
 import { formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
-import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
+import { installmentPlanLabel, isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -37,6 +37,7 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
    const isLaunchFullPrice = launchOffer.enabled && launchOffer.phase === 'full_price';
    const catalogPromo = launchOffer.catalogPromo;
    const symbol = currency?.symbol ?? '$';
+   const installmentLabel = installmentPlanLabel(course, symbol);
 
    const handleWishlist = () => {
       if (isWishlisted) {
@@ -244,6 +245,8 @@ const CourseCard1 = ({ course, viewType = 'grid', className, wishlists }: Props)
                               <span className="text-muted-foreground text-xs font-medium">with coupon</span>
                            </span>
                         </div>
+                     ) : installmentLabel ? (
+                        <span className="normal-case">{installmentLabel}</span>
                      ) : isSubscription ? (
                         <>
                            <span>

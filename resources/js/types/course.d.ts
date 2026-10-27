@@ -67,8 +67,10 @@ interface Course extends TableCommon {
    level: string;
    language?: string;
    pricing_type: string;
-   billing_model?: 'one_time' | 'subscription' | 'upfront_subscription' | 'pre_register_subscription';
+   billing_model?: 'one_time' | 'subscription' | 'upfront_subscription' | 'pre_register_subscription' | 'installment_subscription';
    subscription_price?: number | null;
+   installment_price?: number | null;
+   installment_months?: number | null;
    launch_offer_enabled?: boolean;
    launch_offer_starts_at?: string | null;
    launch_offer_ends_at?: string | null;
@@ -84,6 +86,7 @@ interface Course extends TableCommon {
    catalog_promo?: CatalogPromo | null;
    stripe_product_id?: string | null;
    stripe_price_id?: string | null;
+   stripe_ongoing_price_id?: string | null;
    audience: 'internal' | 'public' | 'both';
    price: number;
    discount?: number;

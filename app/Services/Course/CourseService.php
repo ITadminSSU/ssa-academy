@@ -133,6 +133,11 @@ class CourseService extends MediaService
                $pricing['catalog_coupon_off_remaining'] = $data['catalog_coupon_off_remaining'] ?? null;
             }
 
+            if (Schema::hasColumn('courses', 'installment_price')) {
+               $pricing['installment_price'] = $data['installment_price'] ?? null;
+               $pricing['installment_months'] = $data['installment_months'] ?? null;
+            }
+
             $course->forceFill($pricing)->save();
 
             $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);

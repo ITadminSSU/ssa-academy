@@ -98,6 +98,30 @@ it('keeps launch offer enabled for pre-registration billing', function () {
     expect($request->input('launch_offer_starts_at'))->not->toBeNull();
 });
 
+it('clears launch offer and catalog coupon promo when switching to installment billing', function () {
+    $request = billingSwitchRequest([
+        ...leftoverLaunchFields(),
+        'billing_model' => 'installment_subscription',
+        'price' => null,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'subscription_price' => 6,
+        'catalog_coupon_promo' => true,
+        'catalog_coupon_off_remaining' => 29,
+    ]);
+
+    $request->validateResolved();
+
+    expect($request->input('billing_model'))->toBe('installment_subscription');
+    expect($request->boolean('launch_offer_enabled'))->toBeFalse();
+    expect($request->input('launch_offer_starts_at'))->toBeNull();
+    expect($request->boolean('catalog_coupon_promo'))->toBeFalse();
+    expect($request->input('catalog_coupon_off_remaining'))->toBeNull();
+    expect((float) $request->input('installment_price'))->toBe(15.0);
+    expect((int) $request->input('installment_months'))->toBe(6);
+    expect((float) $request->input('subscription_price'))->toBe(6.0);
+});
+
 it('still requires launch dates for pre-registration billing', function () {
     $request = billingSwitchRequest([
         'billing_model' => 'pre_register_subscription',

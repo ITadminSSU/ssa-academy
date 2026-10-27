@@ -10,6 +10,7 @@ use App\Services\Course\CourseCouponService;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use App\Services\Course\CourseSectionService;
 use App\Services\Payment\ExternalCheckoutService;
+use App\Services\Payment\InstallmentBillingService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
 use App\Services\Payment\StripeCustomerService;
@@ -39,6 +40,7 @@ class StripeController extends Controller
         private LaunchOfferService $launchOffer,
         private LaunchOfferEnrollmentService $launchOfferEnrollment,
         private CourseCouponService $courseCoupon,
+        private InstallmentBillingService $installments,
     ) {
         $this->stripe = $this->settingsService->getSetting(['type' => 'payment', 'sub_type' => 'stripe']);
         $this->stripeSecret = $this->stripe->fields['test_mode']
@@ -100,6 +102,8 @@ class StripeController extends Controller
                 'full_launch' => $this->startFullLaunchCheckout($request, $user, $course),
                 'upfront_subscription' => $this->startUpfrontSubscriptionCheckout($request, $user, $course),
                 'resubscribe', 'legacy_subscription' => $this->startSubscriptionCheckout($request, $user, $course),
+                'installment_subscription' => $this->startInstallmentCheckout($request, $user, $course),
+                'installment_past_due' => $this->redirectToOpenInstallmentInvoice($user, $course),
                 default => $this->startOneTimeCheckout($request, $user),
             };
         }
@@ -462,6 +466,80 @@ class StripeController extends Controller
         return redirect()->away($response->url);
     }
 
+    protected function startInstallmentCheckout(Request $request, $user, Course $course)
+    {
+        if (empty($course->stripe_price_id) || empty($course->stripe_ongoing_price_id)) {
+            return redirect()
+                ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                ->with('error', 'This installment plan is not configured for checkout yet. Please contact support.');
+        }
+
+        $this->stripeCustomer->configureStripe();
+        $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
+
+        Stripe::setApiKey($this->stripeSecret);
+
+        $response = Session::create([
+            'mode' => 'subscription',
+            'customer' => $customerId,
+            'line_items' => [
+                [
+                    'price' => $course->stripe_price_id,
+                    'quantity' => 1,
+                ],
+            ],
+            'success_url' => StripeCheckoutIds::successUrl(),
+            'cancel_url' => route('payments.stripe.cancel'),
+            'client_reference_id' => (string) $user->id,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'item_type' => 'course',
+                'item_id' => (string) $course->id,
+                'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value,
+            ],
+            'subscription_data' => [
+                'metadata' => [
+                    'user_id' => (string) $user->id,
+                    'course_id' => (string) $course->id,
+                    'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value,
+                ],
+            ],
+        ]);
+
+        setTempStore([
+            'user_id' => $user->id,
+            'properties' => [
+                'from' => $request->from,
+                'item_type' => 'course',
+                'item_id' => $course->id,
+                'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value,
+                'stripe_id' => $response->id,
+                'tax_amount' => 0,
+                'coupon_code' => null,
+            ],
+        ]);
+
+        return redirect()->away($response->url);
+    }
+
+    protected function redirectToOpenInstallmentInvoice($user, Course $course)
+    {
+        $enrollment = CourseEnrollment::query()
+            ->where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->with('subscription')
+            ->first();
+        $invoiceUrl = $enrollment?->subscription?->open_invoice_url;
+
+        if (is_string($invoiceUrl) && $invoiceUrl !== '') {
+            return redirect()->away($invoiceUrl);
+        }
+
+        return redirect()
+            ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+            ->with('error', 'Your installment payment is past due. Pay the open invoice to unlock this course.');
+    }
+
     protected function startSubscriptionCheckout(Request $request, $user, Course $course)
     {
         if (empty($course->stripe_price_id)) {
@@ -665,9 +743,14 @@ class StripeController extends Controller
             if (
                 $billing_model === CourseBillingModel::SUBSCRIPTION->value
                 || $billing_model === CourseBillingModel::UPFRONT_SUBSCRIPTION->value
+                || $billing_model === CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value
                 || $order->mode === 'subscription'
             ) {
                 $this->subscriptionService->activateFromCheckoutSession($order);
+
+                if ($billing_model === CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value) {
+                    $this->installments->recordCheckoutSession($order);
+                }
 
                 if ($course) {
                     $this->sendWelcomeEmailForCourse($user, $course);
@@ -680,8 +763,9 @@ class StripeController extends Controller
                 }
 
                 if ($course) {
-                    $message = match ($offerMode) {
-                        'full_launch', 'upfront_subscription' => 'Enrollment complete. You paid the course price and the first month of Project Plans today. Monthly billing continues from next month.',
+                    $message = match (true) {
+                        $billing_model === CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value => 'Installment plan started. You now have access to this course. The monthly price changes after the installment months are paid.',
+                        in_array($offerMode, ['full_launch', 'upfront_subscription'], true) => 'Enrollment complete. You paid the course price and the first month of Project Plans today. Monthly billing continues from next month.',
                         default => 'Subscription active. You now have access to this course.',
                     };
 

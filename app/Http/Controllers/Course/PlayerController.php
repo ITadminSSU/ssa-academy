@@ -11,14 +11,14 @@ use App\Services\Course\CourseCompletionGateService;
 use App\Services\Course\CourseFinalExamService;
 use App\Services\Course\CoursePlayerService;
 use App\Services\Course\CourseReviewService;
-use App\Services\Course\CourseService;
 use App\Services\Course\CourseSectionService;
+use App\Services\Course\CourseService;
 use App\Services\Course\LessonWatchProgressService;
 use App\Services\Course\ProtectedMediaService;
 use App\Services\Course\QuizTakeoffService;
 use App\Services\Course\VideoPlaybackTokenService;
-use App\Services\LiveClass\ZoomLiveService;
 use App\Services\LegalAgreementService;
+use App\Services\LiveClass\ZoomLiveService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Support\CurriculumSequence;
 use Illuminate\Http\Request;
@@ -63,12 +63,12 @@ class PlayerController extends Controller
         $course = \App\Models\Course\Course::findOrFail($validated['course_id']);
 
         if (
-            !$course->isEnrollmentOpen()
-            && !$course->canPreviewBeforeLaunch($user)
-            && !$course->isStaffPreviewer($user)
+            ! $course->isEnrollmentOpen()
+            && ! $course->canPreviewBeforeLaunch($user)
+            && ! $course->isStaffPreviewer($user)
         ) {
             $message = $course->launch_at
-                ? 'This course launches on ' . $course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A') . '.'
+                ? 'This course launches on '.$course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A').'.'
                 : 'This course is coming soon.';
 
             return redirect()
@@ -76,7 +76,7 @@ class PlayerController extends Controller
                 ->with('error', $message);
         }
 
-        if (!$this->subscriptionAccess->canAccessPlayer($user, $course)) {
+        if (! $this->subscriptionAccess->canAccessPlayer($user, $course)) {
             $enrollment = $this->subscriptionAccess->resolveEnrollment($user, $course);
             $message = $enrollment?->isReservedSeat()
                 ? 'Your seat is reserved. Pay the remaining balance on launch to unlock the full course.'
@@ -101,8 +101,8 @@ class PlayerController extends Controller
             'lesson_id' => $validated['lesson_id'] ?? $watchHistory->current_watching_id,
         ]);
 
-        if (!empty($validated['panel'])) {
-            $url .= '?panel=' . $validated['panel'];
+        if (! empty($validated['panel'])) {
+            $url .= '?panel='.$validated['panel'];
         }
 
         return redirect($url);
@@ -144,7 +144,7 @@ class PlayerController extends Controller
                     ->with('error', 'Course not found.');
             }
 
-            if (!$this->subscriptionAccess->canAccessPlayer($user, $course)) {
+            if (! $this->subscriptionAccess->canAccessPlayer($user, $course)) {
                 $enrollment = $this->subscriptionAccess->resolveEnrollment($user, $course);
                 $redirectMessage = $enrollment?->isReservedSeat()
                     ? 'Your seat is reserved. Pay the remaining balance on launch to unlock the full course.'
@@ -152,9 +152,11 @@ class PlayerController extends Controller
                         ? ($course->launch_at
                             ? 'This course launches on '.$course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A').'.'
                             : 'This course is coming soon.')
-                        : ($course->usesSubscriptionBilling()
-                            ? 'Your access to this course has expired. Resubscribe to continue.'
-                            : 'Your access to this course has expired.'));
+                        : ($course->usesInstallmentSubscription()
+                            ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                            : ($course->usesSubscriptionBilling()
+                                ? 'Your access to this course has expired. Resubscribe to continue.'
+                                : 'Your access to this course has expired.')));
 
                 return redirect()
                     ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
@@ -167,9 +169,9 @@ class PlayerController extends Controller
             $staffPreview = $course->isStaffPreviewer($user);
 
             if (
-                !$staffPreview
+                ! $staffPreview
                 && $type === 'quiz'
-                && !$this->courseCompletionGateService->canAccessQuiz($course, $user->id, $lesson_id, $watch_history)
+                && ! $this->courseCompletionGateService->canAccessQuiz($course, $user->id, $lesson_id, $watch_history)
             ) {
                 return $this->redirectLockedCurriculumItem(
                     $course,
@@ -182,9 +184,9 @@ class PlayerController extends Controller
             }
 
             if (
-                !$staffPreview
+                ! $staffPreview
                 && $type === 'lesson'
-                && !$this->courseCompletionGateService->canAccessLesson($course, $user->id, $lesson_id, $watch_history)
+                && ! $this->courseCompletionGateService->canAccessLesson($course, $user->id, $lesson_id, $watch_history)
             ) {
                 return $this->redirectLockedCurriculumItem(
                     $course,
@@ -198,7 +200,7 @@ class PlayerController extends Controller
 
             $watching = $this->coursePlay->getWatchingLesson($lesson_id, $type);
 
-            if (!$watching) {
+            if (! $watching) {
                 if ($staffPreview) {
                     return back()->with('error', 'Lesson not found.');
                 }
@@ -289,8 +291,12 @@ class PlayerController extends Controller
 
         $course = $watch_history->course()->firstOrFail();
 
-        if (!$this->subscriptionAccess->canMarkProgress($user, $course)) {
-            return response()->json(['message' => 'Your subscription is inactive. Resubscribe to track progress.'], 403);
+        if (! $this->subscriptionAccess->canMarkProgress($user, $course)) {
+            $message = $course->usesInstallmentSubscription()
+                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                : 'Your subscription is inactive. Resubscribe to track progress.';
+
+            return response()->json(['message' => $message], 403);
         }
 
         $validated = $request->validate([
@@ -326,9 +332,11 @@ class PlayerController extends Controller
             ->with(['sections.section_lessons', 'sections.section_quizzes'])
             ->firstOrFail();
 
-        if (!$this->subscriptionAccess->canMarkProgress($user, $course)) {
+        if (! $this->subscriptionAccess->canMarkProgress($user, $course)) {
             return response()->json([
-                'message' => 'Your subscription is inactive. Resubscribe to mark lessons complete.',
+                'message' => $course->usesInstallmentSubscription()
+                    ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                    : 'Your subscription is inactive. Resubscribe to mark lessons complete.',
             ], 403);
         }
 
@@ -394,8 +402,10 @@ class PlayerController extends Controller
 
         $course = $watch_history->course()->with(['sections.section_lessons', 'sections.section_quizzes', 'assignments'])->firstOrFail();
 
-        if (!$this->subscriptionAccess->canFinishCourse($user, $course)) {
-            return back()->with('error', 'Your subscription is inactive. Resubscribe to finish the course.');
+        if (! $this->subscriptionAccess->canFinishCourse($user, $course)) {
+            return back()->with('error', $course->usesInstallmentSubscription()
+                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                : 'Your subscription is inactive. Resubscribe to finish the course.');
         }
 
         // Keep quiz completions in sync before gating / percentage checks.
@@ -412,7 +422,7 @@ class PlayerController extends Controller
         $completion = $this->coursePlay->calculateCompletion($course, $watch_history);
         $gates = $this->courseCompletionGateService->getGateStatus($course, $user->id, $completion, $watch_history);
 
-        if (!$gates['certificate_unlocked']) {
+        if (! $gates['certificate_unlocked']) {
             return back()->with('error', 'Complete all required phases before finishing the course.');
         }
 
@@ -430,7 +440,7 @@ class PlayerController extends Controller
             }
         }
 
-        if (!$itemExists && $lastItem['id'] !== '' && $lastItem['type']) {
+        if (! $itemExists && $lastItem['id'] !== '' && $lastItem['type']) {
             $completedItems[] = $lastItem;
         }
 

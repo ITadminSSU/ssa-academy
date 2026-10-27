@@ -56,7 +56,7 @@ class CheckEnroll
                 ? $routeWatchHistory
                 : WatchHistory::find($routeWatchHistory);
 
-            if (!$watchHistory) {
+            if (! $watchHistory) {
                 return back()->with('error', 'Invalid watch history');
             }
 
@@ -67,7 +67,7 @@ class CheckEnroll
 
         $course = $courseId ? Course::find($courseId) : null;
 
-        if (!$course) {
+        if (! $course) {
             return back()->with('error', 'Invalid course');
         }
 
@@ -92,6 +92,8 @@ class CheckEnroll
             $message = $course->launch_at
                 ? 'This course launches on '.$course->launch_at->timezone(config('app.timezone'))->format('M j, Y g:i A').'.'
                 : 'This course is coming soon.';
+        } elseif ($enrollment && $course->usesInstallmentSubscription()) {
+            $message = 'Your installment payment is past due. Pay the open invoice to unlock this course.';
         } elseif ($enrollment) {
             $message = $course->usesSubscriptionBilling()
                 ? 'Your access to this course has expired. Resubscribe to continue.'

@@ -410,6 +410,10 @@ class CourseCouponService
       $billing = $this->billingModelValue($course);
       $off = (float) ($course->catalog_coupon_off_remaining ?? 0);
 
+      if ($billing === CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value) {
+         return null;
+      }
+
       if ($billing === CourseBillingModel::ONE_TIME->value) {
          return $this->pricedPromoPayload('one_time', (float) ($course->price ?? 0), 0.0, $off);
       }

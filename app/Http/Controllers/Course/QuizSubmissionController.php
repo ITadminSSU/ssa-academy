@@ -35,9 +35,11 @@ class QuizSubmissionController extends Controller
         $user = User::query()->findOrFail($request->user_id);
 
         if (!$this->subscriptionAccess->canMarkProgress($user, $quiz->course)) {
-            $message = $quiz->course->usesSubscriptionBilling()
-                ? 'Your subscription is inactive. Resubscribe to take quizzes.'
-                : 'Your access to this course is inactive.';
+            $message = $quiz->course->usesInstallmentSubscription()
+                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                : ($quiz->course->usesSubscriptionBilling()
+                    ? 'Your subscription is inactive. Resubscribe to take quizzes.'
+                    : 'Your access to this course is inactive.');
 
             return back()->with('error', $message);
         }
@@ -72,9 +74,11 @@ class QuizSubmissionController extends Controller
         $user = User::query()->findOrFail($request->user_id);
 
         if (!$this->subscriptionAccess->canMarkProgress($user, $quiz->course)) {
-            $message = $quiz->course->usesSubscriptionBilling()
-                ? 'Your subscription is inactive. Resubscribe to take quizzes.'
-                : 'Your access to this course is inactive.';
+            $message = $quiz->course->usesInstallmentSubscription()
+                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                : ($quiz->course->usesSubscriptionBilling()
+                    ? 'Your subscription is inactive. Resubscribe to take quizzes.'
+                    : 'Your access to this course is inactive.');
 
             return back()->with('error', $message);
         }

@@ -21,6 +21,7 @@ class StripeWebhookService
         private SubscriptionService $subscriptions,
         private LaunchOfferEnrollmentService $launchOfferEnrollment,
         private PaymentService $payment,
+        private InstallmentBillingService $installments,
     ) {}
 
     public function handle(string $payload, ?string $signatureHeader): void
@@ -214,6 +215,7 @@ class StripeWebhookService
     {
         try {
             $this->subscriptions->handleInvoicePaymentSucceeded($invoice);
+            $this->installments->recordPaidInvoice($invoice);
         } catch (\Throwable $exception) {
             Log::error('Stripe subscription invoice payment handling failed', [
                 'invoice_id' => $invoice->id ?? null,
@@ -280,6 +282,16 @@ class StripeWebhookService
         $this->stripeCustomer->configureStripe();
 
         $stripeSubscription = \Stripe\Subscription::retrieve($subscriptionId);
+        $subscription = Subscription::query()
+            ->where('stripe_subscription_id', $subscriptionId)
+            ->first();
+
+        if ($subscription?->course?->usesInstallmentSubscription()) {
+            $this->installments->lockForFailedInvoice($stripeSubscription, $invoice);
+
+            return;
+        }
+
         $this->subscriptions->handlePaymentFailed($stripeSubscription);
     }
 }
