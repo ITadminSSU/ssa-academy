@@ -15,7 +15,28 @@ const SubscriptionAccessBanner = ({ subscriptionAccess: accessProp, course: cour
    const subscriptionAccess = accessProp ?? page.subscriptionAccess;
    const course = courseProp ?? page.course;
 
-   if (!subscriptionAccess || subscriptionAccess.mode !== 'completed_only' || !course) {
+   if (!subscriptionAccess || !course) {
+      return null;
+   }
+
+   if (subscriptionAccess.mode === 'installment_locked') {
+      return (
+         <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-50">
+            <Lock className="h-4 w-4" />
+            <AlertTitle>Payment past due</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+               <span>This course is locked until the open invoice is paid. Paying it unlocks the same enrollment.</span>
+               {subscriptionAccess.invoice_url ? (
+                  <Button asChild size="sm" className="sm:w-auto">
+                     <a href={subscriptionAccess.invoice_url}>Pay open invoice</a>
+                  </Button>
+               ) : null}
+            </AlertDescription>
+         </Alert>
+      );
+   }
+
+   if (subscriptionAccess.mode !== 'completed_only') {
       return null;
    }
 

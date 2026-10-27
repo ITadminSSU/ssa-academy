@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\EnrollmentAccessStatus;
 use App\Enums\CourseBillingModel;
+use App\Enums\EnrollmentAccessStatus;
 use App\Enums\LearnerUserType;
 use App\Enums\SubscriptionStatus;
 use App\Models\Course\Course;
@@ -181,6 +181,54 @@ it('hides public us experience from guests staff and anyone not enrolled in the 
     expect($this->service->canViewPublicUsExperience($student, $course, $lapsed))->toBeTrue();
     expect($this->service->canViewPublicUsExperience($student, $oneTimeCourse, $active))->toBeTrue();
     expect($this->service->canViewPublicUsExperience($student, $oneTimeCourse, $lapsed))->toBeFalse();
+});
+
+it('locks an installment course immediately without using the subscription grace period', function () {
+    $user = makeUser();
+    $course = makeCourse([
+        'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'subscription_price' => 6,
+    ]);
+    $subscription = new Subscription([
+        'status' => SubscriptionStatus::PAST_DUE,
+        'grace_ends_at' => Carbon::now()->addDays(3),
+        'open_invoice_url' => 'https://pay.stripe.test/in_123',
+    ]);
+    $enrollment = makeEnrollment(EnrollmentAccessStatus::SUSPENDED, $subscription);
+    $watchHistory = new WatchHistory([
+        'completed_watching' => json_encode([
+            ['id' => '10', 'type' => 'lesson'],
+        ]),
+    ]);
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('installment_locked');
+    expect($this->service->canAccessPlayer($user, $course, $enrollment))->toBeFalse();
+    expect($this->service->canAccessItem($user, $course, 10, 'lesson', $watchHistory, $enrollment))->toBeFalse();
+
+    $payload = $this->service->toFrontendPayload($user, $course, $enrollment);
+
+    expect($payload['can_resubscribe'])->toBeFalse();
+    expect($payload['can_pay_invoice'])->toBeTrue();
+    expect($payload['invoice_url'])->toBe('https://pay.stripe.test/in_123');
+    expect($payload['can_mark_progress'])->toBeFalse();
+});
+
+it('gives full access to an active installment subscription', function () {
+    $user = makeUser();
+    $course = makeCourse([
+        'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION,
+    ]);
+    $enrollment = makeEnrollment(
+        EnrollmentAccessStatus::ACTIVE,
+        new Subscription(['status' => SubscriptionStatus::ACTIVE]),
+    );
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('full');
+    expect($this->service->canMarkProgress($user, $course, $enrollment))->toBeTrue();
+    expect($this->service->toFrontendPayload($user, $course, $enrollment)['can_resubscribe'])->toBeFalse();
+    expect($this->service->toFrontendPayload($user, $course, $enrollment)['can_pay_invoice'])->toBeFalse();
 });
 
 it('allows employees through linked exam gate without subscription', function () {

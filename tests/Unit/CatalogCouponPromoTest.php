@@ -185,3 +185,18 @@ it('does not advertise a catalog coupon on monthly-only billing', function () {
 
     expect(app(CourseCouponService::class)->catalogPromoFor($course))->toBeNull();
 });
+
+it('does not advertise a catalog coupon on installment billing', function () {
+    $course = new Course([
+        'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'subscription_price' => 6,
+        'catalog_coupon_promo' => true,
+        'catalog_coupon_off_remaining' => 29,
+        'launch_offer_enabled' => false,
+    ]);
+
+    expect(app(CourseCouponService::class)->catalogPromoFor($course))->toBeNull();
+    expect($course->installmentPlanLabel())->toBe('$15/mo for 6 months, then $6/mo');
+});

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import VideoPlayer from '@/components/video-player';
 import courseLanguages from '@/data/course-languages';
 import { formatCatalogPromoDate, formatOfferAmount, getLaunchOfferView } from '@/lib/launch-offer';
-import { isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
+import { installmentPlanLabel, isSubscriptionCourse, isUpfrontSubscriptionCourse } from '@/lib/subscription-billing';
 import { getCourseDuration, systemCurrency } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { BarChart3, Calendar, Clock, Languages, Mail, Play, Users } from 'lucide-react';
@@ -32,6 +32,7 @@ const CoursePreview = () => {
    const promoWindowDate = formatCatalogPromoDate(promoWindowEnd);
    const thenFullPrice = formatOfferAmount(catalogPromo?.full_upfront_price ?? offer.fullUpfrontPrice);
    const symbol = currency?.symbol ?? '$';
+   const installmentLabel = installmentPlanLabel(course, symbol);
 
    return (
       <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
@@ -168,6 +169,8 @@ const CoursePreview = () => {
                         <span className="text-muted-foreground text-base font-medium normal-case">with coupon</span>
                      </span>
                   </>
+               ) : installmentLabel ? (
+                  <span className="font-semibold normal-case">{installmentLabel}</span>
                ) : course.billing_model === 'subscription' ? (
                   <>
                      <span className="font-semibold">

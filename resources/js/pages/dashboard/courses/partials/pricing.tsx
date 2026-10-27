@@ -45,6 +45,10 @@ const billingModelLabel = (value: string) => {
       return 'Pre-registration + monthly subscription';
    }
 
+   if (value === 'installment_subscription') {
+      return 'Installment, then monthly';
+   }
+
    return 'One-time purchase';
 };
 
@@ -285,6 +289,8 @@ const Pricing = () => {
       billing_model: initialBillingModel,
       price: course.price ?? '',
       subscription_price: course.subscription_price ?? '',
+      installment_price: course.installment_price ?? '',
+      installment_months: course.installment_months ?? '',
       discount: Boolean(course.discount),
       discount_price: course.discount_price ?? '',
       expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
@@ -338,6 +344,14 @@ const Pricing = () => {
          price: form.price === '' || form.price === null ? null : Number(form.price),
          subscription_price:
             form.subscription_price === '' || form.subscription_price === null ? null : Number(form.subscription_price),
+         installment_price:
+            form.billing_model === 'installment_subscription' && form.installment_price !== '' && form.installment_price !== null
+               ? Number(form.installment_price)
+               : null,
+         installment_months:
+            form.billing_model === 'installment_subscription' && form.installment_months !== '' && form.installment_months !== null
+               ? Number(form.installment_months)
+               : null,
          discount_price:
             form.discount && form.discount_price !== '' && form.discount_price !== null
                ? Number(form.discount_price)
@@ -362,11 +376,13 @@ const Pricing = () => {
    const isPaid = data.pricing_type === paidValue;
    const isPreRegisterSubscription = isPaid && data.billing_model === 'pre_register_subscription';
    const isUpfrontSubscription = isPaid && data.billing_model === 'upfront_subscription';
+   const isInstallment = isPaid && data.billing_model === 'installment_subscription';
    const isSubscription =
       isPaid &&
       (data.billing_model === 'subscription' ||
          data.billing_model === 'upfront_subscription' ||
-         data.billing_model === 'pre_register_subscription');
+         data.billing_model === 'pre_register_subscription' ||
+         isInstallment);
    const isOneTime = isPaid && data.billing_model === 'one_time';
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -437,10 +453,19 @@ const Pricing = () => {
                                  subscription_price:
                                     (value === 'subscription' ||
                                        value === 'upfront_subscription' ||
-                                       value === 'pre_register_subscription') &&
+                                       value === 'pre_register_subscription' ||
+                                       value === 'installment_subscription') &&
                                     !current.subscription_price
                                        ? '6'
                                        : current.subscription_price,
+                                 installment_price:
+                                    value === 'installment_subscription' && !current.installment_price
+                                       ? '15'
+                                       : current.installment_price,
+                                 installment_months:
+                                    value === 'installment_subscription' && !current.installment_months
+                                       ? '6'
+                                       : current.installment_months,
                               }));
                            }}
                         >
@@ -517,8 +542,52 @@ const Pricing = () => {
 
                      {isSubscription ? (
                         <div className="space-y-4">
+                           {isInstallment ? (
+                              <div className="grid gap-4 sm:grid-cols-2">
+                                 <div>
+                                    <Label>Installment price *</Label>
+                                    <Input
+                                       type="number"
+                                       name="installment_price"
+                                       min="1"
+                                       step="0.01"
+                                       value={
+                                          data.installment_price === null || data.installment_price === undefined
+                                             ? ''
+                                             : String(data.installment_price)
+                                       }
+                                       onChange={(e) => setData('installment_price', e.target.value)}
+                                       placeholder="15.00"
+                                    />
+                                    <p className="text-muted-foreground mt-1 text-xs">
+                                       Charged every month until this many installment invoices are paid.
+                                    </p>
+                                    <InputError message={errors.installment_price} />
+                                 </div>
+                                 <div>
+                                    <Label>Installment months *</Label>
+                                    <Input
+                                       type="number"
+                                       name="installment_months"
+                                       min="1"
+                                       step="1"
+                                       value={
+                                          data.installment_months === null || data.installment_months === undefined
+                                             ? ''
+                                             : String(data.installment_months)
+                                       }
+                                       onChange={(e) => setData('installment_months', e.target.value)}
+                                       placeholder="6"
+                                    />
+                                    <p className="text-muted-foreground mt-1 text-xs">
+                                       The checkout payment counts as month 1.
+                                    </p>
+                                    <InputError message={errors.installment_months} />
+                                 </div>
+                              </div>
+                           ) : null}
                            <div>
-                              <Label>Monthly subscription price *</Label>
+                              <Label>{isInstallment ? 'Monthly price after installments *' : 'Monthly subscription price *'}</Label>
                               <Input
                                  type="number"
                                  name="subscription_price"
@@ -533,12 +602,24 @@ const Pricing = () => {
                                  placeholder="6.00"
                               />
                               <p className="text-muted-foreground mt-1 text-xs">
-                                 {isUpfrontSubscription
+                                 {isInstallment
+                                    ? 'Charged on the invoice after the last paid installment. Build Your US Experience stays on this same course. This does not change the installment invoices already due.'
+                                    : isUpfrontSubscription
                                     ? 'Students pay the upfront amount plus this first monthly charge today, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
                                     : isPreRegisterSubscription
                                       ? 'Only students who pay the launch balance on time get one free subscription month, then this amount monthly. Full-upfront enrollments after pre-reg pay the course price plus this first month today (no free month).'
                                       : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
+                              {isInstallment &&
+                              Number(data.installment_price) >= 1 &&
+                              Number(data.installment_months) >= 1 &&
+                              Number(data.subscription_price) >= 1 ? (
+                                 <p className="text-muted-foreground mt-1 text-xs">
+                                    Card preview: ${Number(data.installment_price)}/mo for {Number(data.installment_months)}{' '}
+                                    {Number(data.installment_months) === 1 ? 'month' : 'months'}, then $
+                                    {Number(data.subscription_price)}/mo
+                                 </p>
+                              ) : null}
                               <InputError message={errors.subscription_price} />
                            </div>
 
@@ -719,7 +800,14 @@ const Pricing = () => {
                                     {(course.stripe_product_id || course.stripe_price_id) && (
                                        <div className="text-muted-foreground space-y-1 text-xs">
                                           {course.stripe_product_id ? <p>Product: {course.stripe_product_id}</p> : null}
-                                          {course.stripe_price_id ? <p>Price: {course.stripe_price_id}</p> : null}
+                                          {course.stripe_price_id ? (
+                                             <p>
+                                                {isInstallment ? 'Installment price' : 'Price'}: {course.stripe_price_id}
+                                             </p>
+                                          ) : null}
+                                          {isInstallment && course.stripe_ongoing_price_id ? (
+                                             <p>Ongoing price: {course.stripe_ongoing_price_id}</p>
+                                          ) : null}
                                        </div>
                                     )}
 

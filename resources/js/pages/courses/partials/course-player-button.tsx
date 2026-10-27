@@ -250,8 +250,29 @@ const EnrollOrPlayerButton = () => {
       return <ComingSoonButton />;
    }
 
-   const canPlay = hasWatchHistory && (isAdminOrInstructor || (isEnrolled && subscriptionAccess?.mode !== 'none'));
+   const canPlay =
+      hasWatchHistory &&
+      (isAdminOrInstructor || (isEnrolled && subscriptionAccess?.mode !== 'none' && subscriptionAccess?.mode !== 'installment_locked'));
    const showResubscribe = subscriptionAccess?.can_resubscribe ?? false;
+
+   if (subscriptionAccess?.can_pay_invoice) {
+      return (
+         <div className="space-y-3">
+            <p className="text-muted-foreground text-sm">
+               This course is locked until the open invoice is paid. Paying it unlocks the same enrollment.
+            </p>
+            {subscriptionAccess.invoice_url ? (
+               <Button asChild size="lg" className="w-full">
+                  <a href={subscriptionAccess.invoice_url}>Pay open invoice</a>
+               </Button>
+            ) : (
+               <Button disabled size="lg" className="w-full">
+                  Pay open invoice
+               </Button>
+            )}
+         </div>
+      );
+   }
 
    if (canPlay) {
       return (

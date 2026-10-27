@@ -8,6 +8,7 @@ use App\Enums\CourseStatusType;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Support\CourseReviewCarousel;
+use App\Support\InstallmentBillingRules;
 use App\Support\S3CompatibleStorage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -48,6 +49,8 @@ class Course extends Model implements HasMedia
         'discount',
         'discount_price',
         'subscription_price',
+        'installment_price',
+        'installment_months',
         'launch_offer_enabled',
         'launch_offer_starts_at',
         'launch_offer_ends_at',
@@ -62,6 +65,7 @@ class Course extends Model implements HasMedia
         'catalog_coupon_off_remaining',
         'stripe_product_id',
         'stripe_price_id',
+        'stripe_ongoing_price_id',
         'drip_content',
 
         'thumbnail',
@@ -95,6 +99,8 @@ class Course extends Model implements HasMedia
         'audience' => CourseAudience::class,
         'billing_model' => CourseBillingModel::class,
         'subscription_price' => 'decimal:2',
+        'installment_price' => 'decimal:2',
+        'installment_months' => 'integer',
         'launch_offer_enabled' => 'boolean',
         'launch_offer_starts_at' => 'datetime',
         'launch_offer_ends_at' => 'datetime',
@@ -234,7 +240,7 @@ class Course extends Model implements HasMedia
     {
         $user ??= Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -251,7 +257,7 @@ class Course extends Model implements HasMedia
     {
         $user ??= Auth::user();
 
-        if (!$user || !$this->isComingSoon()) {
+        if (! $user || ! $this->isComingSoon()) {
             return false;
         }
 
@@ -259,7 +265,7 @@ class Course extends Model implements HasMedia
             return true;
         }
 
-        if (!($this->allow_staff_preview ?? true)) {
+        if (! ($this->allow_staff_preview ?? true)) {
             return false;
         }
 
@@ -282,7 +288,7 @@ class Course extends Model implements HasMedia
 
     public function isPubliclyViewable(?User $user = null): bool
     {
-        if (!$this->isVisibleToUser($user)) {
+        if (! $this->isVisibleToUser($user)) {
             return false;
         }
 
@@ -305,7 +311,7 @@ class Course extends Model implements HasMedia
 
     public static function catalogViewerCanSeeInternal(?User $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -429,6 +435,28 @@ class Course extends Model implements HasMedia
         ], true);
     }
 
+    public function usesInstallmentSubscription(): bool
+    {
+        return $this->billing_model === CourseBillingModel::INSTALLMENT_SUBSCRIPTION;
+    }
+
+    public function installmentPlanLabel(string $symbol = '$'): ?string
+    {
+        if (! $this->usesInstallmentSubscription()) {
+            return null;
+        }
+
+        $installment = (float) ($this->installment_price ?? 0);
+        $months = (int) ($this->installment_months ?? 0);
+        $ongoing = (float) ($this->subscription_price ?? 0);
+
+        if ($installment < 1 || $months < 1 || $ongoing < 1) {
+            return null;
+        }
+
+        return InstallmentBillingRules::planLabel($installment, $months, $ongoing, $symbol);
+    }
+
     public function usesUpfrontSubscription(): bool
     {
         return $this->billing_model === CourseBillingModel::UPFRONT_SUBSCRIPTION;
@@ -447,7 +475,7 @@ class Course extends Model implements HasMedia
 
     public function subscriptionCheckoutPrice(): ?float
     {
-        if (!$this->usesSubscriptionBilling()) {
+        if (! $this->usesSubscriptionBilling()) {
             return null;
         }
 

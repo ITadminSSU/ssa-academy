@@ -18,7 +18,7 @@ class CourseStripeSyncService
 
     public function sync(Course $course): Course
     {
-        if (!$this->stripeCustomer->isStripeActive()) {
+        if (! $this->stripeCustomer->isStripeActive()) {
             throw new \RuntimeException('Stripe is not active. Enable Stripe in payment settings first.');
         }
 
@@ -26,13 +26,17 @@ class CourseStripeSyncService
             throw new \RuntimeException('Only paid courses can be synced to Stripe.');
         }
 
-        if (!$course->usesSubscriptionBilling()) {
+        if ($course->usesInstallmentSubscription()) {
+            return $this->syncInstallment($course);
+        }
+
+        if (! $course->usesSubscriptionBilling()) {
             throw new \RuntimeException('Switch the billing model to monthly subscription before syncing.');
         }
 
         $amount = $course->subscriptionCheckoutPrice();
 
-        if (!$amount || $amount < 1) {
+        if (! $amount || $amount < 1) {
             throw new \RuntimeException('Set a monthly subscription price of at least 1 before syncing.');
         }
 
@@ -76,9 +80,91 @@ class CourseStripeSyncService
 
     public function isSynced(Course $course): bool
     {
+        if ($course->usesInstallmentSubscription()) {
+            return ! empty($course->stripe_product_id)
+                && ! empty($course->stripe_price_id)
+                && ! empty($course->stripe_ongoing_price_id);
+        }
+
         return $course->usesSubscriptionBilling()
-            && !empty($course->stripe_product_id)
-            && !empty($course->stripe_price_id);
+            && ! empty($course->stripe_product_id)
+            && ! empty($course->stripe_price_id);
+    }
+
+    private function syncInstallment(Course $course): Course
+    {
+        $installment = (float) ($course->installment_price ?? 0);
+        $ongoing = (float) ($course->subscription_price ?? 0);
+        $months = (int) ($course->installment_months ?? 0);
+
+        if ($installment < 1 || $ongoing < 1 || $months < 1) {
+            throw new \RuntimeException('Set the installment price, number of months, and the later monthly price before syncing.');
+        }
+
+        $this->stripeCustomer->configureStripe();
+
+        $currency = strtolower($this->resolveCurrency());
+        $productId = $this->ensureProduct($course);
+        $installmentPriceId = $this->ensureMonthlyPrice(
+            $course->stripe_price_id,
+            $productId,
+            $installment,
+            $currency,
+            $course->id,
+            'installment',
+        );
+        $ongoingPriceId = $this->ensureMonthlyPrice(
+            $course->stripe_ongoing_price_id,
+            $productId,
+            $ongoing,
+            $currency,
+            $course->id,
+            'ongoing',
+        );
+
+        $course->update([
+            'stripe_product_id' => $productId,
+            'stripe_price_id' => $installmentPriceId,
+            'stripe_ongoing_price_id' => $ongoingPriceId,
+        ]);
+
+        return $course->fresh();
+    }
+
+    private function ensureMonthlyPrice(
+        ?string $existingId,
+        string $productId,
+        float $amount,
+        string $currency,
+        int|string $courseId,
+        string $phase,
+    ): string {
+        $unitAmount = (int) round($amount * 100);
+
+        if ($this->priceMatches($existingId, $unitAmount, $currency)) {
+            return (string) $existingId;
+        }
+
+        if ($existingId) {
+            try {
+                Price::update($existingId, ['active' => false]);
+            } catch (\Throwable) {
+                // Older price may already be inactive or removed in Stripe.
+            }
+        }
+
+        $price = Price::create([
+            'product' => $productId,
+            'unit_amount' => $unitAmount,
+            'currency' => $currency,
+            'recurring' => ['interval' => 'month'],
+            'metadata' => [
+                'course_id' => (string) $courseId,
+                'billing_phase' => $phase,
+            ],
+        ]);
+
+        return $price->id;
     }
 
     private function ensureProduct(Course $course): string
@@ -112,7 +198,7 @@ class CourseStripeSyncService
 
     private function priceMatches(?string $priceId, int $unitAmount, string $currency): bool
     {
-        if (!$priceId) {
+        if (! $priceId) {
             return false;
         }
 

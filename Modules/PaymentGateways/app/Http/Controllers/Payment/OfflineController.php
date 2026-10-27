@@ -2,15 +2,16 @@
 
 namespace Modules\PaymentGateways\Http\Controllers\Payment;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Course\Course;
 use App\Services\MediaService;
 use App\Services\SettingsService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Modules\PaymentGateways\Services\PaymentService;
-use Modules\PaymentGateways\Models\PaymentHistory;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Modules\PaymentGateways\Models\PaymentHistory;
+use Modules\PaymentGateways\Services\PaymentService;
 
 class OfflineController extends Controller
 {
@@ -20,12 +21,32 @@ class OfflineController extends Controller
         private SettingsService $settingsService,
     ) {}
 
+    private function rejectInstallmentOfflinePayment(Request $request)
+    {
+        $itemType = (string) $request->input('item_type', $request->query('item_type', ''));
+        $itemId = $request->input('item_id', $request->query('item_id'));
+
+        if ($itemType !== 'course' || empty($itemId)) {
+            return null;
+        }
+
+        $course = Course::query()->find($itemId);
+
+        if (! $course?->usesInstallmentSubscription()) {
+            return null;
+        }
+
+        return redirect()
+            ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+            ->with('error', 'This installment plan can only be paid with Stripe.');
+    }
+
     private function resolveGatewaySettings(Request $request)
     {
         $gateway = $request->query('gateway', 'offline');
         $allowed = ['offline', 'bank_transfer', 'wire_transfer'];
 
-        if (!in_array($gateway, $allowed, true)) {
+        if (! in_array($gateway, $allowed, true)) {
             $gateway = 'offline';
         }
 
@@ -40,6 +61,10 @@ class OfflineController extends Controller
      */
     public function index(Request $request)
     {
+        if ($redirect = $this->rejectInstallmentOfflinePayment($request)) {
+            return $redirect;
+        }
+
         $gateway = $this->resolveGatewaySettings($request);
         $user = Auth::user();
         $checkoutItem = $this->payment->getCheckoutItem(
@@ -59,7 +84,7 @@ class OfflineController extends Controller
                 'final_price' => $checkoutItem['finalPrice'],
                 'coupon_code' => $checkoutItem['coupon'] ? $checkoutItem['coupon']->code : null,
                 'gateway' => $gateway['type'],
-            ]
+            ],
         ]);
 
         return Inertia::render('offline-payment/index', [
@@ -78,6 +103,10 @@ class OfflineController extends Controller
      */
     public function submit(Request $request)
     {
+        if ($redirect = $this->rejectInstallmentOfflinePayment($request)) {
+            return $redirect;
+        }
+
         $request->validate([
             'payment_info' => 'required|string|max:100',
             'payment_date' => 'required|date',
@@ -87,7 +116,7 @@ class OfflineController extends Controller
         $user = Auth::user();
         $temp = getTempStore($user->id);
 
-        if (!$temp) {
+        if (! $temp) {
             return redirect()
                 ->route('student.index', ['tab' => 'courses'])
                 ->with('error', 'Session expired. Please try again.');
@@ -100,14 +129,14 @@ class OfflineController extends Controller
         $final_price = $temp->properties['final_price'];
         $coupon_code = $temp->properties['coupon_code'];
 
-        if (!in_array($item_type, ['course', 'exam'])) {
+        if (! in_array($item_type, ['course', 'exam'])) {
             return redirect()->route('student.index', ['tab' => 'courses'])
                 ->with('error', 'Invalid item type');
         }
 
         try {
             // Generate unique transaction ID for offline payment
-            $transactionId = 'OFFLINE-' . strtoupper(Str::random(12));
+            $transactionId = 'OFFLINE-'.strtoupper(Str::random(12));
 
             // Create payment history with pending status
             $gatewayType = $temp->properties['gateway'] ?? 'offline';
@@ -133,12 +162,12 @@ class OfflineController extends Controller
                         'payment_date' => $request->payment_date,
                         'attachment' => $request->attachment ? $this->media->addNewDeletePrev($paymentHistory, $request->attachment, 'payment_attachment') : null,
                         'submitted_at' => now()->toDateTimeString(),
-                    ]
+                    ],
                 ]);
             }
 
             if ($from == 'api') {
-                return redirect()->to(env('FRONTEND_URL') . '/student?payment=pending');
+                return redirect()->to(env('FRONTEND_URL').'/student?payment=pending');
             } else {
                 return redirect()
                     ->route('student.index', ['tab' => 'courses'])
@@ -159,7 +188,7 @@ class OfflineController extends Controller
         $user = Auth::user();
         $temp = getTempStore($user->id);
 
-        if (!$temp) {
+        if (! $temp) {
             return redirect()->route('student.index', ['tab' => 'courses']);
         }
 

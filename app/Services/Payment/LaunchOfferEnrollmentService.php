@@ -27,7 +27,7 @@ class LaunchOfferEnrollmentService
     ) {}
 
     /**
-     * @return 'deposit'|'balance'|'full_launch'|'upfront_subscription'|'legacy_subscription'|'legacy_one_time'|'resubscribe'|null
+     * @return 'deposit'|'balance'|'full_launch'|'upfront_subscription'|'legacy_subscription'|'legacy_one_time'|'resubscribe'|'installment_subscription'|'installment_past_due'|null
      */
     public function resolveCheckoutMode(User $user, Course $course): ?string
     {
@@ -43,6 +43,14 @@ class LaunchOfferEnrollmentService
 
         if ($enrollment?->hasFullAccess()) {
             return null;
+        }
+
+        if ($course->usesInstallmentSubscription()) {
+            if ($enrollment?->subscription && ! $enrollment->subscription->grantsFullAccess()) {
+                return 'installment_past_due';
+            }
+
+            return 'installment_subscription';
         }
 
         if ($enrollment && ($this->subscriptionAccess->toFrontendPayload($user, $course, $enrollment)['can_resubscribe'] ?? false)) {

@@ -7,6 +7,7 @@ use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
+use App\Support\InstallmentBillingRules;
 
 class SubscriptionAccessService
 {
@@ -31,7 +32,7 @@ class SubscriptionAccessService
 
         $enrollment ??= $this->resolveEnrollment($user, $course);
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return 'none';
         }
 
@@ -39,7 +40,15 @@ class SubscriptionAccessService
             return 'none';
         }
 
-        if (!$course->usesSubscriptionBilling()) {
+        if ($course->usesInstallmentSubscription()) {
+            if (! $enrollment->relationLoaded('subscription')) {
+                $enrollment->load('subscription');
+            }
+
+            return InstallmentBillingRules::accessMode($enrollment->subscription?->status);
+        }
+
+        if (! $course->usesSubscriptionBilling()) {
             return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
         }
 
@@ -67,7 +76,9 @@ class SubscriptionAccessService
 
     public function canAccessPlayer(User $user, Course $course, ?CourseEnrollment $enrollment = null): bool
     {
-        return $this->getAccessMode($user, $course, $enrollment) !== 'none';
+        $mode = $this->getAccessMode($user, $course, $enrollment);
+
+        return $mode === 'full' || $mode === 'completed_only';
     }
 
     /**
@@ -78,7 +89,7 @@ class SubscriptionAccessService
      */
     public function canViewPublicCurriculum(?User $user, Course $course, ?CourseEnrollment $enrollment = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -93,7 +104,7 @@ class SubscriptionAccessService
      */
     public function canViewPublicUsExperience(?User $user, Course $course, ?CourseEnrollment $enrollment = null): bool
     {
-        if (!$user || !$enrollment) {
+        if (! $user || ! $enrollment) {
             return false;
         }
 
@@ -118,7 +129,7 @@ class SubscriptionAccessService
     ): bool {
         $mode = $this->getAccessMode($user, $course, $enrollment);
 
-        if ($mode === 'none') {
+        if ($mode === 'none' || $mode === 'installment_locked') {
             return false;
         }
 
@@ -126,7 +137,7 @@ class SubscriptionAccessService
             return true;
         }
 
-        if (!$watchHistory) {
+        if (! $watchHistory) {
             return false;
         }
 
@@ -154,7 +165,7 @@ class SubscriptionAccessService
             ->where('final_exam_id', $examId)
             ->first();
 
-        if (!$course || !$course->usesSubscriptionBilling()) {
+        if (! $course || ! $course->usesSubscriptionBilling()) {
             return true;
         }
 
@@ -169,11 +180,11 @@ class SubscriptionAccessService
 
     public function toFrontendPayload(User $user, Course $course, ?CourseEnrollment $enrollment = null): array
     {
-        if ($enrollment === null && !$course->isStaffPreviewer($user)) {
+        if ($enrollment === null && ! $course->isStaffPreviewer($user)) {
             $enrollment = $this->resolveEnrollment($user, $course);
         }
 
-        if ($enrollment && !$enrollment->relationLoaded('subscription')) {
+        if ($enrollment && ! $enrollment->relationLoaded('subscription')) {
             $enrollment->load('subscription');
         }
 
@@ -185,6 +196,8 @@ class SubscriptionAccessService
             'can_submit_assignments' => $mode === 'full',
             'can_finish_course' => $mode === 'full',
             'can_resubscribe' => $mode === 'completed_only' && $course->usesSubscriptionBilling(),
+            'can_pay_invoice' => $mode === 'installment_locked',
+            'invoice_url' => $mode === 'installment_locked' ? ($enrollment?->subscription?->open_invoice_url ?: null) : null,
             'is_subscription_course' => $course->usesSubscriptionBilling(),
             'staff_preview' => $course->isStaffPreviewer($user),
             'access_status' => $enrollment?->access_status?->value,

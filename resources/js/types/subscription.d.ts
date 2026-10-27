@@ -2,7 +2,7 @@ type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'unp
 
 type EnrollmentAccessStatus = 'active' | 'reserved' | 'canceled' | 'suspended' | 'expired';
 
-type SubscriptionAccessMode = 'full' | 'completed_only' | 'none';
+type SubscriptionAccessMode = 'full' | 'completed_only' | 'installment_locked' | 'none';
 
 interface SubscriptionAccess {
    mode: SubscriptionAccessMode;
@@ -10,6 +10,8 @@ interface SubscriptionAccess {
    can_submit_assignments: boolean;
    can_finish_course: boolean;
    can_resubscribe: boolean;
+   can_pay_invoice?: boolean;
+   invoice_url?: string | null;
    is_subscription_course: boolean;
    staff_preview?: boolean;
    access_status?: EnrollmentAccessStatus | null;
