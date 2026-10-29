@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\User;
 use App\Support\MasterAdmin;
+use App\Support\PersonName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -51,13 +52,15 @@ class UpdateUserRequest extends FormRequest
 
         if (MasterAdmin::isProtected($user)) {
             return [
-                'name' => ['required', 'string', 'max:255'],
+                'given_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['nullable', 'string', 'max:255'],
                 'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             ];
         }
 
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            'given_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'status' => ['required', 'in:0,1'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
@@ -100,6 +103,8 @@ class UpdateUserRequest extends FormRequest
             if ($this->has('account_type') && ! $this->actorCanChangeAccountType($user)) {
                 $validator->errors()->add('account_type', 'You do not have permission to change account type.');
             }
+
+            PersonName::validatePair($validator, $this->input('given_name'), $this->input('last_name'));
         });
     }
 

@@ -9,6 +9,7 @@ use App\Services\Auth\SingleSessionService;
 use App\Services\AuthService;
 use App\Services\LearnerTypeResolver;
 use App\Services\LegalAgreementService;
+use App\Support\PersonName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,7 +52,8 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse|SymfonyResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'given_name' => 'required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'recaptcha_status' => 'required|boolean',
@@ -59,14 +61,21 @@ class RegisteredUserController extends Controller
             'accept_terms' => 'accepted',
             'accept_legal_age' => 'accepted',
         ], [
+            'given_name.required' => 'Please enter your given name.',
             'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
             'accept_legal_age.accepted' => 'You must confirm that you are of legal age and capable of entering into these Terms.',
         ]);
 
+        if (! PersonName::fits($validated['given_name'], $validated['last_name'] ?? null)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'last_name' => 'The given name and last name together must be 255 characters or fewer.',
+            ]);
+        }
+
         // Profile answers, CV, ID, and the student agreement are collected later.
         // Do not record a legal acceptance at account creation.
         $user = User::create([
-            'name' => $validated['name'],
+            ...PersonName::attributes($validated['given_name'], $validated['last_name'] ?? null),
             'email' => $validated['email'],
             'role' => 'student',
             'user_type' => $this->learnerTypeResolver->resolveFromEmail($validated['email'])->value,

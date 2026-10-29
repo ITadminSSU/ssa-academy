@@ -416,8 +416,21 @@ class StudentService extends MediaService
       return DB::transaction(function () use ($data, $id) {
          $user = User::findOrFail($id);
 
-         if (array_key_exists('name', $data) && $data['name'] !== null) {
-            $user->name = $data['name'];
+         if (array_key_exists('given_name', $data) || array_key_exists('last_name', $data)) {
+            $given = array_key_exists('given_name', $data)
+               ? \App\Support\PersonName::clean((string) $data['given_name'])
+               : \App\Support\PersonName::clean((string) $user->given_name);
+            $last = array_key_exists('last_name', $data)
+               ? \App\Support\PersonName::clean((string) ($data['last_name'] ?? ''))
+               : \App\Support\PersonName::clean((string) $user->last_name);
+            $user->given_name = $given;
+            $user->last_name = $last !== '' ? $last : null;
+            $user->name = \App\Support\PersonName::join($given, $last);
+         } elseif (array_key_exists('name', $data) && $data['name'] !== null) {
+            [$given, $last] = \App\Support\PersonName::split((string) $data['name']);
+            $user->given_name = $given;
+            $user->last_name = $last !== '' ? $last : null;
+            $user->name = \App\Support\PersonName::join($given, $last);
          }
 
          if (array_key_exists('social_links', $data) && $data['social_links'] !== null) {

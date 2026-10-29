@@ -88,7 +88,8 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
          : text(input.user_type_external, 'External (public, may pay)');
 
    const initialData = () => ({
-      name: user.name,
+      given_name: user.given_name ?? user.name.split(' ')[0] ?? '',
+      last_name: user.given_name != null || user.last_name != null ? (user.last_name ?? '') : user.name.split(' ').slice(1).join(' '),
       email: user.email,
       status: user.status,
       user_type: (user.user_type || 'external') as 'employee' | 'external',
@@ -159,15 +160,21 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                   <p className="text-muted-foreground text-sm">
                      {text(
                         dashboard.primary_admin_edit_note,
-                        'Only the name and email can be updated for the primary admin. Status, password, and deletion remain protected.',
+                        'Only the given name, last name, and email can be updated for the primary admin. Status, password, and deletion remain protected.',
                      )}
                   </p>
                )}
 
                <div>
-                  <Label>{text(input.name, 'Name')}</Label>
-                  <Input required value={data.name} onChange={(e) => setData('name', e.target.value)} />
-                  <InputError message={errors.name} />
+                  <Label htmlFor="given_name">Given name</Label>
+                  <Input id="given_name" required autoComplete="given-name" value={data.given_name} onChange={(e) => setData('given_name', e.target.value)} />
+                  <InputError message={errors.given_name} />
+               </div>
+
+               <div>
+                  <Label htmlFor="last_name">Last name</Label>
+                  <Input id="last_name" autoComplete="family-name" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} />
+                  <InputError message={errors.last_name} />
                </div>
 
                <div>

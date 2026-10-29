@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\LearnerUserType;
 use App\Enums\UserType;
 use App\Models\User;
+use App\Support\PersonName;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -54,8 +55,10 @@ class AuthService
     public function googleAuthRegister(object $user): User
     {
         return DB::transaction(function () use ($user) {
+            [$given, $last] = PersonName::split((string) $user->name);
+
             $userData = [
-                'name' => $user->name,
+                ...PersonName::attributes($given, $last),
                 'email' => $user->email,
                 'photo' => $user->avatar,
                 'role' => UserType::STUDENT->value,

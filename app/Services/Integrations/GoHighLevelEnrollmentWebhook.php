@@ -186,7 +186,12 @@ class GoHighLevelEnrollmentWebhook
             return;
         }
 
-        [$firstName, $lastName] = $this->splitName((string) ($enrollment->user?->name ?? ''));
+        $user = $enrollment->user;
+        [$firstName, $lastName] = \App\Support\PersonName::webhookNames(
+            $user?->given_name,
+            $user?->last_name,
+            $user?->name,
+        );
         $enrolledAt = $enrollment->entry_date;
 
         $payload = [
@@ -262,22 +267,6 @@ class GoHighLevelEnrollmentWebhook
             ->sort(fn (string $left, string $right): int => strcasecmp($left, $right))
             ->values()
             ->implode(', ');
-    }
-
-    /**
-     * @return array{0: string, 1: string}
-     */
-    private function splitName(string $name): array
-    {
-        $name = trim($name);
-
-        if ($name === '') {
-            return ['', ''];
-        }
-
-        $parts = explode(' ', $name, 2);
-
-        return [trim($parts[0]), trim($parts[1] ?? '')];
     }
 
     private function isEnabled(Setting $setting): bool

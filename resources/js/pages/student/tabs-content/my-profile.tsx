@@ -95,7 +95,8 @@ const MyProfile = () => {
    const experienceOptions = profileSetup?.constructionExperienceOptions ?? [];
 
    const { data, post, setData, processing } = useForm({
-      name: user.name || '',
+      given_name: user.given_name ?? user.name.split(' ')[0] ?? '',
+      last_name: user.given_name != null || user.last_name != null ? (user.last_name ?? '') : user.name.split(' ').slice(1).join(' '),
       photo: null as File | null,
       social_links: null as string | null,
       professional_type_id: answers?.professional_type_id ?? '',
@@ -229,7 +230,8 @@ const MyProfile = () => {
          onError: (formErrors) => {
             const message =
                formErrors.photo ||
-               formErrors.name ||
+               formErrors.given_name ||
+               formErrors.last_name ||
                formErrors.cv_resume ||
                formErrors.id_document ||
                formErrors.professional_type_id ||
@@ -293,9 +295,32 @@ const MyProfile = () => {
             </div>
 
             <div className="space-y-4">
-               <Label>{input.name}</Label>
-               <Input type="text" name="name" value={data.name} onChange={(e) => onHandleChange(e, setData)} placeholder={input.full_name_placeholder} />
-               <InputError message={errors.name} />
+               <Label htmlFor="given_name">Given name</Label>
+               <Input
+                  id="given_name"
+                  type="text"
+                  name="given_name"
+                  required
+                  autoComplete="given-name"
+                  value={data.given_name}
+                  onChange={(e) => onHandleChange(e, setData)}
+                  placeholder="Alexis"
+               />
+               <InputError message={errors.given_name} />
+            </div>
+
+            <div className="space-y-4">
+               <Label htmlFor="last_name">Last name</Label>
+               <Input
+                  id="last_name"
+                  type="text"
+                  name="last_name"
+                  autoComplete="family-name"
+                  value={data.last_name}
+                  onChange={(e) => onHandleChange(e, setData)}
+                  placeholder="Pacapac"
+               />
+               <InputError message={errors.last_name} />
             </div>
 
             <div className="space-y-4">

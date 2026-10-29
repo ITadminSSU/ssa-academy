@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PersonName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
@@ -27,7 +28,8 @@ class StoreAdminUserRequest extends FormRequest
             : 'employee,trainer';
 
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            'given_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'account_type' => ['required', 'in:'.$allowedTypes],
@@ -57,6 +59,8 @@ class StoreAdminUserRequest extends FormRequest
             if (! canManagePlatformSettings() && in_array($type, ['admin', 'operations'], true)) {
                 $validator->errors()->add('account_type', 'You do not have permission to create admin accounts.');
             }
+
+            PersonName::validatePair($validator, $this->input('given_name'), $this->input('last_name'));
         });
     }
 }

@@ -21,6 +21,8 @@ interface BreadcrumbItem {
 // User related types
 interface User extends TableCommon {
    name: string;
+   given_name?: string | null;
+   last_name?: string | null;
    email: string;
    status: number | null;
    social_links: { host: string; profile_link: string }[] | null;

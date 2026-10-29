@@ -7,6 +7,7 @@ use App\Models\Instructor;
 use App\Models\ProfessionalType;
 use App\Models\User;
 use App\Services\LegalAgreementService;
+use App\Support\PersonName;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +19,7 @@ class AdminUserProvisioningService
     ) {}
 
     /**
-     * @param  array{name: string, email: string, password: string, account_type: 'admin'|'operations'|'employee'|'trainer'|'social_media', designation?: string|null}  $data
+     * @param  array{given_name: string, last_name?: string|null, email: string, password: string, account_type: 'admin'|'operations'|'employee'|'trainer'|'social_media', designation?: string|null}  $data
      */
     public function provision(array $data, Request $request): User
     {
@@ -35,8 +36,10 @@ class AdminUserProvisioningService
                 default => 'student',
             };
 
+            $names = PersonName::attributes((string) $data['given_name'], $data['last_name'] ?? null);
+
             $user = User::create([
-                'name' => $data['name'],
+                ...$names,
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
                 'role' => $role,
@@ -51,7 +54,7 @@ class AdminUserProvisioningService
                 $instructor = Instructor::create([
                     'user_id' => $user->id,
                     'skills' => ['Training', 'Course delivery'],
-                    'biography' => $data['name'] . ' is a SMARTSOURCING USA ACADEMY trainer delivering courses and supporting learners.',
+                    'biography' => $names['name'].' is a SMARTSOURCING USA ACADEMY trainer delivering courses and supporting learners.',
                     'resume' => '',
                     'designation' => $data['designation'],
                     'status' => 'approved',
