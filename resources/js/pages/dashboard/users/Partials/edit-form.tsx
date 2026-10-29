@@ -3,6 +3,7 @@ import LoadingButton from '@/components/loading-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SharedData } from '@/types/global';
 import { useForm, usePage } from '@inertiajs/react';
@@ -91,6 +92,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
       email: user.email,
       status: user.status,
       user_type: (user.user_type || 'external') as 'employee' | 'external',
+      pef_tagged: Boolean(user.pef_tagged),
       designation: user.instructor?.designation ?? '',
       account_type: currentAccountType(user),
       password: '',
@@ -117,13 +119,15 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
       put(route('users.update', user.id), {
          preserveScroll: true,
          transform: (payload) => {
-            if (canChangeRole) {
-               return payload;
-            }
+            const next = canChangeRole ? payload : (({ account_type: _ignored, ...rest }) => rest)(payload);
+            const externalStudent = canChangeRole
+               ? next.account_type === 'external'
+               : user.role === 'student' && next.user_type === 'external';
 
-            const { account_type: _ignored, ...rest } = payload;
-
-            return rest;
+            return {
+               ...next,
+               pef_tagged: externalStudent ? Boolean(next.pef_tagged) : false,
+            };
          },
          onSuccess: () => {
             setOpen(false);
@@ -137,6 +141,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
    const selectedOption = ACCOUNT_TYPE_OPTIONS.find((option) => option.value === selectedAccountType);
    const showDesignation = canChangeRole ? selectedAccountType === 'trainer' : !isPrimaryAdmin && accountKind === 'trainer';
    const showLearnerType = !canChangeRole && !isPrimaryAdmin && accountKind === 'student';
+   const showPefTag = canChangeRole ? selectedAccountType === 'external' : showLearnerType && data.user_type === 'external';
    const showPasswordFields =
       !isPrimaryAdmin &&
       (canChangeRole ? ['admin', 'operations', 'trainer'].includes(selectedAccountType) : accountKind === 'admin' || accountKind === 'trainer');
@@ -225,6 +230,25 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                         </SelectContent>
                      </Select>
                      <InputError message={errors.user_type} />
+                  </div>
+               )}
+
+               {showPefTag && (
+                  <div>
+                     <Label>PEF tag</Label>
+                     <p className="text-muted-foreground mb-2 text-sm">
+                        Saving this tag enrolls the student in the PEF package from Settings → System. The access end date is set the first time and does not move if you save again.
+                     </p>
+                     <label className="flex items-center gap-2 text-sm">
+                        <Checkbox checked={data.pef_tagged} onCheckedChange={(value) => setData('pef_tagged', value === true)} />
+                        <span>PEF student</span>
+                     </label>
+                     {user.pef_access_ends_at ? (
+                        <p className="text-muted-foreground mt-2 text-xs">
+                           Access ends {new Date(user.pef_access_ends_at).toLocaleDateString()}. Removing the tag keeps finished work and does not delete the courses.
+                        </p>
+                     ) : null}
+                     <InputError message={errors.pef_tagged} />
                   </div>
                )}
 

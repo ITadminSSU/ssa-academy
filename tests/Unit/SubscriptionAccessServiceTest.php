@@ -242,3 +242,48 @@ it('allows non-subscription linked courses through exam gate', function () {
 
     expect($this->service->hasActiveSubscriptionForLinkedExam($user, 999))->toBeTrue();
 });
+
+it('keeps a normal one-time enrollment open when the course expiry date has passed', function () {
+    $user = makeUser();
+    $course = makeCourse(['billing_model' => CourseBillingModel::ONE_TIME]);
+    $enrollment = makeEnrollment(EnrollmentAccessStatus::ACTIVE);
+    $enrollment->expiry_date = Carbon::now()->subDay();
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('full');
+});
+
+it('gives a PEF enrollment full access before its end date', function () {
+    $user = makeUser(['pef_access_ends_at' => Carbon::now()->addYear()]);
+    $course = makeCourse([
+        'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION,
+    ]);
+    $enrollment = makeEnrollment(EnrollmentAccessStatus::ACTIVE);
+    $enrollment->pef_granted = true;
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('full');
+    expect($this->service->canMarkProgress($user, $course, $enrollment))->toBeTrue();
+    expect($this->service->toFrontendPayload($user, $course, $enrollment)['pef_limited'])->toBeFalse();
+});
+
+it('limits an ended PEF enrollment to finished items without a resubscribe offer', function () {
+    $user = makeUser(['pef_access_ends_at' => Carbon::now()->subMinute()]);
+    $course = makeCourse(['billing_model' => CourseBillingModel::SUBSCRIPTION]);
+    $enrollment = makeEnrollment(EnrollmentAccessStatus::ACTIVE);
+    $enrollment->pef_granted = true;
+    $watchHistory = new WatchHistory([
+        'completed_watching' => [
+            ['id' => '10', 'type' => 'lesson'],
+        ],
+    ]);
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('completed_only');
+    expect($this->service->canAccessItem($user, $course, 10, 'lesson', $watchHistory, $enrollment))->toBeTrue();
+    expect($this->service->canAccessItem($user, $course, 99, 'lesson', $watchHistory, $enrollment))->toBeFalse();
+    expect($this->service->canSubmitAssignments($user, $course, $enrollment))->toBeFalse();
+
+    $payload = $this->service->toFrontendPayload($user, $course, $enrollment);
+
+    expect($payload['pef_limited'])->toBeTrue();
+    expect($payload['can_resubscribe'])->toBeFalse();
+    expect($payload['can_mark_progress'])->toBeFalse();
+});

@@ -27,6 +27,9 @@ interface User extends TableCommon {
    role: string;
    can_manage_platform_settings?: boolean;
    user_type: 'employee' | 'external';
+   pef_tagged?: boolean;
+   pef_tagged_at?: string | null;
+   pef_access_ends_at?: string | null;
    about: string | null;
    photo: string | null;
    email_verified_at: string | null;

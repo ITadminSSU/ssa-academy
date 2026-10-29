@@ -10,6 +10,7 @@ interface SubscriptionAccess {
    can_submit_assignments: boolean;
    can_finish_course: boolean;
    can_resubscribe: boolean;
+   pef_limited?: boolean;
    can_pay_invoice?: boolean;
    invoice_url?: string | null;
    is_subscription_course: boolean;

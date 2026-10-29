@@ -45,7 +45,7 @@ class CourseCompletionGateService
 
         $videosCompleted = $watchHistory
             ? $this->lessonWatchProgress->allVideoLessonsWatched($course, $watchHistory)
-            : !$hasVideoLessons;
+            : ! $hasVideoLessons;
 
         $allLessonsCompleted = $watchHistory
             ? $this->lessonWatchProgress->allLessonsCompleted($course, $watchHistory)
@@ -158,7 +158,7 @@ class CourseCompletionGateService
             }
 
             if ($mode === 'completed_only') {
-                if (!$watchHistory || !$quizId) {
+                if (! $watchHistory || ! $quizId) {
                     return false;
                 }
 
@@ -166,13 +166,13 @@ class CourseCompletionGateService
             }
         }
 
-        if (!$quizId) {
+        if (! $quizId) {
             return $this->getGateStatus($course, $userId, null, $watchHistory)['quizzes_unlocked'];
         }
 
         $course->loadMissing(['sections.section_lessons', 'sections.section_quizzes']);
 
-        if (!$watchHistory) {
+        if (! $watchHistory) {
             return $this->isFirstCurriculumItem($course, $quizId, 'quiz');
         }
 
@@ -250,6 +250,12 @@ class CourseCompletionGateService
         array $subscriptionAccess,
     ): string {
         if (($subscriptionAccess['mode'] ?? null) === 'completed_only') {
+            if (! empty($subscriptionAccess['pef_limited'])) {
+                return $type === 'quiz'
+                    ? 'This quiz is locked. Your PEF access period has ended.'
+                    : 'This lesson is locked. Your PEF access period has ended.';
+            }
+
             if ($course->usesSubscriptionBilling()) {
                 return $type === 'quiz'
                     ? 'This quiz is locked. Resubscribe to continue learning.'
@@ -300,7 +306,7 @@ class CourseCompletionGateService
             }
 
             if ($mode === 'completed_only') {
-                if (!$watchHistory) {
+                if (! $watchHistory) {
                     return false;
                 }
 
@@ -308,7 +314,7 @@ class CourseCompletionGateService
             }
         }
 
-        if (!$watchHistory) {
+        if (! $watchHistory) {
             return $this->isFirstCurriculumItem($course, $lessonId, 'lesson');
         }
 
@@ -320,11 +326,11 @@ class CourseCompletionGateService
         $course = $assignment->course()->with(['assignments', 'sections.section_lessons'])->firstOrFail();
         $user = User::query()->find($userId);
 
-        if ($user && !$this->subscriptionAccess->canSubmitAssignments($user, $course)) {
+        if ($user && ! $this->subscriptionAccess->canSubmitAssignments($user, $course)) {
             return false;
         }
 
-        if (!$this->canAccessAssignmentTab($course, $userId)) {
+        if (! $this->canAccessAssignmentTab($course, $userId)) {
             return false;
         }
 
@@ -361,11 +367,11 @@ class CourseCompletionGateService
             return 'completed';
         }
 
-        if (!$videosCompleted) {
+        if (! $videosCompleted) {
             return 'video';
         }
 
-        if ($hasQuizzes && !$allQuizzesPassed) {
+        if ($hasQuizzes && ! $allQuizzesPassed) {
             return 'quiz';
         }
 
@@ -379,7 +385,7 @@ class CourseCompletionGateService
         }
 
         foreach ($course->assignments as $assignment) {
-            if (!$this->getLatestSubmission($assignment->id, $userId)) {
+            if (! $this->getLatestSubmission($assignment->id, $userId)) {
                 return false;
             }
         }
@@ -396,22 +402,22 @@ class CourseCompletionGateService
         foreach ($course->assignments as $assignment) {
             $submission = $this->getLatestSubmission($assignment->id, $userId);
 
-            if (!$submission) {
+            if (! $submission) {
                 return false;
             }
 
-            if (!empty($assignment->sample_project_path)) {
+            if (! empty($assignment->sample_project_path)) {
                 $downloaded = AssignmentSampleDownload::query()
                     ->where('user_id', $userId)
                     ->where('course_assignment_id', $assignment->id)
                     ->exists();
 
-                if (!$downloaded) {
+                if (! $downloaded) {
                     return false;
                 }
             }
 
-            if (!$this->isSubmissionApproved($submission, $assignment)) {
+            if (! $this->isSubmissionApproved($submission, $assignment)) {
                 return false;
             }
         }
@@ -426,7 +432,7 @@ class CourseCompletionGateService
         foreach ($course->assignments as $assignment) {
             $submission = $this->getLatestSubmission($assignment->id, $userId);
 
-            if (!$submission || !$this->isSubmissionApproved($submission, $assignment)) {
+            if (! $submission || ! $this->isSubmissionApproved($submission, $assignment)) {
                 $pending++;
             }
         }
@@ -446,7 +452,7 @@ class CourseCompletionGateService
                 ->where('is_passed', true)
                 ->exists();
 
-            if (!$passed) {
+            if (! $passed) {
                 return false;
             }
         }
@@ -555,7 +561,7 @@ class CourseCompletionGateService
 
         for ($i = 0; $i < $targetIndex; $i++) {
             $item = $allItems[$i];
-            if (!$this->isCurriculumItemComplete($watchHistory, $item, $userId, $course)) {
+            if (! $this->isCurriculumItemComplete($watchHistory, $item, $userId, $course)) {
                 return false;
             }
         }

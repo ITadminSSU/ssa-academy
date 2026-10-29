@@ -292,9 +292,13 @@ class PlayerController extends Controller
         $course = $watch_history->course()->firstOrFail();
 
         if (! $this->subscriptionAccess->canMarkProgress($user, $course)) {
-            $message = $course->usesInstallmentSubscription()
-                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
-                : 'Your subscription is inactive. Resubscribe to track progress.';
+            $message = $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $course,
+                $course->usesInstallmentSubscription()
+                    ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                    : 'Your subscription is inactive. Resubscribe to track progress.',
+            );
 
             return response()->json(['message' => $message], 403);
         }
@@ -334,9 +338,13 @@ class PlayerController extends Controller
 
         if (! $this->subscriptionAccess->canMarkProgress($user, $course)) {
             return response()->json([
-                'message' => $course->usesInstallmentSubscription()
-                    ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
-                    : 'Your subscription is inactive. Resubscribe to mark lessons complete.',
+                'message' => $this->subscriptionAccess->progressDeniedMessage(
+                    $user,
+                    $course,
+                    $course->usesInstallmentSubscription()
+                        ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                        : 'Your subscription is inactive. Resubscribe to mark lessons complete.',
+                ),
             ], 403);
         }
 
@@ -403,9 +411,13 @@ class PlayerController extends Controller
         $course = $watch_history->course()->with(['sections.section_lessons', 'sections.section_quizzes', 'assignments'])->firstOrFail();
 
         if (! $this->subscriptionAccess->canFinishCourse($user, $course)) {
-            return back()->with('error', $course->usesInstallmentSubscription()
-                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
-                : 'Your subscription is inactive. Resubscribe to finish the course.');
+            return back()->with('error', $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $course,
+                $course->usesInstallmentSubscription()
+                    ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                    : 'Your subscription is inactive. Resubscribe to finish the course.',
+            ));
         }
 
         // Keep quiz completions in sync before gating / percentage checks.

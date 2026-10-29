@@ -32,7 +32,7 @@ class ProtectedMediaService
 
     public function protectLessonForPlayer(SectionLesson $lesson, User $user): SectionLesson
     {
-        if (!$this->shouldSignLessonMedia($lesson)) {
+        if (! $this->shouldSignLessonMedia($lesson)) {
             return $lesson;
         }
 
@@ -83,7 +83,7 @@ class ProtectedMediaService
 
         $media = $this->resolveMediaForStreaming($lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src);
 
-        if (!$media) {
+        if (! $media) {
             abort(404, 'Video file not found. Please re-upload this lesson video.');
         }
 
@@ -170,7 +170,7 @@ class ProtectedMediaService
 
                 $remaining = $length;
 
-                while ($remaining > 0 && !feof($handle)) {
+                while ($remaining > 0 && ! feof($handle)) {
                     $chunk = fread($handle, min(8192, $remaining));
 
                     if ($chunk === false) {
@@ -194,7 +194,7 @@ class ProtectedMediaService
     {
         $media = $this->resolveMediaForStreaming($url);
 
-        if (!$media) {
+        if (! $media) {
             abort(404, 'Media file not found.');
         }
 
@@ -243,7 +243,7 @@ class ProtectedMediaService
 
     public function findChunkedUpload(?string $url): ?ChunkedUpload
     {
-        if (!$url) {
+        if (! $url) {
             return null;
         }
 
@@ -398,7 +398,7 @@ class ProtectedMediaService
         $body = $object['Body'];
 
         return response()->stream(function () use ($body) {
-            while (!$body->eof()) {
+            while (! $body->eof()) {
                 echo $body->read(8192);
             }
         }, $status, $headers);
@@ -424,7 +424,7 @@ class ProtectedMediaService
             ->with('subscription')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             abort(403, 'You are not enrolled in this course.');
         }
 
@@ -434,8 +434,12 @@ class ProtectedMediaService
             ->where('course_id', $lesson->course_id)
             ->first();
 
-        if (!$this->subscriptionAccess->canAccessItem($user, $course, $lesson->id, 'lesson', $watchHistory, $enrollment)) {
-            abort(403, 'Your subscription is inactive. Resubscribe to access new content.');
+        if (! $this->subscriptionAccess->canAccessItem($user, $course, $lesson->id, 'lesson', $watchHistory, $enrollment)) {
+            abort(403, $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $course,
+                'Your subscription is inactive. Resubscribe to access new content.',
+            ));
         }
     }
 
@@ -449,14 +453,14 @@ class ProtectedMediaService
     {
         $this->authorizeResourceAccess($user, $resource);
 
-        if (!$resource->is_downloadable) {
+        if (! $resource->is_downloadable) {
             abort(403, 'This resource is view-only and cannot be downloaded.');
         }
     }
 
     public function shouldSignLessonMedia(SectionLesson $lesson): bool
     {
-        if (!in_array($lesson->lesson_type, ['video', 'document', 'image'], true)) {
+        if (! in_array($lesson->lesson_type, ['video', 'document', 'image'], true)) {
             return false;
         }
 
@@ -482,7 +486,7 @@ class ProtectedMediaService
 
     public function isLocalMediaUrl(?string $url): bool
     {
-        if (!$url || trim($url) === '') {
+        if (! $url || trim($url) === '') {
             return false;
         }
 
@@ -508,7 +512,7 @@ class ProtectedMediaService
 
     public function resolveLocalPath(?string $url): ?string
     {
-        if (!$this->isLocalMediaUrl($url)) {
+        if (! $this->isLocalMediaUrl($url)) {
             return null;
         }
 
@@ -516,7 +520,7 @@ class ProtectedMediaService
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             $appUrl = rtrim((string) config('app.url'), '/');
-            if (!str_starts_with($path, $appUrl)) {
+            if (! str_starts_with($path, $appUrl)) {
                 return null;
             }
             $path = substr($path, strlen($appUrl));
@@ -524,7 +528,7 @@ class ProtectedMediaService
 
         $path = ltrim($path, '/');
 
-        if (!str_starts_with($path, 'storage/')) {
+        if (! str_starts_with($path, 'storage/')) {
             return null;
         }
 
@@ -535,11 +539,11 @@ class ProtectedMediaService
         // storage dir), strip it so the path maps back onto storage/app/public.
         $segment = trim((string) config('filesystems.public_storage_path', ''), '/');
 
-        if ($segment !== '' && str_starts_with($relative, $segment . '/')) {
-            $relative = substr($relative, strlen($segment . '/'));
+        if ($segment !== '' && str_starts_with($relative, $segment.'/')) {
+            $relative = substr($relative, strlen($segment.'/'));
         }
 
-        return storage_path('app/public/' . $relative);
+        return storage_path('app/public/'.$relative);
     }
 
     public function resolveLessonVideoPath(SectionLesson $lesson): ?string
@@ -547,7 +551,7 @@ class ProtectedMediaService
         $originalSrc = $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src;
         $media = $this->resolveMediaForStreaming($originalSrc);
 
-        if (!$media || $media['type'] !== 'local') {
+        if (! $media || $media['type'] !== 'local') {
             return null;
         }
 
@@ -634,7 +638,7 @@ class ProtectedMediaService
 
         $media = $this->resolveMediaForStreaming($resource->resource);
 
-        if (!$media || $media['type'] !== 'local') {
+        if (! $media || $media['type'] !== 'local') {
             return null;
         }
 
@@ -645,7 +649,7 @@ class ProtectedMediaService
     {
         $media = $this->resolveMediaForStreaming($url);
 
-        if (!$media) {
+        if (! $media) {
             abort(404, 'File not found');
         }
 
@@ -663,7 +667,7 @@ class ProtectedMediaService
                 $filename,
                 [
                     'Content-Type' => $mimeType,
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    'Content-Disposition' => 'attachment; filename="'.$filename.'"',
                 ],
             );
         }
@@ -678,14 +682,14 @@ class ProtectedMediaService
 
         return response()->streamDownload(
             function () use ($body) {
-                while (!$body->eof()) {
+                while (! $body->eof()) {
                     echo $body->read(8192);
                 }
             },
             $filename,
             [
                 'Content-Type' => $mimeType,
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ],
         );
     }

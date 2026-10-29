@@ -5,10 +5,10 @@ namespace App\Services\UsExperience;
 use App\Models\Course\Course;
 use App\Models\Course\UsExperienceAttempt;
 use App\Models\Course\UsExperiencePlan;
+use App\Models\User;
 use App\Services\Course\CourseCompletionGateService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Support\S3CompatibleStorage;
-use App\Models\User;
 use Illuminate\Support\Collection;
 
 class UsExperienceUnlockService
@@ -77,8 +77,8 @@ class UsExperienceUnlockService
     }
 
     /**
-     * @param Collection<int, UsExperiencePlan> $orderedPlans
-     * @param Collection<int, Collection<int, UsExperienceAttempt>> $attemptsByPlanId
+     * @param  Collection<int, UsExperiencePlan>  $orderedPlans
+     * @param  Collection<int, Collection<int, UsExperienceAttempt>>  $attemptsByPlanId
      * @return array<int, array<string, mixed>>
      */
     public function studentPlanPayloads(
@@ -97,10 +97,10 @@ class UsExperienceUnlockService
             $attempts = Collection::wrap($attempts)->sortByDesc('attempt_number')->values();
             $passed = $attempts->contains(fn (UsExperienceAttempt $attempt) => $attempt->isPassed());
             $attemptsUsed = $attempts->count();
-            $attemptsExhausted = !$passed && $attemptsUsed >= (int) $plan->max_attempts;
+            $attemptsExhausted = ! $passed && $attemptsUsed >= (int) $plan->max_attempts;
             $unlocked = $previousPassed;
 
-            if (!$unlocked) {
+            if (! $unlocked) {
                 $status = 'locked';
             } elseif ($passed) {
                 $status = 'passed';
@@ -125,7 +125,7 @@ class UsExperienceUnlockService
                 'status' => $status,
                 'unlocked' => $unlocked,
                 'can_download' => $canUseFiles && $unlocked,
-                'can_submit' => $canUseFiles && $unlocked && !$passed && !$attemptsExhausted,
+                'can_submit' => $canUseFiles && $unlocked && ! $passed && ! $attemptsExhausted,
                 'accuracy' => $canSeeScores ? ($bestAttempt?->lines_percent) : null,
                 'latest_attempt' => ($canSeeScores && $latestAttempt)
                     ? $latestAttempt->toStudentArray()
@@ -172,8 +172,12 @@ class UsExperienceUnlockService
     {
         $this->assertCourseCurriculumComplete($course, $user);
 
-        if (!$canUseFiles) {
-            abort(403, 'Resubscribe to download plan files.');
+        if (! $canUseFiles) {
+            abort(403, $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $course,
+                'Resubscribe to download plan files.',
+            ));
         }
 
         $this->assertUnlocked($plan, $orderedPlans, $user);
@@ -183,8 +187,12 @@ class UsExperienceUnlockService
     {
         $this->assertCourseCurriculumComplete($course, $user);
 
-        if (!$canUseFiles) {
-            abort(403, 'Resubscribe to submit plan work.');
+        if (! $canUseFiles) {
+            abort(403, $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $course,
+                'Resubscribe to submit plan work.',
+            ));
         }
 
         $this->assertUnlocked($plan, $orderedPlans, $user);
@@ -212,11 +220,11 @@ class UsExperienceUnlockService
 
     private function assertUnlocked(UsExperiencePlan $plan, Collection $orderedPlans, User $user): void
     {
-        if (!$plan->isReady()) {
+        if (! $plan->isReady()) {
             abort(404);
         }
 
-        if (!$this->previousPlanIsPassed($plan, $orderedPlans, $user)) {
+        if (! $this->previousPlanIsPassed($plan, $orderedPlans, $user)) {
             abort(403, 'Pass the previous plan before opening this one.');
         }
     }
