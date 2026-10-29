@@ -11,6 +11,7 @@ use App\Services\Course\CourseEnrollmentService;
 use App\Services\StudentService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -291,4 +292,99 @@ test('one cv and id on the account releases certificates for later courses', fun
         ->and($issuedFirst->id)->not->toBe($issuedSecond->id)
         ->and($user->fresh()->getMedia('cv_resume'))->toHaveCount(1)
         ->and($user->fresh()->getMedia('id_document'))->toHaveCount(1);
+});
+
+test('saving a profile without files leaves the documents empty and the background complete', function () {
+    $user = signupStudent();
+    $type = ProfessionalType::create([
+        'name' => 'Architect',
+        'sort_order' => 1,
+        'is_active' => true,
+    ]);
+
+    $saved = app(StudentService::class)->updateProfile([
+        'name' => 'New Student',
+        'professional_type_id' => $type->id,
+        'estimating_software' => ['Excel'],
+        'construction_experience' => '1–3 Years',
+        'worked_as_construction_va' => false,
+        'referred_by' => '',
+    ], (string) $user->id);
+
+    $notice = app(CourseCertificateIssuanceService::class);
+
+    expect($saved->hasCompletedProfileSetup())->toBeTrue()
+        ->and($saved->hasMedia('cv_resume'))->toBeFalse()
+        ->and($saved->hasMedia('id_document'))->toBeFalse()
+        ->and($notice->finishCourseNotice($saved, false))->toBe('Course completed successfully. Upload your CV/resume and government ID on your profile to release your certificate.')
+        ->and(CourseCertificate::query()->count())->toBe(0);
+});
+
+test('a profile upload stores one cv and one id and a later file replaces it', function () {
+    $user = signupStudent();
+    $type = ProfessionalType::create([
+        'name' => 'Architect',
+        'sort_order' => 1,
+        'is_active' => true,
+    ]);
+    $service = app(StudentService::class);
+    $profile = [
+        'name' => 'New Student',
+        'professional_type_id' => $type->id,
+        'estimating_software' => ['Excel'],
+        'construction_experience' => '1–3 Years',
+        'worked_as_construction_va' => true,
+        'referred_by' => '',
+    ];
+
+    $saved = $service->updateProfile([
+        ...$profile,
+        'cv_resume' => UploadedFile::fake()->createWithContent('resume.pdf', "%PDF-1.4\n% profile cv\n"),
+        'id_document' => UploadedFile::fake()->createWithContent(
+            'id.jpg',
+            base64_decode('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGf/9k=')
+        ),
+    ], (string) $user->id);
+
+    $course = new Course;
+    $course->id = 9;
+    $course->exists = true;
+    $certificates = app(CourseCertificateIssuanceService::class);
+    $issued = $certificates->issueForCourse($course, $saved);
+
+    expect($saved->getFirstMedia('cv_resume')?->file_name)->toBe('resume.pdf')
+        ->and($saved->getFirstMedia('id_document')?->file_name)->toBe('id.jpg')
+        ->and($issued)->not->toBeNull()
+        ->and(CourseCertificate::query()->count())->toBe(1);
+
+    $replaced = $service->updateProfile([
+        ...$profile,
+        'cv_resume' => UploadedFile::fake()->createWithContent('updated-resume.pdf', "%PDF-1.4\n% replacement cv\n"),
+    ], (string) $user->id);
+
+    expect($replaced->getMedia('cv_resume'))->toHaveCount(1)
+        ->and($replaced->getFirstMedia('cv_resume')?->file_name)->toBe('updated-resume.pdf')
+        ->and($replaced->getMedia('id_document'))->toHaveCount(1)
+        ->and($certificates->issueForCourse($course, $replaced->fresh())?->id)->toBe($issued->id)
+        ->and($certificates->finishCourseNotice($replaced, true))->toBe('Course completed successfully. Your certificate has been issued.');
+});
+
+test('a profile with only a cv tells the student to upload the government id', function () {
+    $user = signupStudent();
+
+    $user->media()->create([
+        'collection_name' => 'cv_resume',
+        'name' => 'cv_resume',
+        'file_name' => 'resume.pdf',
+        'mime_type' => 'application/pdf',
+        'disk' => 'public',
+        'size' => 120,
+        'manipulations' => [],
+        'custom_properties' => ['name' => 'cv_resume'],
+        'generated_conversions' => [],
+        'responsive_images' => [],
+    ]);
+
+    expect(app(CourseCertificateIssuanceService::class)->finishCourseNotice($user->fresh(), false))
+        ->toBe('Course completed successfully. Upload your government ID on your profile to release your certificate.');
 });

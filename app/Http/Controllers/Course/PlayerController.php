@@ -465,9 +465,7 @@ class PlayerController extends Controller
 
         return redirect()
             ->route('student.course.show', ['id' => $course->id, 'tab' => 'certificate'])
-            ->with('success', $certificate
-                ? 'Course completed successfully. Your certificate has been issued.'
-                : 'Course completed successfully. Upload your CV and government ID to release your certificate.');
+            ->with('success', $this->certificateIssuance->finishCourseNotice($user, $certificate !== null));
     }
 
     /**

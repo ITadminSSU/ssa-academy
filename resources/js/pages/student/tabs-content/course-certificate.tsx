@@ -7,13 +7,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudentCourseProps } from '@/types/page';
-import { useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
 import { Award, ClipboardList, Lock } from 'lucide-react';
 import { FormEvent } from 'react';
 
+const missingDocumentLabels = (release?: { needs_cv: boolean; needs_id: boolean } | null) => {
+   const files = [release?.needs_cv ? 'CV/resume' : null, release?.needs_id ? 'government ID' : null].filter(Boolean);
+
+   if (files.length === 2) {
+      return `${files[0]} and ${files[1]}`;
+   }
+
+   return files[0] ?? 'CV/resume and government ID';
+};
+
 const CertificateReleaseForm = () => {
-   const { course, certificateRelease, errors } = usePage<StudentCourseProps>().props;
+   const { course, certificateRelease, errors, auth } = usePage<StudentCourseProps>().props;
    const { data, setData, post, processing } = useForm({
       cv_resume: null as File | null,
       id_document: null as File | null,
@@ -30,10 +40,18 @@ const CertificateReleaseForm = () => {
    return (
       <Card>
          <CardContent className="space-y-4 p-6">
-            <div>
+            <div className="space-y-2">
                <h3 className="text-lg font-semibold">Upload documents to release your certificate</h3>
+               <p className="text-sm">
+                  Upload your {missingDocumentLabels(certificateRelease)} on your profile to release your certificate.
+               </p>
+               {auth.profileUrl && (
+                  <Link href={auth.profileUrl} className="text-sm font-medium underline">
+                     Go to profile
+                  </Link>
+               )}
                <p className="text-muted-foreground text-sm">
-                  This is asked once for your account. After these files are saved, later courses use the same documents.
+                  You can also upload the missing file here. This is asked once for your account. After these files are saved, later courses use the same documents.
                </p>
             </div>
             <form onSubmit={submit} className="space-y-4">
