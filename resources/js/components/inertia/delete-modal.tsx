@@ -49,7 +49,7 @@ const DeleteModal = (props: Props) => {
                   {button.cancel}
                </Button>
 
-               <Button type="button" onClick={deleteHandler} className="hover:bg-primary-hover bg-primary px-5">
+               <Button type="button" variant="brand" onClick={deleteHandler} className="px-5">
                   {button.delete}
                </Button>
             </div>
