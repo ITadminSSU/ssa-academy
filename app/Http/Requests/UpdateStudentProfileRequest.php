@@ -89,6 +89,8 @@ class UpdateStudentProfileRequest extends FormRequest
                 'nullable',
                 'boolean',
             ],
+            'cv_resume' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'id_document' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
         ];
     }
 
@@ -106,6 +108,10 @@ class UpdateStudentProfileRequest extends FormRequest
             'construction_experience.required' => 'Please select your years of construction experience.',
             'worked_as_construction_va.required' => 'Please indicate whether you have worked as a Construction Virtual Assistant.',
             'referrer_is_employee.required' => 'Please say whether your referrer is part of the SMARTSOURCING USA team.',
+            'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
+            'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
+            'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
+            'id_document.max' => 'ID must not be larger than 10MB.',
         ];
     }
 }

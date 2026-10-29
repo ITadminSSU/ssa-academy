@@ -63,6 +63,7 @@ class StudentController extends Controller
 
         if ($tab === 'profile') {
             $props['profileAnswers'] = $request->user()->profileBackgroundAnswers();
+            $props['profileDocuments'] = $this->profileDocuments($request->user());
             $props['profileSetup'] = [
                 'professionalTypes' => ProfessionalType::query()
                     ->where('is_active', true)
@@ -273,11 +274,96 @@ class StudentController extends Controller
             unset($data['photo']);
         }
 
+        foreach (['cv_resume', 'id_document'] as $field) {
+            if ($request->hasFile($field)) {
+                $data[$field] = $request->file($field);
+            } else {
+                unset($data[$field]);
+            }
+        }
+
         $user = $this->studentService->updateProfile($data, (string) Auth::id());
 
         Auth::setUser($user);
 
         return redirect()->back()->with('success', 'Profile updated successfully');
+    }
+
+    public function showOwnDocument(Request $request, string $type)
+    {
+        [$collection, $label] = match ($type) {
+            'cv' => ['cv_resume', 'CV/Resume'],
+            'id' => ['id_document', 'ID document'],
+            default => abort(404),
+        };
+
+        $media = $request->user()->getFirstMedia($collection);
+
+        if (!$media) {
+            abort(404, $label.' not found');
+        }
+
+        try {
+            return $media->toInlineResponse($request);
+        } catch (\Throwable) {
+            // Fall through to a signed URL or local path for this student's own file.
+        }
+
+        $fileName = str_replace(['"', '\\', "\r", "\n"], '', (string) $media->file_name);
+        $mimeType = $media->mime_type ?: 'application/octet-stream';
+        $disposition = 'inline; filename="'.$fileName.'"';
+
+        if ($media->disk === 's3') {
+            try {
+                $fileUrl = $media->getTemporaryUrl(now()->addHours(12), '', [
+                    'ResponseContentDisposition' => $disposition,
+                ]);
+            } catch (\Throwable) {
+                $fileUrl = media_public_url($media);
+            }
+
+            if ($fileUrl === '') {
+                abort(404, $label.' file not found');
+            }
+
+            return redirect()->away($fileUrl);
+        }
+
+        $localPath = $media->getPath();
+        if (is_string($localPath) && $localPath !== '' && file_exists($localPath)) {
+            return response()->file($localPath, [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => $disposition,
+            ]);
+        }
+
+        $fileUrl = media_public_url($media);
+
+        if ($fileUrl === '') {
+            abort(404, $label.' file not found');
+        }
+
+        return redirect()->away($fileUrl);
+    }
+
+    /**
+     * @return array{cv: ?array{file_name: string, view_url: string}, id: ?array{file_name: string, view_url: string}}
+     */
+    private function profileDocuments(\App\Models\User $user): array
+    {
+        $cv = $user->getFirstMedia('cv_resume');
+        $id = $user->getFirstMedia('id_document');
+
+        return [
+            'cv' => $cv ? [
+                'file_name' => $cv->file_name,
+                'view_url' => route('student.profile.document', ['type' => 'cv']),
+            ] : null,
+            'id' => $id ? [
+                'file_name' => $id->file_name,
+                'view_url' => route('student.profile.document', ['type' => 'id']),
+            ] : null,
+        ];
     }
 
     public function storeCertificateDocuments(Request $request, int $id)

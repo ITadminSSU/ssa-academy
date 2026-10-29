@@ -30,11 +30,13 @@ type SocialLinksMap = {
 };
 
 const MyProfile = () => {
-   const { auth, errors, translate, profileAnswers, profileSetup } = usePage<StudentDashboardProps>().props;
+   const { auth, errors, translate, profileAnswers, profileSetup, profileDocuments } = usePage<StudentDashboardProps>().props;
    const { button, input, common } = translate;
    const user = auth.user;
    const [userPhoto, setUserPhoto] = useState(user.photo);
    const photoFileRef = useRef<File | null>(null);
+   const cvInputRef = useRef<HTMLInputElement>(null);
+   const idInputRef = useRef<HTMLInputElement>(null);
    const [removePhoto, setRemovePhoto] = useState(false);
    const [socialLinks, setSocialLinks] = useState<SocialLinksMap>({
       website: '',
@@ -112,6 +114,8 @@ const MyProfile = () => {
          : answers.referrer_is_employee
            ? '1'
            : '0') as '' | '1' | '0',
+      cv_resume: null as File | null,
+      id_document: null as File | null,
    });
 
    const selectedProfessionalType = professionalTypes.find((type) => type.id.toString() === data.professional_type_id);
@@ -184,18 +188,41 @@ const MyProfile = () => {
       post(route('student.profile.update'), {
          forceFormData: true,
          preserveScroll: true,
-         transform: (form) => ({
-            ...form,
-            photo: removePhoto ? null : photo,
-            remove_photo: removePhoto ? 1 : 0,
-            social_links: form.social_links ?? formatSocialLinks(socialLinks),
-            worked_as_construction_va: form.worked_as_construction_va === '' ? '' : form.worked_as_construction_va === '1',
-            referrer_is_employee: form.referred_by.trim() && form.referrer_is_employee !== '' ? form.referrer_is_employee === '1' : '',
-         }),
+         transform: (form) => {
+            const payload: Record<string, unknown> = {
+               ...form,
+               photo: removePhoto ? null : photo,
+               remove_photo: removePhoto ? 1 : 0,
+               social_links: form.social_links ?? formatSocialLinks(socialLinks),
+               worked_as_construction_va: form.worked_as_construction_va === '' ? '' : form.worked_as_construction_va === '1',
+               referrer_is_employee: form.referred_by.trim() && form.referrer_is_employee !== '' ? form.referrer_is_employee === '1' : '',
+            };
+
+            if (!form.cv_resume) {
+               delete payload.cv_resume;
+            }
+
+            if (!form.id_document) {
+               delete payload.id_document;
+            }
+
+            return payload;
+         },
          onSuccess: (page) => {
             photoFileRef.current = null;
             setRemovePhoto(false);
-            setData('photo', null);
+            setData((form) => ({
+               ...form,
+               photo: null,
+               cv_resume: null,
+               id_document: null,
+            }));
+            if (cvInputRef.current) {
+               cvInputRef.current.value = '';
+            }
+            if (idInputRef.current) {
+               idInputRef.current.value = '';
+            }
             setUserPhoto((page.props as SharedData).auth?.user?.photo ?? null);
             toast.success('Profile updated successfully');
          },
@@ -203,6 +230,8 @@ const MyProfile = () => {
             const message =
                formErrors.photo ||
                formErrors.name ||
+               formErrors.cv_resume ||
+               formErrors.id_document ||
                formErrors.professional_type_id ||
                formErrors.estimating_software ||
                formErrors.construction_experience ||
@@ -308,6 +337,59 @@ const MyProfile = () => {
                   onChange={(e) => updateSocialLink('linkedin', e.target.value)}
                   placeholder={input.https_placeholder}
                />
+            </div>
+
+            <div className="col-span-full space-y-4 border-t pt-6">
+               <div>
+                  <h2 className="text-lg font-semibold">Documents</h2>
+                  <p className="text-muted-foreground text-sm">
+                     Upload your CV/resume and government ID. These stay on your account and are used to release course certificates. You can save this profile without them.
+                  </p>
+               </div>
+
+               <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-2">
+                     <Label htmlFor="cv_resume">CV / resume</Label>
+                     {profileDocuments?.cv && (
+                        <p className="text-sm">
+                           Current file: {profileDocuments.cv.file_name}{' '}
+                           <a href={profileDocuments.cv.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
+                              View
+                           </a>
+                        </p>
+                     )}
+                     <input
+                        ref={cvInputRef}
+                        id="cv_resume"
+                        type="file"
+                        accept=".pdf,.doc,.docx,application/pdf"
+                        onChange={(event) => setData('cv_resume', event.target.files?.[0] ?? null)}
+                     />
+                     <p className="text-muted-foreground text-xs">PDF, DOC, or DOCX up to 10 MB. A new file replaces the saved one.</p>
+                     <InputError message={errors.cv_resume} />
+                  </div>
+
+                  <div className="grid gap-2">
+                     <Label htmlFor="id_document">Government ID</Label>
+                     {profileDocuments?.id && (
+                        <p className="text-sm">
+                           Current file: {profileDocuments.id.file_name}{' '}
+                           <a href={profileDocuments.id.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
+                              View
+                           </a>
+                        </p>
+                     )}
+                     <input
+                        ref={idInputRef}
+                        id="id_document"
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={(event) => setData('id_document', event.target.files?.[0] ?? null)}
+                     />
+                     <p className="text-muted-foreground text-xs">JPG, PNG, WEBP, or PDF up to 10 MB. A new file replaces the saved one.</p>
+                     <InputError message={errors.id_document} />
+                  </div>
+               </div>
             </div>
 
             <div id="profile-questions" className="col-span-full space-y-6 border-t pt-6">

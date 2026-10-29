@@ -67,6 +67,10 @@ export interface StudentDashboardProps extends SharedData {
       referred_by: string;
       referrer_is_employee: boolean | null;
    };
+   profileDocuments?: {
+      cv: { file_name: string; view_url: string } | null;
+      id: { file_name: string; view_url: string } | null;
+   };
    profileSetup?: {
       professionalTypes: { id: number; name: string }[];
       estimatingSoftwareOptions: string[];

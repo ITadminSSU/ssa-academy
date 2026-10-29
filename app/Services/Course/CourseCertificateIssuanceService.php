@@ -57,6 +57,27 @@ class CourseCertificateIssuanceService
         return ! $missing['needs_cv'] && ! $missing['needs_id'];
     }
 
+    public function finishCourseNotice(User $user, bool $issued): string
+    {
+        if ($issued) {
+            return 'Course completed successfully. Your certificate has been issued.';
+        }
+
+        $missing = $this->missingReleaseDocuments($user);
+        $files = array_values(array_filter([
+            $missing['needs_cv'] ? 'CV/resume' : null,
+            $missing['needs_id'] ? 'government ID' : null,
+        ]));
+
+        if ($files === []) {
+            return 'Course completed successfully. Your certificate has been issued.';
+        }
+
+        $list = count($files) === 2 ? $files[0].' and '.$files[1] : $files[0];
+
+        return "Course completed successfully. Upload your {$list} on your profile to release your certificate.";
+    }
+
     public function getForStudent(Course $course, User $user): ?CourseCertificate
     {
         $certificate = CourseCertificate::query()

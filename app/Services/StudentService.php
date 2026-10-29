@@ -482,6 +482,17 @@ class StudentService extends MediaService
 
          $user->save();
 
+         foreach (['cv_resume', 'id_document'] as $collection) {
+            if (empty($data[$collection])) {
+               continue;
+            }
+
+            $user->addMedia($data[$collection])
+               ->withCustomProperties(['name' => $collection])
+               ->toMediaCollection($collection);
+            $user->unsetRelation('media');
+         }
+
          return $user->fresh(['media']) ?? $user;
       }, 5);
    }
