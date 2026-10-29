@@ -170,6 +170,35 @@ test('an active enrollment posts only the allowed keys', function () {
     });
 });
 
+test('go high level uses the stored given and last name', function () {
+    Schema::table('users', function (Blueprint $table) {
+        $table->string('given_name')->nullable();
+        $table->string('last_name')->nullable();
+    });
+
+    saveGoHighLevel(true, GHL_WEBHOOK_URL);
+    Http::fake();
+
+    $user = User::query()->create([
+        'name' => 'Jane Ann Doe',
+        'given_name' => 'Janet',
+        'last_name' => 'Doe',
+        'email' => 'janet@example.com',
+        'password' => 'secret',
+        'role' => 'student',
+    ]);
+
+    enrollLearner('Jane Ann Doe', 'janet@example.com', 'Alpha Takeoff', null, 'free', false, $user);
+    app()->terminate();
+
+    Http::assertSent(function ($request) {
+        expect($request->data()['first_name'])->toBe('Janet')
+            ->and($request->data()['last_name'])->toBe('Doe');
+
+        return true;
+    });
+});
+
 test('a reserved enrollment sends nothing', function () {
     saveGoHighLevel(true, GHL_WEBHOOK_URL);
     Http::fake();

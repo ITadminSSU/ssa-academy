@@ -182,7 +182,7 @@ class InstructorService extends MediaService
       }
 
       // Do not overwrite user photo/name fields on the instructor row.
-      unset($data['name'], $data['photo'], $data['social_links'], $data['user_id']);
+      unset($data['name'], $data['given_name'], $data['last_name'], $data['photo'], $data['social_links'], $data['user_id']);
 
       $filteredData = array_filter($data, function ($value) {
          return $value !== null;

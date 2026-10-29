@@ -88,7 +88,8 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
    const initialOptions = instructor?.skills ? (typeof instructor.skills === 'string' ? JSON.parse(instructor.skills) : instructor.skills) : [];
 
    const { data, post, setData, processing } = useForm({
-      name: user.name || '',
+      given_name: user.given_name ?? user.name.split(' ')[0] ?? '',
+      last_name: user.given_name != null || user.last_name != null ? (user.last_name ?? '') : user.name.split(' ').slice(1).join(' '),
       photo: null as File | null,
       social_links: [] as any[],
       user_id: user.id,
@@ -245,10 +246,34 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                </div>
             </div>
 
-            <div>
-               <Label htmlFor="name">Full Name</Label>
-               <Input id="name" name="name" value={data.name} onChange={(e) => onHandleChange(e, setData)} className="mt-1" placeholder="John Doe" />
-               <InputError message={errors.name} />
+            <div className="grid gap-4 sm:grid-cols-2">
+               <div>
+                  <Label htmlFor="given_name">Given name</Label>
+                  <Input
+                     id="given_name"
+                     name="given_name"
+                     required
+                     autoComplete="given-name"
+                     value={data.given_name}
+                     onChange={(e) => onHandleChange(e, setData)}
+                     className="mt-1"
+                     placeholder="Alexis"
+                  />
+                  <InputError message={errors.given_name} />
+               </div>
+               <div>
+                  <Label htmlFor="last_name">Last name</Label>
+                  <Input
+                     id="last_name"
+                     name="last_name"
+                     autoComplete="family-name"
+                     value={data.last_name}
+                     onChange={(e) => onHandleChange(e, setData)}
+                     className="mt-1"
+                     placeholder="Pacapac"
+                  />
+                  <InputError message={errors.last_name} />
+               </div>
             </div>
 
             {((user.role === 'admin' && user.instructor_id) || user.role === 'instructor') && (

@@ -16,7 +16,8 @@ test('new users can register with name email and password and must verify email'
     Notification::fake();
 
     $response = $this->post('/register', [
-        'name' => 'Test User',
+        'given_name' => 'Test',
+        'last_name' => 'User',
         'email' => 'test@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -32,6 +33,8 @@ test('new users can register with name email and password and must verify email'
 
     expect($user)->not->toBeNull()
         ->and($user->name)->toBe('Test User')
+        ->and($user->given_name)->toBe('Test')
+        ->and($user->last_name)->toBe('User')
         ->and($user->hasVerifiedEmail())->toBeFalse()
         ->and($user->legal_agreement_accepted_at)->toBeNull()
         ->and($user->professional_type_id)->toBeNull()
@@ -47,7 +50,8 @@ test('registration does not require a cv or government id', function () {
     Notification::fake();
 
     $response = $this->post('/register', [
-        'name' => 'Test User',
+        'given_name' => 'Test',
+        'last_name' => 'User',
         'email' => 'noid@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',

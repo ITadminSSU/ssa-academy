@@ -203,13 +203,7 @@ class CourseEnrollmentWelcomeMailService
 
     private function firstName(User $user): string
     {
-        $name = trim((string) ($user->name ?? ''));
-
-        if ($name === '') {
-            return 'there';
-        }
-
-        return explode(' ', $name)[0];
+        return \App\Support\PersonName::greeting($user->given_name);
     }
 
     private function money(float $amount): string

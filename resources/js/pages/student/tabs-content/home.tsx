@@ -64,7 +64,7 @@ const Home = () => {
            : route('student.course.show', { id: continueEnrollment.course.id, tab: 'modules' })
       : '';
 
-   const firstName = auth.user?.name?.split(' ')[0] ?? 'there';
+   const firstName = auth.user?.given_name?.trim() || 'there';
 
    const stats = [
       { label: 'Enrolled Courses', value: courseEnrollments.length, Icon: GraduationCap },

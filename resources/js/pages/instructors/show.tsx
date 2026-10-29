@@ -52,8 +52,13 @@ const Show = ({ instructor, system, translate }: InstructorPageProps & { transla
             <meta property="og:image:alt" content={`${user.name} - ${frontend.instructor_profile}`} />
 
             {/* Profile specific Open Graph */}
-            <meta property="profile:first_name" content={user.name.split(' ')[0]} />
-            {user.name.split(' ').length > 1 && <meta property="profile:last_name" content={user.name.split(' ').slice(1).join(' ')} />}
+            <meta property="profile:first_name" content={user.given_name?.trim() || user.name.trim().split(/\s+/)[0] || ''} />
+            {(user.given_name?.trim() ? user.last_name?.trim() : user.name.trim().split(/\s+/).slice(1).join(' ')) && (
+               <meta
+                  property="profile:last_name"
+                  content={user.given_name?.trim() ? user.last_name?.trim() ?? '' : user.name.trim().split(/\s+/).slice(1).join(' ')}
+               />
+            )}
 
             {/* Twitter Card Tags */}
             <meta name="twitter:card" content="summary" />

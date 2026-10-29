@@ -3,9 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Models\ProfessionalType;
+use App\Support\PersonName;
 use App\Support\RegistrationProfileOptions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateStudentProfileRequest extends FormRequest
 {
@@ -62,7 +64,8 @@ class UpdateStudentProfileRequest extends FormRequest
         $typeIsOther = $type && strcasecmp((string) $type->name, 'other') === 0;
 
         return [
-            'name' => 'required|string|max:255',
+            'given_name' => 'required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
             'remove_photo' => 'nullable|boolean',
             'social_links' => 'nullable',
@@ -100,6 +103,7 @@ class UpdateStudentProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'given_name.required' => 'Please enter your given name.',
             'professional_type_id.required' => 'Please select your professional type.',
             'professional_type_other.required' => 'Please specify your professional type.',
             'estimating_software.required' => 'Please select at least one estimating software option.',
@@ -113,5 +117,12 @@ class UpdateStudentProfileRequest extends FormRequest
             'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
             'id_document.max' => 'ID must not be larger than 10MB.',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            PersonName::validatePair($validator, $this->input('given_name'), $this->input('last_name'));
+        });
     }
 }

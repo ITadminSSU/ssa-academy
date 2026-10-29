@@ -68,7 +68,8 @@ const CreateForm = () => {
    const accountTypeOptions = ACCOUNT_TYPE_OPTIONS.filter((option) => canCreateAdmins || !option.requiresPlatformSettings);
 
    const { data, setData, post, processing, errors, reset } = useForm({
-      name: '',
+      given_name: '',
+      last_name: '',
       email: '',
       password: '',
       password_confirmation: '',
@@ -129,14 +130,28 @@ const CreateForm = () => {
                </div>
 
                <div>
-                  <Label>{input.name}</Label>
+                  <Label htmlFor="given_name">Given name</Label>
                   <Input
+                     id="given_name"
                      required
-                     value={data.name}
-                     onChange={(e) => setData('name', e.target.value)}
-                     placeholder={input.name_placeholder}
+                     autoComplete="given-name"
+                     value={data.given_name}
+                     onChange={(e) => setData('given_name', e.target.value)}
+                     placeholder="Alexis"
                   />
-                  <InputError message={errors.name} />
+                  <InputError message={errors.given_name} />
+               </div>
+
+               <div>
+                  <Label htmlFor="last_name">Last name</Label>
+                  <Input
+                     id="last_name"
+                     autoComplete="family-name"
+                     value={data.last_name}
+                     onChange={(e) => setData('last_name', e.target.value)}
+                     placeholder="Pacapac"
+                  />
+                  <InputError message={errors.last_name} />
                </div>
 
                <div>

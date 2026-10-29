@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PersonName;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateInstructorProfileRequest extends FormRequest
 {
@@ -32,7 +34,8 @@ class UpdateInstructorProfileRequest extends FormRequest
     {
         // Base validation rules for all users
         $rules = [
-            'name' => 'required|string|max:255',
+            'given_name' => 'required|string|max:255',
+            'last_name' => 'nullable|string|max:255',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
             'remove_photo' => 'nullable|boolean',
             'social_links' => 'nullable',
@@ -49,5 +52,12 @@ class UpdateInstructorProfileRequest extends FormRequest
         $rules['resume'] = 'nullable|file|mimes:pdf,doc,docx|max:2048';
 
         return $rules;
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            PersonName::validatePair($validator, $this->input('given_name'), $this->input('last_name'));
+        });
     }
 }

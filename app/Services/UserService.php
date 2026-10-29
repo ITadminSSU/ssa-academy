@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Auth\SingleSessionService;
 use App\Services\Course\PefEnrollmentService;
 use App\Support\MasterAdmin;
+use App\Support\PersonName;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -94,7 +95,7 @@ class UserService
 
             if (MasterAdmin::isProtected($user)) {
                 $user->update([
-                    'name' => $data['name'],
+                    ...$this->namePayload($data),
                     'email' => strtolower($data['email']),
                 ]);
 
@@ -102,7 +103,7 @@ class UserService
             }
 
             $payload = [
-                'name' => $data['name'],
+                ...$this->namePayload($data),
                 'email' => strtolower($data['email']),
                 'status' => (int) $data['status'],
             ];
@@ -252,6 +253,15 @@ class UserService
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{given_name: string, last_name: ?string, name: string}
+     */
+    private function namePayload(array $data): array
+    {
+        return PersonName::attributes((string) ($data['given_name'] ?? ''), $data['last_name'] ?? null);
     }
 
     private function exportRoleLabel(string $role): string

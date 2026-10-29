@@ -40,7 +40,8 @@ const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
    }, []);
 
    const { data, setData, post, processing, errors, reset } = useForm({
-      name: '',
+      given_name: '',
+      last_name: '',
       email: '',
       password: '',
       password_confirmation: '',
@@ -61,7 +62,7 @@ const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
    };
 
    const isFormComplete =
-      Boolean(data.name.trim()) &&
+      Boolean(data.given_name.trim()) &&
       Boolean(data.email.trim()) &&
       Boolean(data.password) &&
       Boolean(data.password_confirmation) &&
@@ -108,20 +109,34 @@ const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
 
                <form className="space-y-8" onSubmit={submit}>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                     <div className="grid gap-2 sm:col-span-2">
-                        <Label htmlFor="name">{inputCopy.name}</Label>
+                     <div className="grid gap-2">
+                        <Label htmlFor="given_name">Given name</Label>
                         <Input
-                           id="name"
+                           id="given_name"
                            type="text"
                            required
                            autoFocus
-                           autoComplete="name"
-                           value={data.name}
-                           onChange={(e) => setData('name', e.target.value)}
+                           autoComplete="given-name"
+                           value={data.given_name}
+                           onChange={(e) => setData('given_name', e.target.value)}
                            disabled={processing}
-                           placeholder={inputCopy.full_name_placeholder}
+                           placeholder="Alexis"
                         />
-                        <InputError message={errors.name} />
+                        <InputError message={errors.given_name} />
+                     </div>
+
+                     <div className="grid gap-2">
+                        <Label htmlFor="last_name">Last name</Label>
+                        <Input
+                           id="last_name"
+                           type="text"
+                           autoComplete="family-name"
+                           value={data.last_name}
+                           onChange={(e) => setData('last_name', e.target.value)}
+                           disabled={processing}
+                           placeholder="Pacapac"
+                        />
+                        <InputError message={errors.last_name} />
                      </div>
 
                      <div className="grid gap-2 sm:col-span-2">
