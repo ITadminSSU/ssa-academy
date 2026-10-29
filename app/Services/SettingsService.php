@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Course\Course;
 use App\Models\Footer;
 use App\Models\FooterItem;
 use App\Models\Navbar;
@@ -10,6 +11,7 @@ use App\Models\Page;
 use App\Models\Setting;
 use App\Support\DashboardWelcomeOverlay;
 use App\Support\LandingOverlay;
+use App\Support\PefPackageSettings;
 use App\Support\SiteAlert;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
@@ -100,6 +102,29 @@ class SettingsService extends MediaService
                     : (int) $companionCourseId;
             }
 
+            if (array_key_exists('pef_enabled', $filteredData)) {
+                $filteredData['pef_enabled'] = filter_var(
+                    $filteredData['pef_enabled'],
+                    FILTER_VALIDATE_BOOLEAN
+                );
+            }
+
+            if (array_key_exists('pef_access_duration', $filteredData)) {
+                $duration = (string) $filteredData['pef_access_duration'];
+
+                if (! in_array($duration, PefPackageSettings::DURATIONS, true)) {
+                    throw ValidationException::withMessages([
+                        'pef_access_duration' => 'Choose an access period from the list.',
+                    ]);
+                }
+
+                $filteredData['pef_access_duration'] = $duration;
+            }
+
+            if (array_key_exists('pef_course_ids', $filteredData)) {
+                $filteredData['pef_course_ids'] = $this->normalizePefCourseIds($filteredData['pef_course_ids']);
+            }
+
             if (array_key_exists('site_alert_enabled', $filteredData) || array_key_exists('site_alert_message', $filteredData)) {
                 $alert = SiteAlert::fromFields($filteredData);
                 $filteredData['site_alert_enabled'] = $alert['enabled'];
@@ -112,6 +137,43 @@ class SettingsService extends MediaService
         }, 5);
     }
 
+    /**
+     * @return list<int>
+     */
+    private function normalizePefCourseIds(mixed $ids): array
+    {
+        if ($ids === null || $ids === '') {
+            return [];
+        }
+
+        if (! is_array($ids)) {
+            $ids = [$ids];
+        }
+
+        $normalized = [];
+
+        foreach ($ids as $id) {
+            $courseId = (int) $id;
+
+            if ($courseId > 0) {
+                $normalized[] = $courseId;
+            }
+        }
+
+        $normalized = array_values(array_unique($normalized));
+
+        if ($normalized === []) {
+            return [];
+        }
+
+        $existing = Course::query()->whereIn('id', $normalized)->pluck('id')->all();
+
+        return array_values(array_filter(
+            $normalized,
+            fn (int $id) => in_array($id, $existing, true)
+        ));
+    }
+
     private function isUploadedFavicon(mixed $value): bool
     {
         return $value instanceof UploadedFile && $value->isValid();
@@ -121,7 +183,7 @@ class SettingsService extends MediaService
     {
         $sourcePath = $file->getRealPath();
 
-        if (!$sourcePath || !is_file($sourcePath)) {
+        if (! $sourcePath || ! is_file($sourcePath)) {
             throw ValidationException::withMessages([
                 'new_favicon' => 'The favicon file could not be read. Please choose it again and click Save Changes.',
             ]);
@@ -353,10 +415,10 @@ class SettingsService extends MediaService
             // Handle different types of navbar items
             if ($data['type'] === 'dropdown') {
                 // For dropdown items, filter out empty items and keep as array (Laravel will auto-convert to JSON)
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     // Filter out empty items
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['title']) && !empty($item['url']);
+                        return ! empty($item['title']) && ! empty($item['url']);
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -390,10 +452,10 @@ class SettingsService extends MediaService
             // Handle different types of navbar items
             if ($data['type'] === 'dropdown') {
                 // For dropdown items, filter out empty items and keep as array (Laravel will auto-convert to JSON)
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     // Filter out empty items
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['title']) && !empty($item['url']);
+                        return ! empty($item['title']) && ! empty($item['url']);
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -432,7 +494,7 @@ class SettingsService extends MediaService
     {
         foreach ($sortedData as $value) {
             NavbarItem::where('id', $value['id'])->update([
-                'sort' => $value['sort']
+                'sort' => $value['sort'],
             ]);
         }
     }
@@ -498,7 +560,8 @@ class SettingsService extends MediaService
     public function toggleNavbarItemStatus(NavbarItem $item)
     {
         return DB::transaction(function () use ($item) {
-            $item->update(['active' => !$item->active]);
+            $item->update(['active' => ! $item->active]);
+
             return $item->fresh();
         }, 5);
     }
@@ -514,8 +577,8 @@ class SettingsService extends MediaService
             return NavbarItem::create([
                 'navbar_id' => $item->navbar_id,
                 'type' => $item->type,
-                'slug' => $item->slug . '_copy',
-                'title' => $item->title . ' (Copy)',
+                'slug' => $item->slug.'_copy',
+                'title' => $item->title.' (Copy)',
                 'value' => $item->value,
                 'items' => $item->items,
                 'sort' => $maxSort + 1,
@@ -533,10 +596,10 @@ class SettingsService extends MediaService
             // Handle different types of footer items
             if ($data['type'] === 'list') {
                 // For list items, filter out empty items and keep as array (Laravel will auto-convert to JSON)
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     // Filter out empty items
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['title']) && (!isset($item['url']) || !empty($item['url']));
+                        return ! empty($item['title']) && (! isset($item['url']) || ! empty($item['url']));
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -544,9 +607,9 @@ class SettingsService extends MediaService
                 }
             } elseif ($data['type'] === 'social_media') {
                 // For social media items, ensure icon and url are provided
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['title']) && !empty($item['url']) && !empty($item['icon']);
+                        return ! empty($item['title']) && ! empty($item['url']) && ! empty($item['icon']);
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -554,9 +617,9 @@ class SettingsService extends MediaService
                 }
             } elseif ($data['type'] === 'payment_methods') {
                 // For payment methods, ensure image is provided
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['image']);
+                        return ! empty($item['image']);
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -567,7 +630,7 @@ class SettingsService extends MediaService
                 $data['items'] = [];
             } else {
                 // For other types, keep items as is or empty array
-                if (!isset($data['items']) || !is_array($data['items'])) {
+                if (! isset($data['items']) || ! is_array($data['items'])) {
                     $data['items'] = [];
                 }
             }
@@ -590,10 +653,10 @@ class SettingsService extends MediaService
             // Handle different types of footer items
             if ($data['type'] === 'list') {
                 // For list items, filter out empty items and keep as array (Laravel will auto-convert to JSON)
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     // Filter out empty items
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['title']) && (!isset($item['url']) || !empty($item['url']));
+                        return ! empty($item['title']) && (! isset($item['url']) || ! empty($item['url']));
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -601,9 +664,9 @@ class SettingsService extends MediaService
                 }
             } elseif ($data['type'] === 'social_media') {
                 // For social media items, ensure icon and url are provided
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['title']) && !empty($item['url']) && !empty($item['icon']);
+                        return ! empty($item['title']) && ! empty($item['url']) && ! empty($item['icon']);
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -611,9 +674,9 @@ class SettingsService extends MediaService
                 }
             } elseif ($data['type'] === 'payment_methods') {
                 // For payment methods, ensure image is provided
-                if (isset($data['items']) && is_array($data['items']) && !empty($data['items'])) {
+                if (isset($data['items']) && is_array($data['items']) && ! empty($data['items'])) {
                     $filteredItems = array_filter($data['items'], function ($item) {
-                        return !empty($item['image']);
+                        return ! empty($item['image']);
                     });
                     $data['items'] = array_values($filteredItems);
                 } else {
@@ -624,7 +687,7 @@ class SettingsService extends MediaService
                 $data['items'] = [];
             } else {
                 // For other types, keep items as is or empty array
-                if (!isset($data['items']) || !is_array($data['items'])) {
+                if (! isset($data['items']) || ! is_array($data['items'])) {
                     $data['items'] = [];
                 }
             }
@@ -653,7 +716,7 @@ class SettingsService extends MediaService
         return DB::transaction(function () use ($sortedData) {
             foreach ($sortedData as $itemData) {
                 FooterItem::where('id', $itemData['id'])->update([
-                    'sort' => $itemData['sort']
+                    'sort' => $itemData['sort'],
                 ]);
             }
         }, 5);
@@ -685,7 +748,8 @@ class SettingsService extends MediaService
     public function toggleFooterItemStatus(FooterItem $item)
     {
         return DB::transaction(function () use ($item) {
-            $item->update(['active' => !$item->active]);
+            $item->update(['active' => ! $item->active]);
+
             return $item->fresh();
         }, 5);
     }

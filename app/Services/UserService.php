@@ -6,6 +6,7 @@ use App\Enums\LearnerUserType;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Services\Auth\SingleSessionService;
+use App\Services\Course\PefEnrollmentService;
 use App\Support\MasterAdmin;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -30,13 +31,13 @@ class UserService
         $includeAllRoles = (bool) ($data['include_all_roles'] ?? false);
 
         $users = User::with(['professionalType', 'instructor'])
-            ->when(!$includeAllRoles, function ($query) {
+            ->when(! $includeAllRoles, function ($query) {
                 return $query
                     ->where('role', '!=', 'admin')
                     ->where('role', '!=', 'instructor')
                     ->where('role', '!=', 'social_media');
             })
-            ->when($includeAllRoles && !empty($data['role_filter']) && $data['role_filter'] !== 'all', function ($query) use ($data) {
+            ->when($includeAllRoles && ! empty($data['role_filter']) && $data['role_filter'] !== 'all', function ($query) use ($data) {
                 return match ($data['role_filter']) {
                     'admin' => $query->where('role', 'admin'),
                     'trainer' => $query->where('role', 'instructor'),
@@ -50,14 +51,14 @@ class UserService
                 $search = $data['search'];
 
                 return $query->where(function ($inner) use ($search) {
-                    $inner->where('name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('email', 'LIKE', '%' . $search . '%');
+                    $inner->where('name', 'LIKE', '%'.$search.'%')
+                        ->orWhere('email', 'LIKE', '%'.$search.'%');
                 });
             })
-            ->when(!empty($data['registered_from']), function ($query) use ($data) {
+            ->when(! empty($data['registered_from']), function ($query) use ($data) {
                 return $query->whereDate('created_at', '>=', $data['registered_from']);
             })
-            ->when(!empty($data['registered_to']), function ($query) use ($data) {
+            ->when(! empty($data['registered_to']), function ($query) use ($data) {
                 return $query->whereDate('created_at', '<=', $data['registered_to']);
             })
             ->orderBy('created_at', 'desc');
@@ -86,7 +87,7 @@ class UserService
         return $users->get()->transform($transform);
     }
 
-    public function updateUser(int | string $id, array $data): void
+    public function updateUser(int|string $id, array $data): void
     {
         DB::transaction(function () use ($data, $id) {
             $user = User::with('instructor')->findOrFail($id);
@@ -106,7 +107,7 @@ class UserService
                 'status' => (int) $data['status'],
             ];
 
-            if (!empty($data['password'])) {
+            if (! empty($data['password'])) {
                 $payload['password'] = Hash::make($data['password']);
             }
 
@@ -130,6 +131,10 @@ class UserService
 
             $user->update($payload);
             $user = $user->fresh('instructor');
+
+            if (array_key_exists('pef_tagged', $data)) {
+                app(PefEnrollmentService::class)->syncTag($user, (bool) $data['pef_tagged']);
+            }
 
             if ($wasActive && (int) $payload['status'] === 0) {
                 app(SingleSessionService::class)->revokeAll($user);
@@ -158,7 +163,7 @@ class UserService
         ];
     }
 
-    public function deleteUser(int | string $id): void
+    public function deleteUser(int|string $id): void
     {
         DB::transaction(function () use ($id) {
             $user = User::findOrFail($id);
@@ -206,7 +211,7 @@ class UserService
         return response()->streamDownload(function () use ($users) {
             $handle = fopen('php://output', 'w');
 
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($handle, [
                 'Name',
@@ -225,7 +230,7 @@ class UserService
             foreach ($users as $user) {
                 $professionalType = $user->professionalType?->name ?? '';
                 if ($professionalType === 'Other' && $user->professional_type_other) {
-                    $professionalType = 'Other (' . $user->professional_type_other . ')';
+                    $professionalType = 'Other ('.$user->professional_type_other.')';
                 }
 
                 fputcsv($handle, [

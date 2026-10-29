@@ -17,6 +17,7 @@ class CourseEnrollment extends Model
         'user_id',
         'course_id',
         'enrollment_type',
+        'pef_granted',
         'access_status',
         'entry_date',
         'expiry_date',
@@ -42,6 +43,7 @@ class CourseEnrollment extends Model
     ];
 
     protected $casts = [
+        'pef_granted' => 'boolean',
         'access_status' => EnrollmentAccessStatus::class,
         'entry_date' => 'datetime',
         'expiry_date' => 'datetime',
@@ -61,7 +63,6 @@ class CourseEnrollment extends Model
         'forfeit_notice_sent_at' => 'datetime',
         'welcome_email_sent_at' => 'datetime',
     ];
-
 
     public function user(): BelongsTo
     {

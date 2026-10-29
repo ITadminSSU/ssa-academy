@@ -253,6 +253,11 @@ interface SettingsLang {
    site_alert_enabled: string;
    site_alert_message: string;
    site_alert_message_placeholder: string;
+   pef_package: string;
+   pef_package_help: string;
+   pef_enabled: string;
+   pef_courses: string;
+   pef_access_duration: string;
 
    // Update Process
    maintenance_mode: string;

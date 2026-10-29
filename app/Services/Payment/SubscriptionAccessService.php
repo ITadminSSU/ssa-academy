@@ -40,6 +40,14 @@ class SubscriptionAccessService
             return 'none';
         }
 
+        if ($enrollment->pef_granted) {
+            if ($enrollment->access_status !== EnrollmentAccessStatus::ACTIVE) {
+                return 'none';
+            }
+
+            return $this->pefWindowEnded($user) ? 'completed_only' : 'full';
+        }
+
         if ($course->usesInstallmentSubscription()) {
             if (! $enrollment->relationLoaded('subscription')) {
                 $enrollment->load('subscription');
@@ -175,7 +183,22 @@ class SubscriptionAccessService
 
         $enrollment = $this->resolveEnrollment($user, $course);
 
+        if ($enrollment?->pef_granted && $this->pefWindowEnded($user)) {
+            return false;
+        }
+
         return $enrollment !== null && $enrollment->hasFullAccess();
+    }
+
+    public function progressDeniedMessage(User $user, Course $course, string $otherwise): string
+    {
+        $enrollment = $this->resolveEnrollment($user, $course);
+
+        if ($enrollment?->pef_granted && $this->pefWindowEnded($user)) {
+            return 'Your PEF access period has ended. Finished lessons, quizzes, and assignments stay available. Unfinished items stay locked.';
+        }
+
+        return $otherwise;
     }
 
     public function toFrontendPayload(User $user, Course $course, ?CourseEnrollment $enrollment = null): array
@@ -189,13 +212,15 @@ class SubscriptionAccessService
         }
 
         $mode = $this->getAccessMode($user, $course, $enrollment);
+        $pefLimited = $mode === 'completed_only' && (bool) $enrollment?->pef_granted;
 
         return [
             'mode' => $mode,
             'can_mark_progress' => $mode === 'full',
             'can_submit_assignments' => $mode === 'full',
             'can_finish_course' => $mode === 'full',
-            'can_resubscribe' => $mode === 'completed_only' && $course->usesSubscriptionBilling(),
+            'can_resubscribe' => $mode === 'completed_only' && $course->usesSubscriptionBilling() && ! $pefLimited,
+            'pef_limited' => $pefLimited,
             'can_pay_invoice' => $mode === 'installment_locked',
             'invoice_url' => $mode === 'installment_locked' ? ($enrollment?->subscription?->open_invoice_url ?: null) : null,
             'is_subscription_course' => $course->usesSubscriptionBilling(),
@@ -203,5 +228,12 @@ class SubscriptionAccessService
             'access_status' => $enrollment?->access_status?->value,
             'subscription_status' => $enrollment?->subscription?->status?->value,
         ];
+    }
+
+    private function pefWindowEnded(User $user): bool
+    {
+        $endsAt = $user->pef_access_ends_at;
+
+        return $endsAt !== null && now()->greaterThanOrEqualTo($endsAt);
     }
 }

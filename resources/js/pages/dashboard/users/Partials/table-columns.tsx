@@ -107,7 +107,12 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
       {
          accessorKey: 'user_type',
          header: table.user_type,
-         cell: ({ row }) => <span>{learnerTypeLabel(row.original, common)}</span>,
+         cell: ({ row }) => (
+            <span className="inline-flex items-center gap-2">
+               <span>{learnerTypeLabel(row.original, common)}</span>
+               {row.original.pef_tagged ? <Badge>PEF</Badge> : null}
+            </span>
+         ),
       },
       {
          id: 'professional_type',

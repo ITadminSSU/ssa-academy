@@ -34,23 +34,27 @@ class QuizSubmissionController extends Controller
         $quiz = SectionQuiz::with('course.assignments')->findOrFail($request->section_quiz_id);
         $user = User::query()->findOrFail($request->user_id);
 
-        if (!$this->subscriptionAccess->canMarkProgress($user, $quiz->course)) {
-            $message = $quiz->course->usesInstallmentSubscription()
-                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
-                : ($quiz->course->usesSubscriptionBilling()
-                    ? 'Your subscription is inactive. Resubscribe to take quizzes.'
-                    : 'Your access to this course is inactive.');
+        if (! $this->subscriptionAccess->canMarkProgress($user, $quiz->course)) {
+            $message = $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $quiz->course,
+                $quiz->course->usesInstallmentSubscription()
+                    ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                    : ($quiz->course->usesSubscriptionBilling()
+                        ? 'Your subscription is inactive. Resubscribe to take quizzes.'
+                        : 'Your access to this course is inactive.'),
+            );
 
             return back()->with('error', $message);
         }
 
-        if (!$this->courseCompletionGateService->canAccessQuiz($quiz->course, $request->user_id, $quiz->id)) {
+        if (! $this->courseCompletionGateService->canAccessQuiz($quiz->course, $request->user_id, $quiz->id)) {
             return back()->with('error', 'Complete all video lessons before taking the quiz.');
         }
 
         $submission = $this->quizService->quizSubmission($request->validated());
 
-        if (!$submission) {
+        if (! $submission) {
             return back()->with('error', 'You have done your retake attempts');
         }
 
@@ -73,17 +77,21 @@ class QuizSubmissionController extends Controller
         $quiz = SectionQuiz::with(['course', 'quiz_questions'])->findOrFail($request->section_quiz_id);
         $user = User::query()->findOrFail($request->user_id);
 
-        if (!$this->subscriptionAccess->canMarkProgress($user, $quiz->course)) {
-            $message = $quiz->course->usesInstallmentSubscription()
-                ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
-                : ($quiz->course->usesSubscriptionBilling()
-                    ? 'Your subscription is inactive. Resubscribe to take quizzes.'
-                    : 'Your access to this course is inactive.');
+        if (! $this->subscriptionAccess->canMarkProgress($user, $quiz->course)) {
+            $message = $this->subscriptionAccess->progressDeniedMessage(
+                $user,
+                $quiz->course,
+                $quiz->course->usesInstallmentSubscription()
+                    ? 'Your installment payment is past due. Pay the open invoice to unlock this course.'
+                    : ($quiz->course->usesSubscriptionBilling()
+                        ? 'Your subscription is inactive. Resubscribe to take quizzes.'
+                        : 'Your access to this course is inactive.'),
+            );
 
             return back()->with('error', $message);
         }
 
-        if (!$this->courseCompletionGateService->canAccessQuiz($quiz->course, $user->id, $quiz->id)) {
+        if (! $this->courseCompletionGateService->canAccessQuiz($quiz->course, $user->id, $quiz->id)) {
             return back()->with('error', 'Complete the previous item before taking this quiz.');
         }
 
@@ -93,7 +101,7 @@ class QuizSubmissionController extends Controller
             return back()->with('error', $exception->getMessage());
         }
 
-        if (!$submission) {
+        if (! $submission) {
             return back()->with('error', 'You have done your retake attempts');
         }
 
@@ -120,11 +128,11 @@ class QuizSubmissionController extends Controller
         $user = request()->user();
         $quiz->loadMissing(['course', 'quiz_questions']);
 
-        if (!$this->subscriptionAccess->canAccessPlayer($user, $quiz->course)) {
+        if (! $this->subscriptionAccess->canAccessPlayer($user, $quiz->course)) {
             abort(403);
         }
 
-        if (!$this->courseCompletionGateService->canAccessQuiz($quiz->course, $user->id, $quiz->id)) {
+        if (! $this->courseCompletionGateService->canAccessQuiz($quiz->course, $user->id, $quiz->id)) {
             return back()->with('error', 'Complete the previous item before downloading this takeoff.');
         }
 

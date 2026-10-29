@@ -84,6 +84,8 @@ class SettingController extends Controller
     public function system(Request $request)
     {
         $system = $this->settingsService->getSetting(['type' => 'system']);
+        $selectedPefCourseIds = $system?->getField('pef_course_ids', []);
+        $selectedPefCourseIds = is_array($selectedPefCourseIds) ? $selectedPefCourseIds : [];
         $companionCourseOptions = \App\Models\Course\Course::query()
             ->select(['id', 'title', 'status'])
             ->where('status', 'approved')
@@ -93,6 +95,9 @@ class SettingController extends Controller
                     $query->orWhere('id', $selectedId);
                 }
             )
+            ->when($selectedPefCourseIds !== [], function ($query) use ($selectedPefCourseIds) {
+                $query->orWhereIn('id', $selectedPefCourseIds);
+            })
             ->orderBy('title')
             ->get();
 

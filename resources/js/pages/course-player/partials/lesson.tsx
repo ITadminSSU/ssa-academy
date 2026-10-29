@@ -96,7 +96,7 @@ const Lesson = ({ lesson, completed, variant = 'default', index }: Props) => {
          return (
             <LockedCurriculumButton reason={lockReason || 'This lesson is locked.'} className="text-muted-foreground px-4 py-3">
                {content}
-               {subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course ? (
+               {subscriptionLocked && !isCompleted && subscriptionAccess?.is_subscription_course && !subscriptionAccess?.pef_limited ? (
                   <p className="text-muted-foreground mt-1 pl-9 text-[11px]">Resubscribe to unlock</p>
                ) : null}
             </LockedCurriculumButton>

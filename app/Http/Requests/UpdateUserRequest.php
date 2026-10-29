@@ -36,6 +36,10 @@ class UpdateUserRequest extends FormRequest
             ) ?? false;
         }
 
+        if ($this->exists('pef_tagged')) {
+            $payload['pef_tagged'] = filter_var($this->input('pef_tagged'), FILTER_VALIDATE_BOOLEAN);
+        }
+
         if ($payload !== []) {
             $this->merge($payload);
         }
@@ -58,6 +62,8 @@ class UpdateUserRequest extends FormRequest
             'status' => ['required', 'in:0,1'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ];
+
+        $rules['pef_tagged'] = ['sometimes', 'boolean'];
 
         if ($this->actorCanChangeAccountType($user)) {
             $rules['account_type'] = ['required', 'in:admin,operations,employee,trainer,external,social_media'];

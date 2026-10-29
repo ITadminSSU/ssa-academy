@@ -38,6 +38,9 @@ interface SystemFields {
    theme: Appearance;
    companion_auto_enroll_enabled?: boolean;
    companion_course_id?: number | string | null;
+   pef_enabled?: boolean;
+   pef_course_ids?: Array<number | string>;
+   pef_access_duration?: string;
    site_alert_enabled?: boolean;
    site_alert_message?: string;
 }

@@ -36,6 +36,18 @@ const SubscriptionAccessBanner = ({ subscriptionAccess: accessProp, course: cour
       );
    }
 
+   if (subscriptionAccess.mode === 'completed_only' && subscriptionAccess.pef_limited) {
+      return (
+         <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-50">
+            <Lock className="h-4 w-4" />
+            <AlertTitle>PEF access ended</AlertTitle>
+            <AlertDescription>
+               Lessons, quizzes, and assignments you already finished stay available. Unfinished items stay locked.
+            </AlertDescription>
+         </Alert>
+      );
+   }
+
    if (subscriptionAccess.mode !== 'completed_only') {
       return null;
    }
