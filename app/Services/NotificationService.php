@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Notifications\ChatMessageNotification;
 use App\Services\MediaService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -13,14 +14,18 @@ class NotificationService extends MediaService
    {
       $user = Auth::user();
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
+      $notifications = $this->visibleNotifications($user);
 
       if (array_key_exists('unread', $data) && $data['unread']) {
-         $notifications = $user->unreadNotifications;
-      } else {
-         $notifications = $user->notifications()->paginate($page);
+         return $notifications->whereNull('read_at')->get();
       }
 
-      return $notifications;
+      return $notifications->paginate($page);
+   }
+
+   private function visibleNotifications($user)
+   {
+      return $user->notifications()->where('type', '!=', ChatMessageNotification::class);
    }
 
    function markAllAsRead(): void

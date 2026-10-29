@@ -14,7 +14,6 @@ use App\Models\ChatParticipant;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\User;
-use App\Notifications\ChatMessageNotification;
 use App\Support\TransactionalMailSender;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -789,12 +788,6 @@ class ChatService
             ->with('user')
             ->get();
 
-        $label = match ($conversation->type) {
-            ChatConversationType::Group => $conversation->title ?? 'Class chat',
-            ChatConversationType::Academy => 'Academy',
-            default => $conversation->student?->name ?? 'Direct message',
-        };
-
         foreach ($recipients as $participantRow) {
             $recipient = $participantRow->user;
             if (! $recipient instanceof User) {
@@ -809,18 +802,6 @@ class ChatService
                 $inboxPreview,
                 $unreadCount,
             ));
-
-            if (! $this->presence->isViewingConversation($recipient, $conversation->id)) {
-                try {
-                    $recipient->notify(new ChatMessageNotification($conversation, $message, $label));
-                } catch (\Throwable $e) {
-                    Log::warning('chat_in_app notify failed', [
-                        'recipient_id' => $recipient->id,
-                        'conversation_id' => $conversation->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
 
             if (
                 filter_var($recipient->email, FILTER_VALIDATE_EMAIL)

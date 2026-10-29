@@ -6,7 +6,7 @@ use App\Services\Chat\ChatPresenceService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Cache;
 
-it('does not queue chat message notifications so admin bells update immediately', function () {
+it('does not queue chat message notifications', function () {
     expect((new ReflectionClass(ChatMessageNotification::class))->implementsInterface(ShouldQueue::class))->toBeFalse();
 });
 
