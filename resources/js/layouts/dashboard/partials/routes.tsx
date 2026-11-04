@@ -157,6 +157,12 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   access: ['admin', 'collaborative', 'administrative'],
                },
                {
+                  name: 'Active subscriptions',
+                  slug: routeLastSegment(route('payment-reports.active-subscriptions.index')),
+                  path: route('payment-reports.active-subscriptions.index'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
                   name: 'Refund Tracking',
                   slug: routeLastSegment(route('payment-refunds.index')),
                   path: route('payment-refunds.index'),

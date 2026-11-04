@@ -1,18 +1,19 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Modules\PaymentGateways\Http\Middleware\SSLConfigMiddleware;
-use Modules\PaymentGateways\Http\Controllers\Payment\PaymentController;
+use Illuminate\Support\Facades\Route;
+use Modules\PaymentGateways\Http\Controllers\Payment\ActiveSubscriptionReportController;
 use Modules\PaymentGateways\Http\Controllers\Payment\MollieController;
+use Modules\PaymentGateways\Http\Controllers\Payment\OfflineController;
+use Modules\PaymentGateways\Http\Controllers\Payment\PaymentController;
+use Modules\PaymentGateways\Http\Controllers\Payment\PaymentReportController;
 use Modules\PaymentGateways\Http\Controllers\Payment\PaypalController;
 use Modules\PaymentGateways\Http\Controllers\Payment\PaystackController;
+use Modules\PaymentGateways\Http\Controllers\Payment\RazorpayController;
 use Modules\PaymentGateways\Http\Controllers\Payment\SslCommerzController;
 use Modules\PaymentGateways\Http\Controllers\Payment\StripeController;
 use Modules\PaymentGateways\Http\Controllers\Payment\StripeWebhookController;
-use Modules\PaymentGateways\Http\Controllers\Payment\OfflineController;
-use Modules\PaymentGateways\Http\Controllers\Payment\PaymentReportController;
-use Modules\PaymentGateways\Http\Controllers\Payment\RazorpayController;
+use Modules\PaymentGateways\Http\Middleware\SSLConfigMiddleware;
 
 Route::middleware(['auth', 'role:admin'])->prefix('dashboard')->group(function () {
     // payment gateway settings
@@ -22,11 +23,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('dashboard')->group(function (
     });
 
     // payment reports routes
-    Route::controller(PaymentReportController::class)->prefix('payment-reports')->group(function () {
-        Route::get('online', 'online_index')->name('payment-reports.online.index');
-        Route::get('offline', 'offline_index')->name('payment-reports.offline.index');
-        Route::post('offline/{id}/verify', 'verify')->name('payment-reports.offline.verify');
-        Route::post('offline/{id}/reject', 'reject')->name('payment-reports.offline.reject');
+    Route::prefix('payment-reports')->group(function () {
+        Route::get('active-subscriptions/export', [ActiveSubscriptionReportController::class, 'export'])->name('payment-reports.active-subscriptions.export');
+        Route::get('active-subscriptions', [ActiveSubscriptionReportController::class, 'index'])->name('payment-reports.active-subscriptions.index');
+
+        Route::controller(PaymentReportController::class)->group(function () {
+            Route::get('online', 'online_index')->name('payment-reports.online.index');
+            Route::get('offline', 'offline_index')->name('payment-reports.offline.index');
+            Route::post('offline/{id}/verify', 'verify')->name('payment-reports.offline.verify');
+            Route::post('offline/{id}/reject', 'reject')->name('payment-reports.offline.reject');
+        });
     });
 });
 
