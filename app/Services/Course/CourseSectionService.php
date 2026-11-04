@@ -2,7 +2,6 @@
 
 namespace App\Services\Course;
 
-use App\Models\ChunkedUpload;
 use App\Models\Course\Course;
 use App\Models\Course\CourseSection;
 use App\Models\Course\SectionLesson;
@@ -11,19 +10,10 @@ use App\Models\Course\WatchHistory;
 use App\Services\BunnyStreamService;
 use App\Services\MediaService;
 use App\Services\Course\CoursePlayerService;
-use App\Services\LocalFileUploadService;
-use App\Services\S3MultipartUploadService;
 use App\Support\CurriculumSequence;
 
 class CourseSectionService extends MediaService
 {
-   protected LocalFileUploadService | S3MultipartUploadService $uploaderService;
-
-   public function __construct()
-   {
-      $this->uploaderService = config('filesystems.default') === 's3' ? new S3MultipartUploadService() : new LocalFileUploadService();
-   }
-
    function createSection(array $data, string $user_id): CourseSection
    {
       return CourseSection::create([...$data, 'user_id' => $user_id]);
@@ -83,14 +73,11 @@ class CourseSectionService extends MediaService
       // Get the current section to get its sort order
       $currentSection = CourseSection::find($course_section_id);
 
-      if ($lesson->bunny_video_id) {
-         app(BunnyStreamService::class)->deleteVideo($lesson->bunny_video_id);
-      }
-
-      if ($lesson->lesson_src) {
-         $chunkedUpload = ChunkedUpload::where('file_url', $lesson->lesson_src)->first();
-         $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
-      }
+      app(LessonMediaGuard::class)->release(
+         $lesson->bunny_video_id,
+         $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src,
+         (int) $lesson->id,
+      );
 
       $lesson->delete();
       $lessons = SectionLesson::where('course_id', $course_id)->get();
@@ -272,12 +259,11 @@ class CourseSectionService extends MediaService
          case 'document':
          case 'video':
             if (!empty($data['bunny_video_id_new'])) {
-               if ($lesson->bunny_video_id) {
-                  app(BunnyStreamService::class)->deleteVideo($lesson->bunny_video_id);
-               }
-
-               $chunkedUpload = ChunkedUpload::where('file_url', $lesson->lesson_src)->first();
-               $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
+               app(LessonMediaGuard::class)->release(
+                  $lesson->bunny_video_id,
+                  $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src,
+                  (int) $lesson->id,
+               );
 
                $bunny = app(BunnyStreamService::class);
                $video = $bunny->getVideo($data['bunny_video_id_new']) ?? [];
@@ -304,14 +290,13 @@ class CourseSectionService extends MediaService
                   'thumbnail' => $video['thumbnailUrl'] ?? ($updatedLesson['thumbnail'] ?? null),
                ];
             } elseif (array_key_exists('lesson_src_new', $data) && $data['lesson_src_new']) {
-               if ($lesson->bunny_video_id) {
-                  app(BunnyStreamService::class)->deleteVideo($lesson->bunny_video_id);
-               }
+               app(LessonMediaGuard::class)->release(
+                  $lesson->bunny_video_id,
+                  $lesson->getRawOriginal('lesson_src') ?: $lesson->lesson_src,
+                  (int) $lesson->id,
+               );
 
                $embedCode = '<iframe src="' . $data['lesson_src_new'] . '" width="100%" height="500" frameborder="0" allowfullscreen></iframe>';
-
-               $chunkedUpload = ChunkedUpload::where('file_url', $lesson->lesson_src)->first();
-               $chunkedUpload && $this->uploaderService->deleteFile($chunkedUpload);
 
                $updatedLesson = [
                   ...$updatedLesson,

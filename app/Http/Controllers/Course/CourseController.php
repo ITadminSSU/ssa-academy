@@ -11,12 +11,15 @@ use App\Enums\CourseStatusType;
 use App\Enums\ExpiryLimitType;
 use App\Services\InstructorService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DuplicateCourseRequest;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Requests\UpdateCourseStatusRequest;
 use App\Services\Course\AssignmentSubmissionService;
 use App\Services\Course\LessonActivitySubmissionService;
 use App\Services\Course\CourseCategoryService;
+use App\Services\Course\CourseDuplicateException;
+use App\Services\Course\CourseDuplicateService;
 use App\Services\Course\CourseFinalExamService;
 use App\Services\Course\CourseService;
 use App\Services\Course\CourseSectionService;
@@ -439,6 +442,26 @@ class CourseController extends Controller
         }
 
         return back()->with('success', 'Course status changed successfully');
+    }
+
+    public function duplicate(DuplicateCourseRequest $request, string $id, CourseDuplicateService $duplicates)
+    {
+        $course = Course::findOrFail($id);
+        $this->authorizeCourseDelete($course);
+
+        try {
+            $copy = $duplicates->duplicate($course, (string) $request->validated('title'));
+        } catch (CourseDuplicateException $exception) {
+            return back()->with('error', $exception->getMessage());
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', 'The course could not be duplicated. Nothing on the original course was changed.');
+        }
+
+        return redirect()
+            ->route('courses.edit', ['course' => $copy->id, 'tab' => 'pricing'])
+            ->with('success', 'Course copied as a draft. Choose the billing plan and click Sync to Stripe.');
     }
 
     public function destroy($id)

@@ -86,6 +86,7 @@ Route::prefix('dashboard/trainer')->group(function () {
    Route::resource('courses', CourseController::class)->except(['update']);
    Route::post('courses/{id}', [CourseController::class, 'update'])->name('courses.update');
    Route::post('courses/{id}/stripe/sync', CourseStripeSyncController::class)->name('courses.stripe.sync');
+   Route::post('courses/{id}/duplicate', [CourseController::class, 'duplicate'])->name('courses.duplicate');
    Route::put('course/status/{id}', [CourseController::class, 'status'])->name('course.status')->middleware('smtpConfig', 'checkSmtp');
    Route::post('courses/{course}/launch-notifications/send', [CourseLaunchNotificationController::class, 'send'])
       ->name('course.launch-notifications.send')
