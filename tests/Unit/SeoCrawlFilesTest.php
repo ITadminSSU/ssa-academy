@@ -121,6 +121,7 @@ test('sitemap lists public pages and leaves out private or unpublished ones', fu
 
     expect($response->getContent())
         ->toContain('https://academy.test/')
+        ->toContain('https://academy.test/evt')
         ->toContain('https://academy.test/about-us')
         ->toContain('https://academy.test/faqs')
         ->toContain('https://academy.test/courses/all')
