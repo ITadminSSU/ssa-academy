@@ -149,6 +149,7 @@ class SitemapBuilder
     {
         return [
             '/',
+            'evt',
             'about-us',
             'faqs',
             'connect-with-us',
