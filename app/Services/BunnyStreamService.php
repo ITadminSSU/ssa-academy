@@ -93,6 +93,127 @@ class BunnyStreamService
     }
 
     /**
+     * Download an existing library video and upload it as a new video id.
+     * The source video is only read. A failed copy deletes the empty new video.
+     */
+    public function copyVideo(string $sourceVideoId, string $title): string
+    {
+        $sourceVideoId = trim($sourceVideoId);
+
+        if (! $this->isEnabled()) {
+            throw new RuntimeException('Bunny Stream is not enabled, so this course\'s videos cannot be copied.');
+        }
+
+        if ($sourceVideoId === '' || ! $this->getVideo($sourceVideoId)) {
+            throw new RuntimeException('A lesson video could not be found in Bunny Stream, so the course was not copied.');
+        }
+
+        $created = $this->createVideo($title !== '' ? $title : 'Copied lesson video');
+        $newId = (string) ($created['guid'] ?? $created['id'] ?? '');
+
+        if ($newId === '' || $newId === $sourceVideoId) {
+            throw new RuntimeException('Bunny Stream did not create a separate video, so the course was not copied.');
+        }
+
+        $tempFile = null;
+        $stream = null;
+
+        try {
+            $tempFile = $this->downloadSourceVideo($sourceVideoId);
+            $size = filesize($tempFile);
+
+            if ($size === false || $size < 1) {
+                throw new RuntimeException('A lesson video could not be read for copying, so the course was not copied.');
+            }
+
+            $stream = fopen($tempFile, 'rb');
+
+            if ($stream === false) {
+                throw new RuntimeException('A lesson video could not be read for copying, so the course was not copied.');
+            }
+
+            $upload = Http::withHeaders([
+                'AccessKey' => $this->apiKey(),
+                'Accept' => 'application/json',
+                'Content-Length' => (string) $size,
+            ])->timeout(600)
+                ->withBody($stream, 'application/octet-stream')
+                ->put(self::API_BASE.'/library/'.$this->libraryId().'/videos/'.$newId);
+
+            if (! $upload->successful()) {
+                throw new RuntimeException('Bunny Stream rejected the copied video, so the course was not copied.');
+            }
+        } catch (\Throwable $exception) {
+            $this->deleteVideo($newId);
+
+            if ($exception instanceof RuntimeException) {
+                throw $exception;
+            }
+
+            throw new RuntimeException('A lesson video could not be copied, so the course was not copied.', 0, $exception);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            if ($tempFile && is_file($tempFile)) {
+                @unlink($tempFile);
+            }
+        }
+
+        return $newId;
+    }
+
+    private function downloadSourceVideo(string $videoId): string
+    {
+        $host = preg_replace('#^https?://#i', '', $this->cdnHostname());
+        $host = rtrim((string) $host, '/');
+
+        if ($host === '') {
+            throw new RuntimeException('Bunny Stream has no CDN hostname, so this course\'s videos cannot be copied.');
+        }
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'bunny-copy-');
+
+        if ($tempFile === false) {
+            throw new RuntimeException('A lesson video could not be copied, so the course was not copied.');
+        }
+
+        $paths = ['original', 'play_720p.mp4', 'play_480p.mp4', 'play_360p.mp4'];
+
+        foreach ($paths as $path) {
+            $urls = ['https://'.$host.'/'.$videoId.'/'.$path];
+
+            if ($this->tokenAuthKey() !== '') {
+                $urls[] = $this->signCdnUrl($urls[0]);
+            }
+
+            foreach ($urls as $url) {
+                $response = Http::timeout(600)->sink($tempFile)->get($url);
+
+                if ($response->successful() && is_file($tempFile) && filesize($tempFile) > 0) {
+                    return $tempFile;
+                }
+            }
+        }
+
+        @unlink($tempFile);
+
+        throw new RuntimeException('Bunny Stream could not read a lesson video, so the course was not copied.');
+    }
+
+    private function signCdnUrl(string $url): string
+    {
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?: '');
+        $expires = time() + 3600;
+        $hash = hash('sha256', $this->tokenAuthKey().$path.$expires, true);
+        $token = rtrim(strtr(base64_encode($hash), '+/', '-_'), '=');
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url.$separator.'token='.$token.'&expires='.$expires;
+    }
+
+    /**
      * @return array{video_id: string, library_id: string, authorization_signature: string, authorization_expire: int, tus_endpoint: string}
      */
     public function tusUploadCredentials(string $videoId, int $ttlSeconds = 3600): array

@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { Editor } from 'richtor';
 import 'richtor/styles';
 import { CourseUpdateProps } from '../update';
+import DuplicateCourseButton from './duplicate-course-button';
 
 function ScheduleLaunchDateField({
    value,
@@ -54,6 +55,7 @@ const CourseUpdateHeader = () => {
    const { approve_able, validation_messages, counts } = approvalStatus;
    const canStaffPreviewPlayer =
       user.role === 'admin' || (user.role === 'instructor' && String(user.instructor_id) === String(course.instructor_id));
+   const canDuplicate = canStaffPreviewPlayer;
    const launchLabel = formatCourseLaunchDateTime(course);
 
    const { data, put, setData, processing, errors, reset } = useForm({
@@ -280,6 +282,8 @@ const CourseUpdateHeader = () => {
                {button.course_preview}
             </Link>
          </Button>
+
+         {canDuplicate ? <DuplicateCourseButton courseId={course.id} title={course.title} /> : null}
 
          <Button asChild variant="outline">
             <Link href={route('student-progress.show', course.id)}>{button.view_progress ?? 'View Progress'}</Link>

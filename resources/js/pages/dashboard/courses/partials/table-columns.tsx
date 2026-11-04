@@ -1,5 +1,6 @@
 import DeleteModal from '@/components/inertia/delete-modal';
 import { Button } from '@/components/ui/button';
+import DuplicateCourseButton from './duplicate-course-button';
 import { useAuth } from '@/hooks/use-auth';
 import { systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -167,6 +168,10 @@ const TableColumn = (): ColumnDef<Course>[] => {
                   >
                      <Pencil />
                   </Button>
+
+                  {(isAdmin || Number(user?.instructor_id) === Number(course.instructor_id)) && (
+                     <DuplicateCourseButton courseId={course.id} title={course.title} variant="icon" />
+                  )}
 
                   {(isAdmin || Number(user?.instructor_id) === Number(course.instructor_id)) && (
                      <DeleteModal
