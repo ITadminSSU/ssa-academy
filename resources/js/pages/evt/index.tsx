@@ -76,7 +76,8 @@ const Icon = ({ name }: { name: string }) => {
          <>
             <path d="m2 10 10-5 10 5-10 5z" />
             <path d="M6 12v4c2 2 10 2 12 0v-4" />
-            <path d="M22 10v6" />
+            <path d="M22 10v5" stroke="#f5b400" />
+            <circle cx="22" cy="16.5" r="1.35" fill="#f5b400" stroke="none" />
          </>
       ),
       case: (
@@ -320,7 +321,10 @@ export default function EvtLanding() {
                               </span>
                            </article>
                         </div>
-                        <WebinarButton />
+                        <a className="evt-btn evt-session-btn" href="/register">
+                           <span>SIGN UP TO JOIN THE FREE</span>
+                           <span>WEBINAR ON NOVEMBER 21 →</span>
+                        </a>
                      </div>
                   </div>
                </section>
