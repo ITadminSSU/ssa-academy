@@ -114,24 +114,15 @@ const WebinarButton = ({ id }: { id?: string }) => (
 export default function EvtLanding() {
    useEffect(() => {
       const id = 'evt-barlow';
-      if (!document.getElementById(id)) {
-         const link = document.createElement('link');
-         link.id = id;
-         link.rel = 'stylesheet';
-         link.href = 'https://fonts.bunny.net/css?family=barlow:500,600,700,800,900';
-         document.head.appendChild(link);
-      }
-
-      const displayId = 'evt-montserrat';
-      if (document.getElementById(displayId)) {
+      if (document.getElementById(id)) {
          return;
       }
 
-      const display = document.createElement('link');
-      display.id = displayId;
-      display.rel = 'stylesheet';
-      display.href = 'https://fonts.bunny.net/css?family=montserrat:500,600,700,800,900';
-      document.head.appendChild(display);
+      const link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.bunny.net/css?family=barlow:500,600,700,800,900|barlow-condensed:800,900';
+      document.head.appendChild(link);
    }, []);
 
    return (
@@ -148,73 +139,77 @@ export default function EvtLanding() {
                <p>EXCLUSIVE VIRTUAL TRAINING</p>
             </header>
 
-            <section className="evt-hero">
-               <div>
-                  <p className="evt-kicker">SMARTSOURCING USA ACADEMY PRESENTS:</p>
-                  <h1>
-                     BECOME A REMOTE
-                     <span>CONSTRUCTION ESTIMATOR</span>
-                  </h1>
-                  <p className="evt-intro">
-                     Introducing the <span className="evt-red">Exclusive Virtual Training (EVT)</span>.
-                  </p>
-                  <p className="evt-lead">
-                     Specialized, practical training in <strong>Roofing, Siding &amp; Drywall</strong> with a structured pathway from{' '}
-                     <strong>Dec 1, 2026 – Apr 1, 2027</strong>.
-                  </p>
-                  <ul className="evt-features">
-                     <li>
-                        <span className="evt-icon-bubble">
-                           <Icon name="laptop" />
+            <section className="evt-hero-block">
+               <p className="evt-kicker">SMARTSOURCING USA ACADEMY PRESENTS:</p>
+               <div className="evt-hero">
+                  <div className="evt-hero-copy">
+                     <h1>
+                        <span className="evt-h-line">
+                           BECOME A <span className="evt-gold-word">REMOTE</span>
                         </span>
+                        <span className="evt-h-line evt-gold-word">CONSTRUCTION ESTIMATOR</span>
+                     </h1>
+                     <p className="evt-intro">
+                        Introducing the <span className="evt-red">Exclusive Virtual Training (EVT).</span>
+                     </p>
+                     <p className="evt-lead">
+                        Specialized, practical training in <strong>Roofing, Siding &amp; Drywall</strong> with a structured pathway from{' '}
+                        <strong>Dec 1, 2026 – Apr 1, 2027</strong>.
+                     </p>
+                     <ul className="evt-features">
+                        <li>
+                           <span className="evt-icon-bubble">
+                              <Icon name="laptop" />
+                           </span>
+                           <span>
+                              Specialized
+                              <br />
+                              Training
+                           </span>
+                        </li>
+                        <li>
+                           <span className="evt-icon-bubble">
+                              <Icon name="chart" />
+                           </span>
+                           <span>
+                              U.S. Estimating
+                              <br />
+                              Workflows
+                           </span>
+                        </li>
+                        <li>
+                           <span className="evt-icon-bubble">
+                              <Icon name="clipboard" />
+                           </span>
+                           <span>
+                              Practical
+                              <br />
+                              Exercises
+                           </span>
+                        </li>
+                        <li>
+                           <span className="evt-icon-bubble">
+                              <Icon name="users" />
+                           </span>
+                           <span>
+                              Structured
+                              <br />
+                              Pathway
+                           </span>
+                        </li>
+                     </ul>
+                     <WebinarButton id="evt-webinar" />
+                     <p className="evt-experience">
+                        <i aria-hidden="true" />
                         <span>
-                           Specialized
-                           <br />
-                           Training
+                           Have 1 year U.S. experience? <a href="#evt-estimator">Apply as an Estimator</a> or{' '}
+                           <a href="#evt-scholarship">Check for Scholarship.</a>
                         </span>
-                     </li>
-                     <li>
-                        <span className="evt-icon-bubble">
-                           <Icon name="chart" />
-                        </span>
-                        <span>
-                           U.S. Estimating
-                           <br />
-                           Workflows
-                        </span>
-                     </li>
-                     <li>
-                        <span className="evt-icon-bubble">
-                           <Icon name="clipboard" />
-                        </span>
-                        <span>
-                           Practical
-                           <br />
-                           Exercises
-                        </span>
-                     </li>
-                     <li>
-                        <span className="evt-icon-bubble">
-                           <Icon name="users" />
-                        </span>
-                        <span>
-                           Structured
-                           <br />
-                           Pathway
-                        </span>
-                     </li>
-                  </ul>
-                  <WebinarButton id="evt-webinar" />
-                  <p className="evt-experience">
-                     <i aria-hidden="true" />
-                     <span>
-                        Have 1 year U.S. experience? <a href="#evt-estimator">Apply as an Estimator</a> or{' '}
-                        <a href="#evt-scholarship">Check for Scholarship.</a>
-                     </span>
-                     <i aria-hidden="true" />
-                  </p>
+                        <i aria-hidden="true" />
+                     </p>
+                  </div>
+                  <img className="evt-mascot" src="/assets/evt/mascot.png" alt="EVT mascot pointing toward the training" />
                </div>
-               <img className="evt-mascot" src="/assets/evt/mascot.png" alt="EVT mascot pointing toward the training" />
             </section>
 
             <div className="evt-lower">

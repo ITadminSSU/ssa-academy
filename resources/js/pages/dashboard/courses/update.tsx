@@ -158,9 +158,23 @@ const Update = (props: CourseUpdateProps) => {
       },
    ].filter((item) => (item.slug !== 'us-experience' || showUsExperience) && (item.slug !== 'landing' || showLandingPage));
 
+   const videoCopyStatus = course.video_copy_status;
+   const videoCopyError = course.video_copy_error;
+
    return (
       <section className="space-y-8">
          <CourseUpdateHeader />
+
+         {videoCopyStatus === 'failed' && videoCopyError ? (
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm whitespace-pre-line text-red-800">{videoCopyError}</div>
+         ) : null}
+
+         {videoCopyStatus === 'copying' ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+               Lesson videos are still copying onto this draft. You can leave this page. Refresh in a few minutes to see them. The original course is
+               unchanged.
+            </div>
+         ) : null}
 
          <Tabs value={tab ?? tabs[0].slug} className="grid grid-rows-1 gap-5 md:grid-cols-4">
             <div className="col-span-full md:col-span-1">

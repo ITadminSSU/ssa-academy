@@ -1,6 +1,5 @@
 import DeleteModal from '@/components/inertia/delete-modal';
 import { Button } from '@/components/ui/button';
-import DuplicateCourseButton from './duplicate-course-button';
 import { useAuth } from '@/hooks/use-auth';
 import { systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
@@ -8,6 +7,7 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Pencil, Trash2 } from 'lucide-react';
 import CourseStatusFilter from './course-status-filter';
+import DuplicateCourseButton from './duplicate-course-button';
 
 const TableColumn = (): ColumnDef<Course>[] => {
    const { isAdmin, user } = useAuth();
@@ -47,6 +47,12 @@ const TableColumn = (): ColumnDef<Course>[] => {
                >
                   {row.getValue('title')}
                </Link>
+               {row.original.video_copy_status === 'failed' ? (
+                  <p className="text-destructive text-xs normal-case">A lesson video could not be copied. Open this draft for details.</p>
+               ) : null}
+               {row.original.video_copy_status === 'copying' ? (
+                  <p className="text-muted-foreground text-xs normal-case">Lesson videos are still copying.</p>
+               ) : null}
             </div>
          ),
       },
@@ -57,9 +63,7 @@ const TableColumn = (): ColumnDef<Course>[] => {
                <CourseStatusFilter />
             </div>
          ),
-         cell: ({ row }) => (
-            <div className="py-1 text-center capitalize">{String(row.getValue('status') ?? '').replaceAll('_', ' ')}</div>
-         ),
+         cell: ({ row }) => <div className="py-1 text-center capitalize">{String(row.getValue('status') ?? '').replaceAll('_', ' ')}</div>,
       },
       {
          accessorKey: 'audience',
@@ -116,15 +120,16 @@ const TableColumn = (): ColumnDef<Course>[] => {
                if (course.launch_offer_enabled) {
                   const list = course.launch_list_price ?? course.launch_full_upfront_price;
                   const monthly = course.subscription_price;
-                  label = list
-                     ? `${symbol}${list}${monthly ? ` + ${symbol}${monthly}/mo` : ''}`
-                     : monthly
-                       ? `${symbol}${monthly}/mo`
-                       : 'Paid';
+                  label = list ? `${symbol}${list}${monthly ? ` + ${symbol}${monthly}/mo` : ''}` : monthly ? `${symbol}${monthly}/mo` : 'Paid';
                } else if (course.billing_model === 'upfront_subscription' && course.price) {
                   const monthly = course.subscription_price;
                   label = `${symbol}${course.price}${monthly ? ` + ${symbol}${monthly}/mo` : ''}`;
-               } else if (course.billing_model === 'installment_subscription' && course.installment_price && course.installment_months && course.subscription_price) {
+               } else if (
+                  course.billing_model === 'installment_subscription' &&
+                  course.installment_price &&
+                  course.installment_months &&
+                  course.subscription_price
+               ) {
                   label = `${symbol}${course.installment_price}/mo for ${course.installment_months} months, then ${symbol}${course.subscription_price}/mo`;
                } else if (course.billing_model === 'subscription' && course.subscription_price) {
                   label = `${symbol}${course.subscription_price}/mo`;
