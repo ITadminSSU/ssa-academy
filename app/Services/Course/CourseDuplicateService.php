@@ -5,6 +5,7 @@ namespace App\Services\Course;
 use App\Enums\CourseStatusType;
 use App\Models\Course\Course;
 use App\Models\Course\CourseAssignment;
+use App\Models\Course\CourseLessonVideoCopy;
 use App\Models\Course\CourseFaq;
 use App\Models\Course\CourseLandingPage;
 use App\Models\Course\CourseLiveClass;
@@ -29,27 +30,28 @@ class CourseDuplicateService
 
     public function duplicate(Course $source, string $title): Course
     {
+        $copy = $this->createDraft($source, $title);
+        $this->copyPendingVideos((int) $copy->id);
+
+        return $copy->fresh();
+    }
+
+    public function createDraft(Course $source, string $title): Course
+    {
         $title = trim($title);
 
         if ($title === '') {
             throw new CourseDuplicateException('Enter a title for the copied course.');
         }
 
-        if (function_exists('set_time_limit')) {
-            @set_time_limit(0);
-        }
-
         $this->files->resetTracking();
-        $createdVideoIds = [];
 
         try {
-            $videoMap = $this->copyLessonVideos($source, $createdVideoIds);
-
-            return DB::transaction(function () use ($source, $title, $videoMap) {
+            return DB::transaction(function () use ($source, $title) {
                 $source->refresh();
                 $copy = $this->copyCourse($source, $title);
                 $sectionMap = $this->copySections($source, $copy);
-                $this->copyLessons($source, $copy, $sectionMap, $videoMap);
+                $pendingVideos = $this->copyLessons($source, $copy, $sectionMap);
                 $this->copyQuizzes($source, $copy, $sectionMap);
                 $this->copyAssignments($source, $copy);
                 $this->copySimpleRows($source, $copy, CourseFaq::class);
@@ -58,65 +60,157 @@ class CourseDuplicateService
                 $this->copySimpleRows($source, $copy, CourseLiveClass::class);
                 $this->copyLandingPage($source, $copy);
                 $this->copyUsExperiencePlans($source, $copy);
+                $this->rememberPendingVideos($copy, $pendingVideos);
 
                 return $copy->fresh();
             });
         } catch (CourseDuplicateException $exception) {
-            $this->cleanupFailedCopy($createdVideoIds, (int) $source->id);
+            $this->files->rollback();
             throw $exception;
         } catch (\Throwable $exception) {
-            $this->cleanupFailedCopy($createdVideoIds, (int) $source->id);
+            $this->files->rollback();
 
             throw new CourseDuplicateException('The course could not be duplicated. Nothing on the original course was changed.', 0, $exception);
         }
     }
 
-    /**
-     * @param  list<string>  $createdVideoIds
-     * @return array<int, string> source lesson id => new bunny video id
-     */
-    private function copyLessonVideos(Course $source, array &$createdVideoIds): array
+    public function copyPendingVideos(int $courseId): void
     {
-        $lessons = SectionLesson::query()
-            ->where('course_id', $source->id)
-            ->whereNotNull('bunny_video_id')
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
+        $course = Course::query()->find($courseId);
+
+        if (! $course) {
+            return;
+        }
+
+        $pending = CourseLessonVideoCopy::query()
+            ->where('course_id', $courseId)
+            ->where('status', 'pending')
             ->orderBy('id')
             ->get();
 
-        if ($lessons->isEmpty()) {
-            return [];
+        if ($pending->isEmpty()) {
+            return;
         }
+
+        $failures = [];
 
         if (! $this->bunny->isEnabled()) {
-            throw new CourseDuplicateException('Bunny Stream is not enabled, so this course\'s videos cannot be copied.');
+            foreach ($pending as $row) {
+                $row->status = 'failed';
+                $row->error = 'Bunny Stream is not enabled, so this lesson video was not copied.';
+                $row->save();
+                $failures[] = $this->pendingLessonLabel($courseId, $row).': Bunny Stream is not enabled.';
+            }
+
+            $this->storeVideoCopyResult($course, $failures);
+
+            return;
         }
 
-        $map = [];
+        foreach ($pending as $row) {
+            $lesson = SectionLesson::query()
+                ->where('course_id', $courseId)
+                ->whereKey($row->section_lesson_id)
+                ->first();
 
-        foreach ($lessons as $lesson) {
-            $sourceVideoId = trim((string) $lesson->bunny_video_id);
+            if (! $lesson) {
+                $row->status = 'failed';
+                $row->error = 'The copied lesson no longer exists.';
+                $row->save();
+                $failures[] = 'A copied lesson no longer exists, so its video was not copied.';
 
-            if ($sourceVideoId === '') {
                 continue;
             }
 
+            $sourceVideoId = trim((string) $row->source_bunny_video_id);
+
             try {
-                $newVideoId = $this->bunny->copyVideo($sourceVideoId, $source->title.' — '.$lesson->title);
-            } catch (CourseDuplicateException $exception) {
-                throw $exception;
+                $newVideoId = $this->bunny->copyVideo($sourceVideoId, $course->title.' — '.$lesson->title);
             } catch (\Throwable $exception) {
-                throw new CourseDuplicateException('A lesson video could not be copied, so the course was not duplicated.', 0, $exception);
+                $row->status = 'failed';
+                $row->error = 'This lesson video could not be copied.';
+                $row->save();
+                $failures[] = $lesson->title.': this video could not be copied.';
+
+                continue;
             }
 
             if ($newVideoId === '' || $newVideoId === $sourceVideoId) {
-                throw new CourseDuplicateException('Bunny Stream did not create a separate video, so the course was not duplicated.');
+                $row->status = 'failed';
+                $row->error = 'Bunny Stream did not create a separate video.';
+                $row->save();
+                $failures[] = $lesson->title.': Bunny Stream did not create a separate video.';
+
+                continue;
             }
 
-            $map[(int) $lesson->id] = $newVideoId;
-            $createdVideoIds[] = $newVideoId;
+            $lesson->bunny_video_id = $newVideoId;
+            $lesson->save();
+            $row->status = 'copied';
+            $row->error = null;
+            $row->save();
         }
 
-        return $map;
+        $this->storeVideoCopyResult($course->fresh() ?? $course, $failures);
+    }
+
+    /**
+     * @param  list<array{section_lesson_id: int, source_bunny_video_id: string}>  $pendingVideos
+     */
+    private function rememberPendingVideos(Course $copy, array $pendingVideos): void
+    {
+        if ($pendingVideos === []) {
+            $copy->video_copy_status = null;
+            $copy->video_copy_error = null;
+            $copy->save();
+
+            return;
+        }
+
+        foreach ($pendingVideos as $pending) {
+            CourseLessonVideoCopy::query()->create([
+                'course_id' => $copy->id,
+                'section_lesson_id' => $pending['section_lesson_id'],
+                'source_bunny_video_id' => $pending['source_bunny_video_id'],
+                'status' => 'pending',
+            ]);
+        }
+
+        $copy->video_copy_status = 'copying';
+        $copy->video_copy_error = null;
+        $copy->save();
+    }
+
+    /**
+     * @param  list<string>  $failures
+     */
+    private function storeVideoCopyResult(Course $course, array $failures): void
+    {
+        if ($failures === []) {
+            $course->video_copy_status = null;
+            $course->video_copy_error = null;
+            $course->save();
+
+            return;
+        }
+
+        $course->video_copy_status = 'failed';
+        $course->video_copy_error = "Some lesson videos could not be copied. The original course was not changed.\n".implode("\n", $failures);
+        $course->save();
+    }
+
+    private function pendingLessonLabel(int $courseId, CourseLessonVideoCopy $row): string
+    {
+        $title = SectionLesson::query()
+            ->where('course_id', $courseId)
+            ->whereKey($row->section_lesson_id)
+            ->value('title');
+
+        return is_string($title) && $title !== '' ? $title : 'A lesson';
     }
 
     private function copyCourse(Course $source, string $title): Course
@@ -129,6 +223,8 @@ class CourseDuplicateService
         $copy->title = $title;
         $copy->slug = $this->uniqueSlug($title);
         $copy->status = CourseStatusType::DRAFT->value;
+        $copy->video_copy_status = null;
+        $copy->video_copy_error = null;
         $copy->stripe_product_id = null;
         $copy->stripe_price_id = null;
         $copy->stripe_ongoing_price_id = null;
@@ -169,10 +265,11 @@ class CourseDuplicateService
 
     /**
      * @param  array<int, int>  $sectionMap
-     * @param  array<int, string>  $videoMap
+     * @return list<array{section_lesson_id: int, source_bunny_video_id: string}>
      */
-    private function copyLessons(Course $source, Course $copy, array $sectionMap, array $videoMap): void
+    private function copyLessons(Course $source, Course $copy, array $sectionMap): array
     {
+        $pendingVideos = [];
         $lessons = SectionLesson::query()
             ->where('course_id', $source->id)
             ->with('resources')
@@ -194,22 +291,23 @@ class CourseDuplicateService
             $sourceVideoId = trim((string) $lesson->bunny_video_id);
 
             if ($sourceVideoId !== '') {
-                $newVideoId = $videoMap[(int) $lesson->id] ?? '';
-
-                if ($newVideoId === '' || $newVideoId === $sourceVideoId) {
-                    throw new CourseDuplicateException('A lesson video could not be copied, so the course was not duplicated.');
-                }
-
-                $next->bunny_video_id = $newVideoId;
+                $next->bunny_video_id = null;
                 $next->lesson_src = null;
                 $next->embed_source = null;
                 $next->thumbnail = null;
+                $next->save();
+                $pendingVideos[] = [
+                    'section_lesson_id' => (int) $next->id,
+                    'source_bunny_video_id' => $sourceVideoId,
+                ];
             } else {
                 $next->lesson_src = $this->files->copyValue($lesson->getRawOriginal('lesson_src'));
                 $next->thumbnail = $this->files->copyValue($lesson->getRawOriginal('thumbnail'));
             }
 
-            $next->save();
+            if ($sourceVideoId === '') {
+                $next->save();
+            }
 
             foreach ($lesson->resources as $resource) {
                 $copied = $resource->replicate();
@@ -218,6 +316,8 @@ class CourseDuplicateService
                 $copied->save();
             }
         }
+
+        return $pendingVideos;
     }
 
     /**
@@ -366,33 +466,5 @@ class CourseDuplicateService
         }
 
         return $slug;
-    }
-
-    /**
-     * @param  list<string>  $createdVideoIds
-     */
-    private function cleanupFailedCopy(array $createdVideoIds, int $sourceCourseId): void
-    {
-        $protected = $createdVideoIds === []
-            ? []
-            : SectionLesson::query()
-                ->where('course_id', $sourceCourseId)
-                ->whereIn('bunny_video_id', $createdVideoIds)
-                ->pluck('bunny_video_id')
-                ->all();
-
-        foreach ($createdVideoIds as $videoId) {
-            if (in_array($videoId, $protected, true)) {
-                continue;
-            }
-
-            try {
-                $this->bunny->deleteVideo($videoId);
-            } catch (\Throwable) {
-                // The original course is unchanged. A leftover new video can be removed in Bunny.
-            }
-        }
-
-        $this->files->rollback();
     }
 }

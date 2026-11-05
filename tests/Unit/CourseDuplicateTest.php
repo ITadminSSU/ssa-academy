@@ -35,6 +35,8 @@ beforeEach(function () {
         $table->string('slug');
         $table->string('course_type')->default('general');
         $table->string('status');
+        $table->string('video_copy_status', 32)->nullable();
+        $table->text('video_copy_error')->nullable();
         $table->string('level')->nullable();
         $table->text('short_description')->nullable();
         $table->text('description')->nullable();
@@ -95,6 +97,16 @@ beforeEach(function () {
         $table->string('bunny_video_id')->nullable();
         $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
         $table->foreignId('course_section_id')->constrained('course_sections')->cascadeOnDelete();
+        $table->timestamps();
+    });
+
+    Schema::create('course_lesson_video_copies', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('course_id')->constrained('courses')->cascadeOnDelete();
+        $table->foreignId('section_lesson_id')->constrained('section_lessons')->cascadeOnDelete();
+        $table->string('source_bunny_video_id');
+        $table->string('status')->default('pending');
+        $table->text('error')->nullable();
         $table->timestamps();
     });
 
@@ -536,7 +548,7 @@ it('copies a course onto a new draft and leaves the original course untouched', 
 
     $bunny = $this->mock(BunnyStreamService::class);
     $bunny->shouldReceive('isEnabled')->andReturn(true);
-    $bunny->shouldReceive('copyVideo')->once()->with('source-vid', 'Drywall Estimating — Introduction')->andReturn('copied-vid');
+    $bunny->shouldReceive('copyVideo')->once()->with('source-vid', 'Copy of Drywall Estimating — Introduction')->andReturn('copied-vid');
     $bunny->shouldReceive('deleteVideo')->never();
 
     $copy = app(CourseDuplicateService::class)->duplicate($source, 'Copy of Drywall Estimating');
@@ -626,7 +638,25 @@ it('copies a course onto a new draft and leaves the original course untouched', 
         ->and(SectionLesson::query()->where('course_id', $copyId)->count())->toBe(0);
 });
 
-it('rolls back a failed video copy and does not keep a partial course', function () {
+it('saves the draft before any lesson video is copied', function () {
+    $source = duplicateFixtureCourse();
+
+    $bunny = $this->mock(BunnyStreamService::class);
+    $bunny->shouldReceive('copyVideo')->never();
+    $bunny->shouldReceive('deleteVideo')->never();
+
+    $copy = app(CourseDuplicateService::class)->createDraft($source, 'Copy of Drywall Estimating');
+
+    expect($copy->status)->toBe('draft')
+        ->and($copy->video_copy_status)->toBe('copying')
+        ->and(SectionLesson::query()->where('course_id', $copy->id)->value('bunny_video_id'))->toBeNull()
+        ->and(SectionLesson::query()->where('course_id', $source->id)->value('bunny_video_id'))->toBe('source-vid')
+        ->and(DB::table('course_lesson_video_copies')->where('course_id', $copy->id)->where('status', 'pending')->count())->toBe(1)
+        ->and(DB::table('course_enrollments')->where('course_id', $copy->id)->count())->toBe(0)
+        ->and($source->fresh()->stripe_product_id)->toBe('prod_source');
+});
+
+it('keeps the new draft when a lesson video cannot be copied', function () {
     $source = duplicateFixtureCourse();
     SectionLesson::query()->create([
         'title' => 'Second video',
@@ -642,16 +672,20 @@ it('rolls back a failed video copy and does not keep a partial course', function
     $bunny->shouldReceive('isEnabled')->andReturn(true);
     $bunny->shouldReceive('copyVideo')->once()->ordered()->andReturn('new-vid-1');
     $bunny->shouldReceive('copyVideo')->once()->ordered()->andThrow(new RuntimeException('Bunny unavailable'));
-    $bunny->shouldReceive('deleteVideo')->once()->with('new-vid-1');
-    $bunny->shouldNotReceive('deleteVideo')->with('source-vid');
-    $bunny->shouldNotReceive('deleteVideo')->with('source-vid-2');
+    $bunny->shouldReceive('deleteVideo')->never();
 
-    expect(fn () => app(CourseDuplicateService::class)->duplicate($source, 'Copy of Drywall Estimating'))
-        ->toThrow(CourseDuplicateException::class);
+    $copy = app(CourseDuplicateService::class)->duplicate($source, 'Copy of Drywall Estimating');
 
-    expect(Course::query()->count())->toBe(1)
-        ->and(Course::query()->first()->title)->toBe('Drywall Estimating')
-        ->and(SectionLesson::query()->where('bunny_video_id', 'source-vid')->count())->toBe(1)
+    expect(Course::query()->count())->toBe(2)
+        ->and($copy->video_copy_status)->toBe('failed')
+        ->and($copy->video_copy_error)->toContain('Second video')
+        ->and($copy->video_copy_error)->toContain('original course was not changed')
+        ->and(SectionLesson::query()->where('course_id', $source->id)->where('bunny_video_id', 'source-vid')->count())->toBe(1)
+        ->and(SectionLesson::query()->where('course_id', $source->id)->where('bunny_video_id', 'source-vid-2')->count())->toBe(1)
+        ->and(SectionLesson::query()->where('course_id', $copy->id)->where('title', 'Introduction')->value('bunny_video_id'))->toBe('new-vid-1')
+        ->and(SectionLesson::query()->where('course_id', $copy->id)->where('title', 'Second video')->value('bunny_video_id'))->toBeNull()
+        ->and($source->fresh()->title)->toBe('Drywall Estimating')
+        ->and($source->fresh()->stripe_price_id)->toBe('price_source')
         ->and(Storage::disk('public')->exists('courses/cover.jpg'))->toBeTrue();
 });
 
@@ -662,10 +696,8 @@ it('rolls back copied files when the new course cannot be saved', function () {
     ]);
 
     $bunny = $this->mock(BunnyStreamService::class);
-    $bunny->shouldReceive('isEnabled')->andReturn(true);
-    $bunny->shouldReceive('copyVideo')->once()->andReturn('new-vid');
-    $bunny->shouldReceive('deleteVideo')->once()->with('new-vid')->andReturn(true);
-    $bunny->shouldNotReceive('deleteVideo')->with('source-vid');
+    $bunny->shouldReceive('copyVideo')->never();
+    $bunny->shouldReceive('deleteVideo')->never();
 
     expect(fn () => app(CourseDuplicateService::class)->duplicate($source->fresh(), 'Copy of Drywall Estimating'))
         ->toThrow(CourseDuplicateException::class);

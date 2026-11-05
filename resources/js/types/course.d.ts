@@ -58,6 +58,8 @@ interface Course extends TableCommon {
    review_carousel?: string[] | null;
    course_type: string;
    status: 'draft' | 'upcoming' | 'coming_soon' | 'pending' | 'rejected' | 'approved';
+   video_copy_status?: 'copying' | 'failed' | null;
+   video_copy_error?: string | null;
    launch_at?: string | null;
    is_coming_soon?: boolean;
    is_enrollment_open?: boolean;

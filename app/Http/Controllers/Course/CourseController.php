@@ -12,6 +12,7 @@ use App\Enums\ExpiryLimitType;
 use App\Services\InstructorService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DuplicateCourseRequest;
+use App\Jobs\CopyDraftCourseVideos;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Requests\UpdateCourseStatusRequest;
@@ -450,7 +451,7 @@ class CourseController extends Controller
         $this->authorizeCourseDelete($course);
 
         try {
-            $copy = $duplicates->duplicate($course, (string) $request->validated('title'));
+            $copy = $duplicates->createDraft($course, (string) $request->validated('title'));
         } catch (CourseDuplicateException $exception) {
             return back()->with('error', $exception->getMessage());
         } catch (\Throwable $exception) {
@@ -459,9 +460,19 @@ class CourseController extends Controller
             return back()->with('error', 'The course could not be duplicated. Nothing on the original course was changed.');
         }
 
+        $videosAreCopying = $copy->video_copy_status === 'copying';
+
+        if ($videosAreCopying) {
+            CopyDraftCourseVideos::dispatch($copy->id)->afterResponse();
+        }
+
+        $message = $videosAreCopying
+            ? 'Course copied as a draft and opened below. It is the newest course on your course list. Lesson videos keep copying after you leave this page. Choose the billing plan and click Sync to Stripe.'
+            : 'Course copied as a draft. It is the newest course on your course list. Choose the billing plan and click Sync to Stripe.';
+
         return redirect()
             ->route('courses.edit', ['course' => $copy->id, 'tab' => 'pricing'])
-            ->with('success', 'Course copied as a draft. Choose the billing plan and click Sync to Stripe.');
+            ->with('success', $message);
     }
 
     public function destroy($id)
