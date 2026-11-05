@@ -11,10 +11,7 @@ use App\Support\CurriculumSequence;
 
 class SectionQuizService extends CourseSectionService
 {
-   public function __construct(private AttemptHalfwayAlertService $halfwayAlerts)
-   {
-      parent::__construct();
-   }
+   public function __construct(private AttemptHalfwayAlertService $halfwayAlerts) {}
 
    public function createQuiz(array $data, string $userId): SectionQuiz
    {
