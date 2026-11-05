@@ -357,9 +357,11 @@
 
 .evt-section-kicker {
    color: var(--evt-red);
-   font-size: 20px;
+   font-family: Barlow, sans-serif;
+   font-size: 22px;
    font-weight: 800;
-   letter-spacing: 0.04em;
+   letter-spacing: 0.01em;
+   line-height: 1;
 }
 
 .evt-steps h2,
@@ -371,16 +373,19 @@
    line-height: 1.05;
 }
 
-.evt-steps h2 {
-   margin-top: 2px;
+.evt-lower .evt-steps h2 {
+   margin-top: 10px;
    color: var(--evt-navy);
-   font-size: clamp(28px, 3.2vw, 42px);
+   font-family: Barlow, sans-serif;
+   font-size: clamp(36px, 4.2vw, 56px);
    font-weight: 800;
+   letter-spacing: -0.025em;
+   line-height: 0.98;
 }
 
-.evt-steps h2 span {
-   font-weight: 500;
-   letter-spacing: 0;
+.evt-lower .evt-steps h2 span {
+   font-weight: 400;
+   letter-spacing: -0.02em;
 }
 
 .evt-steps h2 span,
@@ -393,8 +398,8 @@
 .evt-step-grid {
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
-   gap: 14px;
-   margin-top: 18px;
+   gap: 16px;
+   margin-top: 28px;
 }
 
 .evt-step {
@@ -414,35 +419,37 @@
 .evt-num {
    display: inline-grid;
    place-items: center;
-   min-width: 64px;
-   height: 64px;
-   padding: 0 8px;
-   border-radius: 14px;
+   min-width: 74px;
+   height: 56px;
+   padding: 0 10px;
+   border-radius: 12px;
    background: #f6b000;
    color: #ffffff;
-   font-size: 28px;
+   font-family: Barlow, sans-serif;
+   font-size: 30px;
    font-weight: 800;
 }
 
 .evt-step .evt-icon-bubble {
-   width: 64px;
-   height: 64px;
+   width: 56px;
+   height: 56px;
    background: #f8e4a4;
 }
 
 .evt-step .evt-icon-bubble svg {
-   width: 34px;
-   height: 34px;
+   width: 32px;
+   height: 32px;
    stroke-width: 2;
 }
 
 .evt-step h3 {
    position: relative;
    display: inline-block;
-   margin-top: 14px;
+   margin-top: 18px;
    padding-bottom: 8px;
    color: var(--evt-navy);
-   font-size: 16px;
+   font-family: Barlow, sans-serif;
+   font-size: 18px;
    font-weight: 800;
    letter-spacing: 0.01em;
 }
@@ -452,19 +459,20 @@
    position: absolute;
    left: 0;
    bottom: 0;
-   width: 2.15em;
-   height: 4px;
+   width: 46px;
+   height: 5px;
    border-radius: 2px;
    background: #f6b000;
 }
 
 .evt-step p,
 .evt-checks {
-   margin-top: 10px;
+   margin-top: 12px;
    color: #1c4574;
+   font-family: Barlow, sans-serif;
    font-size: 16px;
    font-weight: 600;
-   line-height: 1.4;
+   line-height: 1.35;
 }
 
 .evt-checks {
@@ -490,9 +498,9 @@
 .evt-session {
    display: flex;
    align-items: center;
-   gap: 16px;
-   margin-top: 16px;
-   padding: 12px 12px 12px 18px;
+   gap: 18px;
+   margin-top: 22px;
+   padding: 14px 14px 14px 22px;
    border-radius: 18px;
    background: #fbf4e4;
 }
@@ -524,10 +532,11 @@
 
 .evt-free {
    display: block;
-   font-size: 28px;
+   font-family: Barlow, sans-serif;
+   font-size: 30px;
    font-weight: 800;
-   letter-spacing: 0.02em;
-   line-height: 1;
+   letter-spacing: 0.01em;
+   line-height: 0.95;
 }
 
 .evt-session-rule {
