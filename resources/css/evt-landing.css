@@ -365,9 +365,11 @@
 
 .evt-section-kicker {
    color: var(--evt-red);
-   font-size: 14px;
+   font-family: Barlow, sans-serif;
+   font-size: 22px;
    font-weight: 800;
-   letter-spacing: 0.08em;
+   letter-spacing: 0.01em;
+   line-height: 1;
 }
 
 .evt-steps h2,
@@ -379,10 +381,19 @@
    line-height: 1.05;
 }
 
-.evt-steps h2 {
-   margin-top: 2px;
+.evt-lower .evt-steps h2 {
+   margin-top: 10px;
    color: var(--evt-navy);
-   font-size: clamp(30px, 3.6vw, 46px);
+   font-family: Barlow, sans-serif;
+   font-size: clamp(36px, 4.2vw, 56px);
+   font-weight: 800;
+   letter-spacing: -0.025em;
+   line-height: 0.98;
+}
+
+.evt-lower .evt-steps h2 span {
+   font-weight: 400;
+   letter-spacing: -0.02em;
 }
 
 .evt-steps h2 span,
@@ -395,8 +406,8 @@
 .evt-step-grid {
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
-   gap: 14px;
-   margin-top: 18px;
+   gap: 16px;
+   margin-top: 28px;
 }
 
 .evt-step {
@@ -416,44 +427,58 @@
 .evt-num {
    display: inline-grid;
    place-items: center;
-   min-width: 52px;
-   height: 40px;
-   padding: 0 8px;
-   border-radius: 10px;
+   min-width: 74px;
+   height: 56px;
+   padding: 0 10px;
+   border-radius: 12px;
    background: #f6b000;
    color: #ffffff;
-   font-size: 20px;
+   font-family: Barlow, sans-serif;
+   font-size: 30px;
    font-weight: 800;
 }
 
 .evt-step .evt-icon-bubble {
-   width: 52px;
-   height: 52px;
+   width: 56px;
+   height: 56px;
    background: #f8e4a4;
 }
 
 .evt-step .evt-icon-bubble svg {
-   width: 28px;
-   height: 28px;
+   width: 32px;
+   height: 32px;
    stroke-width: 2;
 }
 
 .evt-step h3 {
+   position: relative;
    display: inline-block;
-   margin-top: 12px;
-   padding-bottom: 3px;
-   border-bottom: 3px solid #f6b000;
+   margin-top: 18px;
+   padding-bottom: 8px;
    color: var(--evt-navy);
-   font-size: 15px;
+   font-family: Barlow, sans-serif;
+   font-size: 18px;
    font-weight: 800;
    letter-spacing: 0.01em;
 }
 
+.evt-step h3::after {
+   content: '';
+   position: absolute;
+   left: 0;
+   bottom: 0;
+   width: 46px;
+   height: 5px;
+   border-radius: 2px;
+   background: #f6b000;
+}
+
 .evt-step p,
 .evt-checks {
-   margin-top: 8px;
+   margin-top: 12px;
    color: #1c4574;
-   font-size: 14px;
+   font-family: Barlow, sans-serif;
+   font-size: 16px;
    font-weight: 600;
    line-height: 1.35;
 }
@@ -481,9 +506,9 @@
 .evt-session {
    display: flex;
    align-items: center;
-   gap: 16px;
-   margin-top: 16px;
-   padding: 12px 12px 12px 18px;
+   gap: 18px;
+   margin-top: 22px;
+   padding: 14px 14px 14px 22px;
    border-radius: 18px;
    background: #fbf4e4;
 }
@@ -499,18 +524,27 @@
 .evt-session-items article {
    display: flex;
    align-items: center;
-   gap: 10px;
+   gap: 12px;
    color: var(--evt-navy);
-   font-size: 14px;
+   font-size: 18px;
    font-weight: 800;
-   line-height: 1.2;
+   line-height: 1.15;
 }
 
 .evt-session-items article svg {
    flex: 0 0 auto;
-   width: 30px;
-   height: 30px;
+   width: 38px;
+   height: 38px;
    stroke-width: 1.8;
+}
+
+.evt-free {
+   display: block;
+   font-family: Barlow, sans-serif;
+   font-size: 30px;
+   font-weight: 800;
+   letter-spacing: 0.01em;
+   line-height: 0.95;
 }
 
 .evt-session-rule {
