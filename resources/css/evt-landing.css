@@ -357,9 +357,9 @@
 
 .evt-section-kicker {
    color: var(--evt-red);
-   font-size: 14px;
+   font-size: 20px;
    font-weight: 800;
-   letter-spacing: 0.08em;
+   letter-spacing: 0.04em;
 }
 
 .evt-steps h2,
@@ -374,7 +374,13 @@
 .evt-steps h2 {
    margin-top: 2px;
    color: var(--evt-navy);
-   font-size: clamp(30px, 3.6vw, 46px);
+   font-size: clamp(28px, 3.2vw, 42px);
+   font-weight: 800;
+}
+
+.evt-steps h2 span {
+   font-weight: 500;
+   letter-spacing: 0;
 }
 
 .evt-steps h2 span,
@@ -408,46 +414,57 @@
 .evt-num {
    display: inline-grid;
    place-items: center;
-   min-width: 52px;
-   height: 40px;
+   min-width: 64px;
+   height: 64px;
    padding: 0 8px;
-   border-radius: 10px;
+   border-radius: 14px;
    background: #f6b000;
    color: #ffffff;
-   font-size: 20px;
+   font-size: 28px;
    font-weight: 800;
 }
 
 .evt-step .evt-icon-bubble {
-   width: 52px;
-   height: 52px;
+   width: 64px;
+   height: 64px;
    background: #f8e4a4;
 }
 
 .evt-step .evt-icon-bubble svg {
-   width: 28px;
-   height: 28px;
+   width: 34px;
+   height: 34px;
    stroke-width: 2;
 }
 
 .evt-step h3 {
+   position: relative;
    display: inline-block;
-   margin-top: 12px;
-   padding-bottom: 3px;
-   border-bottom: 3px solid #f6b000;
+   margin-top: 14px;
+   padding-bottom: 8px;
    color: var(--evt-navy);
-   font-size: 15px;
+   font-size: 16px;
    font-weight: 800;
    letter-spacing: 0.01em;
 }
 
+.evt-step h3::after {
+   content: '';
+   position: absolute;
+   left: 0;
+   bottom: 0;
+   width: 2.15em;
+   height: 4px;
+   border-radius: 2px;
+   background: #f6b000;
+}
+
 .evt-step p,
 .evt-checks {
-   margin-top: 8px;
+   margin-top: 10px;
    color: #1c4574;
-   font-size: 14px;
+   font-size: 16px;
    font-weight: 600;
-   line-height: 1.35;
+   line-height: 1.4;
 }
 
 .evt-checks {
@@ -491,18 +508,26 @@
 .evt-session-items article {
    display: flex;
    align-items: center;
-   gap: 10px;
+   gap: 12px;
    color: var(--evt-navy);
-   font-size: 14px;
+   font-size: 18px;
    font-weight: 800;
-   line-height: 1.2;
+   line-height: 1.15;
 }
 
 .evt-session-items article svg {
    flex: 0 0 auto;
-   width: 30px;
-   height: 30px;
+   width: 38px;
+   height: 38px;
    stroke-width: 1.8;
+}
+
+.evt-free {
+   display: block;
+   font-size: 28px;
+   font-weight: 800;
+   letter-spacing: 0.02em;
+   line-height: 1;
 }
 
 .evt-session-rule {

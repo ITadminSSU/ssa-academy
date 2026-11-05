@@ -315,7 +315,7 @@ export default function EvtLanding() {
                            <article>
                               <Icon name="laptop" />
                               <span>
-                                 <span className="evt-red">FREE</span>
+                                 <span className="evt-red evt-free">FREE</span>
                                  <br />
                                  Registration
                               </span>
