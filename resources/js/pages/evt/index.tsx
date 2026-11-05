@@ -105,7 +105,7 @@ const Icon = ({ name }: { name: string }) => {
 };
 
 const WebinarButton = ({ id }: { id?: string }) => (
-   <a id={id} className="evt-btn evt-webinar-target" href="#evt-webinar">
+   <a id={id} className="evt-btn evt-webinar-target" href="/register">
       <span>SIGN UP TO JOIN THE FREE WEBINAR</span>
       <span>ON NOVEMBER 21 →</span>
    </a>
@@ -113,16 +113,25 @@ const WebinarButton = ({ id }: { id?: string }) => (
 
 export default function EvtLanding() {
    useEffect(() => {
-      const id = 'evt-montserrat';
-      if (document.getElementById(id)) {
+      const id = 'evt-barlow';
+      if (!document.getElementById(id)) {
+         const link = document.createElement('link');
+         link.id = id;
+         link.rel = 'stylesheet';
+         link.href = 'https://fonts.bunny.net/css?family=barlow:500,600,700,800,900';
+         document.head.appendChild(link);
+      }
+
+      const displayId = 'evt-montserrat';
+      if (document.getElementById(displayId)) {
          return;
       }
 
-      const link = document.createElement('link');
-      link.id = id;
-      link.rel = 'stylesheet';
-      link.href = 'https://fonts.bunny.net/css?family=montserrat:500,600,700,800,900';
-      document.head.appendChild(link);
+      const display = document.createElement('link');
+      display.id = displayId;
+      display.rel = 'stylesheet';
+      display.href = 'https://fonts.bunny.net/css?family=montserrat:500,600,700,800,900';
+      document.head.appendChild(display);
    }, []);
 
    return (
@@ -208,266 +217,268 @@ export default function EvtLanding() {
                <img className="evt-mascot" src="/assets/evt/mascot.png" alt="EVT mascot pointing toward the training" />
             </section>
 
-            <div className="evt-strip">
-               <span>
-                  <Icon name="users" />
-                  FOR ASPIRING CONSTRUCTION ESTIMATORS
-               </span>
-               <span>Roofing | Siding | Drywall</span>
-               <span className="evt-strip-rule" aria-hidden="true" />
-               <span>
-                  <Icon name="laptop" />
-                  ENTRY VIA <span className="evt-gold">FREE WEBINAR</span>
-               </span>
-            </div>
-
-            <section className="evt-steps">
-               <div className="evt-wrap">
-                  <div className="evt-section-head">
-                     <span className="evt-section-mark" aria-hidden="true" />
-                     <div>
-                        <p className="evt-section-kicker">YOUR FIRST STEP STARTS HERE</p>
-                        <h2>
-                           BEFORE YOU COMMIT, <span>SEE WHAT&apos;S POSSIBLE.</span>
-                        </h2>
-                     </div>
-                  </div>
-                  <div className="evt-step-grid">
-                     <article className="evt-step">
-                        <div className="evt-step-top">
-                           <span className="evt-num">01</span>
-                           <span className="evt-icon-bubble">
-                              <Icon name="chart" />
-                           </span>
-                        </div>
-                        <h3>THE OPPORTUNITY</h3>
-                        <p>Discover U.S. construction opportunities and in-demand skills.</p>
-                     </article>
-                     <article className="evt-step">
-                        <div className="evt-step-top">
-                           <span className="evt-num">02</span>
-                           <span className="evt-icon-bubble">
-                              <Icon name="laptop" />
-                           </span>
-                        </div>
-                        <h3>THE TRAINING</h3>
-                        <p>Get inside the EVT program—training, instructor support, and hands-on estimating.</p>
-                     </article>
-                     <article className="evt-step">
-                        <div className="evt-step-top">
-                           <span className="evt-num">03</span>
-                           <span className="evt-icon-bubble">
-                              <Icon name="users" />
-                           </span>
-                        </div>
-                        <h3>YOUR NEXT STEP</h3>
-                        <p>Learn about application pathways, placement considerations, and career preparation.</p>
-                     </article>
-                     <article className="evt-step">
-                        <div className="evt-step-top">
-                           <span className="evt-num">04</span>
-                           <span className="evt-icon-bubble">
-                              <Icon name="shield" />
-                           </span>
-                        </div>
-                        <h3>MONEYBACK GUARANTEE</h3>
-                        <ul className="evt-checks">
-                           <li>
-                              <Icon name="check" />
-                              <span>No placement by Aug 31, 2027</span>
-                           </li>
-                           <li>
-                              <Icon name="check" />
-                              <span>At least 50+ projects accomplished by Mar 31, 2027</span>
-                           </li>
-                           <li>
-                              <Icon name="check" />
-                              <span>Attended all additional trainings</span>
-                           </li>
-                        </ul>
-                     </article>
-                  </div>
-                  <div className="evt-session">
-                     <div className="evt-session-items">
-                        <article>
-                           <Icon name="calendar" />
-                           <span>
-                              Saturday,
-                              <br />
-                              Nov 21, 2026
-                           </span>
-                        </article>
-                        <article>
-                           <Icon name="clock" />
-                           <span>
-                              8:00 PM
-                              <br />
-                              PHT
-                           </span>
-                        </article>
-                        <span className="evt-session-rule" aria-hidden="true" />
-                        <article>
-                           <Icon name="calendar" />
-                           <span>
-                              <span className="evt-red">FREE</span>
-                              <br />
-                              Registration
-                           </span>
-                        </article>
-                     </div>
-                     <WebinarButton />
-                  </div>
+            <div className="evt-lower">
+               <div className="evt-strip">
+                  <span>
+                     <Icon name="users" />
+                     FOR ASPIRING CONSTRUCTION ESTIMATORS
+                  </span>
+                  <span>Roofing | Siding | Drywall</span>
+                  <span className="evt-strip-rule" aria-hidden="true" />
+                  <span>
+                     <Icon name="laptop" />
+                     ENTRY VIA <span className="evt-gold">FREE WEBINAR</span>
+                  </span>
                </div>
-            </section>
 
-            <section className="evt-why">
-               <div className="evt-why-banner">
+               <section className="evt-steps">
                   <div className="evt-wrap">
-                     <p className="evt-why-kicker">WHY CHOOSE EVT?</p>
+                     <div className="evt-section-head">
+                        <span className="evt-section-mark" aria-hidden="true" />
+                        <div>
+                           <p className="evt-section-kicker">YOUR FIRST STEP STARTS HERE</p>
+                           <h2>
+                              BEFORE YOU COMMIT, <span>SEE WHAT&apos;S POSSIBLE.</span>
+                           </h2>
+                        </div>
+                     </div>
+                     <div className="evt-step-grid">
+                        <article className="evt-step">
+                           <div className="evt-step-top">
+                              <span className="evt-num">01</span>
+                              <span className="evt-icon-bubble">
+                                 <Icon name="chart" />
+                              </span>
+                           </div>
+                           <h3>THE OPPORTUNITY</h3>
+                           <p>Discover U.S. construction opportunities and in-demand skills.</p>
+                        </article>
+                        <article className="evt-step">
+                           <div className="evt-step-top">
+                              <span className="evt-num">02</span>
+                              <span className="evt-icon-bubble">
+                                 <Icon name="laptop" />
+                              </span>
+                           </div>
+                           <h3>THE TRAINING</h3>
+                           <p>Get inside the EVT program—training, instructor support, and hands-on estimating.</p>
+                        </article>
+                        <article className="evt-step">
+                           <div className="evt-step-top">
+                              <span className="evt-num">03</span>
+                              <span className="evt-icon-bubble">
+                                 <Icon name="users" />
+                              </span>
+                           </div>
+                           <h3>YOUR NEXT STEP</h3>
+                           <p>Learn about application pathways, placement considerations, and career preparation.</p>
+                        </article>
+                        <article className="evt-step">
+                           <div className="evt-step-top">
+                              <span className="evt-num">04</span>
+                              <span className="evt-icon-bubble">
+                                 <Icon name="shield" />
+                              </span>
+                           </div>
+                           <h3>MONEYBACK GUARANTEE</h3>
+                           <ul className="evt-checks">
+                              <li>
+                                 <Icon name="check" />
+                                 <span>No placement by Aug 31, 2027</span>
+                              </li>
+                              <li>
+                                 <Icon name="check" />
+                                 <span>At least 50+ projects accomplished by Mar 31, 2027</span>
+                              </li>
+                              <li>
+                                 <Icon name="check" />
+                                 <span>Attended all additional trainings</span>
+                              </li>
+                           </ul>
+                        </article>
+                     </div>
+                     <div className="evt-session">
+                        <div className="evt-session-items">
+                           <article>
+                              <Icon name="calendar" />
+                              <span>
+                                 Saturday,
+                                 <br />
+                                 Nov 21, 2026
+                              </span>
+                           </article>
+                           <article>
+                              <Icon name="clock" />
+                              <span>
+                                 8:00 PM
+                                 <br />
+                                 PHT
+                              </span>
+                           </article>
+                           <span className="evt-session-rule" aria-hidden="true" />
+                           <article>
+                              <Icon name="laptop" />
+                              <span>
+                                 <span className="evt-red">FREE</span>
+                                 <br />
+                                 Registration
+                              </span>
+                           </article>
+                        </div>
+                        <WebinarButton />
+                     </div>
+                  </div>
+               </section>
+
+               <section className="evt-why">
+                  <div className="evt-why-banner">
+                     <div className="evt-wrap">
+                        <p className="evt-why-kicker">WHY CHOOSE EVT?</p>
+                        <h2>
+                           NOT JUST LESSONS. <span>SKILLS YOU CAN PUT TO WORK.</span>
+                        </h2>
+                        <p>
+                           EVT goes beyond online learning with U.S.-focused estimating training, industry-experienced instructors, and practical
+                           exercises to build career-ready skills.
+                        </p>
+                     </div>
+                  </div>
+                  <div className="evt-wrap evt-why-grid">
+                     <article className="evt-why-card">
+                        <span className="evt-icon-bubble">
+                           <Icon name="gear" />
+                        </span>
+                        <div>
+                           <p>01. SPECIALIZED TRAINING</p>
+                           <h3>
+                              U.S. PROJECT
+                              <br />
+                              ESTIMATING
+                           </h3>
+                           <small>Roofing | Siding | Drywall</small>
+                        </div>
+                     </article>
+                     <article className="evt-why-card">
+                        <span className="evt-icon-bubble">
+                           <Icon name="helmet" />
+                        </span>
+                        <div>
+                           <p>02. INDUSTRY INSTRUCTORS</p>
+                           <h3>
+                              LEARN FROM
+                              <br />
+                              WORKING ESTIMATORS
+                           </h3>
+                           <small>Real U.S. project experience</small>
+                        </div>
+                     </article>
+                     <article className="evt-why-card">
+                        <span className="evt-icon-bubble">
+                           <Icon name="file" />
+                        </span>
+                        <div>
+                           <p>03. PRACTICAL EXPERIENCE</p>
+                           <h3>
+                              51 PROJECTS.
+                              <br />
+                              REAL PRACTICE.
+                           </h3>
+                           <small>Hands-on estimating exercises</small>
+                        </div>
+                     </article>
+                     <article className="evt-why-card">
+                        <span className="evt-icon-bubble">
+                           <Icon name="chart" />
+                        </span>
+                        <div>
+                           <p>04. CAREER PREPARATION</p>
+                           <h3>
+                              PREPARE FOR
+                              <br />
+                              WHAT COMES NEXT.
+                           </h3>
+                           <small>Skills, support &amp; U.S. opportunities</small>
+                        </div>
+                     </article>
+                  </div>
+               </section>
+
+               <section className="evt-paths">
+                  <div className="evt-wrap">
                      <h2>
-                        NOT JUST LESSONS. <span>SKILLS YOU CAN PUT TO WORK.</span>
+                        YOUR EXPERIENCE. <span>YOUR NEXT STEP.</span>
                      </h2>
-                     <p>
-                        EVT goes beyond online learning with U.S.-focused estimating training, industry-experienced instructors, and practical
-                        exercises to build career-ready skills.
-                     </p>
+                     <p className="evt-paths-lead">Choose the pathway that matches your current experience and career goal.</p>
+                     <div className="evt-path-grid">
+                        <article className="evt-path">
+                           <span className="evt-path-badge">PATH 01</span>
+                           <div className="evt-path-title">
+                              <Icon name="cap" />
+                              <h3>
+                                 NEW TO U.S. ESTIMATING?
+                                 <span>START HERE.</span>
+                              </h3>
+                           </div>
+                           <p className="evt-path-copy">Get introduced to U.S. estimating, the EVT program, and how to get started.</p>
+                           <a className="evt-btn" href="/register">
+                              JOIN THE FREE WEBINAR →
+                           </a>
+                           <div className="evt-qualify" />
+                        </article>
+                        <article className="evt-path evt-path-featured" id="evt-scholarship">
+                           <span className="evt-path-badge">PATH 02</span>
+                           <div className="evt-path-title">
+                              <Icon name="users" />
+                              <h3>
+                                 WITH U.S. EXPERIENCE?
+                                 <span>APPLY FOR A SCHOLARSHIP.</span>
+                              </h3>
+                           </div>
+                           <p className="evt-path-copy">
+                              Qualified participants may receive a scholarship, advanced learning, and a chance to help mentor other EVT trainees.
+                           </p>
+                           <a className="evt-btn" href="/register">
+                              APPLY FOR SCHOLARSHIP →
+                           </a>
+                           <div className="evt-qualify">
+                              <strong>Who qualifies:</strong>
+                              <p>
+                                 <Icon name="check" />
+                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 51+ U.S. projects.</span>
+                              </p>
+                           </div>
+                        </article>
+                        <article className="evt-path" id="evt-estimator">
+                           <span className="evt-path-badge">PATH 03</span>
+                           <div className="evt-path-title">
+                              <Icon name="case" />
+                              <h3>READY FOR A DIRECT OPPORTUNITY?</h3>
+                           </div>
+                           <p className="evt-path-copy">
+                              Submit your profile for consideration for direct employment opportunities with our U.S. construction clients.
+                           </p>
+                           <a className="evt-btn" href="/register">
+                              APPLY AS AN ESTIMATOR →
+                           </a>
+                           <div className="evt-qualify">
+                              <strong>Who qualifies:</strong>
+                              <p>
+                                 <Icon name="check" />
+                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 51+ U.S. projects.</span>
+                              </p>
+                           </div>
+                        </article>
+                     </div>
                   </div>
-               </div>
-               <div className="evt-wrap evt-why-grid">
-                  <article className="evt-why-card">
-                     <span className="evt-icon-bubble">
-                        <Icon name="gear" />
-                     </span>
-                     <div>
-                        <p>01. SPECIALIZED TRAINING</p>
-                        <h3>
-                           U.S. PROJECT
-                           <br />
-                           ESTIMATING
-                        </h3>
-                        <small>Roofing | Siding | Drywall</small>
-                     </div>
-                  </article>
-                  <article className="evt-why-card">
-                     <span className="evt-icon-bubble">
-                        <Icon name="helmet" />
-                     </span>
-                     <div>
-                        <p>02. INDUSTRY INSTRUCTORS</p>
-                        <h3>
-                           LEARN FROM
-                           <br />
-                           WORKING ESTIMATORS
-                        </h3>
-                        <small>Real U.S. project experience</small>
-                     </div>
-                  </article>
-                  <article className="evt-why-card">
-                     <span className="evt-icon-bubble">
-                        <Icon name="file" />
-                     </span>
-                     <div>
-                        <p>03. PRACTICAL EXPERIENCE</p>
-                        <h3>
-                           51 PROJECTS.
-                           <br />
-                           REAL PRACTICE.
-                        </h3>
-                        <small>Hands-on estimating exercises</small>
-                     </div>
-                  </article>
-                  <article className="evt-why-card">
-                     <span className="evt-icon-bubble">
-                        <Icon name="chart" />
-                     </span>
-                     <div>
-                        <p>04. CAREER PREPARATION</p>
-                        <h3>
-                           PREPARE FOR
-                           <br />
-                           WHAT COMES NEXT.
-                        </h3>
-                        <small>Skills, support &amp; U.S. opportunities</small>
-                     </div>
-                  </article>
-               </div>
-            </section>
+               </section>
 
-            <section className="evt-paths">
-               <div className="evt-wrap">
+               <footer className="evt-footer">
                   <h2>
-                     YOUR EXPERIENCE. <span>YOUR NEXT STEP.</span>
+                     READY TO TAKE <span>THE NEXT STEP?</span>
                   </h2>
-                  <p className="evt-paths-lead">Choose the pathway that matches your current experience and career goal.</p>
-                  <div className="evt-path-grid">
-                     <article className="evt-path">
-                        <span className="evt-path-badge">PATH 01</span>
-                        <div className="evt-path-title">
-                           <Icon name="cap" />
-                           <h3>
-                              NEW TO U.S. ESTIMATING?
-                              <span>START HERE.</span>
-                           </h3>
-                        </div>
-                        <p className="evt-path-copy">Get introduced to U.S. estimating, the EVT program, and how to get started.</p>
-                        <a className="evt-btn" href="#evt-webinar">
-                           JOIN THE FREE WEBINAR →
-                        </a>
-                        <div className="evt-qualify" />
-                     </article>
-                     <article className="evt-path evt-path-featured" id="evt-scholarship">
-                        <span className="evt-path-badge">PATH 02</span>
-                        <div className="evt-path-title">
-                           <Icon name="users" />
-                           <h3>
-                              WITH U.S. EXPERIENCE?
-                              <span>APPLY FOR A SCHOLARSHIP.</span>
-                           </h3>
-                        </div>
-                        <p className="evt-path-copy">
-                           Qualified participants may receive a scholarship, advanced learning, and a chance to help mentor other EVT trainees.
-                        </p>
-                        <a className="evt-btn" href="#evt-scholarship">
-                           APPLY FOR SCHOLARSHIP →
-                        </a>
-                        <div className="evt-qualify">
-                           <strong>Who qualifies:</strong>
-                           <p>
-                              <Icon name="check" />
-                              <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 51+ U.S. projects.</span>
-                           </p>
-                        </div>
-                     </article>
-                     <article className="evt-path" id="evt-estimator">
-                        <span className="evt-path-badge">PATH 03</span>
-                        <div className="evt-path-title">
-                           <Icon name="case" />
-                           <h3>READY FOR A DIRECT OPPORTUNITY?</h3>
-                        </div>
-                        <p className="evt-path-copy">
-                           Submit your profile for consideration for direct employment opportunities with our U.S. construction clients.
-                        </p>
-                        <a className="evt-btn" href="#evt-estimator">
-                           APPLY AS AN ESTIMATOR →
-                        </a>
-                        <div className="evt-qualify">
-                           <strong>Who qualifies:</strong>
-                           <p>
-                              <Icon name="check" />
-                              <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 51+ U.S. projects.</span>
-                           </p>
-                        </div>
-                     </article>
-                  </div>
-               </div>
-            </section>
-
-            <footer className="evt-footer">
-               <h2>
-                  READY TO TAKE <span>THE NEXT STEP?</span>
-               </h2>
-               <p>Join the FREE webinar and discover how EVT can help you build practical skills, real experience, and future opportunities.</p>
-            </footer>
+                  <p>Join the FREE webinar and discover how EVT can help you build practical skills, real experience, and future opportunities.</p>
+               </footer>
+            </div>
          </div>
       </>
    );

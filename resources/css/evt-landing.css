@@ -232,17 +232,33 @@
    margin-bottom: 6px;
 }
 
+.evt-lower,
+.evt-lower h2,
+.evt-lower h3,
+.evt-lower p,
+.evt-lower a,
+.evt-lower li,
+.evt-lower span,
+.evt-lower small {
+   font-family: Barlow, sans-serif;
+}
+
+.evt-lower h2,
+.evt-lower h3 {
+   font-weight: 900;
+}
+
 .evt-strip {
    display: flex;
    flex-wrap: wrap;
    align-items: center;
    justify-content: center;
-   gap: 10px 16px;
+   gap: 10px 18px;
    margin-top: 18px;
-   padding: 14px 20px;
+   padding: 16px 20px;
    background: var(--evt-navy);
    color: #ffffff;
-   font-size: 13px;
+   font-size: 14px;
    font-weight: 800;
    letter-spacing: 0.04em;
 }
@@ -299,7 +315,7 @@
 .evt-steps h2 {
    margin-top: 2px;
    color: var(--evt-navy);
-   font-size: clamp(28px, 3.5vw, 42px);
+   font-size: clamp(32px, 4vw, 52px);
 }
 
 .evt-steps h2 span,
@@ -333,23 +349,23 @@
 .evt-num {
    display: inline-grid;
    place-items: center;
-   min-width: 42px;
-   height: 32px;
-   padding: 0 8px;
-   border-radius: 8px;
+   min-width: 48px;
+   height: 36px;
+   padding: 0 10px;
+   border-radius: 10px;
    background: var(--evt-gold);
    color: #ffffff;
-   font-size: 16px;
+   font-size: 18px;
    font-weight: 800;
 }
 
 .evt-step h3 {
    display: inline-block;
-   margin-top: 14px;
+   margin-top: 16px;
    padding-bottom: 4px;
    border-bottom: 3px solid var(--evt-gold);
    color: var(--evt-navy);
-   font-size: 15px;
+   font-size: 16px;
    font-weight: 800;
    letter-spacing: 0.01em;
 }
@@ -358,8 +374,8 @@
 .evt-checks {
    margin-top: 10px;
    color: #1c4574;
-   font-size: 14px;
-   font-weight: 600;
+   font-size: 15px;
+   font-weight: 500;
    line-height: 1.4;
 }
 
@@ -367,6 +383,7 @@
    display: grid;
    gap: 7px;
    padding: 0;
+   font-weight: 600;
    list-style: none;
 }
 
@@ -423,8 +440,12 @@
 
 .evt-session .evt-btn {
    flex: 0 0 auto;
-   min-width: 280px;
+   min-width: min(100%, 340px);
    margin-top: 0;
+   padding: 14px 22px;
+   border-radius: 14px;
+   font-size: 15px;
+   font-weight: 800;
 }
 
 .evt-why {
@@ -455,10 +476,10 @@
 }
 
 .evt-why h2 {
-   max-width: 760px;
+   max-width: 820px;
    margin-top: 6px;
    color: #ffffff;
-   font-size: clamp(28px, 3.6vw, 44px);
+   font-size: clamp(30px, 3.8vw, 48px);
 }
 
 .evt-why-banner p {
@@ -523,7 +544,7 @@
 
 .evt-paths h2 {
    color: var(--evt-navy);
-   font-size: clamp(28px, 3.6vw, 44px);
+   font-size: clamp(30px, 3.8vw, 48px);
    text-align: center;
 }
 
@@ -609,9 +630,11 @@
 }
 
 .evt-path-featured {
+   z-index: 1;
    background: var(--evt-navy-deep);
    color: #ffffff;
    box-shadow: 0 18px 36px rgb(3 27 56 / 28%);
+   transform: translateY(-12px);
 }
 
 .evt-path-featured h3,
@@ -670,7 +693,7 @@
 
 .evt-footer h2 {
    position: relative;
-   font-size: clamp(26px, 3.4vw, 40px);
+   font-size: clamp(28px, 3.6vw, 44px);
 }
 
 .evt-footer p {
@@ -759,6 +782,10 @@
 
    .evt-why-banner {
       background-size: auto, cover;
+   }
+
+   .evt-path-featured {
+      transform: none;
    }
 
    .evt-footer::before,
