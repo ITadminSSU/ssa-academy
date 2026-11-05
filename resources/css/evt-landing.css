@@ -655,8 +655,7 @@
    position: relative;
    display: flex;
    flex-direction: column;
-   margin-top: 16px;
-   padding: 26px 20px 18px;
+   padding: 16px 20px 18px;
    border-radius: 18px;
    background: #ffffff;
    box-shadow: 0 10px 24px rgb(16 42 78 / 8%);
@@ -664,10 +663,9 @@
 }
 
 .evt-path-badge {
-   position: absolute;
-   top: 3px;
-   left: 22px;
-   z-index: 2;
+   display: inline-flex;
+   align-self: flex-start;
+   margin-bottom: 14px;
    padding: 5px 14px;
    border-radius: 999px;
    background: #f6b000;
@@ -676,7 +674,6 @@
    font-weight: 800;
    letter-spacing: 0.04em;
    line-height: 1.2;
-   transform: translateY(-50%);
 }
 
 .evt-path-title {
