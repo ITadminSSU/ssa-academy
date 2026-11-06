@@ -571,25 +571,30 @@
 }
 
 .evt-why-banner {
-   padding: 26px 0 72px;
-   background-color: var(--evt-navy);
-   background-image:
-      linear-gradient(90deg, rgb(1 36 71 / 98%) 0%, rgb(1 36 71 / 94%) 42%, rgb(1 36 71 / 28%) 64%, rgb(1 36 71 / 0%) 80%),
-      url('/assets/evt/hard-hat.png');
-   background-repeat: no-repeat;
-   background-position:
-      left center,
-      right center;
-   background-size:
-      auto,
-      560px auto;
+   position: relative;
+   overflow: hidden;
+   min-height: 224px;
+   padding: 22px 0 8px;
+   background: var(--evt-navy);
 }
 
-.evt-why-kicker {
-   color: var(--evt-gold-deep);
-   font-size: 14px;
-   font-weight: 800;
-   letter-spacing: 0.12em;
+.evt-why-photo {
+   position: absolute;
+   top: 0;
+   right: 0;
+   width: 628px;
+   max-width: 54%;
+   height: 224px;
+   object-fit: contain;
+   object-position: right center;
+   pointer-events: none;
+   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
+   mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
+}
+
+.evt-why-banner .evt-wrap {
+   position: relative;
+   z-index: 1;
 }
 
 .evt-why h2 {
@@ -611,11 +616,23 @@
    font-weight: 500;
 }
 
+.evt-why-banner p.evt-why-kicker {
+   max-width: none;
+   margin: 0 0 6px;
+   color: #f6c400;
+   font-size: 20px;
+   font-weight: 800;
+   letter-spacing: 0.04em;
+   line-height: 1;
+   -webkit-text-stroke: 1.5px #000;
+   paint-order: stroke fill;
+}
+
 .evt-why-grid {
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
    gap: 12px;
-   margin-top: -58px;
+   margin-top: -28px;
    padding-bottom: 22px;
 }
 
@@ -959,7 +976,24 @@
    }
 
    .evt-why-banner {
-      background-size: auto, cover;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 0 0 12px;
+   }
+
+   .evt-why-photo {
+      position: static;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      -webkit-mask-image: none;
+      mask-image: none;
+   }
+
+   .evt-why-banner .evt-wrap {
+      padding-top: 16px;
    }
 
    .evt-why h2 span {

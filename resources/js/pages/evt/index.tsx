@@ -331,6 +331,7 @@ export default function EvtLanding() {
 
                <section className="evt-why">
                   <div className="evt-why-banner">
+                     <img className="evt-why-photo" src="/assets/evt/hard-hat.png" alt="" />
                      <div className="evt-wrap">
                         <p className="evt-why-kicker">WHY CHOOSE EVT?</p>
                         <h2>
