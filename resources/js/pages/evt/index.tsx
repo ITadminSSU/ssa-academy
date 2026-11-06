@@ -199,15 +199,17 @@ export default function EvtLanding() {
                            </span>
                         </li>
                      </ul>
-                     <WebinarButton id="evt-webinar" />
-                     <p className="evt-experience">
-                        <i aria-hidden="true" />
-                        <span>
-                           Have 1 year U.S. experience? <a href="#evt-estimator">Apply as an Estimator</a> or{' '}
-                           <a href="#evt-scholarship">Check for Scholarship.</a>
-                        </span>
-                        <i aria-hidden="true" />
-                     </p>
+                     <div className="evt-hero-cta">
+                        <WebinarButton id="evt-webinar" />
+                        <p className="evt-experience">
+                           <i aria-hidden="true" />
+                           <span>
+                              Have 1 year U.S. experience? <a href="#evt-estimator">Apply as an Estimator</a> or{' '}
+                              <a href="#evt-scholarship">Check for Scholarship.</a>
+                           </span>
+                           <i aria-hidden="true" />
+                        </p>
+                     </div>
                   </div>
                   <img className="evt-mascot" src="/assets/evt/mascot.png" alt="EVT mascot pointing toward the training" />
                </div>
