@@ -303,6 +303,7 @@ export default function EvtLanding() {
                                  Nov 21, 2026
                               </span>
                            </article>
+                           <span className="evt-session-rule" aria-hidden="true" />
                            <article>
                               <Icon name="clock" />
                               <span>
@@ -314,9 +315,8 @@ export default function EvtLanding() {
                            <span className="evt-session-rule" aria-hidden="true" />
                            <article>
                               <Icon name="laptop" />
-                              <span>
+                              <span className="evt-reg">
                                  <span className="evt-red evt-free">FREE</span>
-                                 <br />
                                  Registration
                               </span>
                            </article>
