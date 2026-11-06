@@ -571,30 +571,27 @@
 }
 
 .evt-why-banner {
-   position: relative;
-   overflow: hidden;
-   min-height: 224px;
-   padding: 22px 0 8px;
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) min(628px, 46vw);
+   align-items: center;
+   column-gap: 20px;
+   padding: 18px 0;
    background: var(--evt-navy);
 }
 
 .evt-why-photo {
-   position: absolute;
-   top: 0;
-   right: 0;
-   width: 628px;
-   max-width: 54%;
-   height: 224px;
-   object-fit: contain;
-   object-position: right center;
-   pointer-events: none;
-   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
-   mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 100%);
+   display: block;
+   width: 100%;
+   height: auto;
+   justify-self: end;
+   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 100%);
+   mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 100%);
 }
 
 .evt-why-banner .evt-wrap {
-   position: relative;
-   z-index: 1;
+   width: auto;
+   margin: 0;
+   padding-left: max(24px, calc((100vw - 1180px) / 2));
 }
 
 .evt-why h2 {
@@ -632,7 +629,7 @@
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
    gap: 12px;
-   margin-top: -28px;
+   margin-top: 16px;
    padding-bottom: 22px;
 }
 
@@ -976,24 +973,21 @@
    }
 
    .evt-why-banner {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      padding: 0 0 12px;
+      grid-template-columns: 1fr;
+      padding: 0 0 16px;
    }
 
    .evt-why-photo {
-      position: static;
+      order: -1;
       width: 100%;
-      max-width: 100%;
-      height: auto;
-      object-fit: contain;
+      max-width: none;
+      justify-self: stretch;
       -webkit-mask-image: none;
       mask-image: none;
    }
 
    .evt-why-banner .evt-wrap {
-      padding-top: 16px;
+      padding: 16px 24px 0;
    }
 
    .evt-why h2 span {
