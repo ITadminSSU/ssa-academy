@@ -539,8 +539,16 @@
    stroke-width: 1.7;
 }
 
+.evt-reg {
+   display: flex;
+   flex-direction: column;
+   gap: 0;
+   line-height: 1;
+}
+
 .evt-free {
    display: block;
+   margin: 0;
    font-family: Barlow, sans-serif;
    font-size: 22px;
    font-weight: 800;
