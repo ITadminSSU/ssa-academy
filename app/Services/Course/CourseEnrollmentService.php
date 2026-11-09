@@ -5,6 +5,7 @@ namespace App\Services\Course;
 use App\Enums\CourseStatusType;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
+use App\Models\StudentLabel;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\SectionQuiz;
 use App\Services\Course\CourseSectionService;
@@ -33,12 +34,13 @@ class CourseEnrollmentService extends MediaService
    }
 
    /**
-    * Distinct enrolled students per course for the same audience as the
-    * enrollment list (admin, one instructor, or one learner). Search and
-    * pagination are intentionally ignored so the chart is not the current page.
+    * Enrollment rows per course for the course enrollment chart. A student in
+    * two courses counts twice. Search and pagination are ignored so the chart
+    * is not the current page. Tag ids limit the chart to students who have any
+    * of those labels.
     *
-    * @param  array{instructor_id?: int, user_id?: int}  $scope
-    * @return list<array{course: string, students: int}>
+    * @param  array{instructor_id?: int, user_id?: int, label_ids?: list<int>}  $scope
+    * @return list<array{course: string, enrollments: int}>
     */
    public function enrollmentCountsByCourse(array $scope): array
    {
@@ -50,7 +52,7 @@ class CourseEnrollmentService extends MediaService
       // with the same wrapped names the query builder uses.
       $enrollmentsSql = $grammar->wrapTable($enrollments);
       $coursesSql = $grammar->wrapTable($courses);
-      $studentCount = 'COUNT(DISTINCT '.$enrollmentsSql.'.'.$grammar->wrap('user_id').')';
+      $enrollmentCount = 'COUNT('.$enrollmentsSql.'.'.$grammar->wrap('id').')';
       $courseTitle = 'MIN('.$coursesSql.'.'.$grammar->wrap('title').')';
 
       return DB::table($enrollments)
@@ -61,40 +63,66 @@ class CourseEnrollmentService extends MediaService
          ->when(array_key_exists('user_id', $scope), function ($query) use ($scope, $enrollments) {
             $query->where("{$enrollments}.user_id", $scope['user_id']);
          })
+         ->when(! empty($scope['label_ids']), function ($query) use ($scope, $enrollments) {
+            $this->whereStudentHasAnyLabel($query, $enrollments, $scope['label_ids']);
+         })
          ->groupBy("{$courses}.id")
          ->selectRaw("{$courseTitle} as course_title")
-         ->selectRaw("{$studentCount} as student_count")
-         ->orderByRaw("{$studentCount} DESC")
+         ->selectRaw("{$enrollmentCount} as enrollment_count")
+         ->orderByRaw("{$enrollmentCount} DESC")
          ->orderByRaw("{$courseTitle} ASC")
          ->get()
          ->map(fn ($row) => [
             'course' => (string) $row->course_title,
-            'students' => (int) $row->student_count,
+            'enrollments' => (int) $row->enrollment_count,
          ])
          ->all();
    }
 
-   function getEnrollments(array $data, bool $paginate = false, bool $withBilling = false): LengthAwarePaginator|Collection
+   /**
+    * Ids of every enrollment matching the course list filters, including rows
+    * on other pages. Used only to count a checkbox selection.
+    *
+    * @return list<int>
+    */
+   public function matchingEnrollmentIds(array $data): array
    {
-      $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
+      return $this->filteredEnrollments($data)
+         ->orderBy('id')
+         ->pluck('id')
+         ->map(fn ($id) => (int) $id)
+         ->all();
+   }
 
-      $enrollments = CourseEnrollment::with([
-            'user.studentLabels',
-            'course.instructor.user',
-            'course.final_exam:id,title,slug',
-            ...($withBilling ? ['subscription'] : []),
-         ])
+   /**
+    * Same filter and order as the course enrollment list, without loading relations.
+    *
+    * @return list<int>
+    */
+   public function listEnrollmentIds(array $data): array
+   {
+      $query = $this->filteredEnrollments($data);
+      $this->applyListSort($query, $data);
+
+      return $query->pluck('id')->map(fn ($id) => (int) $id)->all();
+   }
+
+   private function filteredEnrollments(array $data)
+   {
+      $enrollments = (new CourseEnrollment())->getTable();
+
+      return CourseEnrollment::query()
          ->when(array_key_exists('search', $data) && filled($data['search']), function ($query) use ($data) {
             $search = trim((string) $data['search']);
 
             return $query->where(function ($outer) use ($search) {
                $outer->whereHas('user', function ($user) use ($search) {
                   $user->where(function ($inner) use ($search) {
-                     $inner->where('name', 'LIKE', '%' . $search . '%')
-                        ->orWhere('email', 'LIKE', '%' . $search . '%');
+                     $inner->where('name', 'LIKE', '%'.$search.'%')
+                        ->orWhere('email', 'LIKE', '%'.$search.'%');
                   });
                })->orWhereHas('course', function ($course) use ($search) {
-                  $course->where('title', 'LIKE', '%' . $search . '%');
+                  $course->where('title', 'LIKE', '%'.$search.'%');
                });
             });
          })
@@ -106,7 +134,121 @@ class CourseEnrollmentService extends MediaService
          ->when(array_key_exists('user_id', $data), function ($query) use ($data) {
             $query->where('user_id', $data['user_id']);
          })
-         ->orderBy('created_at', 'desc');
+         ->when(! empty($data['label_ids']), function ($query) use ($data, $enrollments) {
+            $this->whereStudentHasAnyLabel($query, $enrollments, $data['label_ids']);
+         });
+   }
+
+   /**
+    * @param  \Illuminate\Database\Eloquent\Builder<CourseEnrollment>|\Illuminate\Database\Query\Builder  $query
+    * @param  list<int>  $labelIds
+    */
+   private function whereStudentHasAnyLabel($query, string $enrollments, array $labelIds): void
+   {
+      $pivot = (new StudentLabel())->users()->getTable();
+      $ids = array_values(array_filter(array_map('intval', $labelIds)));
+
+      $query->whereExists(function ($sub) use ($pivot, $enrollments, $ids) {
+         $sub->selectRaw('1')
+            ->from($pivot)
+            ->whereColumn("{$pivot}.user_id", "{$enrollments}.user_id")
+            ->whereIn("{$pivot}.student_label_id", $ids);
+      });
+   }
+
+   /**
+    * @param  \Illuminate\Database\Eloquent\Builder<CourseEnrollment>  $query
+    */
+   private function applyListSort($query, array $data): void
+   {
+      $sort = $data['sort'] ?? null;
+      $direction = ($data['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+      $enrollments = (new CourseEnrollment())->getTable();
+
+      if ($sort === 'course') {
+         $query->orderBy(
+            Course::query()->select('title')->whereColumn('courses.id', "{$enrollments}.course_id")->limit(1),
+            $direction,
+         )->orderBy("{$enrollments}.id");
+
+         return;
+      }
+
+      if ($sort === 'enrolled_date') {
+         $query->orderBy('entry_date', $direction)->orderBy("{$enrollments}.id");
+
+         return;
+      }
+
+      if ($sort === 'coupon') {
+         $this->orderBySubquery($query, $this->couponSortQuery(), $direction)->orderBy("{$enrollments}.id");
+
+         return;
+      }
+
+      if ($sort === 'tags') {
+         $labels = (new StudentLabel())->getTable();
+         $pivot = (new StudentLabel())->users()->getTable();
+         $this->orderBySubquery(
+            $query,
+            StudentLabel::query()
+               ->select("{$labels}.name")
+               ->join($pivot, "{$pivot}.student_label_id", '=', "{$labels}.id")
+               ->whereColumn("{$pivot}.user_id", "{$enrollments}.user_id")
+               ->orderBy("{$labels}.name")
+               ->limit(1),
+            $direction,
+         )->orderBy("{$enrollments}.id");
+
+         return;
+      }
+
+      $query->orderBy('created_at', 'desc')->orderBy("{$enrollments}.id", 'desc');
+   }
+
+   /**
+    * Empty coupons and students with no tag sort after the named values.
+    *
+    * @param  \Illuminate\Database\Eloquent\Builder<CourseEnrollment>  $query
+    * @param  \Illuminate\Database\Eloquent\Builder<\Illuminate\Database\Eloquent\Model>  $subquery
+    */
+   private function orderBySubquery($query, $subquery, string $direction)
+   {
+      $sql = $subquery->toSql();
+
+      return $query
+         ->orderByRaw('('.$sql.') IS NULL', $subquery->getBindings())
+         ->orderByRaw('('.$sql.') '.$direction, $subquery->getBindings());
+   }
+
+   private function couponSortQuery()
+   {
+      $payments = (new PaymentHistory())->getTable();
+      $enrollments = (new CourseEnrollment())->getTable();
+      $codeSql = DB::getDriverName() === 'sqlite'
+         ? "COALESCE(NULLIF(coupon, ''), json_extract(meta, '$.coupon_code'))"
+         : "COALESCE(NULLIF(`coupon`, ''), JSON_UNQUOTE(JSON_EXTRACT(`meta`, '$.coupon_code')))";
+
+      return PaymentHistory::query()
+         ->selectRaw($codeSql)
+         ->where('purchase_type', Course::class)
+         ->whereColumn("{$payments}.user_id", "{$enrollments}.user_id")
+         ->whereColumn("{$payments}.purchase_id", "{$enrollments}.course_id")
+         ->orderByDesc("{$payments}.id")
+         ->limit(1);
+   }
+
+   function getEnrollments(array $data, bool $paginate = false, bool $withBilling = false): LengthAwarePaginator|Collection
+   {
+      $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
+
+      $enrollments = $this->filteredEnrollments($data)->with([
+            'user.studentLabels',
+            'course.instructor.user',
+            'course.final_exam:id,title,slug',
+            ...($withBilling ? ['subscription'] : []),
+         ]);
+      $this->applyListSort($enrollments, $data);
 
       if ($paginate) {
          $result = $enrollments->paginate($page)->withQueryString();

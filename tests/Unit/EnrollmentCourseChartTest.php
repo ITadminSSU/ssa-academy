@@ -32,7 +32,7 @@ afterEach(function () {
     DB::connection()->setTablePrefix('');
 });
 
-test('enrollment chart counts each student once and sorts by that count', function () {
+test('enrollment chart counts every enrollment row and sorts by that count', function () {
     $now = now();
 
     DB::table('courses')->insert([
@@ -50,8 +50,8 @@ test('enrollment chart counts each student once and sorts by that count', functi
     $rows = (new CourseEnrollmentService())->enrollmentCountsByCourse([]);
 
     expect($rows)->toBe([
-        ['course' => 'Alpha', 'students' => 2],
-        ['course' => 'Beta', 'students' => 1],
+        ['course' => 'Alpha', 'enrollments' => 3],
+        ['course' => 'Beta', 'enrollments' => 1],
     ]);
 });
 
@@ -72,10 +72,10 @@ test('enrollment chart keeps the instructor and learner scopes', function () {
     $service = new CourseEnrollmentService();
 
     expect($service->enrollmentCountsByCourse(['instructor_id' => 10]))->toBe([
-        ['course' => 'Alpha', 'students' => 2],
+        ['course' => 'Alpha', 'enrollments' => 2],
     ])->and($service->enrollmentCountsByCourse(['user_id' => 1]))->toBe([
-        ['course' => 'Alpha', 'students' => 1],
-        ['course' => 'Beta', 'students' => 1],
+        ['course' => 'Alpha', 'enrollments' => 1],
+        ['course' => 'Beta', 'enrollments' => 1],
     ]);
 
     expect((new Course())->getTable())->toBe('courses')
@@ -113,6 +113,47 @@ test('enrollment chart qualifies tables with the database prefix', function () {
     ]);
 
     expect((new CourseEnrollmentService())->enrollmentCountsByCourse([]))->toBe([
-        ['course' => 'Alpha', 'students' => 2],
+        ['course' => 'Alpha', 'enrollments' => 2],
     ]);
+});
+
+test('enrollment chart keeps only students who have any selected label', function () {
+    Schema::dropIfExists('student_label_user');
+    Schema::create('student_label_user', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id');
+        $table->unsignedBigInteger('student_label_id');
+    });
+
+    $now = now();
+
+    DB::table('courses')->insert([
+        ['id' => 1, 'title' => 'Alpha', 'instructor_id' => null, 'created_at' => $now, 'updated_at' => $now],
+        ['id' => 2, 'title' => 'Beta', 'instructor_id' => null, 'created_at' => $now, 'updated_at' => $now],
+    ]);
+
+    DB::table('course_enrollments')->insert([
+        ['id' => 1, 'user_id' => 1, 'course_id' => 1, 'created_at' => $now, 'updated_at' => $now],
+        ['id' => 2, 'user_id' => 1, 'course_id' => 2, 'created_at' => $now, 'updated_at' => $now],
+        ['id' => 3, 'user_id' => 2, 'course_id' => 1, 'created_at' => $now, 'updated_at' => $now],
+    ]);
+
+    DB::table('student_label_user')->insert([
+        ['user_id' => 1, 'student_label_id' => 5],
+        ['user_id' => 2, 'student_label_id' => 8],
+    ]);
+
+    $service = new CourseEnrollmentService();
+
+    expect($service->enrollmentCountsByCourse(['label_ids' => [5, 8]]))->toBe([
+        ['course' => 'Alpha', 'enrollments' => 2],
+        ['course' => 'Beta', 'enrollments' => 1],
+    ])->and($service->enrollmentCountsByCourse(['label_ids' => [5]]))->toBe([
+        ['course' => 'Alpha', 'enrollments' => 1],
+        ['course' => 'Beta', 'enrollments' => 1],
+    ])->and($service->enrollmentCountsByCourse(['label_ids' => [8]]))->toBe([
+        ['course' => 'Alpha', 'enrollments' => 1],
+    ]);
+
+    Schema::dropIfExists('student_label_user');
 });
