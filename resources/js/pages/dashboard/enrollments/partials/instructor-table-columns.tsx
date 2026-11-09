@@ -1,3 +1,4 @@
+import StudentTagPills from '@/components/student-tag-pills';
 import { ColumnDef } from '@tanstack/react-table';
 import { enrollmentBillingColumns } from './enrollment-billing-columns';
 
@@ -52,6 +53,15 @@ const InstructorTableColumn = (
          },
       },
       ...enrollmentBillingColumns(enrollmentType, translate),
+      ...(enrollmentType === 'course'
+         ? [
+              {
+                 id: 'student_tags',
+                 header: 'Student Tags',
+                 cell: ({ row }) => <StudentTagPills user={(row.original as CourseEnrollment).user} />,
+              } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
+           ]
+         : []),
    ];
 };
 

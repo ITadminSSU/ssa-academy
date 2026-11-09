@@ -1,4 +1,5 @@
 import DeleteModal from '@/components/inertia/delete-modal';
+import StudentTagPills from '@/components/student-tag-pills';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -107,12 +108,12 @@ const TableColumn = (translate: LanguageTranslations, protectedUserId?: number |
       {
          accessorKey: 'user_type',
          header: table.user_type,
-         cell: ({ row }) => (
-            <span className="inline-flex items-center gap-2">
-               <span>{learnerTypeLabel(row.original, common)}</span>
-               {row.original.pef_tagged ? <Badge>PEF</Badge> : null}
-            </span>
-         ),
+         cell: ({ row }) => <span>{learnerTypeLabel(row.original, common)}</span>,
+      },
+      {
+         id: 'student_tags',
+         header: 'Student Tags',
+         cell: ({ row }) => <StudentTagPills user={row.original} />,
       },
       {
          id: 'professional_type',

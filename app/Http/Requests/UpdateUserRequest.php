@@ -67,6 +67,8 @@ class UpdateUserRequest extends FormRequest
         ];
 
         $rules['pef_tagged'] = ['sometimes', 'boolean'];
+        $rules['student_label_ids'] = ['sometimes', 'array'];
+        $rules['student_label_ids.*'] = ['integer', 'distinct', 'exists:student_labels,id'];
 
         if ($this->actorCanChangeAccountType($user)) {
             $rules['account_type'] = ['required', 'in:admin,operations,employee,trainer,external,social_media'];
@@ -101,11 +103,34 @@ class UpdateUserRequest extends FormRequest
             $user = $this->resolveUser();
 
             if ($this->has('account_type') && ! $this->actorCanChangeAccountType($user)) {
-                $validator->errors()->add('account_type', 'You do not have permission to change account type.');
+                // The edit dialog always posts the current account type. Operations
+                // admins cannot change it, but saving the same type is not a change.
+                if ((string) $this->input('account_type') !== $this->currentAccountType($user)) {
+                    $validator->errors()->add('account_type', 'You do not have permission to change account type.');
+                }
             }
 
             PersonName::validatePair($validator, $this->input('given_name'), $this->input('last_name'));
         });
+    }
+
+    private function currentAccountType(User $user): string
+    {
+        if ($user->role === 'admin') {
+            return $user->can_manage_platform_settings === false ? 'operations' : 'admin';
+        }
+
+        if ($user->role === 'instructor') {
+            return 'trainer';
+        }
+
+        if ($user->role === 'social_media') {
+            return 'social_media';
+        }
+
+        $userType = $user->user_type instanceof \BackedEnum ? $user->user_type->value : $user->user_type;
+
+        return $userType === 'employee' ? 'employee' : 'external';
     }
 
     private function actorCanChangeAccountType(User $user): bool

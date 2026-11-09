@@ -11,6 +11,8 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\Admin\CandidatePipelineController;
 use App\Http\Controllers\Admin\CourseCouponLabelController;
+use App\Http\Controllers\Admin\EnrollmentPackageController;
+use App\Http\Controllers\Admin\StudentLabelController;
 use App\Http\Controllers\Admin\PaymentRefundController;
 use App\Http\Controllers\Admin\TeamMemberController;
 use App\Http\Controllers\Admin\ProfessionalTypeController;
@@ -41,6 +43,15 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::post('courses/coupon-labels', [CourseCouponLabelController::class, 'store'])->name('coupon-labels.store');
     Route::put('courses/coupon-labels/{couponLabel}', [CourseCouponLabelController::class, 'update'])->name('coupon-labels.update');
     Route::delete('courses/coupon-labels/{couponLabel}', [CourseCouponLabelController::class, 'destroy'])->name('coupon-labels.destroy');
+
+    Route::get('enrollments/student-labels', [StudentLabelController::class, 'index'])->name('student-labels.index');
+    Route::post('enrollments/student-labels', [StudentLabelController::class, 'store'])->name('student-labels.store');
+    Route::put('enrollments/student-labels/{studentLabel}', [StudentLabelController::class, 'update'])->name('student-labels.update');
+    Route::delete('enrollments/student-labels/{studentLabel}', [StudentLabelController::class, 'destroy'])->name('student-labels.destroy');
+    Route::get('enrollments/pef-package', [EnrollmentPackageController::class, 'pef'])->name('enrollment-packages.pef');
+    Route::put('enrollments/pef-package', [EnrollmentPackageController::class, 'updatePef'])->name('enrollment-packages.pef.update');
+    Route::get('enrollments/companion-course', [EnrollmentPackageController::class, 'companion'])->name('enrollment-packages.companion');
+    Route::put('enrollments/companion-course', [EnrollmentPackageController::class, 'updateCompanion'])->name('enrollment-packages.companion.update');
 
     // users
     Route::resource('users', UsersController::class)->only(['index', 'store', 'update']);

@@ -84,24 +84,8 @@ class SettingController extends Controller
     public function system(Request $request)
     {
         $system = $this->settingsService->getSetting(['type' => 'system']);
-        $selectedPefCourseIds = $system?->getField('pef_course_ids', []);
-        $selectedPefCourseIds = is_array($selectedPefCourseIds) ? $selectedPefCourseIds : [];
-        $companionCourseOptions = \App\Models\Course\Course::query()
-            ->select(['id', 'title', 'status'])
-            ->where('status', 'approved')
-            ->when(
-                $system?->getField('companion_course_id'),
-                function ($query, $selectedId) {
-                    $query->orWhere('id', $selectedId);
-                }
-            )
-            ->when($selectedPefCourseIds !== [], function ($query) use ($selectedPefCourseIds) {
-                $query->orWhereIn('id', $selectedPefCourseIds);
-            })
-            ->orderBy('title')
-            ->get();
 
-        return Inertia::render('dashboard/settings/system/index', compact('system', 'companionCourseOptions'));
+        return Inertia::render('dashboard/settings/system/index', compact('system'));
     }
 
     /**
