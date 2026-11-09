@@ -1,4 +1,5 @@
 import DeleteModal from '@/components/inertia/delete-modal';
+import StudentTagPills from '@/components/student-tag-pills';
 import { Button } from '@/components/ui/button';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
@@ -56,6 +57,15 @@ const AdminTableColumn = (
          },
       },
       ...enrollmentBillingColumns(enrollmentType, translate),
+      ...(enrollmentType === 'course'
+         ? [
+              {
+                 id: 'student_tags',
+                 header: 'Student Tags',
+                 cell: ({ row }) => <StudentTagPills user={(row.original as CourseEnrollment).user} />,
+              } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
+           ]
+         : []),
       {
          id: 'actions',
          header: () => <div className="pr-4 text-end">{table.action}</div>,

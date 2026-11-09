@@ -10,6 +10,8 @@ use App\Http\Controllers\JobCircularController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\Admin\CandidatePipelineController;
+use App\Http\Controllers\Admin\EnrollmentPackageController;
+use App\Http\Controllers\Admin\StudentLabelController;
 use App\Http\Controllers\Admin\PaymentRefundController;
 use App\Http\Controllers\Admin\TeamMemberController;
 use App\Http\Controllers\Admin\ProfessionalTypeController;
@@ -35,6 +37,15 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.admin');
 
     Route::get('forum-questions', [TrainerForumQuestionsController::class, 'index'])->name('admin.forum-questions.index');
+
+    Route::get('enrollments/student-labels', [StudentLabelController::class, 'index'])->name('student-labels.index');
+    Route::post('enrollments/student-labels', [StudentLabelController::class, 'store'])->name('student-labels.store');
+    Route::put('enrollments/student-labels/{studentLabel}', [StudentLabelController::class, 'update'])->name('student-labels.update');
+    Route::delete('enrollments/student-labels/{studentLabel}', [StudentLabelController::class, 'destroy'])->name('student-labels.destroy');
+    Route::get('enrollments/pef-package', [EnrollmentPackageController::class, 'pef'])->name('enrollment-packages.pef');
+    Route::put('enrollments/pef-package', [EnrollmentPackageController::class, 'updatePef'])->name('enrollment-packages.pef.update');
+    Route::get('enrollments/companion-course', [EnrollmentPackageController::class, 'companion'])->name('enrollment-packages.companion');
+    Route::put('enrollments/companion-course', [EnrollmentPackageController::class, 'updateCompanion'])->name('enrollment-packages.companion.update');
 
     // users
     Route::resource('users', UsersController::class)->only(['index', 'store', 'update']);

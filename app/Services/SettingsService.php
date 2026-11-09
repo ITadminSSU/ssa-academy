@@ -131,10 +131,97 @@ class SettingsService extends MediaService
                 $filteredData['site_alert_message'] = $alert['message'];
             }
 
+            foreach (self::enrollmentSettingKeys() as $key) {
+                if (array_key_exists($key, $existing)) {
+                    $filteredData[$key] = $existing[$key];
+                } else {
+                    unset($filteredData[$key]);
+                }
+            }
+
             $setting->update(['fields' => $filteredData]);
 
             return $setting;
         }, 5);
+    }
+
+    /**
+     * PEF and companion auto-enroll are edited under Enrollments.
+     * A Settings save must not change them.
+     *
+     * @return list<string>
+     */
+    public static function enrollmentSettingKeys(): array
+    {
+        return [
+            'companion_auto_enroll_enabled',
+            'companion_course_id',
+            'pef_enabled',
+            'pef_course_ids',
+            'pef_access_duration',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $changes
+     */
+    public function updateEnrollmentSettings(array $changes): Setting
+    {
+        return DB::transaction(function () use ($changes) {
+            $setting = Setting::query()->where('type', 'system')->firstOrFail();
+            $existing = is_array($setting->fields) ? $setting->fields : [];
+            $normalized = $this->normalizeEnrollmentSettings($changes);
+            $setting->update([
+                'fields' => array_merge($existing, $normalized),
+            ]);
+
+            return $setting->fresh();
+        }, 5);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalizeEnrollmentSettings(array $data): array
+    {
+        $normalized = [];
+
+        if (array_key_exists('companion_auto_enroll_enabled', $data)) {
+            $normalized['companion_auto_enroll_enabled'] = filter_var(
+                $data['companion_auto_enroll_enabled'],
+                FILTER_VALIDATE_BOOLEAN
+            );
+        }
+
+        if (array_key_exists('companion_course_id', $data)) {
+            $companionCourseId = $data['companion_course_id'];
+            $normalized['companion_course_id'] = ($companionCourseId === '' || $companionCourseId === null || (int) $companionCourseId <= 0)
+                ? null
+                : (int) $companionCourseId;
+        }
+
+        if (array_key_exists('pef_enabled', $data)) {
+            $normalized['pef_enabled'] = filter_var($data['pef_enabled'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        if (array_key_exists('pef_access_duration', $data)) {
+            $duration = (string) $data['pef_access_duration'];
+
+            if (! in_array($duration, PefPackageSettings::DURATIONS, true)) {
+                throw ValidationException::withMessages([
+                    'pef_access_duration' => 'Choose an access period from the list.',
+                ]);
+            }
+
+            $normalized['pef_access_duration'] = $duration;
+        }
+
+        if (array_key_exists('pef_course_ids', $data)) {
+            $normalized['pef_course_ids'] = $this->normalizePefCourseIds($data['pef_course_ids']);
+        }
+
+        return $normalized;
     }
 
     /**

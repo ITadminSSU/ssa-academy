@@ -1,4 +1,5 @@
 import InputError from '@/components/input-error';
+import { StudentLabelPill, textOn } from '@/components/student-tag-pills';
 import LoadingButton from '@/components/loading-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -47,9 +48,10 @@ interface Props {
 }
 
 const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
-   const { props } = usePage<SharedData>();
+   const { props } = usePage<SharedData & { studentLabels?: StudentLabelPill[] }>();
    const { translate, auth } = props;
    const canAssignAdminAccess = Boolean(auth.canManagePlatformSettings);
+   const studentLabels = props.studentLabels ?? [];
    const { dashboard, input, button, common } = translate;
    const [open, setOpen] = useState(false);
 
@@ -94,13 +96,14 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
       status: user.status,
       user_type: (user.user_type || 'external') as 'employee' | 'external',
       pef_tagged: Boolean(user.pef_tagged),
+      student_label_ids: (user.student_labels ?? []).map((label) => label.id),
       designation: user.instructor?.designation ?? '',
       account_type: currentAccountType(user),
       password: '',
       password_confirmation: '',
    });
 
-   const { data, put, setData, processing, errors, setDefaults, clearErrors } = useForm(initialData());
+   const { data, put, setData, processing, errors, setDefaults, clearErrors, transform } = useForm(initialData());
 
    const restoreSavedValues = () => {
       const fresh = initialData();
@@ -117,22 +120,33 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
+      // useForm().put() does not apply a transform option. Call transform() first,
+      // or account_type stays in the payload and an operations admin save is rejected.
+      transform((payload) => {
+         const next = canChangeRole ? payload : (({ account_type: _ignored, ...rest }) => rest)(payload);
+         const externalStudent = canChangeRole
+            ? next.account_type === 'external'
+            : user.role === 'student' && next.user_type === 'external';
+
+         const studentAccount = canChangeRole
+            ? next.account_type === 'external' || next.account_type === 'employee'
+            : user.role === 'student';
+
+         return {
+            ...next,
+            pef_tagged: externalStudent ? Boolean(next.pef_tagged) : false,
+            student_label_ids: studentAccount ? next.student_label_ids : [],
+         };
+      });
+
       put(route('users.update', user.id), {
          preserveScroll: true,
-         transform: (payload) => {
-            const next = canChangeRole ? payload : (({ account_type: _ignored, ...rest }) => rest)(payload);
-            const externalStudent = canChangeRole
-               ? next.account_type === 'external'
-               : user.role === 'student' && next.user_type === 'external';
-
-            return {
-               ...next,
-               pef_tagged: externalStudent ? Boolean(next.pef_tagged) : false,
-            };
-         },
          onSuccess: () => {
             setOpen(false);
             restoreSavedValues();
+         },
+         onFinish: () => {
+            transform((payload) => payload);
          },
       });
    };
@@ -143,6 +157,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
    const showDesignation = canChangeRole ? selectedAccountType === 'trainer' : !isPrimaryAdmin && accountKind === 'trainer';
    const showLearnerType = !canChangeRole && !isPrimaryAdmin && accountKind === 'student';
    const showPefTag = canChangeRole ? selectedAccountType === 'external' : showLearnerType && data.user_type === 'external';
+   const showStudentTags = canChangeRole ? selectedAccountType === 'external' || selectedAccountType === 'employee' : accountKind === 'student';
    const showPasswordFields =
       !isPrimaryAdmin &&
       (canChangeRole ? ['admin', 'operations', 'trainer'].includes(selectedAccountType) : accountKind === 'admin' || accountKind === 'trainer');
@@ -240,16 +255,61 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                   </div>
                )}
 
+               {showStudentTags && (
+                  <div>
+                     <Label>Student tags</Label>
+                     <p className="text-muted-foreground mb-2 text-sm">
+                        These labels only show on the student. They do not enroll the student or change PEF access. Create labels under Enrollments → Student labels.
+                     </p>
+                     {studentLabels.length === 0 ? (
+                        <p className="text-muted-foreground text-sm">No labels yet.</p>
+                     ) : (
+                        <div className="space-y-2">
+                           {studentLabels.map((label) => {
+                              const checked = data.student_label_ids.includes(label.id);
+
+                              return (
+                                 <label key={label.id} className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                       checked={checked}
+                                       onCheckedChange={(value) => {
+                                          setData(
+                                             'student_label_ids',
+                                             value === true
+                                                ? [...data.student_label_ids, label.id]
+                                                : data.student_label_ids.filter((id) => id !== label.id),
+                                          );
+                                       }}
+                                    />
+                                    <span
+                                       className="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                                       style={{ backgroundColor: label.color, color: textOn(label.color) }}
+                                    >
+                                       {label.name}
+                                    </span>
+                                 </label>
+                              );
+                           })}
+                        </div>
+                     )}
+                     <InputError message={errors.student_label_ids} />
+                  </div>
+               )}
+
                {showPefTag && (
                   <div>
                      <Label>PEF tag</Label>
                      <p className="text-muted-foreground mb-2 text-sm">
-                        Saving this tag enrolls the student in the PEF package from Settings → System. The access end date is set the first time and does not move if you save again.
+                        Saving this tag enrolls the student in the courses selected under Enrollments → PEF package. The access end date is set the first time and does not move if you save again.
                      </p>
-                     <label className="flex items-center gap-2 text-sm">
-                        <Checkbox checked={data.pef_tagged} onCheckedChange={(value) => setData('pef_tagged', value === true)} />
-                        <span>PEF student</span>
-                     </label>
+                     <div className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                           id={`pef-tagged-${user.id}`}
+                           checked={data.pef_tagged}
+                           onCheckedChange={(value) => setData('pef_tagged', value === true)}
+                        />
+                        <label htmlFor={`pef-tagged-${user.id}`}>PEF student</label>
+                     </div>
                      {user.pef_access_ends_at ? (
                         <p className="text-muted-foreground mt-2 text-xs">
                            Access ends {new Date(user.pef_access_ends_at).toLocaleDateString()}. Removing the tag keeps finished work and does not delete the courses.
@@ -318,6 +378,8 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                      </div>
                   </>
                )}
+
+               {!canChangeRole && errors.account_type ? <InputError message={errors.account_type} /> : null}
 
                <LoadingButton loading={processing} className="w-full">
                   {text(button.submit, 'Submit')}

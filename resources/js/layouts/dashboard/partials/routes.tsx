@@ -116,6 +116,24 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   path: route('exam-enrollments.index'),
                   access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
+               {
+                  name: 'Student labels',
+                  slug: routeLastSegment(route('student-labels.index')),
+                  path: route('student-labels.index'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'PEF package',
+                  slug: routeLastSegment(route('enrollment-packages.pef')),
+                  path: route('enrollment-packages.pef'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
+                  name: 'Companion course',
+                  slug: routeLastSegment(route('enrollment-packages.companion')),
+                  path: route('enrollment-packages.companion'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
             ],
          },
          {

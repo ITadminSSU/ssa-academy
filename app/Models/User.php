@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use App\Enums\CandidateStatus;
 use App\Models\Course\CourseEnrollment;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Exam\Models\ExamEnrollment;
 use Spatie\MediaLibrary\HasMedia;
@@ -164,6 +165,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function professionalType(): BelongsTo
     {
         return $this->belongsTo(ProfessionalType::class);
+    }
+
+    public function studentLabels(): BelongsToMany
+    {
+        return $this->belongsToMany(StudentLabel::class)->orderBy((new StudentLabel)->getTable().'.name');
     }
 
     public function courseEnrollments(): HasMany
