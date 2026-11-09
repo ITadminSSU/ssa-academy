@@ -121,6 +121,7 @@
    flex-direction: column;
    min-height: 420px;
    padding-right: 410px;
+   padding-bottom: 44px;
 }
 
 .evt-hero-copy {
@@ -273,24 +274,29 @@
 }
 
 .evt-experience {
+   position: absolute;
+   right: 380px;
+   bottom: 8px;
+   left: 0;
+   z-index: 1;
    display: flex;
    align-items: center;
-   align-self: center;
-   justify-content: center;
+   justify-content: flex-end;
    gap: 12px;
-   width: max-content;
-   max-width: 100%;
-   margin-top: auto;
-   margin-bottom: auto;
-   padding-top: 18px;
-   padding-bottom: 18px;
+   width: auto;
+   max-width: none;
+   margin: 0;
    color: var(--evt-navy);
    font-size: 20px;
    font-weight: 700;
    letter-spacing: -0.01em;
    line-height: 1.25;
-   text-align: center;
-   white-space: nowrap;
+   text-align: right;
+   white-space: normal;
+}
+
+.evt-experience span {
+   min-width: 0;
 }
 
 .evt-experience a {
@@ -890,18 +896,15 @@
    scroll-margin-top: 16px;
 }
 
+@media (max-width: 1280px) {
+   .evt-hero {
+      padding-bottom: 78px;
+   }
+}
+
 @media (max-width: 1200px) {
    .evt-hero-cta {
       width: 100%;
-   }
-
-   .evt-experience {
-      max-width: 100%;
-      white-space: normal;
-   }
-
-   .evt-experience span {
-      min-width: 0;
    }
 }
 
@@ -909,6 +912,24 @@
    .evt-hero {
       min-height: 0;
       padding-right: 0;
+      padding-bottom: 0;
+   }
+
+   .evt-experience {
+      position: static;
+      right: auto;
+      bottom: auto;
+      left: auto;
+      width: min(100%, 520px);
+      max-width: 100%;
+      margin: 16px auto 0;
+      justify-content: center;
+      text-align: center;
+      white-space: normal;
+   }
+
+   .evt-experience span {
+      min-width: 0;
    }
 
    .evt-hero h1 {
