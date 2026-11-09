@@ -126,15 +126,23 @@ function activeSubscriptionRows(): array
     ];
 }
 
-function activeSubscriptionReport(): ActiveSubscriptionReport
+function activeSubscriptionReport(?array $rows = null): ActiveSubscriptionReport
 {
-    return new ActiveSubscriptionReport(new class(activeSubscriptionRows()) extends StripeActiveSubscriptionLister
+    return new ActiveSubscriptionReport(new class($rows ?? activeSubscriptionRows()) extends StripeActiveSubscriptionLister
     {
         public function __construct(private array $rows) {}
 
         public function list(): array
         {
             return $this->rows;
+        }
+
+        public function listStatuses(array $statuses): array
+        {
+            return array_values(array_filter(
+                $this->rows,
+                fn (array $row) => in_array($row['status'] ?? '', $statuses, true),
+            ));
         }
     });
 }
@@ -271,4 +279,155 @@ it('asks stripe only for active subscriptions and does not send an update', func
         ->and($calls[0]['method'])->toBe('get')
         ->and($calls[0]['params']['status'])->toBe('active')
         ->and(collect($calls)->pluck('method')->unique()->all())->toBe(['get']);
+});
+
+it('tallies active inactive and canceled subscriptions for the course filter', function () {
+    $rows = activeSubscriptionRows();
+    $rows[] = [
+        'stripe_subscription_id' => 'sub_second_course',
+        'status' => 'active',
+        'cancel_at_period_end' => false,
+        'current_period_end' => 1800000000,
+        'user_id' => 5,
+        'course_id' => 10,
+        'customer_email' => 'ada@academy.test',
+        'customer_name' => 'Ada Lovelace',
+    ];
+    $rows[] = [
+        'stripe_subscription_id' => 'sub_canceled',
+        'status' => 'canceled',
+        'cancel_at_period_end' => false,
+        'current_period_end' => 1800000000,
+        'user_id' => 6,
+        'course_id' => 10,
+        'customer_email' => 'grace@academy.test',
+        'customer_name' => 'Grace Hopper',
+    ];
+    $rows[] = [
+        'stripe_subscription_id' => 'sub_past_due',
+        'status' => 'past_due',
+        'cancel_at_period_end' => false,
+        'current_period_end' => 1800000000,
+        'user_id' => 6,
+        'course_id' => 9,
+        'customer_email' => 'grace@academy.test',
+        'customer_name' => 'Grace Hopper',
+    ];
+    $rows[] = [
+        'stripe_subscription_id' => 'sub_paused',
+        'status' => 'paused',
+        'cancel_at_period_end' => false,
+        'current_period_end' => null,
+        'user_id' => null,
+        'course_id' => null,
+        'customer_email' => 'paused@stripe.test',
+        'customer_name' => 'Paused',
+    ];
+
+    $before = tableCounts();
+    $report = activeSubscriptionReport($rows);
+    $table = $report->filtered([]);
+
+    expect($report->statusSummary([]))->toBe([
+        ['label' => 'Active', 'count' => 4],
+        ['label' => 'Inactive', 'count' => 3],
+        ['label' => 'Canceled', 'count' => 1],
+    ])
+        ->and($report->statusSummary(['search' => 'ada', 'renewal' => 'cancels']))->toBe($report->statusSummary([]))
+        ->and(collect($report->statusSummary([]))->firstWhere('label', 'Active')['count'])->toBe(count($table))
+        ->and($report->statusSummary(['course' => '10']))->toBe([
+            ['label' => 'Active', 'count' => 2],
+            ['label' => 'Inactive', 'count' => 0],
+            ['label' => 'Canceled', 'count' => 1],
+        ])
+        ->and(collect($report->statusSummary(['course' => '10']))->firstWhere('label', 'Active')['count'])->toBe(
+            count($report->filtered(['course' => '10'])),
+        )
+        ->and(collect($report->courseOptions())->pluck('title')->all())->toBe([
+            'Drywall Estimating',
+            'Roofing Estimating',
+        ])
+        ->and(tableCounts())->toBe($before);
+
+    $controller = new ActiveSubscriptionReportController($report);
+    $controller->index(Request::create('/dashboard/payment-reports/active-subscriptions', 'GET', [
+        'search' => 'ada',
+    ]));
+
+    expect(tableCounts())->toBe($before);
+});
+
+it('reads canceled subscriptions on their own and does not update stripe', function () {
+    $calls = [];
+    $client = new class($calls) implements ClientInterface
+    {
+        public function __construct(private array &$calls) {}
+
+        public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1')
+        {
+            $this->calls[] = compact('method', 'absUrl', 'params');
+            $status = (string) ($params['status'] ?? '');
+            $data = [];
+
+            if ($status === 'canceled') {
+                $data[] = [
+                    'id' => 'sub_canceled',
+                    'object' => 'subscription',
+                    'status' => 'canceled',
+                    'cancel_at_period_end' => false,
+                    'customer' => 'cus_canceled',
+                    'metadata' => ['user_id' => '6', 'course_id' => '10'],
+                    'items' => ['object' => 'list', 'data' => [], 'has_more' => false, 'url' => '/v1/subscription_items'],
+                ];
+            }
+
+            if ($status === 'past_due') {
+                $data[] = [
+                    'id' => 'sub_past_due',
+                    'object' => 'subscription',
+                    'status' => 'past_due',
+                    'cancel_at_period_end' => false,
+                    'customer' => 'cus_due',
+                    'metadata' => [],
+                    'items' => ['object' => 'list', 'data' => [], 'has_more' => false, 'url' => '/v1/subscription_items'],
+                ];
+            }
+
+            if ($status === 'canceled') {
+                $data[] = [
+                    'id' => 'sub_not_canceled',
+                    'object' => 'subscription',
+                    'status' => 'active',
+                    'cancel_at_period_end' => false,
+                    'customer' => 'cus_wrong',
+                    'metadata' => [],
+                    'items' => ['object' => 'list', 'data' => [], 'has_more' => false, 'url' => '/v1/subscription_items'],
+                ];
+            }
+
+            $body = [
+                'object' => 'list',
+                'url' => '/v1/subscriptions',
+                'has_more' => false,
+                'data' => $data,
+            ];
+
+            return [json_encode($body), 200, []];
+        }
+    };
+
+    ApiRequestor::setHttpClient($client);
+
+    $stripe = Mockery::mock(StripeCustomerService::class);
+    $stripe->shouldReceive('configureStripe')->once()->andReturnUsing(function () {
+        Stripe::setApiKey('sk_test_status_summary');
+    });
+
+    $rows = (new StripeActiveSubscriptionLister($stripe))->listStatuses(StripeActiveSubscriptionLister::SUMMARY_STATUSES);
+
+    expect(collect($rows)->pluck('stripe_subscription_id')->all())->toBe(['sub_past_due', 'sub_canceled'])
+        ->and(collect($rows)->pluck('status')->all())->toBe(['past_due', 'canceled'])
+        ->and(collect($calls)->pluck('method')->unique()->all())->toBe(['get'])
+        ->and(collect($calls)->pluck('params.status')->all())->toBe(StripeActiveSubscriptionLister::SUMMARY_STATUSES)
+        ->and(collect($calls)->pluck('params.status')->all())->not->toContain('all');
 });

@@ -20,6 +20,11 @@ class ActiveSubscriptionReport
     private ?array $matched = null;
 
     /**
+     * @var list<array{label: string, course_id: int|null, course: string}>|null
+     */
+    private ?array $classified = null;
+
+    /**
      * @param  array{search?: string, course?: string, renewal?: string}  $filters
      */
     public function paginate(array $filters, int $page, int $perPage): LengthAwarePaginator
@@ -42,22 +47,56 @@ class ActiveSubscriptionReport
     }
 
     /**
+     * @param  array{search?: string, course?: string, renewal?: string}  $filters
+     * @return list<array{label: string, count: int}>
+     */
+    public function statusSummary(array $filters): array
+    {
+        $course = trim((string) ($filters['course'] ?? ''));
+        $counts = [
+            'Active' => 0,
+            'Inactive' => 0,
+            'Canceled' => 0,
+        ];
+
+        foreach ($this->classified() as $row) {
+            if ($course !== '' && (string) ($row['course_id'] ?? '') !== $course) {
+                continue;
+            }
+
+            $counts[$row['label']]++;
+        }
+
+        $summary = [];
+
+        foreach ($counts as $label => $count) {
+            $summary[] = [
+                'label' => $label,
+                'count' => $count,
+            ];
+        }
+
+        return $summary;
+    }
+
+    /**
      * @return list<array{id: int, title: string}>
      */
     public function courseOptions(): array
     {
         $courses = [];
 
-        foreach ($this->matched() as $row) {
+        foreach ($this->classified() as $row) {
             $id = (int) ($row['course_id'] ?? 0);
+            $title = (string) $row['course'];
 
-            if ($id < 1 || isset($courses[$id])) {
+            if ($id < 1 || $title === '' || isset($courses[$id])) {
                 continue;
             }
 
             $courses[$id] = [
                 'id' => $id,
-                'title' => (string) $row['course'],
+                'title' => $title,
             ];
         }
 
@@ -150,6 +189,87 @@ class ActiveSubscriptionReport
             fn (array $row) => ($row['status'] ?? '') === 'active',
         ));
 
+        $matched = [];
+
+        foreach ($this->attachCourse($stripeRows) as $row) {
+            $user = $row['user'];
+            $periodEnd = $row['current_period_end']
+                ? Carbon::createFromTimestampUTC((int) $row['current_period_end'])->timezone(config('app.timezone'))
+                : null;
+
+            $matched[] = [
+                'student_name' => trim((string) ($user->name ?? '')) !== ''
+                    ? (string) $user->name
+                    : (string) ($row['customer_name'] ?? ''),
+                'email' => trim((string) ($user->email ?? '')) !== ''
+                    ? (string) $user->email
+                    : (string) ($row['customer_email'] ?? ''),
+                'course' => (string) $row['course'],
+                'course_id' => $row['course_id'],
+                'stripe_status' => 'active',
+                'stripe_status_label' => 'Active',
+                'period_end' => $periodEnd ? $periodEnd->format('F d, Y') : '',
+                'cancel_at_period_end' => (bool) $row['cancel_at_period_end'],
+                'cancel_label' => $row['cancel_at_period_end'] ? 'Yes' : 'No',
+            ];
+        }
+
+        return $this->matched = $matched;
+    }
+
+    /**
+     * @return list<array{label: string, course_id: int|null, course: string}>
+     */
+    private function classified(): array
+    {
+        if ($this->classified !== null) {
+            return $this->classified;
+        }
+
+        $rows = [];
+
+        foreach ($this->matched() as $row) {
+            $rows[] = [
+                'label' => 'Active',
+                'course_id' => $row['course_id'],
+                'course' => (string) $row['course'],
+            ];
+        }
+
+        $extra = $this->stripe->listStatuses(StripeActiveSubscriptionLister::SUMMARY_STATUSES);
+
+        foreach ($this->attachCourse($extra) as $row) {
+            $label = $this->summaryLabel((string) ($row['status'] ?? ''));
+
+            if ($label === null) {
+                continue;
+            }
+
+            $rows[] = [
+                'label' => $label,
+                'course_id' => $row['course_id'],
+                'course' => (string) $row['course'],
+            ];
+        }
+
+        return $this->classified = $rows;
+    }
+
+    private function summaryLabel(string $status): ?string
+    {
+        return match ($status) {
+            'canceled' => 'Canceled',
+            'trialing', 'past_due', 'unpaid', 'paused', 'incomplete', 'incomplete_expired' => 'Inactive',
+            default => null,
+        };
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $stripeRows
+     * @return list<array<string, mixed>>
+     */
+    private function attachCourse(array $stripeRows): array
+    {
         $subscriptionIds = array_values(array_filter(array_map(
             fn (array $row) => (string) ($row['stripe_subscription_id'] ?? ''),
             $stripeRows,
@@ -164,11 +284,17 @@ class ActiveSubscriptionReport
 
         $userIds = [];
         $courseIds = [];
+        $resolved = [];
 
         foreach ($stripeRows as $row) {
             $local = $localByStripeId->get($row['stripe_subscription_id']);
             $userId = $row['user_id'] ?: (int) ($local->user_id ?? 0);
             $courseId = $row['course_id'] ?: (int) ($local->course_id ?? 0);
+            $resolved[] = [
+                'row' => $row,
+                'user_id' => $userId,
+                'course_id' => $courseId,
+            ];
 
             if ($userId > 0) {
                 $userIds[] = $userId;
@@ -186,35 +312,21 @@ class ActiveSubscriptionReport
             ? collect()
             : DB::table('courses')->whereIn('id', array_unique($courseIds))->get(['id', 'title'])->keyBy('id');
 
-        $matched = [];
+        $attached = [];
 
-        foreach ($stripeRows as $row) {
-            $local = $localByStripeId->get($row['stripe_subscription_id']);
-            $userId = $row['user_id'] ?: (int) ($local->user_id ?? 0);
-            $courseId = $row['course_id'] ?: (int) ($local->course_id ?? 0);
-            $user = $userId > 0 ? $users->get($userId) : null;
+        foreach ($resolved as $item) {
+            $row = $item['row'];
+            $userId = $item['user_id'];
+            $courseId = $item['course_id'];
             $course = $courseId > 0 ? $courses->get($courseId) : null;
-            $periodEnd = $row['current_period_end']
-                ? Carbon::createFromTimestampUTC((int) $row['current_period_end'])->timezone(config('app.timezone'))
-                : null;
 
-            $matched[] = [
-                'student_name' => trim((string) ($user->name ?? '')) !== ''
-                    ? (string) $user->name
-                    : (string) ($row['customer_name'] ?? ''),
-                'email' => trim((string) ($user->email ?? '')) !== ''
-                    ? (string) $user->email
-                    : (string) ($row['customer_email'] ?? ''),
+            $attached[] = array_merge($row, [
+                'user' => $userId > 0 ? $users->get($userId) : null,
                 'course' => (string) ($course->title ?? ''),
                 'course_id' => $courseId > 0 ? $courseId : null,
-                'stripe_status' => 'active',
-                'stripe_status_label' => 'Active',
-                'period_end' => $periodEnd ? $periodEnd->format('F d, Y') : '',
-                'cancel_at_period_end' => (bool) $row['cancel_at_period_end'],
-                'cancel_label' => $row['cancel_at_period_end'] ? 'Yes' : 'No',
-            ];
+            ]);
         }
 
-        return $this->matched = $matched;
+        return $attached;
     }
 }
