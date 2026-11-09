@@ -15,26 +15,30 @@ const CourseFilter = ({ routeName = 'category.courses', categorySlug }: CourseFi
    const { levels, prices, categories, category, categoryChild, translate } = page.props;
    const { frontend, common } = translate;
    const activeCategorySlug = categorySlug ?? category?.slug ?? 'all';
-   const showChildren = routeName === 'category.courses';
+   const selectedChildSlug = (typeof urlParams['category_child'] === 'string' && urlParams['category_child']) || categoryChild?.slug || '';
 
    const routeFor = (newParams: Record<string, string>, slug: string, category_child?: string, keepSearch = false) => {
       const updatedParams = { ...urlParams };
+      delete updatedParams.category_child;
 
       if (!keepSearch && 'search' in updatedParams) {
          delete updatedParams.search;
       }
+
+      const child = category_child ? { category_child } : {};
 
       if (routeName === 'student.category.courses') {
          return route('student.category.courses', {
             category: slug,
             ...updatedParams,
             ...newParams,
+            ...child,
          });
       }
 
       return route('category.courses', {
          category: slug,
-         category_child,
+         ...child,
          ...updatedParams,
          ...newParams,
       });
@@ -53,37 +57,35 @@ const CourseFilter = ({ routeName = 'category.courses', categorySlug }: CourseFi
    const currentSlug = category?.slug || activeCategorySlug;
 
    const chooseMenu = (key: 'price' | 'level', value: string) => {
-      router.get(routeFor({ [key]: value }, currentSlug, categoryChild?.slug, true), {}, { preserveScroll: true });
+      router.get(routeFor({ [key]: value }, currentSlug, selectedChildSlug || undefined, true), {}, { preserveScroll: true });
    };
 
    return (
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-            <Link href={routeFor({}, 'all')} className={chipClass(!category && !categoryChild)}>
+            <Link href={routeFor({}, 'all')} className={chipClass(!category && !selectedChildSlug)}>
                {frontend.all}
             </Link>
 
             {categories.map((item) => {
                if (item.slug === 'default') return null;
 
-               const parentSelected = !categoryChild && category?.slug === item.slug;
+               const parentSelected = !selectedChildSlug && category?.slug === item.slug;
 
                return (
                   <span key={item.slug} className="contents">
                      <Link href={routeFor({}, item.slug)} className={cn(chipClass(parentSelected), 'capitalize')}>
                         {item.title}
                      </Link>
-                     {showChildren
-                        ? item.category_children?.map((child) => (
-                             <Link
-                                key={`${item.slug}-${child.slug}`}
-                                href={routeFor({}, item.slug, child.slug)}
-                                className={cn(chipClass(categoryChild?.slug === child.slug), 'capitalize')}
-                             >
-                                {child.title}
-                             </Link>
-                          ))
-                        : null}
+                     {item.category_children?.map((child) => (
+                        <Link
+                           key={`${item.slug}-${child.slug}`}
+                           href={routeFor({}, item.slug, child.slug)}
+                           className={cn(chipClass(selectedChildSlug === child.slug), 'capitalize')}
+                        >
+                           {child.title}
+                        </Link>
+                     ))}
                   </span>
                );
             })}
