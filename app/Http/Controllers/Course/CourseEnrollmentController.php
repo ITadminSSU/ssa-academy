@@ -6,6 +6,7 @@ use App\Enums\CoursePricingType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCourseEnrollmentRequest;
 use App\Models\Course\Course;
+use App\Models\StudentLabel;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseService;
 use App\Services\UserService;
@@ -40,6 +41,7 @@ class CourseEnrollmentController extends Controller
             [
                 'instructor_id' => $data['instructor_id'] ?? null,
                 'user_id' => $data['user_id'] ?? null,
+                'label_ids' => $data['label_ids'] ?? null,
             ],
             static fn ($value) => $value !== null && $value !== '',
         );
@@ -50,6 +52,8 @@ class CourseEnrollmentController extends Controller
             'courses' => $courses,
             'enrollments' => $enrollments,
             'enrollmentChart' => $this->courseEnrollment->enrollmentCountsByCourse($chartScope),
+            'studentLabels' => StudentLabel::query()->orderBy('name')->get(['id', 'name', 'color']),
+            'matchingEnrollmentIds' => $this->courseEnrollment->matchingEnrollmentIds($data),
         ]);
     }
 
@@ -129,20 +133,48 @@ class CourseEnrollmentController extends Controller
 
         $search = trim((string) $request->input('search', ''));
         $perPage = $request->input('per_page');
+        $labelIds = $this->selectedLabelIds($request);
+        $sort = (string) $request->input('sort', '');
+        $sorts = ['course', 'enrolled_date', 'coupon', 'tags'];
+
+        $filters = array_filter(
+            [
+                'search' => $search !== '' ? $search : null,
+                'per_page' => $perPage,
+            ],
+            static fn ($value) => $value !== null && $value !== '',
+        );
+
+        if ($labelIds !== []) {
+            $filters['label_ids'] = $labelIds;
+        }
+
+        if (in_array($sort, $sorts, true)) {
+            $filters['sort'] = $sort;
+            $filters['direction'] = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+        }
 
         return array_merge(
-            array_filter(
-                [
-                    'search' => $search !== '' ? $search : null,
-                    'per_page' => $perPage,
-                ],
-                static fn ($value) => $value !== null && $value !== '',
-            ),
+            $filters,
             isAdmin() ? [] : (
                 $user?->instructor
                     ? ['instructor_id' => $user->instructor->id]
                     : ['user_id' => $user?->id]
             )
         );
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function selectedLabelIds(Request $request): array
+    {
+        $raw = $request->input('tags', '');
+        $parts = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+        return array_values(array_unique(array_filter(
+            array_map(static fn ($id) => (int) $id, $parts),
+            static fn (int $id) => $id > 0,
+        )));
     }
 }

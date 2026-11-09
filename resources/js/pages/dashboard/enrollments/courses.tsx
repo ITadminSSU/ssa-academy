@@ -7,34 +7,71 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
 import DashboardLayout from '@/layouts/dashboard/layout';
+import { getQueryParams } from '@/lib/route';
 import { SharedData } from '@/types/global';
-import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import * as React from 'react';
-import { ReactNode } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import AdminTableColumn from './partials/admin-table-columns';
-import EnrollmentCourseChart, { EnrollmentChartRow } from './partials/enrollment-course-chart';
+import EnrollmentCourseChart, { EnrollmentChartRow, EnrollmentLabelOption } from './partials/enrollment-course-chart';
+import { EnrollmentListControls } from './partials/enrollment-list-controls';
 import EnrollmentModal from './partials/enrollment-modal';
 import InstructorTableColumn from './partials/instructor-table-columns';
 
 interface Props extends SharedData {
    enrollments: Pagination<CourseEnrollment>;
    enrollmentChart?: EnrollmentChartRow[];
+   studentLabels?: EnrollmentLabelOption[];
+   matchingEnrollmentIds?: number[];
 }
 
 const Courses = (props: Props) => {
    const { isAdmin } = useAuth();
-   const [sorting, setSorting] = React.useState<SortingState>([]);
-   const { translate, enrollments, enrollmentChart = [] } = props;
+   const page = usePage();
+   const params = getQueryParams(page.url);
+   const { translate, enrollments, enrollmentChart = [], studentLabels = [], matchingEnrollmentIds = [] } = props;
    const { button, dashboard } = translate;
+   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+   const filterKey = `${params.search ?? ''}|${params.tags ?? ''}`;
+
+   useEffect(() => {
+      setSelectedIds([]);
+   }, [filterKey]);
+
+   const matchingSet = useMemo(() => new Set(matchingEnrollmentIds), [matchingEnrollmentIds]);
+   const selectedCount = selectedIds.filter((id) => matchingSet.has(id)).length;
+   const sortColumn = params.sort ?? '';
+   const sortDirection = params.direction === 'desc' ? 'desc' : 'asc';
+
+   const onSort = (column: string) => {
+      const next: Record<string, string> = { ...params };
+      next.sort = column;
+      next.direction = params.sort === column && params.direction === 'asc' ? 'desc' : 'asc';
+      delete next.page;
+
+      router.get(route('course-enrollments.index'), next, {
+         preserveScroll: true,
+         preserveState: true,
+      });
+   };
+
+   const controls: EnrollmentListControls = {
+      sort: sortColumn ? { column: sortColumn, direction: sortDirection } : null,
+      onSort,
+      selection: {
+         matchingIds: matchingEnrollmentIds,
+         selectedIds,
+         onToggleAll: (checked) => setSelectedIds(checked ? matchingEnrollmentIds : []),
+         onToggle: (id) => setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id])),
+      },
+   };
 
    const table = useReactTable({
       data: enrollments.data,
-      columns: isAdmin ? AdminTableColumn('course', translate, 'enrollments.destroy') : InstructorTableColumn('course', translate),
-      onSortingChange: setSorting,
+      columns: isAdmin
+         ? AdminTableColumn('course', translate, 'enrollments.destroy', controls)
+         : InstructorTableColumn('course', translate, controls),
       getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      getFilteredRowModel: getFilteredRowModel(),
-      state: { sorting },
    });
 
    return (
@@ -43,9 +80,10 @@ const Courses = (props: Props) => {
 
          <Separator className="my-6" />
 
-         <EnrollmentCourseChart rows={enrollmentChart} />
+         <EnrollmentCourseChart rows={enrollmentChart} labels={studentLabels} />
 
          <Card>
+            <p className="text-muted-foreground px-6 pt-4 text-sm">{selectedCount} selected</p>
             <TableFilter
                data={enrollments}
                title={dashboard.course_list}
@@ -56,25 +94,25 @@ const Courses = (props: Props) => {
             />
 
             <div className="overflow-x-auto">
-            <Table className="border-border border-y">
-               <TableHeader table={table} />
+               <Table className="border-border border-y">
+                  <TableHeader table={table} />
 
-               <TableBody>
-                  {enrollments.data && enrollments.data.length > 0 ? (
-                     table.getRowModel().rows.map((row) => (
-                        <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                           {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                           ))}
+                  <TableBody>
+                     {enrollments.data && enrollments.data.length > 0 ? (
+                        table.getRowModel().rows.map((row) => (
+                           <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                              {row.getVisibleCells().map((cell) => (
+                                 <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                              ))}
+                           </TableRow>
+                        ))
+                     ) : (
+                        <TableRow>
+                           <TableCell className="h-24 text-center">{dashboard.no_results}</TableCell>
                         </TableRow>
-                     ))
-                  ) : (
-                     <TableRow>
-                        <TableCell className="h-24 text-center">{dashboard.no_results}</TableCell>
-                     </TableRow>
-                  )}
-               </TableBody>
-            </Table>
+                     )}
+                  </TableBody>
+               </Table>
             </div>
 
             <TableFooter className="p-5 sm:p-7" routeName="course-enrollments.index" paginationInfo={enrollments} />

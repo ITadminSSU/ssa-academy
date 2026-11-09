@@ -1,14 +1,25 @@
 import StudentTagPills from '@/components/student-tag-pills';
 import { ColumnDef } from '@tanstack/react-table';
 import { enrollmentBillingColumns } from './enrollment-billing-columns';
+import { EnrollmentListControls, EnrollmentSelectCell, EnrollmentSelectHeader, EnrollmentSortHeader } from './enrollment-list-controls';
 
 const InstructorTableColumn = (
    enrollmentType: 'course' | 'exam',
    translate: LanguageTranslations,
+   controls?: EnrollmentListControls,
 ): ColumnDef<CourseEnrollment | ExamEnrollment>[] => {
    const { table } = translate;
 
    return [
+      ...(controls?.selection
+         ? [
+              {
+                 id: 'select',
+                 header: () => <EnrollmentSelectHeader selection={controls.selection!} />,
+                 cell: ({ row }) => <EnrollmentSelectCell selection={controls.selection!} id={row.original.id} />,
+              } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
+           ]
+         : []),
       {
          id: 'index',
          header: () => <div className="pl-4">#</div>,
@@ -25,7 +36,7 @@ const InstructorTableColumn = (
                      {user.photo ? (
                         <img src={user.photo} alt={user.name} className="h-full w-full object-cover" />
                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+                        <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center">
                            <span className="text-lg">{table.img_placeholder}</span>
                         </div>
                      )}
@@ -40,7 +51,12 @@ const InstructorTableColumn = (
       },
       {
          id: 'enrolled_course',
-         header: () => (enrollmentType === 'course' ? table.enrolled_course : 'Enrolled Exam'),
+         header: () =>
+            enrollmentType === 'course' ? (
+               <EnrollmentSortHeader label={table.enrolled_course} column="course" sort={controls?.sort} onSort={controls?.onSort} />
+            ) : (
+               'Enrolled Exam'
+            ),
          cell: ({ row }) => {
             const exam = row.original as ExamEnrollment;
             const course = row.original as CourseEnrollment;
@@ -52,12 +68,12 @@ const InstructorTableColumn = (
             );
          },
       },
-      ...enrollmentBillingColumns(enrollmentType, translate),
+      ...enrollmentBillingColumns(enrollmentType, translate, controls),
       ...(enrollmentType === 'course'
          ? [
               {
                  id: 'student_tags',
-                 header: 'Student Tags',
+                 header: () => <EnrollmentSortHeader label="Student Tags" column="tags" sort={controls?.sort} onSort={controls?.onSort} />,
                  cell: ({ row }) => <StudentTagPills user={(row.original as CourseEnrollment).user} />,
               } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
            ]

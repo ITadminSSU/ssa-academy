@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
+import { EnrollmentListControls, EnrollmentSortHeader } from './enrollment-list-controls';
 
 const formatListDate = (value?: string | null) => {
    if (!value) {
@@ -38,16 +39,20 @@ const subscriptionBadgeClass = (status?: string | null) => {
 export const enrollmentBillingColumns = (
    enrollmentType: 'course' | 'exam',
    translate: LanguageTranslations,
+   controls?: EnrollmentListControls,
 ): ColumnDef<CourseEnrollment | ExamEnrollment>[] => {
    const { table } = translate;
    const includeSubscriptionColumns = enrollmentType === 'course';
+   const sortHeader = (label: string, column: string) => (
+      <EnrollmentSortHeader label={label} column={column} sort={controls?.sort} onSort={controls?.onSort} />
+   );
 
    return [
       ...(includeSubscriptionColumns
          ? [
               {
                  id: 'coupon',
-                 header: table.coupon ?? 'Coupon',
+                 header: () => sortHeader(table.coupon ?? 'Coupon', 'coupon'),
                  cell: ({ row }) => {
                     const enrollment = row.original as CourseEnrollment;
                     const code = enrollment.coupon_code;
@@ -63,7 +68,7 @@ export const enrollmentBillingColumns = (
          : []),
       {
          id: 'enrolled_date',
-         header: table.enrolled_date,
+         header: () => (includeSubscriptionColumns ? sortHeader(table.enrolled_date, 'enrolled_date') : table.enrolled_date),
          cell: ({ row }) => <div>{formatListDate(row.original.entry_date) ?? '—'}</div>,
       },
       {
