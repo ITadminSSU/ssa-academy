@@ -10,6 +10,7 @@ use App\Http\Controllers\JobCircularController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\Admin\CandidatePipelineController;
+use App\Http\Controllers\Admin\CourseCouponLabelController;
 use App\Http\Controllers\Admin\EnrollmentPackageController;
 use App\Http\Controllers\Admin\StudentLabelController;
 use App\Http\Controllers\Admin\PaymentRefundController;
@@ -37,6 +38,11 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.admin');
 
     Route::get('forum-questions', [TrainerForumQuestionsController::class, 'index'])->name('admin.forum-questions.index');
+
+    Route::get('courses/coupon-labels', [CourseCouponLabelController::class, 'index'])->name('coupon-labels.index');
+    Route::post('courses/coupon-labels', [CourseCouponLabelController::class, 'store'])->name('coupon-labels.store');
+    Route::put('courses/coupon-labels/{couponLabel}', [CourseCouponLabelController::class, 'update'])->name('coupon-labels.update');
+    Route::delete('courses/coupon-labels/{couponLabel}', [CourseCouponLabelController::class, 'destroy'])->name('coupon-labels.destroy');
 
     Route::get('enrollments/student-labels', [StudentLabelController::class, 'index'])->name('student-labels.index');
     Route::post('enrollments/student-labels', [StudentLabelController::class, 'store'])->name('student-labels.store');

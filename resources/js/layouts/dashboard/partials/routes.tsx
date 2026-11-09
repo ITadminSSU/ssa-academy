@@ -49,6 +49,12 @@ function buildDashboardRouteTemplate(): DashboardRoute[] {
                   access: ['admin', 'instructor', 'collaborative', 'administrative'],
                },
                {
+                  name: 'Coupon labels',
+                  slug: routeLastSegment(route('coupon-labels.index')),
+                  path: route('coupon-labels.index'),
+                  access: ['admin', 'collaborative', 'administrative'],
+               },
+               {
                   name: 'Tracking Dashboard',
                   slug: routeLastSegment(route('student-progress.index')),
                   path: route('student-progress.index'),

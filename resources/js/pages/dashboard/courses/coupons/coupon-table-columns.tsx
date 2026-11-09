@@ -7,12 +7,22 @@ import { Copy, Eye, Pencil, Trash2 } from 'lucide-react';
 import CouponForm from './coupon-form';
 import CouponUsagesModal from './coupon-usages-modal';
 
+const textOn = (hex: string) => {
+   const normalized = hex.replace('#', '');
+   if (normalized.length !== 6) return '#ffffff';
+   const red = Number.parseInt(normalized.slice(0, 2), 16);
+   const green = Number.parseInt(normalized.slice(2, 4), 16);
+   const blue = Number.parseInt(normalized.slice(4, 6), 16);
+   return (red * 299 + green * 587 + blue * 114) / 1000 >= 160 ? '#1e293b' : '#ffffff';
+};
+
 interface CouponTableColumnsProps {
    courses: Course[];
+   labels: Array<{ id: number; name: string; color: string }>;
    onDelete: (id: number) => void;
 }
 
-const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): ColumnDef<CourseCoupon>[] => {
+const CouponTableColumns = ({ courses, labels, onDelete }: CouponTableColumnsProps): ColumnDef<CourseCoupon>[] => {
    const getCouponStatus = (coupon: CourseCoupon) => {
       if (!coupon.is_active) return { label: 'Inactive', variant: 'secondary' as const };
       if (coupon.valid_to && isPast(parseISO(coupon.valid_to))) return { label: 'Expired', variant: 'destructive' as const };
@@ -133,6 +143,19 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
          cell: ({ row }) => (row.original.valid_to ? format(parseISO(row.original.valid_to), 'MMM dd, yyyy HH:mm') : '-'),
       },
       {
+         id: 'category',
+         header: 'Category',
+         cell: ({ row }) =>
+            row.original.label ? (
+               <span
+                  className="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                  style={{ backgroundColor: row.original.label.color, color: textOn(row.original.label.color) }}
+               >
+                  {row.original.label.name}
+               </span>
+            ) : null,
+      },
+      {
          accessorKey: 'status',
          header: 'Status',
          cell: ({ row }) => {
@@ -160,6 +183,7 @@ const CouponTableColumns = ({ courses, onDelete }: CouponTableColumnsProps): Col
                      title="Edit Coupon"
                      coupon={coupon}
                      courses={courses}
+                     labels={labels}
                      handler={
                         <Button size="icon" variant="secondary" className="h-8 w-8" title="Edit">
                            <Pencil className="h-4 w-4" />

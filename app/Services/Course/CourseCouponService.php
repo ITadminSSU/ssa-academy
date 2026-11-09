@@ -6,10 +6,12 @@ use App\Enums\CourseBillingModel;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCoupon;
 use App\Services\Payment\LaunchOfferService;
+use App\Support\CourseCouponStatus;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Modules\PaymentGateways\Models\PaymentHistory;
 
@@ -125,7 +127,6 @@ class CourseCouponService
 
    public function getCouponsList(array $data, bool $paginate = false): LengthAwarePaginator|Collection
    {
-      $user = Auth::user();
       $page = array_key_exists('coupon_per_page', $data) ? intval($data['coupon_per_page']) : 10;
 
       $search = $data['coupon_search'] ?? $data['search'] ?? null;
@@ -133,7 +134,7 @@ class CourseCouponService
       $prefix = CourseCoupon::query()->getConnection()->getTablePrefix();
       $couponsTable = $prefix.'course_coupons';
 
-      $with = ['course:id,title'];
+      $with = ['course:id,title', 'label:id,name,color'];
 
       if (CourseCoupon::assignedEmailTableAvailable()) {
          $with[] = 'assignedEmailRecords:id,course_coupon_id,email';
@@ -148,20 +149,11 @@ class CourseCouponService
                   $inner->whereRaw('LOWER(coupon) = LOWER(`'.$couponsTable.'`.`code`)')
                      ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(meta, "$.coupon_code"))) = LOWER(`'.$couponsTable.'`.`code`)');
                });
-         }, 'usages_count')
-         ->when(!isAdmin(), function ($query) use ($user) {
-            $query->where(function ($scoped) use ($user) {
-               $scoped->where(function ($global) use ($user) {
-                  $global->whereNull('course_id')
-                     ->where(function ($owner) use ($user) {
-                        $owner->whereNull('created_by')
-                           ->orWhere('created_by', $user->id);
-                     });
-               })->orWhereHas('course', function ($courseQuery) use ($user) {
-                  $courseQuery->where('instructor_id', $user->instructor_id);
-               });
-            });
-         })
+         }, 'usages_count');
+
+      $this->applyAudienceScope($coupons);
+
+      $coupons = $coupons
          ->when(!empty($search), function ($query) use ($search) {
             $query->where('code', 'like', '%' . $search . '%');
          })
@@ -181,6 +173,177 @@ class CourseCouponService
 
       return $coupons->get()->transform(function (CourseCoupon $coupon) {
          return $this->presentCoupon($coupon);
+      });
+   }
+
+   /**
+    * Status counts for every coupon this person can already see.
+    * Search and pagination on the list do not change this report.
+    *
+    * @param  array{statuses?: list<string>, label_ids?: list<int>, uncategorized?: bool}  $filter
+    * @return array{
+    *     rows: list<array{key: string, label: string, coupons: int}>,
+    *     total_coupons: int,
+    *     successful_redemptions: int,
+    *     filtered: bool
+    * }
+    */
+   public function couponStatusReport(array $filter): array
+   {
+      $coupons = CourseCoupon::query()
+         ->select(['id', 'code', 'is_active', 'valid_from', 'valid_to', 'usage_limit', 'used_count', 'course_coupon_label_id']);
+
+      $this->applyAudienceScope($coupons);
+
+      $coupons = $coupons->get();
+      $this->attachRedemptionCounts($coupons);
+
+      return $this->summarizeCouponReport($coupons, $filter);
+   }
+
+   /**
+    * Same redemption rows the coupon list counts: the payment coupon column or meta.coupon_code.
+    *
+    * @param  SupportCollection<int, CourseCoupon>  $coupons
+    */
+   private function attachRedemptionCounts(SupportCollection $coupons): void
+   {
+      $counts = [];
+
+      $histories = DB::table('payment_histories')->get(['coupon', 'meta']);
+
+      foreach ($histories as $history) {
+         $matched = [];
+         $column = strtolower(trim((string) ($history->coupon ?? '')));
+
+         if ($column !== '') {
+            $matched[$column] = true;
+         }
+
+         $meta = $history->meta;
+         if (is_string($meta)) {
+            $decoded = json_decode($meta, true);
+            $meta = is_array($decoded) ? $decoded : [];
+         }
+
+         $metaCode = strtolower(trim((string) (is_array($meta) ? ($meta['coupon_code'] ?? '') : '')));
+
+         if ($metaCode !== '') {
+            $matched[$metaCode] = true;
+         }
+
+         foreach (array_keys($matched) as $code) {
+            $counts[$code] = ($counts[$code] ?? 0) + 1;
+         }
+      }
+
+      foreach ($coupons as $coupon) {
+         $coupon->setAttribute('usages_count', $counts[strtolower((string) $coupon->code)] ?? 0);
+      }
+   }
+
+   /**
+    * @param  iterable<int, CourseCoupon>  $coupons
+     * @param  array{statuses?: list<string>, label_ids?: list<int>, uncategorized?: bool}  $filter
+    * @return array{
+    *     rows: list<array{key: string, label: string, coupons: int}>,
+    *     total_coupons: int,
+    *     successful_redemptions: int,
+    *     filtered: bool
+    * }
+    */
+   public function summarizeCouponReport(iterable $coupons, array $filter): array
+   {
+      $statuses = array_values(array_intersect(CourseCouponStatus::ORDER, $filter['statuses'] ?? []));
+      $labelIds = array_values(array_unique(array_map('intval', $filter['label_ids'] ?? [])));
+      $uncategorized = (bool) ($filter['uncategorized'] ?? false);
+      $filtered = $statuses !== [] || $labelIds !== [] || $uncategorized;
+      $counts = array_fill_keys(CourseCouponStatus::ORDER, 0);
+      $total = 0;
+      $redemptions = 0;
+      $now = now();
+
+      foreach ($coupons as $coupon) {
+         $used = $this->redemptionCount($coupon);
+         $status = CourseCouponStatus::key(
+            (bool) $coupon->is_active,
+            $coupon->valid_from,
+            $coupon->valid_to,
+            $coupon->usage_limit,
+            $used,
+            $now,
+         );
+         $labelId = $coupon->course_coupon_label_id !== null ? (int) $coupon->course_coupon_label_id : null;
+
+         if ($filtered && ! $this->couponMatchesReportFilter($status, $labelId, $statuses, $labelIds, $uncategorized)) {
+            continue;
+         }
+
+         $counts[$status]++;
+         $total++;
+         $redemptions += $used;
+      }
+
+      $rows = [];
+
+      foreach (CourseCouponStatus::ORDER as $key) {
+         $rows[] = [
+            'key' => $key,
+            'label' => CourseCouponStatus::LABELS[$key],
+            'coupons' => $counts[$key],
+         ];
+      }
+
+      return [
+         'rows' => $rows,
+         'total_coupons' => $total,
+         'successful_redemptions' => $redemptions,
+         'filtered' => $filtered,
+      ];
+   }
+
+   /**
+    * @param  list<string>  $statuses
+    * @param  list<int>  $labelIds
+    */
+   private function couponMatchesReportFilter(string $status, ?int $labelId, array $statuses, array $labelIds, bool $uncategorized): bool
+   {
+      if (in_array($status, $statuses, true)) {
+         return true;
+      }
+
+      if ($labelId !== null && in_array($labelId, $labelIds, true)) {
+         return true;
+      }
+
+      return $uncategorized && $labelId === null;
+   }
+
+   private function redemptionCount(CourseCoupon $coupon): int
+   {
+      if (array_key_exists('usages_count', $coupon->getAttributes())) {
+         return (int) $coupon->usages_count;
+      }
+
+      return (int) $coupon->used_count;
+   }
+
+   private function applyAudienceScope($query): void
+   {
+      $user = Auth::user();
+
+      $query->when(! isAdmin(), function ($query) use ($user) {
+         $query->where(function ($scoped) use ($user) {
+            $scoped->where(function ($global) use ($user) {
+               $global->whereNull('course_id')
+                  ->where(function ($owner) use ($user) {
+                     $owner->whereNull('created_by')
+                        ->orWhere('created_by', $user->id);
+                  });
+            })->orWhereHas('course', function ($courseQuery) use ($user) {
+               $courseQuery->where('instructor_id', $user->instructor_id);
+            });
+         });
       });
    }
 
