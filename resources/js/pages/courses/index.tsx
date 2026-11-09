@@ -1,12 +1,12 @@
 import CourseCard1 from '@/components/cards/course-card-1';
 import { resolveAuthor, resolveSiteName } from '@/lib/branding';
-import TableFooter from '@/components/table/table-footer';
 import { getQueryParams } from '@/lib/route';
 import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Head, usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
 import Layout from './layout';
+import TableFooter from './partials/table-footer';
 
 export interface CoursesIndexProps extends SharedData {
    levels: string[];
@@ -162,16 +162,20 @@ const Index = (props: CoursesIndexProps) => {
             </script>
          </Head>
 
-         <div
-            className={cn(urlParams['view'] && urlParams['view'] === 'list' ? 'space-y-7' : 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3')}
-         >
+         <div className={cn(urlParams['view'] === 'list' ? 'space-y-3' : 'grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3')}>
             {courses.data.map((course) => (
-               <CourseCard1 key={course.id} course={course} wishlists={wishlists} viewType={urlParams['view'] as 'grid' | 'list'} />
+               <CourseCard1
+                  key={course.id}
+                  course={course}
+                  wishlists={wishlists}
+                  viewType={urlParams['view'] === 'list' ? 'list' : 'grid'}
+                  variant="catalog"
+               />
             ))}
          </div>
 
          <TableFooter
-            className="ssu-surface-card mt-6 p-5 sm:p-7"
+            className="mt-6"
             routeName="category.courses"
             paginationInfo={courses}
             routeParams={{

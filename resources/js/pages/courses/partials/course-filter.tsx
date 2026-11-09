@@ -1,27 +1,26 @@
-import SearchInput from '@/components/search-input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getQueryParams } from '@/lib/route';
+import { cn } from '@/lib/utils';
 import { Link, router, usePage } from '@inertiajs/react';
 import { CoursesIndexProps } from '..';
 
 interface CourseFilterProps {
-   setOpen?: (open: boolean) => void;
    routeName?: 'category.courses' | 'student.category.courses';
    categorySlug?: string;
 }
 
-const CourseFilter = ({ setOpen, routeName = 'category.courses', categorySlug }: CourseFilterProps) => {
+const CourseFilter = ({ routeName = 'category.courses', categorySlug }: CourseFilterProps) => {
    const page = usePage<CoursesIndexProps>();
    const urlParams = getQueryParams(page.url);
    const { levels, prices, categories, category, categoryChild, translate } = page.props;
    const { frontend, common } = translate;
-
    const activeCategorySlug = categorySlug ?? category?.slug ?? 'all';
+   const showChildren = routeName === 'category.courses';
 
-   const getQueryRoute = (newParams: Record<string, string>, slug: string, category_child?: string) => {
+   const routeFor = (newParams: Record<string, string>, slug: string, category_child?: string, keepSearch = false) => {
       const updatedParams = { ...urlParams };
 
-      if ('search' in updatedParams) {
+      if (!keepSearch && 'search' in updatedParams) {
          delete updatedParams.search;
       }
 
@@ -41,125 +40,91 @@ const CourseFilter = ({ setOpen, routeName = 'category.courses', categorySlug }:
       });
    };
 
+   const chipClass = (selected: boolean) =>
+      cn(
+         'inline-flex items-center rounded-full border px-3 py-1 text-sm',
+         selected
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-primary/40 text-primary hover:border-primary bg-[color:var(--brand-grey)]',
+      );
+
+   const priceValue = urlParams['price'] || 'all';
+   const levelValue = urlParams['level'] || 'all';
+   const currentSlug = category?.slug || activeCategorySlug;
+
+   const chooseMenu = (key: 'price' | 'level', value: string) => {
+      router.get(routeFor({ [key]: value }, currentSlug, categoryChild?.slug, true), {}, { preserveScroll: true });
+   };
+
    return (
-      <div className="space-y-6">
-         <SearchInput
-            onChangeValue={(value) =>
-               router.get(
-                  routeName === 'student.category.courses'
-                     ? route('student.category.courses', { category: activeCategorySlug, search: value })
-                     : route('category.courses', { category: 'all', search: value }),
-               )
-            }
-         />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+         <div className="flex min-w-0 flex-1 flex-wrap gap-2">
+            <Link href={routeFor({}, 'all')} className={chipClass(!category && !categoryChild)}>
+               {frontend.all}
+            </Link>
 
-         <div>
-            <h3 className="ssu-catalog-filter__heading">{common.categories}</h3>
-            <RadioGroup value={categoryChild ? categoryChild?.slug : category?.slug || activeCategorySlug || 'all'}>
-               <Link className="flex items-center" href={getQueryRoute({}, 'all')}>
-                  <RadioGroupItem className="cursor-pointer" id="category" value="all" />
-                  <label htmlFor="category" className="cursor-pointer pl-2">
-                     {frontend.all}
-                  </label>
-               </Link>
+            {categories.map((item) => {
+               if (item.slug === 'default') return null;
 
-               {categories.map((item, ind) => {
-                  const key = `category${ind}`;
-                  if (item.slug === 'default') return null;
+               const parentSelected = !categoryChild && category?.slug === item.slug;
 
-                  return (
-                     <div key={key} className="capitalize">
-                        <Link
-                           className="flex items-center"
-                           href={getQueryRoute({}, item.slug)}
-                           onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-                        >
-                           <RadioGroupItem className="cursor-pointer" id={key} value={item.slug} />
-                           <label htmlFor={key} className="cursor-pointer pl-2">
-                              {item.title}
-                           </label>
-                        </Link>
-
-                        {routeName === 'category.courses' &&
-                           item.category_children?.map((child, childInd) => {
-                              const childKey = `category_child${childInd}`;
-                              return (
-                                 <Link
-                                    key={childKey}
-                                    className="mt-2 flex items-center pl-3"
-                                    href={getQueryRoute({}, item.slug, child.slug)}
-                                    onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-                                 >
-                                    <RadioGroupItem className="cursor-pointer" id={childKey} value={child.slug} />
-                                    <label htmlFor={childKey} className="cursor-pointer pl-2">
-                                       {child.title}
-                                    </label>
-                                 </Link>
-                              );
-                           })}
-                     </div>
-                  );
-               })}
-            </RadioGroup>
+               return (
+                  <span key={item.slug} className="contents">
+                     <Link href={routeFor({}, item.slug)} className={cn(chipClass(parentSelected), 'capitalize')}>
+                        {item.title}
+                     </Link>
+                     {showChildren
+                        ? item.category_children?.map((child) => (
+                             <Link
+                                key={`${item.slug}-${child.slug}`}
+                                href={routeFor({}, item.slug, child.slug)}
+                                className={cn(chipClass(categoryChild?.slug === child.slug), 'capitalize')}
+                             >
+                                {child.title}
+                             </Link>
+                          ))
+                        : null}
+                  </span>
+               );
+            })}
          </div>
 
-         <div>
-            <h3 className="ssu-catalog-filter__heading">{common.price}</h3>
-            <RadioGroup value={urlParams['price'] || 'all'}>
-               <Link
-                  className="flex items-center"
-                  href={getQueryRoute({ price: 'all' }, category?.slug || activeCategorySlug, categoryChild?.slug)}
-                  onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-               >
-                  <RadioGroupItem className="cursor-pointer" id="price" value="all" />
-                  <label htmlFor="price" className="cursor-pointer pl-2">
-                     {frontend.all}
-                  </label>
-               </Link>
-
-               {prices.map((price) => (
-                  <Link
-                     key={price}
-                     className="flex items-center capitalize"
-                     href={getQueryRoute({ price }, category?.slug || activeCategorySlug, categoryChild?.slug)}
-                     onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-                  >
-                     <RadioGroupItem className="cursor-pointer" value={price} id={price} />
-                     <label htmlFor={price} className="cursor-pointer pl-2">
+         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <Select value={priceValue} onValueChange={(value) => chooseMenu('price', value)}>
+               <SelectTrigger className="border-primary/30 bg-card h-9 w-full capitalize sm:w-[150px]" aria-label={common.price}>
+                  <SelectValue>
+                     {common.price}: {priceValue === 'all' ? frontend.all : priceValue}
+                  </SelectValue>
+               </SelectTrigger>
+               <SelectContent>
+                  <SelectItem value="all">
+                     {common.price}: {frontend.all}
+                  </SelectItem>
+                  {prices.map((price) => (
+                     <SelectItem key={price} value={price} className="capitalize">
                         {price}
-                     </label>
-                  </Link>
-               ))}
-            </RadioGroup>
-         </div>
+                     </SelectItem>
+                  ))}
+               </SelectContent>
+            </Select>
 
-         <div>
-            <h3 className="ssu-catalog-filter__heading">{common.level}</h3>
-            <RadioGroup value={urlParams['level'] || 'all'}>
-               <Link
-                  className="flex items-center"
-                  href={getQueryRoute({ level: 'all' }, category?.slug || activeCategorySlug, categoryChild?.slug)}
-                  onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-               >
-                  <RadioGroupItem className="cursor-pointer" id="level" value="all" />
-                  <label htmlFor="level" className="cursor-pointer pl-2">
-                     {frontend.all}
-                  </label>
-               </Link>
-               {levels.map((level) => (
-                  <Link
-                     key={level}
-                     className="flex items-center capitalize"
-                     href={getQueryRoute({ level }, category?.slug || activeCategorySlug, categoryChild?.slug)}
-                     onFinish={() => !urlParams.search && setOpen && setOpen(false)}
-                  >
-                     <RadioGroupItem className="cursor-pointer" value={level} id={level} />
-                     <label htmlFor={level} className="cursor-pointer pl-2">
-                        {level}
-                     </label>
-                  </Link>
-               ))}
-            </RadioGroup>
+            <Select value={levelValue} onValueChange={(value) => chooseMenu('level', value)}>
+               <SelectTrigger className="border-primary/30 bg-card h-9 w-full capitalize sm:w-[160px]" aria-label={common.level}>
+                  <SelectValue>
+                     {common.level}: {levelValue === 'all' ? frontend.all : levelValue}
+                  </SelectValue>
+               </SelectTrigger>
+               <SelectContent>
+                  <SelectItem value="all">
+                     {common.level}: {frontend.all}
+                  </SelectItem>
+                  {levels.map((level) => (
+                     <SelectItem key={level} value={String(level)} className="capitalize">
+                        {String(level)}
+                     </SelectItem>
+                  ))}
+               </SelectContent>
+            </Select>
          </div>
       </div>
    );
