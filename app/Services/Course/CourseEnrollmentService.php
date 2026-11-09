@@ -74,6 +74,166 @@ class CourseEnrollmentService extends MediaService
          ->all();
    }
 
+   /**
+    * Course counts plus the enrollment-group rows for the course enrollment chart.
+    * A tag filter only hides students from this view. It does not change enrollments.
+    *
+    * @param  array{instructor_id?: int, user_id?: int}  $scope
+    * @param  list<int>  $labelIds
+    * @return array{
+    *     rows: list<array{label: string, students: int, kind: string}>,
+    *     total_students: int,
+    *     unfiltered_total_students: int,
+    *     filtered: bool
+    * }
+    */
+   public function enrollmentOverview(array $scope, array $labelIds = [], bool $pef = false): array
+   {
+      $rows = $this->enrollmentRowsForChart($scope);
+      $filtered = $labelIds !== [] || $pef;
+      $visible = $filtered ? $this->rowsMatchingStudentTags($rows, $labelIds, $pef) : $rows;
+
+      return [
+         'rows' => $this->chartRowsFromEnrollments($visible),
+         'total_students' => $visible->pluck('user_id')->unique()->count(),
+         'unfiltered_total_students' => $rows->pluck('user_id')->unique()->count(),
+         'filtered' => $filtered,
+      ];
+   }
+
+   /**
+    * @param  array{instructor_id?: int, user_id?: int}  $scope
+    */
+   private function enrollmentRowsForChart(array $scope): SupportCollection
+   {
+      $enrollments = (new CourseEnrollment())->getTable();
+      $courses = (new Course())->getTable();
+
+      return DB::table($enrollments)
+         ->join($courses, "{$courses}.id", '=', "{$enrollments}.course_id")
+         ->when(array_key_exists('instructor_id', $scope), function ($query) use ($scope, $courses) {
+            $query->where("{$courses}.instructor_id", $scope['instructor_id']);
+         })
+         ->when(array_key_exists('user_id', $scope), function ($query) use ($scope, $enrollments) {
+            $query->where("{$enrollments}.user_id", $scope['user_id']);
+         })
+         ->get([
+            "{$enrollments}.user_id",
+            "{$enrollments}.course_id",
+            "{$courses}.title as course_title",
+            "{$enrollments}.access_status",
+            "{$enrollments}.balance_paid_at",
+            "{$enrollments}.forfeited_at",
+         ]);
+   }
+
+   /**
+    * A student matches when they have any selected label, or the PEF flag when that chip is on.
+    * A label named PEF is only a label. It does not count as the PEF flag.
+    *
+    * @param  list<int>  $labelIds
+    */
+   private function rowsMatchingStudentTags(SupportCollection $rows, array $labelIds, bool $pef): SupportCollection
+   {
+      if ($rows->isEmpty()) {
+         return $rows;
+      }
+
+      $userIds = $rows->pluck('user_id')->unique()->values();
+      $matched = collect();
+
+      if ($labelIds !== []) {
+         $matched = $matched->merge(
+            DB::table('student_label_user')
+               ->whereIn('student_label_id', $labelIds)
+               ->whereIn('user_id', $userIds)
+               ->pluck('user_id')
+         );
+      }
+
+      if ($pef) {
+         $matched = $matched->merge(
+            DB::table('users')
+               ->whereIn('id', $userIds)
+               ->where('pef_tagged', true)
+               ->pluck('id')
+         );
+      }
+
+      $matchedIds = $matched->map(fn ($id) => (int) $id)->unique()->flip();
+
+      return $rows
+         ->filter(fn ($row) => $matchedIds->has((int) $row->user_id))
+         ->values();
+   }
+
+   /**
+    * @return list<array{label: string, students: int, kind: string}>
+    */
+   private function chartRowsFromEnrollments(SupportCollection $rows): array
+   {
+      $courses = [];
+      $byUser = [];
+
+      foreach ($rows as $row) {
+         $courseId = (int) $row->course_id;
+         $userId = (int) $row->user_id;
+
+         $courses[$courseId]['title'] = (string) $row->course_title;
+         $courses[$courseId]['users'][$userId] = true;
+
+         $byUser[$userId]['courses'][$courseId] = true;
+         $byUser[$userId]['deposit'] ??= true;
+
+         if (! $this->isDepositSeat($row)) {
+            $byUser[$userId]['deposit'] = false;
+         }
+      }
+
+      $courseRows = collect($courses)
+         ->map(fn (array $course) => [
+            'label' => $course['title'],
+            'students' => count($course['users']),
+            'kind' => 'course',
+         ])
+         ->sortBy([
+            ['students', 'desc'],
+            ['label', 'asc'],
+         ])
+         ->values()
+         ->all();
+
+      $exactCourses = [1 => 0, 2 => 0, 3 => 0];
+      $preRegistered = 0;
+
+      foreach ($byUser as $user) {
+         $courseCount = count($user['courses']);
+
+         if (isset($exactCourses[$courseCount])) {
+            $exactCourses[$courseCount]++;
+         }
+
+         if ($user['deposit']) {
+            $preRegistered++;
+         }
+      }
+
+      return [
+         ...$courseRows,
+         ['label' => 'Pre-registered Only', 'students' => $preRegistered, 'kind' => 'group'],
+         ['label' => 'Enrolled in one course only', 'students' => $exactCourses[1], 'kind' => 'group'],
+         ['label' => 'Two courses enrolled', 'students' => $exactCourses[2], 'kind' => 'group'],
+         ['label' => 'Three courses enrolled', 'students' => $exactCourses[3], 'kind' => 'group'],
+      ];
+   }
+
+   private function isDepositSeat(object $row): bool
+   {
+      return (string) ($row->access_status ?? '') === 'reserved'
+         && empty($row->balance_paid_at)
+         && empty($row->forfeited_at);
+   }
+
    function getEnrollments(array $data, bool $paginate = false, bool $withBilling = false): LengthAwarePaginator|Collection
    {
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;

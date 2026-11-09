@@ -1,6 +1,7 @@
 import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
 import TableHeader from '@/components/table/table-header';
+import { StudentLabelPill } from '@/components/student-tag-pills';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,19 +13,21 @@ import { SortingState, flexRender, getCoreRowModel, getFilteredRowModel, getSort
 import * as React from 'react';
 import { ReactNode } from 'react';
 import AdminTableColumn from './partials/admin-table-columns';
-import EnrollmentCourseChart, { EnrollmentChartRow } from './partials/enrollment-course-chart';
+import EnrollmentCourseChart, { EnrollmentOverview } from './partials/enrollment-course-chart';
 import EnrollmentModal from './partials/enrollment-modal';
 import InstructorTableColumn from './partials/instructor-table-columns';
 
 interface Props extends SharedData {
    enrollments: Pagination<CourseEnrollment>;
-   enrollmentChart?: EnrollmentChartRow[];
+   enrollmentOverview: EnrollmentOverview;
+   chartFilter: { label_ids: number[]; pef: boolean };
+   studentLabels: StudentLabelPill[];
 }
 
 const Courses = (props: Props) => {
    const { isAdmin } = useAuth();
    const [sorting, setSorting] = React.useState<SortingState>([]);
-   const { translate, enrollments, enrollmentChart = [] } = props;
+   const { translate, enrollments, enrollmentOverview, chartFilter, studentLabels } = props;
    const { button, dashboard } = translate;
 
    const table = useReactTable({
@@ -43,7 +46,7 @@ const Courses = (props: Props) => {
 
          <Separator className="my-6" />
 
-         <EnrollmentCourseChart rows={enrollmentChart} />
+         <EnrollmentCourseChart overview={enrollmentOverview} labels={studentLabels} chartFilter={chartFilter} />
 
          <Card>
             <TableFilter
