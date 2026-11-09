@@ -6,6 +6,7 @@ use App\Enums\CoursePricingType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCourseEnrollmentRequest;
 use App\Models\Course\Course;
+use App\Models\StudentLabel;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseService;
 use App\Services\UserService;
@@ -43,13 +44,20 @@ class CourseEnrollmentController extends Controller
             ],
             static fn ($value) => $value !== null && $value !== '',
         );
+        $chartFilter = $this->chartTagFilter($request);
 
         return Inertia::render('dashboard/enrollments/courses', [
             'prices' => $prices,
             'users' => $users,
             'courses' => $courses,
             'enrollments' => $enrollments,
-            'enrollmentChart' => $this->courseEnrollment->enrollmentCountsByCourse($chartScope),
+            'enrollmentOverview' => $this->courseEnrollment->enrollmentOverview(
+                $chartScope,
+                $chartFilter['label_ids'],
+                $chartFilter['pef'],
+            ),
+            'chartFilter' => $chartFilter,
+            'studentLabels' => StudentLabel::query()->orderBy('name')->get(['id', 'name', 'color']),
         ]);
     }
 
@@ -118,6 +126,32 @@ class CourseEnrollmentController extends Controller
             )
             ->orderBy('title')
             ->get();
+    }
+
+    /**
+     * Tag filters apply to the chart and summary only. The course list ignores them.
+     *
+     * @return array{label_ids: list<int>, pef: bool}
+     */
+    private function chartTagFilter(Request $request): array
+    {
+        $raw = $request->input('chart_labels', '');
+
+        if (is_array($raw)) {
+            $raw = implode(',', $raw);
+        }
+
+        $labelIds = collect(explode(',', (string) $raw))
+            ->map(fn ($id) => (int) trim((string) $id))
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        return [
+            'label_ids' => $labelIds,
+            'pef' => $request->boolean('chart_pef'),
+        ];
     }
 
     /**
