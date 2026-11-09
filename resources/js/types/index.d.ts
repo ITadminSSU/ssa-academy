@@ -32,6 +32,11 @@ interface User extends TableCommon {
    pef_tagged?: boolean;
    pef_tagged_at?: string | null;
    pef_access_ends_at?: string | null;
+   student_labels?: Array<{
+      id: number;
+      name: string;
+      color: string;
+   }>;
    about: string | null;
    photo: string | null;
    email_verified_at: string | null;

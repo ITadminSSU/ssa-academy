@@ -79,7 +79,7 @@ class CourseEnrollmentService extends MediaService
       $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
 
       $enrollments = CourseEnrollment::with([
-            'user',
+            'user.studentLabels',
             'course.instructor.user',
             'course.final_exam:id,title,slug',
             ...($withBilling ? ['subscription'] : []),
