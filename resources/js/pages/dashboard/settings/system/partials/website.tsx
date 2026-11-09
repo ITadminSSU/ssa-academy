@@ -2,12 +2,10 @@ import Combobox from '@/components/combobox';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import courseDurations from '@/data/course-durations';
 import currencies from '@/data/currencies';
 import { onHandleChange } from '@/lib/inertia';
 import { SharedData } from '@/types/global';
@@ -22,7 +20,7 @@ interface MediaFields {
 
 const Website = () => {
    const { props } = usePage<SharedData & SystemProps>();
-   const { translate, companionCourseOptions = [] } = props;
+   const { translate } = props;
    const { input, settings } = translate;
    const systemFields = props.system.fields as SystemFields;
 
@@ -31,13 +29,15 @@ const Website = () => {
       new_banner: null,
    };
 
+   const editableFields = { ...systemFields };
+   delete editableFields.companion_auto_enroll_enabled;
+   delete editableFields.companion_course_id;
+   delete editableFields.pef_enabled;
+   delete editableFields.pef_course_ids;
+   delete editableFields.pef_access_duration;
+
    const { data, setData, post, errors, processing } = useForm({
-      ...systemFields,
-      companion_auto_enroll_enabled: Boolean(systemFields.companion_auto_enroll_enabled),
-      companion_course_id: systemFields.companion_course_id ? String(systemFields.companion_course_id) : '',
-      pef_enabled: Boolean(systemFields.pef_enabled),
-      pef_course_ids: Array.isArray(systemFields.pef_course_ids) ? systemFields.pef_course_ids.map((id) => String(id)) : [],
-      pef_access_duration: systemFields.pef_access_duration || '2 years',
+      ...editableFields,
       site_alert_enabled: Boolean(systemFields.site_alert_enabled),
       site_alert_message: systemFields.site_alert_message || '',
       direction: 'none',
@@ -214,121 +214,6 @@ const Website = () => {
                      <Input name="phone" value={data.phone || ''} onChange={(e) => onHandleChange(e, setData)} placeholder="Enter Phone Number" />
                      <InputError message={errors.phone} />
                   </div>
-               </div>
-            </div>
-
-            <div className="border-b pb-6">
-               <h2 className="mb-2 text-xl font-semibold">
-                  {settings.companion_course_auto_enroll || 'Companion course auto-enroll'}
-               </h2>
-               <p className="text-muted-foreground mb-6 text-sm">
-                  {settings.companion_course_auto_enroll_help ||
-                     'When a learner gets full access to any other course, they are also enrolled in this free course. Deposit-only seats wait until the balance is paid. Leave this Off until you pick a course.'}
-               </p>
-
-               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                     <Label>{settings.companion_auto_enroll_enabled || 'Auto-enroll'}</Label>
-                     <Select
-                        value={data.companion_auto_enroll_enabled ? '1' : '0'}
-                        onValueChange={(value) => setData('companion_auto_enroll_enabled', value === '1')}
-                     >
-                        <SelectTrigger>
-                           <SelectValue placeholder={input.select_option || 'Select'} />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value="1">On</SelectItem>
-                           <SelectItem value="0">Off</SelectItem>
-                        </SelectContent>
-                     </Select>
-                     <InputError message={errors.companion_auto_enroll_enabled} />
-                  </div>
-
-                  <div>
-                     <Label>{settings.companion_course || 'Companion course'}</Label>
-                     <Combobox
-                        data={companionCourseOptions.map((course) => ({
-                           label: course.title,
-                           value: String(course.id),
-                        }))}
-                        defaultValue={data.companion_course_id || ''}
-                        placeholder={settings.companion_course_placeholder || 'Select a free course'}
-                        onSelect={(selected) => setData('companion_course_id', selected.value)}
-                     />
-                     {companionCourseOptions.length === 0 ? (
-                        <p className="text-muted-foreground mt-2 text-xs">
-                           No approved courses yet. Publish the gift course as Approved, then return here to select it.
-                        </p>
-                     ) : null}
-                     <InputError message={errors.companion_course_id} />
-                  </div>
-               </div>
-            </div>
-
-            <div className="border-b pb-6">
-               <h2 className="mb-2 text-xl font-semibold">{settings.pef_package || 'PEF package'}</h2>
-               <p className="text-muted-foreground mb-6 text-sm">
-                  {settings.pef_package_help ||
-                     'Tagging an external student as PEF enrolls them in every course selected here. Access lasts for the period below, counted from the day they are tagged. After that, finished lessons stay open and unfinished items lock.'}
-               </p>
-
-               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                     <Label>{settings.pef_enabled || 'PEF package'}</Label>
-                     <Select value={data.pef_enabled ? '1' : '0'} onValueChange={(value) => setData('pef_enabled', value === '1')}>
-                        <SelectTrigger>
-                           <SelectValue placeholder={input.select_option || 'Select'} />
-                        </SelectTrigger>
-                        <SelectContent>
-                           <SelectItem value="1">On</SelectItem>
-                           <SelectItem value="0">Off</SelectItem>
-                        </SelectContent>
-                     </Select>
-                     <InputError message={errors.pef_enabled} />
-                  </div>
-
-                  <div>
-                     <Label>{settings.pef_access_duration || 'Access period'}</Label>
-                     <Combobox
-                        data={courseDurations}
-                        defaultValue={data.pef_access_duration || '2 years'}
-                        placeholder="2 years"
-                        onSelect={(selected) => setData('pef_access_duration', selected.value)}
-                     />
-                     <InputError message={errors.pef_access_duration} />
-                  </div>
-               </div>
-
-               <div className="mt-6">
-                  <Label>{settings.pef_courses || 'Package courses'}</Label>
-                  {companionCourseOptions.length === 0 ? (
-                     <p className="text-muted-foreground mt-2 text-xs">No approved courses yet. Publish the package courses as Approved, then return here to select them.</p>
-                  ) : (
-                     <div className="mt-3 max-h-64 space-y-2 overflow-y-auto rounded-md border p-3">
-                        {companionCourseOptions.map((course) => {
-                           const courseId = String(course.id);
-                           const checked = data.pef_course_ids.includes(courseId);
-
-                           return (
-                              <label key={course.id} className="flex items-center gap-2 text-sm">
-                                 <Checkbox
-                                    checked={checked}
-                                    onCheckedChange={(value) => {
-                                       setData(
-                                          'pef_course_ids',
-                                          value === true
-                                             ? [...data.pef_course_ids, courseId]
-                                             : data.pef_course_ids.filter((id) => id !== courseId),
-                                       );
-                                    }}
-                                 />
-                                 <span>{course.title}</span>
-                              </label>
-                           );
-                        })}
-                     </div>
-                  )}
-                  <InputError message={errors.pef_course_ids} />
                </div>
             </div>
 

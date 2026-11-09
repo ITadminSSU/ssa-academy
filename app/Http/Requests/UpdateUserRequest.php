@@ -67,6 +67,8 @@ class UpdateUserRequest extends FormRequest
         ];
 
         $rules['pef_tagged'] = ['sometimes', 'boolean'];
+        $rules['student_label_ids'] = ['sometimes', 'array'];
+        $rules['student_label_ids.*'] = ['integer', 'distinct', 'exists:student_labels,id'];
 
         if ($this->actorCanChangeAccountType($user)) {
             $rules['account_type'] = ['required', 'in:admin,operations,employee,trainer,external,social_media'];

@@ -31,7 +31,7 @@ class UserService
         $page = array_key_exists('per_page', $data) ? intval($data['per_page']) : 10;
         $includeAllRoles = (bool) ($data['include_all_roles'] ?? false);
 
-        $users = User::with(['professionalType', 'instructor'])
+        $users = User::with(['professionalType', 'instructor', 'studentLabels'])
             ->when(! $includeAllRoles, function ($query) {
                 return $query
                     ->where('role', '!=', 'admin')
@@ -135,6 +135,10 @@ class UserService
 
             if (array_key_exists('pef_tagged', $data)) {
                 app(PefEnrollmentService::class)->syncTag($user, (bool) $data['pef_tagged']);
+            }
+
+            if (array_key_exists('student_label_ids', $data)) {
+                app(StudentLabelService::class)->syncForUser($user, (array) $data['student_label_ids']);
             }
 
             if ($wasActive && (int) $payload['status'] === 0) {

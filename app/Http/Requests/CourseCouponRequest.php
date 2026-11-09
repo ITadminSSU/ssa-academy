@@ -15,6 +15,10 @@ class CourseCouponRequest extends FormRequest
 
    protected function prepareForValidation(): void
    {
+      if ($this->exists('course_coupon_label_id') && in_array($this->input('course_coupon_label_id'), ['', 'none', null], true)) {
+         $this->merge(['course_coupon_label_id' => null]);
+      }
+
       if ($this->exists('assigned_emails')) {
          $parsed = CourseCouponAssignedEmail::parseList($this->input('assigned_emails'));
 
@@ -71,6 +75,7 @@ class CourseCouponRequest extends FormRequest
 
       return [
          'course_id' => 'nullable|exists:courses,id',
+         'course_coupon_label_id' => 'nullable|integer|exists:course_coupon_labels,id',
          'code' => 'required|string|max:50|unique:course_coupons,code,' . $couponId,
          'discount_type' => 'required|in:percentage,fixed',
          'discount' => 'required|numeric|min:0',

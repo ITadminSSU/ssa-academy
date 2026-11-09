@@ -406,6 +406,8 @@ interface CourseCoupon extends TableCommon {
    assigned_emails?: string[];
    course_id: number;
    course: Course;
+   course_coupon_label_id?: number | null;
+   label?: { id: number; name: string; color: string } | null;
 }
 
 // course_cart.ts

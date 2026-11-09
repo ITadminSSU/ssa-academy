@@ -12,11 +12,18 @@ import { useForm } from '@inertiajs/react';
 import { Shuffle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
+interface CouponLabelOption {
+   id: number;
+   name: string;
+   color: string;
+}
+
 interface Props {
    title: string;
    handler: React.ReactNode;
    coupon?: CourseCoupon;
    courses: Course[];
+   labels?: CouponLabelOption[];
 }
 
 const addressText = (value: unknown): string => {
@@ -52,7 +59,7 @@ const assignedEmailsText = (coupon?: CourseCoupon) => {
    return emails.join('\n');
 };
 
-const CouponForm = ({ title, handler, coupon, courses }: Props) => {
+const CouponForm = ({ title, handler, coupon, courses, labels = [] }: Props) => {
    const [open, setOpen] = useState(false);
    const hydratedCouponId = useRef<number | null>(null);
 
@@ -73,6 +80,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
       is_active: coupon?.is_active ?? true,
       show_on_catalog: coupon?.show_on_catalog ?? false,
       assigned_emails: assignedEmailsText(coupon),
+      course_coupon_label_id: coupon?.course_coupon_label_id ? String(coupon.course_coupon_label_id) : '',
    });
 
    const hasAssignedEmails = data.assigned_emails.trim() !== '';
@@ -81,6 +89,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
       ...form,
       assigned_emails: form.assigned_emails,
       usage_limit: form.usage_limit === '' || form.usage_limit === null || form.usage_limit === undefined ? null : Number(form.usage_limit),
+      course_coupon_label_id: form.course_coupon_label_id ? Number(form.course_coupon_label_id) : null,
    }));
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -131,6 +140,7 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
          is_active: coupon.is_active ?? true,
          show_on_catalog: coupon.show_on_catalog ?? false,
          assigned_emails: assignedEmailsText(coupon),
+         course_coupon_label_id: coupon.course_coupon_label_id ? String(coupon.course_coupon_label_id) : '',
       });
    }, [open, coupon]);
 
@@ -219,6 +229,28 @@ const CouponForm = ({ title, handler, coupon, courses }: Props) => {
                            </SelectContent>
                         </Select>
                         <InputError message={errors.course_id} />
+                     </div>
+
+                     <div className="col-span-2">
+                        <Label>Category</Label>
+                        <Select
+                           value={data.course_coupon_label_id || 'none'}
+                           onValueChange={(value) => setData('course_coupon_label_id', value === 'none' ? '' : value)}
+                        >
+                           <SelectTrigger>
+                              <SelectValue placeholder="No category" />
+                           </SelectTrigger>
+                           <SelectContent>
+                              <SelectItem value="none">No category</SelectItem>
+                              {labels.map((label) => (
+                                 <SelectItem key={label.id} value={String(label.id)}>
+                                    {label.name}
+                                 </SelectItem>
+                              ))}
+                           </SelectContent>
+                        </Select>
+                        <p className="text-muted-foreground mt-1 text-xs">A category is a name only. It does not change the discount or who can use the code.</p>
+                        <InputError message={errors.course_coupon_label_id} />
                      </div>
 
                      <div className="col-span-2">

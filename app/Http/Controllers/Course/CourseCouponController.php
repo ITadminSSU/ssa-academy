@@ -9,6 +9,8 @@ use App\Http\Requests\CourseCouponRequest;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCoupon;
 use App\Models\Course\CourseCouponAssignedEmail;
+use App\Models\Course\CourseCouponLabel;
+use App\Support\CourseCouponStatus;
 use App\Services\Course\CourseCouponService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -25,12 +27,16 @@ class CourseCouponController extends Controller
     */
    public function index(Request $request): Response
    {
-      $courses = $this->courseCoupon->getCoursesList($request->all(), true);
+      $courses = $this->courseCoupon->getCoursesList($request->all());
       $coupons = $this->courseCoupon->getCouponsList($request->all(), true);
+      $reportFilter = $this->reportFilter($request);
 
       return Inertia::render('dashboard/courses/coupons/index', [
          'courses' => $courses,
          'coupons' => $coupons,
+         'couponLabels' => CourseCouponLabel::query()->orderBy('name')->get(['id', 'name', 'color']),
+         'couponReport' => $this->courseCoupon->couponStatusReport($reportFilter),
+         'reportFilter' => $reportFilter,
       ]);
    }
 
@@ -152,6 +158,46 @@ class CourseCouponController extends Controller
          'usages' => $usages->values(),
          'total' => $usages->count(),
       ]);
+   }
+
+   /**
+    * Report filters never reach the coupon list query.
+    *
+    * @return array{statuses: list<string>, label_ids: list<int>, uncategorized: bool}
+    */
+   private function reportFilter(Request $request): array
+   {
+      $rawStatuses = $request->input('report_statuses', '');
+
+      if (is_array($rawStatuses)) {
+         $rawStatuses = implode(',', $rawStatuses);
+      }
+
+      $statuses = collect(explode(',', (string) $rawStatuses))
+         ->map(fn ($status) => trim((string) $status))
+         ->filter(fn (string $status) => in_array($status, CourseCouponStatus::ORDER, true))
+         ->unique()
+         ->values()
+         ->all();
+
+      $rawLabels = $request->input('report_labels', '');
+
+      if (is_array($rawLabels)) {
+         $rawLabels = implode(',', $rawLabels);
+      }
+
+      $labelIds = collect(explode(',', (string) $rawLabels))
+         ->map(fn ($id) => (int) trim((string) $id))
+         ->filter(fn (int $id) => $id > 0)
+         ->unique()
+         ->values()
+         ->all();
+
+      return [
+         'statuses' => $statuses,
+         'label_ids' => $labelIds,
+         'uncategorized' => $request->boolean('report_uncategorized'),
+      ];
    }
 
    /**

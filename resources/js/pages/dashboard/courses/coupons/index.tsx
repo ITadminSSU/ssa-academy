@@ -21,14 +21,18 @@ import { Plus, Trash2, Upload } from 'lucide-react';
 import * as React from 'react';
 import CouponForm from './coupon-form';
 import CouponImportForm from './coupon-import-form';
+import CouponSummary, { CouponLabelOption, CouponReport, CouponReportFilter } from './coupon-summary';
 import CouponTableColumns from './coupon-table-columns';
 
 interface Props {
    courses: Course[];
    coupons: Pagination<CourseCoupon>;
+   couponLabels: CouponLabelOption[];
+   couponReport: CouponReport;
+   reportFilter: CouponReportFilter;
 }
 
-const CouponsIndex = ({ coupons, courses }: Props) => {
+const CouponsIndex = ({ coupons, courses, couponLabels, couponReport, reportFilter }: Props) => {
    const [sorting, setSorting] = React.useState<SortingState>([]);
    const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
    const [deleteTarget, setDeleteTarget] = React.useState<{ type: 'single' | 'bulk'; id?: number } | null>(null);
@@ -39,7 +43,7 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
 
    const table = useReactTable({
       data: coupons.data,
-      columns: CouponTableColumns({ courses, onDelete: handleDelete }),
+      columns: CouponTableColumns({ courses, labels: couponLabels, onDelete: handleDelete }),
       onSortingChange: setSorting,
       onRowSelectionChange: setRowSelection,
       getCoreRowModel: getCoreRowModel(),
@@ -96,6 +100,7 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
                   <CouponForm
                      title="Create Coupon"
                      courses={courses}
+                     labels={couponLabels}
                      handler={
                         <Button>
                            <Plus className="mr-2 h-4 w-4" />
@@ -105,6 +110,8 @@ const CouponsIndex = ({ coupons, courses }: Props) => {
                   />
                </div>
             </div>
+
+            <CouponSummary report={couponReport} labels={couponLabels} reportFilter={reportFilter} />
 
             <Card>
                <div className="flex items-center justify-between">

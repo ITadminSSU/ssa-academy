@@ -17,6 +17,7 @@ class CourseCoupon extends Model
     protected $fillable = [
         'created_by',
         'course_id',
+        'course_coupon_label_id',
         'code',
         'discount_type',
         'discount',
@@ -43,6 +44,11 @@ class CourseCoupon extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function label(): BelongsTo
+    {
+        return $this->belongsTo(CourseCouponLabel::class, 'course_coupon_label_id');
     }
 
     public function user(): BelongsTo
