@@ -9,6 +9,7 @@ import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, us
 import { ReactNode } from 'react';
 import ActiveSubscriptionColumns, { ActiveSubscriptionRow } from './partials/active-subscription-columns';
 import ActiveSubscriptionFilters from './partials/active-subscription-filters';
+import SubscriptionStatusChart, { SubscriptionSummaryRow } from './partials/subscription-status-chart';
 
 interface CourseOption {
    id: number;
@@ -18,10 +19,11 @@ interface CourseOption {
 interface Props extends SharedData {
    subscriptions: Pagination<ActiveSubscriptionRow>;
    courses: CourseOption[];
+   subscriptionSummary?: SubscriptionSummaryRow[];
    error?: string | null;
 }
 
-const ActiveSubscriptions = ({ subscriptions, courses, error, translate }: Props) => {
+const ActiveSubscriptions = ({ subscriptions, courses, subscriptionSummary = [], error, translate }: Props) => {
    const { dashboard } = translate;
 
    const table = useReactTable({
@@ -33,7 +35,9 @@ const ActiveSubscriptions = ({ subscriptions, courses, error, translate }: Props
    });
 
    return (
-      <Card>
+      <div className="space-y-6">
+         <SubscriptionStatusChart rows={subscriptionSummary} />
+         <Card>
          <TableFilter
             data={subscriptions}
             title="Active subscriptions"
@@ -73,7 +77,8 @@ const ActiveSubscriptions = ({ subscriptions, courses, error, translate }: Props
          </Table>
 
          <TableFooter className="mt-1 p-5 sm:p-7" routeName="payment-reports.active-subscriptions.index" paginationInfo={subscriptions} />
-      </Card>
+         </Card>
+      </div>
    );
 };
 

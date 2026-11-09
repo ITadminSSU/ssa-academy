@@ -117,12 +117,17 @@
 
 .evt-hero {
    position: relative;
+   display: flex;
+   flex-direction: column;
    min-height: 420px;
    padding-right: 410px;
    padding-bottom: 44px;
 }
 
 .evt-hero-copy {
+   display: flex;
+   flex: 1 1 auto;
+   flex-direction: column;
    min-width: 0;
 }
 
@@ -159,7 +164,7 @@
 .evt-intro {
    margin-top: 16px;
    color: var(--evt-navy);
-   font-size: clamp(22px, 2.15vw, 30px);
+   font-size: clamp(24px, 2.3vw, 32px);
    font-weight: 800;
    letter-spacing: -0.02em;
    line-height: 1.15;
@@ -169,7 +174,7 @@
    max-width: 700px;
    margin-top: 8px;
    color: #16365c;
-   font-size: clamp(17px, 1.5vw, 21px);
+   font-size: clamp(19px, 1.65vw, 23px);
    font-weight: 600;
    line-height: 1.4;
 }
@@ -194,7 +199,7 @@
    gap: 10px;
    padding-right: 16px;
    color: var(--evt-navy);
-   font-size: 16px;
+   font-size: 18px;
    font-weight: 800;
    line-height: 1.05;
    letter-spacing: -0.01em;
@@ -261,6 +266,7 @@
    margin-top: 0;
    padding: 12px 28px;
    border-radius: 14px;
+   font-size: 18px;
 }
 
 .evt-btn:hover {
@@ -281,7 +287,7 @@
    max-width: none;
    margin: 0;
    color: var(--evt-navy);
-   font-size: 18px;
+   font-size: 20px;
    font-weight: 700;
    letter-spacing: -0.01em;
    line-height: 1.25;
@@ -498,7 +504,7 @@
    margin-top: 12px;
    color: #1c4574;
    font-family: Barlow, sans-serif;
-   font-size: 16px;
+   font-size: 18px;
    font-weight: 600;
    line-height: 1.35;
 }
@@ -601,7 +607,7 @@
 
 .evt-why-banner {
    display: grid;
-   grid-template-columns: minmax(0, 1fr) min(629px, 46vw);
+   grid-template-columns: minmax(0, 1fr) min(720px, 46vw);
    align-items: center;
    column-gap: 20px;
    padding: 18px 0;
@@ -610,8 +616,8 @@
 
 .evt-why-photo {
    display: block;
-   width: 629px;
-   max-width: 100%;
+   width: 100%;
+   max-width: 720px;
    height: auto;
    justify-self: end;
    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 100%);
@@ -639,7 +645,7 @@
    max-width: 640px;
    margin-top: 10px;
    color: #ffffff;
-   font-size: 16px;
+   font-size: 18px;
    font-weight: 500;
 }
 
@@ -688,7 +694,7 @@
 
 .evt-why-card p {
    color: var(--evt-red);
-   font-size: 11px;
+   font-size: 13px;
    font-weight: 800;
    letter-spacing: 0.04em;
 }
@@ -696,7 +702,7 @@
 .evt-why-card h3 {
    margin-top: 3px;
    color: var(--evt-navy);
-   font-size: 14px;
+   font-size: 16px;
    font-weight: 900;
    letter-spacing: -0.02em;
    line-height: 1.15;
@@ -706,7 +712,7 @@
    display: block;
    margin-top: 6px;
    color: #4d647c;
-   font-size: 12px;
+   font-size: 14px;
    font-weight: 600;
 }
 
@@ -724,7 +730,7 @@
 .evt-paths-lead {
    margin-top: 8px;
    color: #1d466f;
-   font-size: 16px;
+   font-size: 18px;
    font-weight: 600;
    text-align: center;
 }
@@ -793,7 +799,7 @@
    flex: 1;
    margin-top: 14px;
    color: #1c4574;
-   font-size: 15px;
+   font-size: 17px;
    font-weight: 600;
 }
 
@@ -882,7 +888,7 @@
    position: relative;
    max-width: 720px;
    margin: 10px auto 0;
-   font-size: 16px;
+   font-size: 18px;
    font-weight: 500;
 }
 
@@ -946,7 +952,7 @@
    }
 
    .evt-features li {
-      font-size: 13px;
+      font-size: 15px;
       padding-right: 8px;
    }
 
@@ -1013,7 +1019,7 @@
 
    .evt-features li {
       flex: 1 1 42%;
-      font-size: 14px;
+      font-size: 16px;
    }
 
    .evt-features li:nth-child(odd) {
@@ -1049,8 +1055,8 @@
 
    .evt-why-photo {
       order: -1;
-      width: min(629px, 100%);
-      max-width: 629px;
+      width: min(720px, 100%);
+      max-width: 720px;
       height: auto;
       justify-self: center;
       -webkit-mask-image: none;

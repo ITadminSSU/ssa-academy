@@ -5,11 +5,26 @@ namespace App\Services\Payment;
 use Stripe\Subscription;
 
 /**
- * Reads Stripe subscriptions whose status is active. This class never creates,
- * updates, or cancels a Stripe object.
+ * Reads Stripe subscriptions. This class never creates, updates, or cancels a Stripe object.
  */
 class StripeActiveSubscriptionLister
 {
+    /**
+     * Statuses other than active. Canceled is requested on its own because a Stripe
+     * list with status "all" leaves canceled subscriptions out.
+     *
+     * @var list<string>
+     */
+    public const SUMMARY_STATUSES = [
+        'trialing',
+        'past_due',
+        'unpaid',
+        'paused',
+        'incomplete',
+        'incomplete_expired',
+        'canceled',
+    ];
+
     public function __construct(private StripeCustomerService $stripe) {}
 
     /**
@@ -26,12 +41,70 @@ class StripeActiveSubscriptionLister
      */
     public function list(): array
     {
+        $this->configure();
+
+        return $this->collectStatus('active');
+    }
+
+    /**
+     * @param  list<string>  $statuses
+     * @return list<array{
+     *     stripe_subscription_id: string,
+     *     status: string,
+     *     cancel_at_period_end: bool,
+     *     current_period_end: int|null,
+     *     user_id: int|null,
+     *     course_id: int|null,
+     *     customer_email: string,
+     *     customer_name: string
+     * }>
+     */
+    public function listStatuses(array $statuses): array
+    {
+        $this->configure();
+
+        $rows = [];
+        $seen = [];
+
+        foreach ($statuses as $status) {
+            foreach ($this->collectStatus($status) as $row) {
+                $id = $row['stripe_subscription_id'];
+
+                if ($id === '' || isset($seen[$id])) {
+                    continue;
+                }
+
+                $seen[$id] = true;
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    private function configure(): void
+    {
         try {
             $this->stripe->configureStripe();
         } catch (\Throwable $exception) {
             throw new StripeActiveSubscriptionException('Stripe could not be reached, so the active subscription list is unavailable.', 0, $exception);
         }
+    }
 
+    /**
+     * @return list<array{
+     *     stripe_subscription_id: string,
+     *     status: string,
+     *     cancel_at_period_end: bool,
+     *     current_period_end: int|null,
+     *     user_id: int|null,
+     *     course_id: int|null,
+     *     customer_email: string,
+     *     customer_name: string
+     * }>
+     */
+    private function collectStatus(string $status): array
+    {
         $rows = [];
         $startingAfter = null;
         $pages = 0;
@@ -40,7 +113,7 @@ class StripeActiveSubscriptionLister
         try {
             do {
                 $params = [
-                    'status' => 'active',
+                    'status' => $status,
                     'limit' => 100,
                     'expand' => ['data.customer'],
                 ];
@@ -53,7 +126,7 @@ class StripeActiveSubscriptionLister
                 $pages++;
 
                 foreach ($page->data as $subscription) {
-                    if ((string) ($subscription->status ?? '') !== 'active') {
+                    if (strtolower((string) ($subscription->status ?? '')) !== $status) {
                         continue;
                     }
 
@@ -70,7 +143,11 @@ class StripeActiveSubscriptionLister
         }
 
         if ($hasMore && $pages >= 100) {
-            throw new StripeActiveSubscriptionException('Stripe returned more active subscriptions than this page can show.');
+            $message = $status === 'active'
+                ? 'Stripe returned more active subscriptions than this page can show.'
+                : 'Stripe returned more subscriptions than this page can show.';
+
+            throw new StripeActiveSubscriptionException($message);
         }
 
         return $rows;
@@ -115,7 +192,7 @@ class StripeActiveSubscriptionLister
 
         return [
             'stripe_subscription_id' => (string) $subscription->id,
-            'status' => 'active',
+            'status' => strtolower((string) ($subscription->status ?? '')),
             'cancel_at_period_end' => (bool) ($subscription->cancel_at_period_end ?? false),
             'current_period_end' => is_numeric($periodEnd) ? (int) $periodEnd : null,
             'user_id' => $this->positiveInt($metadata['user_id'] ?? null),

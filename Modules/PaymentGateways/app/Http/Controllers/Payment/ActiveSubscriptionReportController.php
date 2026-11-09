@@ -20,16 +20,19 @@ class ActiveSubscriptionReportController extends Controller
         try {
             $subscriptions = $this->report->paginate($filters, (int) $request->input('page', 1), $this->perPage($request));
             $courses = $this->report->courseOptions();
+            $subscriptionSummary = $this->report->statusSummary($filters);
             $error = null;
         } catch (StripeActiveSubscriptionException $exception) {
             $subscriptions = $this->emptyPage($request);
             $courses = [];
+            $subscriptionSummary = [];
             $error = $exception->getMessage();
         }
 
         return Inertia::render('dashboard/payment-reports/active-subscriptions', [
             'subscriptions' => $subscriptions,
             'courses' => $courses,
+            'subscriptionSummary' => $subscriptionSummary,
             'filters' => $filters,
             'error' => $error,
         ]);
