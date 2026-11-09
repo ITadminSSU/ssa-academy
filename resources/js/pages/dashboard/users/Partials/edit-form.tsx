@@ -103,7 +103,7 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
       password_confirmation: '',
    });
 
-   const { data, put, setData, processing, errors, setDefaults, clearErrors } = useForm(initialData());
+   const { data, put, setData, processing, errors, setDefaults, clearErrors, transform } = useForm(initialData());
 
    const restoreSavedValues = () => {
       const fresh = initialData();
@@ -120,27 +120,33 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
    const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
 
+      // useForm().put() does not apply a transform option. Call transform() first,
+      // or account_type stays in the payload and an operations admin save is rejected.
+      transform((payload) => {
+         const next = canChangeRole ? payload : (({ account_type: _ignored, ...rest }) => rest)(payload);
+         const externalStudent = canChangeRole
+            ? next.account_type === 'external'
+            : user.role === 'student' && next.user_type === 'external';
+
+         const studentAccount = canChangeRole
+            ? next.account_type === 'external' || next.account_type === 'employee'
+            : user.role === 'student';
+
+         return {
+            ...next,
+            pef_tagged: externalStudent ? Boolean(next.pef_tagged) : false,
+            student_label_ids: studentAccount ? next.student_label_ids : [],
+         };
+      });
+
       put(route('users.update', user.id), {
          preserveScroll: true,
-         transform: (payload) => {
-            const next = canChangeRole ? payload : (({ account_type: _ignored, ...rest }) => rest)(payload);
-            const externalStudent = canChangeRole
-               ? next.account_type === 'external'
-               : user.role === 'student' && next.user_type === 'external';
-
-            const studentAccount = canChangeRole
-               ? next.account_type === 'external' || next.account_type === 'employee'
-               : user.role === 'student';
-
-            return {
-               ...next,
-               pef_tagged: externalStudent ? Boolean(next.pef_tagged) : false,
-               student_label_ids: studentAccount ? next.student_label_ids : [],
-            };
-         },
          onSuccess: () => {
             setOpen(false);
             restoreSavedValues();
+         },
+         onFinish: () => {
+            transform((payload) => payload);
          },
       });
    };
@@ -296,10 +302,14 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                      <p className="text-muted-foreground mb-2 text-sm">
                         Saving this tag enrolls the student in the courses selected under Enrollments → PEF package. The access end date is set the first time and does not move if you save again.
                      </p>
-                     <label className="flex items-center gap-2 text-sm">
-                        <Checkbox checked={data.pef_tagged} onCheckedChange={(value) => setData('pef_tagged', value === true)} />
-                        <span>PEF student</span>
-                     </label>
+                     <div className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                           id={`pef-tagged-${user.id}`}
+                           checked={data.pef_tagged}
+                           onCheckedChange={(value) => setData('pef_tagged', value === true)}
+                        />
+                        <label htmlFor={`pef-tagged-${user.id}`}>PEF student</label>
+                     </div>
                      {user.pef_access_ends_at ? (
                         <p className="text-muted-foreground mt-2 text-xs">
                            Access ends {new Date(user.pef_access_ends_at).toLocaleDateString()}. Removing the tag keeps finished work and does not delete the courses.
@@ -368,6 +378,8 @@ const EditForm = ({ user, actionComponent, protectedUserId }: Props) => {
                      </div>
                   </>
                )}
+
+               {!canChangeRole && errors.account_type ? <InputError message={errors.account_type} /> : null}
 
                <LoadingButton loading={processing} className="w-full">
                   {text(button.submit, 'Submit')}
