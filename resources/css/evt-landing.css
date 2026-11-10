@@ -426,12 +426,13 @@
 .evt-step-grid {
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
+   align-items: start;
    gap: 16px;
    margin-top: 28px;
 }
 
 .evt-step {
-   padding: 16px 16px 14px;
+   padding: 12px 14px 12px;
    border-radius: 16px;
    background: #ffffff;
    box-shadow: 0 10px 24px rgb(16 42 78 / 10%);
@@ -447,39 +448,42 @@
 .evt-num {
    display: inline-grid;
    place-items: center;
-   min-width: 74px;
-   height: 56px;
-   padding: 0 10px;
-   border-radius: 12px;
+   min-width: 62px;
+   height: 50px;
+   padding: 0 8px;
+   border-radius: 14px 14px 14px 0;
    background: var(--evt-gold);
    color: #ffffff;
    font-family: Barlow, sans-serif;
-   font-size: 30px;
+   font-size: 26px;
    font-weight: 800;
+   line-height: 1;
 }
 
 .evt-step .evt-icon-bubble {
-   width: 56px;
-   height: 56px;
-   background: #f8e4a4;
+   width: 52px;
+   height: 52px;
+   background: #f8e7b0;
+   color: var(--evt-navy);
 }
 
 .evt-step .evt-icon-bubble svg {
-   width: 32px;
-   height: 32px;
-   stroke-width: 2;
+   width: 30px;
+   height: 30px;
+   stroke-width: 2.2;
 }
 
 .evt-step h3 {
    position: relative;
    display: inline-block;
-   margin-top: 18px;
-   padding-bottom: 8px;
+   margin-top: 10px;
+   padding-bottom: 6px;
    color: var(--evt-navy);
    font-family: Barlow, sans-serif;
    font-size: 20px;
    font-weight: 800;
-   letter-spacing: 0.01em;
+   letter-spacing: 0;
+   line-height: 1.05;
 }
 
 .evt-step h3::after {
@@ -495,17 +499,17 @@
 
 .evt-step p,
 .evt-checks {
-   margin-top: 12px;
+   margin-top: 8px;
    color: var(--evt-navy);
    font-family: Barlow, sans-serif;
-   font-size: 19px;
+   font-size: 20px;
    font-weight: 600;
-   line-height: 1.35;
+   line-height: 1.28;
 }
 
 .evt-checks {
    display: grid;
-   gap: 7px;
+   gap: 4px;
    padding: 0;
    font-weight: 600;
    list-style: none;
@@ -1181,12 +1185,12 @@
    }
 
    .evt-step h3 {
-      font-size: 19px;
+      font-size: 22px;
    }
 
    .evt-step p,
    .evt-checks {
-      font-size: 17px;
+      font-size: 18px;
    }
 
    .evt-session {

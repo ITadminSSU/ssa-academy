@@ -18,6 +18,35 @@ const Icon = ({ name }: { name: string }) => {
             <path d="M22 19H2" />
          </>
       ),
+      stepChart: (
+         <>
+            <path d="M6 18V11" />
+            <path d="M12 18V7" />
+            <path d="M18 18V4" />
+            <path d="M4 18h16" />
+         </>
+      ),
+      stepLaptop: (
+         <>
+            <rect x="4.5" y="4" width="15" height="10" rx="1.4" />
+            <path d="M2 18h20" />
+            <path d="M8 14h8" />
+         </>
+      ),
+      stepPeople: (
+         <>
+            <circle cx="9" cy="7.5" r="2.4" />
+            <path d="M4.4 18c.5-2.8 2.3-4.3 4.6-4.3s4.1 1.5 4.6 4.3" />
+            <circle cx="15.6" cy="8.6" r="1.9" />
+            <path d="M13.2 18c.3-2 1.3-3.1 2.5-3.1 1.2 0 2.2 1.1 2.5 3.1" />
+         </>
+      ),
+      stepShield: (
+         <>
+            <path d="M12 3 5 6.2v6c0 3.8 2.8 6.4 7 7.8 4.2-1.4 7-4 7-7.8v-6z" />
+            <path d="m8.8 12.1 2.2 2.2 4.2-4.3" />
+         </>
+      ),
       clipboard: (
          <>
             <rect x="6" y="4" width="12" height="16" rx="2" />
@@ -240,7 +269,7 @@ export default function EvtLanding() {
                            <div className="evt-step-top">
                               <span className="evt-num">01</span>
                               <span className="evt-icon-bubble">
-                                 <Icon name="chart" />
+                                 <Icon name="stepChart" />
                               </span>
                            </div>
                            <h3>THE OPPORTUNITY</h3>
@@ -250,7 +279,7 @@ export default function EvtLanding() {
                            <div className="evt-step-top">
                               <span className="evt-num">02</span>
                               <span className="evt-icon-bubble">
-                                 <Icon name="laptop" />
+                                 <Icon name="stepLaptop" />
                               </span>
                            </div>
                            <h3>THE TRAINING</h3>
@@ -260,7 +289,7 @@ export default function EvtLanding() {
                            <div className="evt-step-top">
                               <span className="evt-num">03</span>
                               <span className="evt-icon-bubble">
-                                 <Icon name="users" />
+                                 <Icon name="stepPeople" />
                               </span>
                            </div>
                            <h3>YOUR NEXT STEP</h3>
@@ -270,7 +299,7 @@ export default function EvtLanding() {
                            <div className="evt-step-top">
                               <span className="evt-num">04</span>
                               <span className="evt-icon-bubble">
-                                 <Icon name="shield" />
+                                 <Icon name="stepShield" />
                               </span>
                            </div>
                            <h3>MONEYBACK GUARANTEE</h3>
