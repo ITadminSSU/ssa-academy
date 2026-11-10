@@ -24,12 +24,16 @@
       && $fullUpfrontPrice > 0
       && $listPrice > $fullUpfrontPrice + 0.009;
    $formatMoney = fn ($amount) => $currency.' '.number_format((float) $amount, 2);
+   $isChoiceCheckout = in_array($resolvedCheckoutMode, ['one_time_or_monthly', 'one_time_or_installment'], true);
+   $choicePlan = is_array($choice ?? null) ? $choice : null;
    $allowsCoupons = in_array($resolvedCheckoutMode, [
       null,
       'balance',
       'full_launch',
       'upfront_subscription',
       'legacy_one_time',
+      'one_time_or_monthly',
+      'one_time_or_installment',
    ], true);
 
    // Prefer same-origin cover URL for courses (fresh R2 signature via redirect).
@@ -157,6 +161,8 @@
             <p class="text-muted-foreground text-xs leading-relaxed">
                Pay the monthly Project Plans price today to restore full access. Monthly billing continues after this payment. Your saved lessons and progress stay on this course.
             </p>
+         @elseif ($isChoiceCheckout && $choicePlan)
+            @include('paymentgateways::partials.payment.ChoicePlans')
          @else
             <div class="flex items-center justify-between text-sm font-medium">
                <span>Course Price</span>
@@ -218,7 +224,7 @@
                   <p class="text-lg font-semibold uppercase text-emerald-700">{{ $coupon->code }}</p>
                </div>
                <a
-                  href="{{ route('payments.index', ['from' => 'web', 'item' => $item_type, 'id' => $item->id]) }}"
+                  href="{{ route('payments.index', array_filter(['from' => 'web', 'item' => $item_type, 'id' => $item->id, 'plan' => $choicePlan['plan'] ?? null])) }}"
                   class="text-primary text-sm font-semibold underline underline-offset-4"
                >
                   Remove
@@ -236,6 +242,9 @@
                action="{{ route('payments.index', ['from' => 'web', 'item' => $item_type, 'id' => $item->id]) }}"
                class="flex flex-col gap-3 sm:flex-row"
             >
+               @if ($choicePlan)
+                  <input type="hidden" name="plan" value="{{ $choicePlan['plan'] }}">
+               @endif
                <div class="relative flex-1">
                   <input
                      id="coupon"

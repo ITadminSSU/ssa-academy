@@ -35,6 +35,29 @@ class LaunchOfferEnrollmentService
             return null;
         }
 
+        if ($choiceMode = \App\Support\ChoiceBilling::checkoutMode($course)) {
+            $choiceEnrollment = CourseEnrollment::query()
+                ->where('user_id', $user->id)
+                ->where('course_id', $course->id)
+                ->with('subscription')
+                ->first();
+
+            if ($choiceEnrollment?->hasFullAccess()) {
+                return null;
+            }
+
+            if (
+                $course->usesOneTimeOrInstallment()
+                && $choiceEnrollment?->subscription
+                && ! $choiceEnrollment->subscription->choiceInstallmentFinished()
+                && ! $choiceEnrollment->subscription->grantsFullAccess()
+            ) {
+                return 'choice_installment_past_due';
+            }
+
+            return $choiceMode;
+        }
+
         $enrollment = CourseEnrollment::query()
             ->where('user_id', $user->id)
             ->where('course_id', $course->id)

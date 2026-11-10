@@ -20,6 +20,7 @@ class Subscription extends Model
         'stripe_subscription_id',
         'stripe_price_id',
         'installment_paid_count',
+        'choice_installment_completed_at',
         'open_invoice_id',
         'open_invoice_url',
         'status',
@@ -35,6 +36,7 @@ class Subscription extends Model
         'current_period_start' => 'datetime',
         'current_period_end' => 'datetime',
         'installment_paid_count' => 'integer',
+        'choice_installment_completed_at' => 'datetime',
         'cancel_at_period_end' => 'boolean',
         'canceled_at' => 'datetime',
         'grace_ends_at' => 'datetime',
@@ -58,6 +60,11 @@ class Subscription extends Model
     public function paymentHistories(): HasMany
     {
         return $this->hasMany(PaymentHistory::class);
+    }
+
+    public function choiceInstallmentFinished(): bool
+    {
+        return $this->choice_installment_completed_at !== null;
     }
 
     public function grantsFullAccess(): bool

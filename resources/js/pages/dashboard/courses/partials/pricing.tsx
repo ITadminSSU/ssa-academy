@@ -49,6 +49,14 @@ const billingModelLabel = (value: string) => {
       return 'Installment, then monthly';
    }
 
+   if (value === 'one_time_or_monthly') {
+      return 'One-time or monthly';
+   }
+
+   if (value === 'one_time_or_installment') {
+      return 'One-time or installment';
+   }
+
    return 'One-time purchase';
 };
 
@@ -274,6 +282,8 @@ const Pricing = () => {
          { value: 'subscription', label: 'Monthly subscription' },
          { value: 'upfront_subscription', label: 'Upfront + monthly subscription' },
          { value: 'pre_register_subscription', label: 'Pre-registration + monthly subscription' },
+         { value: 'one_time_or_monthly', label: 'One-time or monthly' },
+         { value: 'one_time_or_installment', label: 'One-time or installment' },
       ];
    }, [billingModels]);
 
@@ -291,6 +301,8 @@ const Pricing = () => {
       subscription_price: course.subscription_price ?? '',
       installment_price: course.installment_price ?? '',
       installment_months: course.installment_months ?? '',
+      choice_one_time_compare: course.choice_one_time_compare ?? '',
+      choice_recurring_compare: course.choice_recurring_compare ?? '',
       discount: Boolean(course.discount),
       discount_price: course.discount_price ?? '',
       expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
@@ -345,12 +357,28 @@ const Pricing = () => {
          subscription_price:
             form.subscription_price === '' || form.subscription_price === null ? null : Number(form.subscription_price),
          installment_price:
-            form.billing_model === 'installment_subscription' && form.installment_price !== '' && form.installment_price !== null
+            (form.billing_model === 'installment_subscription' || form.billing_model === 'one_time_or_installment') &&
+            form.installment_price !== '' &&
+            form.installment_price !== null
                ? Number(form.installment_price)
                : null,
          installment_months:
-            form.billing_model === 'installment_subscription' && form.installment_months !== '' && form.installment_months !== null
+            (form.billing_model === 'installment_subscription' || form.billing_model === 'one_time_or_installment') &&
+            form.installment_months !== '' &&
+            form.installment_months !== null
                ? Number(form.installment_months)
+               : null,
+         choice_one_time_compare:
+            (form.billing_model === 'one_time_or_monthly' || form.billing_model === 'one_time_or_installment') &&
+            form.choice_one_time_compare !== '' &&
+            form.choice_one_time_compare !== null
+               ? Number(form.choice_one_time_compare)
+               : null,
+         choice_recurring_compare:
+            (form.billing_model === 'one_time_or_monthly' || form.billing_model === 'one_time_or_installment') &&
+            form.choice_recurring_compare !== '' &&
+            form.choice_recurring_compare !== null
+               ? Number(form.choice_recurring_compare)
                : null,
          discount_price:
             form.discount && form.discount_price !== '' && form.discount_price !== null
@@ -377,6 +405,9 @@ const Pricing = () => {
    const isPreRegisterSubscription = isPaid && data.billing_model === 'pre_register_subscription';
    const isUpfrontSubscription = isPaid && data.billing_model === 'upfront_subscription';
    const isInstallment = isPaid && data.billing_model === 'installment_subscription';
+   const isChoiceMonthly = isPaid && data.billing_model === 'one_time_or_monthly';
+   const isChoiceInstallment = isPaid && data.billing_model === 'one_time_or_installment';
+   const isChoice = isChoiceMonthly || isChoiceInstallment;
    const isSubscription =
       isPaid &&
       (data.billing_model === 'subscription' ||
@@ -538,6 +569,134 @@ const Pricing = () => {
                               <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="one_time" />
                            ) : null}
                         </>
+                     ) : null}
+
+                     {isChoice ? (
+                        <div className="space-y-4">
+                           <div>
+                              <Label>One-time price *</Label>
+                              <Input
+                                 type="number"
+                                 name="price"
+                                 min="1"
+                                 step="0.01"
+                                 value={data.price === null || data.price === undefined ? '' : String(data.price)}
+                                 onChange={(e) => setData('price', e.target.value)}
+                                 placeholder="49.00"
+                              />
+                              <p className="text-muted-foreground mt-1 text-xs">Charged once. The student keeps access with no further payments.</p>
+                              <InputError message={errors.price} />
+                           </div>
+                           <div>
+                              <Label>Crossed-out one-time price</Label>
+                              <Input
+                                 type="number"
+                                 min="1"
+                                 step="0.01"
+                                 value={
+                                    data.choice_one_time_compare === null || data.choice_one_time_compare === undefined
+                                       ? ''
+                                       : String(data.choice_one_time_compare)
+                                 }
+                                 onChange={(e) => setData('choice_one_time_compare', e.target.value)}
+                                 placeholder="99.00"
+                              />
+                              <InputError message={errors.choice_one_time_compare} />
+                           </div>
+                           {isChoiceInstallment ? (
+                              <div className="grid gap-4 sm:grid-cols-2">
+                                 <div>
+                                    <Label>Installment amount *</Label>
+                                    <Input
+                                       type="number"
+                                       min="1"
+                                       step="0.01"
+                                       value={
+                                          data.installment_price === null || data.installment_price === undefined
+                                             ? ''
+                                             : String(data.installment_price)
+                                       }
+                                       onChange={(e) => setData('installment_price', e.target.value)}
+                                       placeholder="15.00"
+                                    />
+                                    <InputError message={errors.installment_price} />
+                                 </div>
+                                 <div>
+                                    <Label>Number of payments *</Label>
+                                    <Input
+                                       type="number"
+                                       min="1"
+                                       step="1"
+                                       value={
+                                          data.installment_months === null || data.installment_months === undefined
+                                             ? ''
+                                             : String(data.installment_months)
+                                       }
+                                       onChange={(e) => setData('installment_months', e.target.value)}
+                                       placeholder="6"
+                                    />
+                                    <p className="text-muted-foreground mt-1 text-xs">Billing stops after the last payment. Access stays.</p>
+                                    <InputError message={errors.installment_months} />
+                                 </div>
+                              </div>
+                           ) : (
+                              <div>
+                                 <Label>Monthly price *</Label>
+                                 <Input
+                                    type="number"
+                                    min="1"
+                                    step="0.01"
+                                    value={
+                                       data.subscription_price === null || data.subscription_price === undefined
+                                          ? ''
+                                          : String(data.subscription_price)
+                                    }
+                                    onChange={(e) => setData('subscription_price', e.target.value)}
+                                    placeholder="15.00"
+                                 />
+                                 <p className="text-muted-foreground mt-1 text-xs">Charged every month until the student cancels.</p>
+                                 <InputError message={errors.subscription_price} />
+                              </div>
+                           )}
+                           <div>
+                              <Label>{isChoiceInstallment ? 'Crossed-out installment amount' : 'Crossed-out monthly price'}</Label>
+                              <Input
+                                 type="number"
+                                 min="1"
+                                 step="0.01"
+                                 value={
+                                    data.choice_recurring_compare === null || data.choice_recurring_compare === undefined
+                                       ? ''
+                                       : String(data.choice_recurring_compare)
+                                 }
+                                 onChange={(e) => setData('choice_recurring_compare', e.target.value)}
+                                 placeholder="20.00"
+                              />
+                              <InputError message={errors.choice_recurring_compare} />
+                           </div>
+                           <Separator />
+                           <div className="space-y-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                 <Label>Stripe checkout</Label>
+                                 {stripeSynced ? (
+                                    <Badge variant="default" className="gap-1">
+                                       <CheckCircle2 className="h-3 w-3" />
+                                       Synced
+                                    </Badge>
+                                 ) : (
+                                    <Badge variant="secondary">Not synced</Badge>
+                                 )}
+                              </div>
+                              <p className="text-muted-foreground text-sm">
+                                 Save first, then sync. This creates only this course’s {isChoiceInstallment ? 'installment' : 'monthly'} price.
+                                 One-time checkout does not need a synced price. Other courses are not changed.
+                              </p>
+                              <Button type="button" variant="outline" disabled={syncing || processing || !stripeActive} onClick={handleStripeSync}>
+                                 <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                                 Sync to Stripe
+                              </Button>
+                           </div>
+                        </div>
                      ) : null}
 
                      {isSubscription ? (

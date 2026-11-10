@@ -51,6 +51,8 @@ class Course extends Model implements HasMedia
         'subscription_price',
         'installment_price',
         'installment_months',
+        'choice_one_time_compare',
+        'choice_recurring_compare',
         'launch_offer_enabled',
         'launch_offer_starts_at',
         'launch_offer_ends_at',
@@ -101,6 +103,8 @@ class Course extends Model implements HasMedia
         'subscription_price' => 'decimal:2',
         'installment_price' => 'decimal:2',
         'installment_months' => 'integer',
+        'choice_one_time_compare' => 'decimal:2',
+        'choice_recurring_compare' => 'decimal:2',
         'launch_offer_enabled' => 'boolean',
         'launch_offer_starts_at' => 'datetime',
         'launch_offer_ends_at' => 'datetime',
@@ -438,6 +442,21 @@ class Course extends Model implements HasMedia
     public function usesInstallmentSubscription(): bool
     {
         return $this->billing_model === CourseBillingModel::INSTALLMENT_SUBSCRIPTION;
+    }
+
+    public function usesOneTimeOrMonthly(): bool
+    {
+        return $this->billing_model === CourseBillingModel::ONE_TIME_OR_MONTHLY;
+    }
+
+    public function usesOneTimeOrInstallment(): bool
+    {
+        return $this->billing_model === CourseBillingModel::ONE_TIME_OR_INSTALLMENT;
+    }
+
+    public function usesChoiceBilling(): bool
+    {
+        return $this->usesOneTimeOrMonthly() || $this->usesOneTimeOrInstallment();
     }
 
     public function installmentPlanLabel(string $symbol = '$'): ?string

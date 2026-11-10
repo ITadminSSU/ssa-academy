@@ -158,7 +158,13 @@ class ExternalCheckoutService
      */
     public function gatewaysForCheckoutMode(Collection $payments, ?string $checkoutMode): Collection
     {
-        if (! in_array($checkoutMode, ['resubscribe', 'installment_subscription'], true)) {
+        if (! in_array($checkoutMode, [
+            'resubscribe',
+            'installment_subscription',
+            'one_time_or_monthly',
+            'one_time_or_installment',
+            'choice_installment_past_due',
+        ], true)) {
             return $payments;
         }
 

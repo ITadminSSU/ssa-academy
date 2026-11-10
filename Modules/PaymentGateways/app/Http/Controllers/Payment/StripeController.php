@@ -16,6 +16,7 @@ use App\Services\Payment\LaunchOfferService;
 use App\Services\Payment\StripeCustomerService;
 use App\Services\Payment\SubscriptionService;
 use App\Services\SettingsService;
+use App\Support\ChoiceBilling;
 use App\Support\PaymentVoucherCopy;
 use App\Support\StripeCheckoutIds;
 use Illuminate\Http\Request;
@@ -96,6 +97,10 @@ class StripeController extends Controller
 
             $mode = $this->launchOfferEnrollment->resolveCheckoutMode($user, $course);
 
+            if (ChoiceBilling::isChoiceMode($mode)) {
+                return $this->startChoiceCheckout($request, $user, $course, (string) $mode);
+            }
+
             return match ($mode) {
                 'deposit' => $this->startFixedAmountCheckout($request, $user, $course, 'deposit', $this->launchOffer->depositAmount($course)),
                 'balance' => $this->startBalanceWithSubscriptionCheckout($request, $user, $course),
@@ -103,7 +108,7 @@ class StripeController extends Controller
                 'upfront_subscription' => $this->startUpfrontSubscriptionCheckout($request, $user, $course),
                 'resubscribe', 'legacy_subscription' => $this->startSubscriptionCheckout($request, $user, $course),
                 'installment_subscription' => $this->startInstallmentCheckout($request, $user, $course),
-                'installment_past_due' => $this->redirectToOpenInstallmentInvoice($user, $course),
+                'installment_past_due', 'choice_installment_past_due' => $this->redirectToOpenInstallmentInvoice($user, $course),
                 default => $this->startOneTimeCheckout($request, $user),
             };
         }
@@ -460,6 +465,199 @@ class StripeController extends Controller
                 'tax_amount' => $pricing['taxAmount'],
                 'coupon_code' => $coupon?->code,
                 'charged_amount' => (float) ($pricing['finalPrice'] ?? 0),
+            ],
+        ]);
+
+        return redirect()->away($response->url);
+    }
+
+    protected function startChoiceCheckout(Request $request, $user, Course $course, string $mode)
+    {
+        $plan = ChoiceBilling::plan($request->input('plan'));
+
+        if (! $plan) {
+            return redirect()
+                ->route('payments.index', [
+                    'from' => $request->from,
+                    'item' => 'course',
+                    'id' => $course->id,
+                ])
+                ->with('error', 'Select a payment option before checkout.');
+        }
+
+        $back = [
+            'from' => $request->from,
+            'item' => 'course',
+            'id' => $course->id,
+            'plan' => $plan,
+        ];
+
+        if ($request->filled('coupon')) {
+            $back['coupon'] = $request->coupon;
+        }
+
+        if ($plan === ChoiceBilling::PLAN_RECURRING && empty($course->stripe_price_id)) {
+            $label = $mode === CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value ? 'installment' : 'monthly';
+
+            return redirect()
+                ->route('payments.index', $back)
+                ->with('error', 'Sync this course to Stripe before the '.$label.' plan can be checked out. One-time payment is still available.');
+        }
+
+        $amount = ChoiceBilling::chargeAmount($course, $plan);
+
+        if ($amount === null) {
+            return redirect()
+                ->route('payments.index', $back)
+                ->with('error', 'This payment option is not ready yet.');
+        }
+
+        $coupon = $this->resolveSubmittedCoupon($course, $request->coupon, $user->id);
+        $pricing = $this->payment->calculateCustomPrice($amount, $coupon);
+
+        if ($plan === ChoiceBilling::PLAN_ONE_TIME) {
+            return $this->startChoiceOneTimeCheckout($request, $user, $course, $pricing, $coupon);
+        }
+
+        return $this->startChoiceRecurringCheckout($request, $user, $course, $mode, $pricing, $coupon);
+    }
+
+    protected function startChoiceOneTimeCheckout(Request $request, $user, Course $course, array $pricing, $coupon)
+    {
+        Stripe::setApiKey($this->stripeSecret);
+        $sessionPayload = [
+            'line_items' => [
+                [
+                    'price_data' => [
+                        'currency' => strtolower($this->stripe->fields['currency']),
+                        'product_data' => $this->stripeProductDataForVoucher(
+                            $course->title,
+                            $coupon,
+                            $pricing,
+                        ),
+                        'unit_amount' => (int) round($pricing['finalPrice'] * 100),
+                    ],
+                    'quantity' => 1,
+                ],
+            ],
+            'mode' => 'payment',
+            'success_url' => StripeCheckoutIds::successUrl(),
+            'cancel_url' => route('payments.stripe.cancel'),
+            'client_reference_id' => (string) $user->id,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'item_type' => 'course',
+                'item_id' => (string) $course->id,
+                'billing_model' => (string) ($course->billing_model?->value ?? $course->billing_model),
+                'choice_plan' => ChoiceBilling::PLAN_ONE_TIME,
+                'launch_offer_mode' => 'legacy_one_time',
+            ],
+        ];
+
+        if ($coupon?->code) {
+            $sessionPayload['metadata']['coupon_code'] = $coupon->code;
+        }
+
+        $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);
+        if ($voucherDescription) {
+            $sessionPayload['payment_intent_data'] = [
+                'description' => $voucherDescription,
+            ];
+        }
+
+        $response = Session::create($sessionPayload);
+
+        setTempStore([
+            'user_id' => $user->id,
+            'properties' => [
+                'from' => $request->from,
+                'item_type' => 'course',
+                'item_id' => $course->id,
+                'billing_model' => (string) ($course->billing_model?->value ?? $course->billing_model),
+                'choice_plan' => ChoiceBilling::PLAN_ONE_TIME,
+                'launch_offer_mode' => 'legacy_one_time',
+                'stripe_id' => $response->id,
+                'tax_amount' => $pricing['taxAmount'],
+                'coupon_code' => $coupon?->code,
+            ],
+        ]);
+
+        return redirect()->away($response->url);
+    }
+
+    protected function startChoiceRecurringCheckout(Request $request, $user, Course $course, string $mode, array $pricing, $coupon)
+    {
+        $this->stripeCustomer->configureStripe();
+        $customerId = $this->stripeCustomer->findOrCreateCustomer($user);
+        Stripe::setApiKey($this->stripeSecret);
+
+        $months = (int) ($course->installment_months ?? 0);
+        $isInstallment = $mode === CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value;
+        $name = $isInstallment
+            ? $course->title.' — '.$months.' monthly payments'
+            : $course->title.' — monthly';
+
+        $subscriptionMetadata = [
+            'user_id' => (string) $user->id,
+            'course_id' => (string) $course->id,
+            'billing_model' => $mode,
+            'choice_plan' => ChoiceBilling::PLAN_RECURRING,
+            'coupon_code' => (string) ($coupon?->code ?? ''),
+            'coupon_discount' => (string) ($pricing['couponDiscount'] ?? 0),
+        ];
+
+        if ($isInstallment) {
+            $subscriptionMetadata['installment_months'] = (string) $months;
+        }
+
+        $subscriptionData = [
+            'metadata' => $subscriptionMetadata,
+        ];
+        $voucherDescription = $this->stripeVoucherDescription($coupon, $pricing);
+        if ($voucherDescription) {
+            $subscriptionData['description'] = $voucherDescription;
+        }
+
+        $response = Session::create([
+            'mode' => 'subscription',
+            'customer' => $customerId,
+            'line_items' => [
+                [
+                    'price_data' => [
+                        'currency' => strtolower($this->stripe->fields['currency']),
+                        'product_data' => $this->stripeProductDataForVoucher($name, $coupon, $pricing),
+                        'unit_amount' => (int) round($pricing['finalPrice'] * 100),
+                        'recurring' => ['interval' => 'month'],
+                    ],
+                    'quantity' => 1,
+                ],
+            ],
+            'success_url' => StripeCheckoutIds::successUrl(),
+            'cancel_url' => route('payments.stripe.cancel'),
+            'client_reference_id' => (string) $user->id,
+            'metadata' => [
+                'user_id' => (string) $user->id,
+                'item_type' => 'course',
+                'item_id' => (string) $course->id,
+                'course_id' => (string) $course->id,
+                'billing_model' => $mode,
+                'choice_plan' => ChoiceBilling::PLAN_RECURRING,
+                'coupon_code' => $coupon?->code,
+            ],
+            'subscription_data' => $subscriptionData,
+        ]);
+
+        setTempStore([
+            'user_id' => $user->id,
+            'properties' => [
+                'from' => $request->from,
+                'item_type' => 'course',
+                'item_id' => $course->id,
+                'billing_model' => $mode,
+                'choice_plan' => ChoiceBilling::PLAN_RECURRING,
+                'stripe_id' => $response->id,
+                'tax_amount' => $pricing['taxAmount'],
+                'coupon_code' => $coupon?->code,
             ],
         ]);
 

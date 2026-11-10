@@ -108,6 +108,12 @@ class SubscriptionService
 
     public function suspend(Subscription $subscription): void
     {
+        if ($subscription->choiceInstallmentFinished()) {
+            $this->setEnrollmentAccess($subscription, EnrollmentAccessStatus::ACTIVE);
+
+            return;
+        }
+
         DB::transaction(function () use ($subscription) {
             $subscription->update([
                 'status' => SubscriptionStatus::CANCELED,
@@ -196,6 +202,17 @@ class SubscriptionService
 
     protected function syncEnrollment(Subscription $subscription): CourseEnrollment
     {
+        if ($subscription->choiceInstallmentFinished()) {
+            $this->setEnrollmentAccess($subscription, EnrollmentAccessStatus::ACTIVE);
+            $existing = CourseEnrollment::query()
+                ->where('subscription_id', $subscription->id)
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
         $accessStatus = $subscription->grantsFullAccess()
             ? EnrollmentAccessStatus::ACTIVE
             : EnrollmentAccessStatus::SUSPENDED;

@@ -5,6 +5,7 @@ namespace App\Services\Payment;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Builds the active-subscription report from a Stripe read. It does not write
@@ -184,10 +185,10 @@ class ActiveSubscriptionReport
             return $this->matched;
         }
 
-        $stripeRows = array_values(array_filter(
+        $stripeRows = $this->withoutFinishedChoiceInstallments(array_values(array_filter(
             $this->stripe->list(),
             fn (array $row) => ($row['status'] ?? '') === 'active',
-        ));
+        )));
 
         $matched = [];
 
@@ -236,7 +237,9 @@ class ActiveSubscriptionReport
             ];
         }
 
-        $extra = $this->stripe->listStatuses(StripeActiveSubscriptionLister::SUMMARY_STATUSES);
+        $extra = $this->withoutFinishedChoiceInstallments(
+            $this->stripe->listStatuses(StripeActiveSubscriptionLister::SUMMARY_STATUSES),
+        );
 
         foreach ($this->attachCourse($extra) as $row) {
             $label = $this->summaryLabel((string) ($row['status'] ?? ''));
@@ -253,6 +256,45 @@ class ActiveSubscriptionReport
         }
 
         return $this->classified = $rows;
+    }
+
+    /**
+     * A finished one-time-or-installment plan is no longer a subscription to tally.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withoutFinishedChoiceInstallments(array $rows): array
+    {
+        if ($rows === [] || ! Schema::hasColumn('subscriptions', 'choice_installment_completed_at')) {
+            return $rows;
+        }
+
+        $ids = array_values(array_filter(array_map(
+            fn (array $row) => (string) ($row['stripe_subscription_id'] ?? ''),
+            $rows,
+        )));
+
+        if ($ids === []) {
+            return $rows;
+        }
+
+        $finished = DB::table('subscriptions')
+            ->whereIn('stripe_subscription_id', $ids)
+            ->whereNotNull('choice_installment_completed_at')
+            ->pluck('stripe_subscription_id')
+            ->all();
+
+        if ($finished === []) {
+            return $rows;
+        }
+
+        $finished = array_flip($finished);
+
+        return array_values(array_filter(
+            $rows,
+            fn (array $row) => ! isset($finished[(string) ($row['stripe_subscription_id'] ?? '')]),
+        ));
     }
 
     private function summaryLabel(string $status): ?string

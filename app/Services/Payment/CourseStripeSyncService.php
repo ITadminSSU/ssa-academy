@@ -26,6 +26,10 @@ class CourseStripeSyncService
             throw new \RuntimeException('Only paid courses can be synced to Stripe.');
         }
 
+        if ($course->usesOneTimeOrMonthly() || $course->usesOneTimeOrInstallment()) {
+            return $this->syncChoiceRecurring($course);
+        }
+
         if ($course->usesInstallmentSubscription()) {
             return $this->syncInstallment($course);
         }
@@ -80,6 +84,11 @@ class CourseStripeSyncService
 
     public function isSynced(Course $course): bool
     {
+        if ($course->usesOneTimeOrMonthly() || $course->usesOneTimeOrInstallment()) {
+            return ! empty($course->stripe_product_id)
+                && ! empty($course->stripe_price_id);
+        }
+
         if ($course->usesInstallmentSubscription()) {
             return ! empty($course->stripe_product_id)
                 && ! empty($course->stripe_price_id)
@@ -89,6 +98,38 @@ class CourseStripeSyncService
         return $course->usesSubscriptionBilling()
             && ! empty($course->stripe_product_id)
             && ! empty($course->stripe_price_id);
+    }
+
+    private function syncChoiceRecurring(Course $course): Course
+    {
+        $amount = $course->usesOneTimeOrInstallment()
+            ? (float) ($course->installment_price ?? 0)
+            : (float) ($course->subscription_price ?? 0);
+        $months = (int) ($course->installment_months ?? 0);
+
+        if ($amount < 1 || ($course->usesOneTimeOrInstallment() && $months < 1)) {
+            throw new \RuntimeException('Set the recurring price before syncing this course to Stripe.');
+        }
+
+        $this->stripeCustomer->configureStripe();
+
+        $currency = strtolower($this->resolveCurrency());
+        $productId = $this->ensureProduct($course);
+        $priceId = $this->ensureMonthlyPrice(
+            $course->stripe_price_id,
+            $productId,
+            $amount,
+            $currency,
+            $course->id,
+            $course->usesOneTimeOrInstallment() ? 'choice_installment' : 'choice_monthly',
+        );
+
+        $course->update([
+            'stripe_product_id' => $productId,
+            'stripe_price_id' => $priceId,
+        ]);
+
+        return $course->fresh();
     }
 
     private function syncInstallment(Course $course): Course

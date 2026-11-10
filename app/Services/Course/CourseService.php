@@ -138,6 +138,11 @@ class CourseService extends MediaService
                $pricing['installment_months'] = $data['installment_months'] ?? null;
             }
 
+            if (Schema::hasColumn('courses', 'choice_one_time_compare')) {
+               $pricing['choice_one_time_compare'] = $data['choice_one_time_compare'] ?? null;
+               $pricing['choice_recurring_compare'] = $data['choice_recurring_compare'] ?? null;
+            }
+
             $course->forceFill($pricing)->save();
 
             $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);

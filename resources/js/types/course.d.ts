@@ -69,10 +69,19 @@ interface Course extends TableCommon {
    level: string;
    language?: string;
    pricing_type: string;
-   billing_model?: 'one_time' | 'subscription' | 'upfront_subscription' | 'pre_register_subscription' | 'installment_subscription';
+   billing_model?:
+      | 'one_time'
+      | 'subscription'
+      | 'upfront_subscription'
+      | 'pre_register_subscription'
+      | 'installment_subscription'
+      | 'one_time_or_monthly'
+      | 'one_time_or_installment';
    subscription_price?: number | null;
    installment_price?: number | null;
    installment_months?: number | null;
+   choice_one_time_compare?: number | null;
+   choice_recurring_compare?: number | null;
    launch_offer_enabled?: boolean;
    launch_offer_starts_at?: string | null;
    launch_offer_ends_at?: string | null;
