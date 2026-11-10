@@ -231,12 +231,9 @@ export default function EvtLanding() {
                   <div className="evt-wrap">
                      <div className="evt-section-head">
                         <span className="evt-section-mark" aria-hidden="true" />
-                        <div>
-                           <p className="evt-section-kicker">YOUR FIRST STEP STARTS HERE</p>
-                           <h2>
-                              BEFORE YOU COMMIT, <span>SEE WHAT&apos;S POSSIBLE.</span>
-                           </h2>
-                        </div>
+                        <h2>
+                           BEFORE YOU COMMIT, <span>SEE WHAT&apos;S POSSIBLE.</span>
+                        </h2>
                      </div>
                      <div className="evt-step-grid">
                         <article className="evt-step">
