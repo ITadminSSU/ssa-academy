@@ -829,6 +829,7 @@
    margin-top: 12px;
    padding: 10px 16px;
    border-radius: 999px;
+   color: var(--evt-navy);
    font-size: 17px;
 }
 
@@ -885,18 +886,18 @@
    position: absolute;
    top: 0;
    bottom: 0;
-   width: 120px;
+   width: 148px;
    background: #fdc000;
 }
 
 .evt-footer::before {
    left: 0;
-   clip-path: polygon(0 0, 100% 0, 42% 100%, 0 100%);
+   clip-path: polygon(0 0, 100% 0, 16% 100%, 0 100%);
 }
 
 .evt-footer::after {
    right: 0;
-   clip-path: polygon(0 0, 100% 0, 100% 100%, 58% 100%);
+   clip-path: polygon(84% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .evt-footer h2 {
@@ -1340,6 +1341,6 @@
 
    .evt-footer::before,
    .evt-footer::after {
-      width: 36px;
+      width: 64px;
    }
 }
