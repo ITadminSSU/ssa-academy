@@ -81,6 +81,61 @@ const Icon = ({ name }: { name: string }) => {
          </>
       ),
       check: <path d="m5 12 4 4 10-8" />,
+      whyGear: (
+         <>
+            <circle cx="12" cy="12" r="2.7" />
+            <path d="M12 4.6a7.4 7.4 0 0 1 0 14.8 7.4 7.4 0 0 1 0-14.8z" />
+            <path d="M12 2.2v2.6M12 19.2v2.6M2.2 12h2.6M19.2 12h2.6M4.8 4.8l1.9 1.9M17.3 17.3l1.9 1.9M19.2 4.8l-1.9 1.9M6.7 17.3l-1.9 1.9" />
+         </>
+      ),
+      whyHelmet: (
+         <>
+            <path d="M4.5 13.2a7.5 7.5 0 0 1 15 0" />
+            <path d="M3 13.2h18" />
+            <path d="M6 13.2v2.2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2.2" />
+            <path d="M12 5.4V8" />
+         </>
+      ),
+      whyClipboard: (
+         <>
+            <rect x="6" y="3.5" width="12" height="17" rx="1.6" />
+            <path d="M9 3.4h6v2.2H9z" />
+            <path d="M9 10.5h6M9 14h4" />
+         </>
+      ),
+      whyChart: (
+         <>
+            <path d="M6 17.5V11" />
+            <path d="M12 17.5V7" />
+            <path d="M18 17.5V4" />
+            <path d="M4 17.5h16" />
+         </>
+      ),
+      pathCap: (
+         <>
+            <path d="m3 10 9-5 9 5-9 4.6z" />
+            <path d="M7.2 12.2v3.4c1.5 1.5 8.1 1.5 9.6 0v-3.4" />
+            <path d="M20 10.4v5" stroke="#f5b400" />
+            <circle cx="20" cy="16.2" r="1.25" fill="#f5b400" stroke="none" />
+         </>
+      ),
+      pathPeople: (
+         <>
+            <circle cx="12" cy="7" r="2.15" />
+            <circle cx="7.2" cy="8.5" r="1.65" />
+            <circle cx="16.8" cy="8.5" r="1.65" />
+            <path d="M8.3 18.2c.35-2.3 1.7-3.5 3.7-3.5s3.35 1.2 3.7 3.5" />
+            <path d="M4 18.2c.25-1.7 1.1-2.6 2.4-2.6" />
+            <path d="M20 18.2c-.25-1.7-1.1-2.6-2.4-2.6" />
+         </>
+      ),
+      pathCase: (
+         <>
+            <rect x="3" y="8" width="18" height="11" rx="1.6" />
+            <path d="M8 8V6.2A1.2 1.2 0 0 1 9.2 5h5.6A1.2 1.2 0 0 1 16 6.2V8" />
+            <path d="M3 13h18" />
+         </>
+      ),
       gear: (
          <>
             <circle cx="12" cy="12" r="3" />
@@ -372,7 +427,7 @@ export default function EvtLanding() {
                   <div className="evt-wrap evt-why-grid">
                      <article className="evt-why-card">
                         <span className="evt-icon-bubble">
-                           <Icon name="gear" />
+                           <Icon name="whyGear" />
                         </span>
                         <div>
                            <p>U.S. STANDARDS TRAINING</p>
@@ -386,7 +441,7 @@ export default function EvtLanding() {
                      </article>
                      <article className="evt-why-card">
                         <span className="evt-icon-bubble">
-                           <Icon name="helmet" />
+                           <Icon name="whyHelmet" />
                         </span>
                         <div>
                            <p>REAL INDUSTRY INSTRUCTION</p>
@@ -400,7 +455,7 @@ export default function EvtLanding() {
                      </article>
                      <article className="evt-why-card">
                         <span className="evt-icon-bubble">
-                           <Icon name="clipboard" />
+                           <Icon name="whyClipboard" />
                         </span>
                         <div>
                            <p>PRACTICAL, HANDS-ON</p>
@@ -414,7 +469,7 @@ export default function EvtLanding() {
                      </article>
                      <article className="evt-why-card">
                         <span className="evt-icon-bubble">
-                           <Icon name="chart" />
+                           <Icon name="whyChart" />
                         </span>
                         <div>
                            <p>CAREER PREPARATION</p>
@@ -439,7 +494,7 @@ export default function EvtLanding() {
                         <article className="evt-path">
                            <span className="evt-path-badge">PATH 01</span>
                            <div className="evt-path-title">
-                              <Icon name="cap" />
+                              <Icon name="pathCap" />
                               <h3>
                                  NEW TO U.S. ESTIMATING?
                                  <span>START HERE.</span>
@@ -454,7 +509,7 @@ export default function EvtLanding() {
                         <article className="evt-path evt-path-featured" id="evt-scholarship">
                            <span className="evt-path-badge">PATH 02</span>
                            <div className="evt-path-title">
-                              <Icon name="users" />
+                              <Icon name="pathPeople" />
                               <h3>
                                  WITH U.S. EXPERIENCE?
                                  <span>APPLY FOR A SCHOLARSHIP.</span>
@@ -477,7 +532,7 @@ export default function EvtLanding() {
                         <article className="evt-path" id="evt-estimator">
                            <span className="evt-path-badge">PATH 03</span>
                            <div className="evt-path-title">
-                              <Icon name="case" />
+                              <Icon name="pathCase" />
                               <h3>READY FOR A DIRECT OPPORTUNITY?</h3>
                            </div>
                            <p className="evt-path-copy">
