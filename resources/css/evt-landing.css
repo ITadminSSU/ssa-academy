@@ -607,17 +607,17 @@
 
 .evt-why-banner {
    display: grid;
-   grid-template-columns: minmax(0, 1fr) min(720px, 46vw);
+   grid-template-columns: minmax(0, 1fr) min(400px, 32vw);
    align-items: center;
    column-gap: 20px;
-   padding: 18px 0;
+   padding: 18px 0 0;
    background: var(--evt-navy);
 }
 
 .evt-why-photo {
    display: block;
    width: 100%;
-   max-width: 720px;
+   max-width: 380px;
    height: auto;
    justify-self: end;
    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 100%);
@@ -631,10 +631,11 @@
 }
 
 .evt-why h2 {
-   max-width: 760px;
+   max-width: none;
    margin-top: 4px;
    color: #ffffff;
-   font-size: clamp(28px, 3.2vw, 40px);
+   font-size: clamp(22px, 1.85vw, 30px);
+   white-space: nowrap;
 }
 
 .evt-why h2 span {
@@ -662,10 +663,12 @@
 }
 
 .evt-why-grid {
+   position: relative;
+   z-index: 1;
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
    gap: 12px;
-   margin-top: 16px;
+   margin-top: -48px;
    padding-bottom: 22px;
 }
 
@@ -1055,18 +1058,23 @@
 
    .evt-why-photo {
       order: -1;
-      width: min(720px, 100%);
-      max-width: 720px;
+      width: min(320px, 78%);
+      max-width: 320px;
       height: auto;
       justify-self: center;
       -webkit-mask-image: none;
       mask-image: none;
    }
 
+   .evt-why-grid {
+      margin-top: 16px;
+   }
+
    .evt-why-banner .evt-wrap {
       padding: 16px 24px 0;
    }
 
+   .evt-why h2,
    .evt-why h2 span {
       white-space: normal;
    }
