@@ -1,9 +1,9 @@
 .evt-page {
    --evt-navy: #012447;
    --evt-navy-deep: #031b38;
-   --evt-ink: #07284a;
+   --evt-ink: #012447;
    --evt-gold: #f5b400;
-   --evt-gold-deep: #fcb004;
+   --evt-gold-deep: #f5b400;
    --evt-yellow: #fec001;
    --evt-red: #e10600;
    --evt-cream: #fbf6ea;
@@ -65,9 +65,9 @@
 
 .evt-topbar {
    background: #fdc000;
-   color: #10233f;
+   color: var(--evt-navy);
    text-align: center;
-   font-size: 15px;
+   font-size: 17px;
    font-weight: 600;
    letter-spacing: 0.01em;
    padding: 9px 16px;
@@ -105,7 +105,7 @@
 
 .evt-header p {
    color: var(--evt-navy);
-   font-size: 15px;
+   font-size: 13px;
    font-weight: 800;
    letter-spacing: 0.08em;
 }
@@ -148,8 +148,8 @@
 
 .evt-hero h1 {
    color: var(--evt-navy);
-   font-size: clamp(52px, 5.5vw, 74px);
-   line-height: 0.86;
+   font-size: 64px;
+   line-height: 0.9;
 }
 
 .evt-h-line {
@@ -158,13 +158,13 @@
 }
 
 .evt-gold-word {
-   color: #f6b000;
+   color: var(--evt-gold);
 }
 
 .evt-intro {
    margin-top: 16px;
    color: var(--evt-navy);
-   font-size: clamp(24px, 2.3vw, 32px);
+   font-size: 26px;
    font-weight: 800;
    letter-spacing: -0.02em;
    line-height: 1.15;
@@ -173,8 +173,8 @@
 .evt-lead {
    max-width: 700px;
    margin-top: 8px;
-   color: #16365c;
-   font-size: clamp(19px, 1.65vw, 23px);
+   color: var(--evt-navy);
+   font-size: 17px;
    font-weight: 600;
    line-height: 1.4;
 }
@@ -199,7 +199,7 @@
    gap: 10px;
    padding-right: 16px;
    color: var(--evt-navy);
-   font-size: 18px;
+   font-size: 16px;
    font-weight: 800;
    line-height: 1.05;
    letter-spacing: -0.01em;
@@ -266,7 +266,7 @@
    margin-top: 0;
    padding: 12px 28px;
    border-radius: 14px;
-   font-size: 18px;
+   font-size: 16px;
 }
 
 .evt-btn:hover {
@@ -287,7 +287,7 @@
    max-width: none;
    margin: 0;
    color: var(--evt-navy);
-   font-size: 20px;
+   font-size: 17px;
    font-weight: 700;
    letter-spacing: -0.01em;
    line-height: 1.25;
@@ -311,7 +311,7 @@
    width: 48px;
    height: 4px;
    border-radius: 3px;
-   background: #f0b400;
+   background: var(--evt-gold);
 }
 
 .evt-mascot {
@@ -391,7 +391,7 @@
 .evt-section-kicker {
    color: var(--evt-red);
    font-family: Barlow, sans-serif;
-   font-size: 22px;
+   font-size: 13px;
    font-weight: 800;
    letter-spacing: 0.01em;
    line-height: 1;
@@ -401,25 +401,27 @@
 .evt-paths h2,
 .evt-why h2,
 .evt-footer h2 {
+   font-family: 'Barlow Condensed', Barlow, sans-serif;
+   font-size: 40px;
    font-weight: 900;
-   letter-spacing: -0.03em;
-   line-height: 1.05;
+   letter-spacing: 0.01em;
+   line-height: 0.95;
 }
 
 .evt-lower .evt-steps h2 {
    margin-top: 10px;
    color: var(--evt-navy);
-   font-family: Barlow, sans-serif;
-   font-size: clamp(36px, 4.2vw, 56px);
-   font-weight: 800;
-   letter-spacing: -0.025em;
-   line-height: 0.98;
+   font-family: 'Barlow Condensed', Barlow, sans-serif;
+   font-size: 40px;
+   font-weight: 900;
+   letter-spacing: 0.01em;
+   line-height: 0.95;
 }
 
 .evt-lower .evt-steps h2 span {
-   color: #eeb534;
-   font-weight: 800;
-   letter-spacing: -0.025em;
+   color: var(--evt-gold);
+   font-weight: 900;
+   letter-spacing: 0.01em;
 }
 
 .evt-steps h2 span,
@@ -457,7 +459,7 @@
    height: 56px;
    padding: 0 10px;
    border-radius: 12px;
-   background: #f6b000;
+   background: var(--evt-gold);
    color: #ffffff;
    font-family: Barlow, sans-serif;
    font-size: 30px;
@@ -496,15 +498,15 @@
    width: 46px;
    height: 5px;
    border-radius: 2px;
-   background: #f6b000;
+   background: var(--evt-gold);
 }
 
 .evt-step p,
 .evt-checks {
    margin-top: 12px;
-   color: #1c4574;
+   color: var(--evt-navy);
    font-family: Barlow, sans-serif;
-   font-size: 18px;
+   font-size: 17px;
    font-weight: 600;
    line-height: 1.35;
 }
@@ -553,7 +555,7 @@
    gap: 10px;
    color: var(--evt-navy);
    font-family: Barlow, sans-serif;
-   font-size: 16px;
+   font-size: 17px;
    font-weight: 700;
    line-height: 1.15;
 }
@@ -576,7 +578,7 @@
    display: block;
    margin: 0;
    font-family: Barlow, sans-serif;
-   font-size: 22px;
+   font-size: 17px;
    font-weight: 800;
    letter-spacing: 0.01em;
    line-height: 1;
@@ -586,7 +588,7 @@
    width: 2px;
    height: 44px;
    align-self: center;
-   background: #e1b663;
+   background: var(--evt-gold);
 }
 
 .evt-session .evt-btn {
@@ -595,7 +597,7 @@
    margin-top: 0;
    padding: 12px 22px;
    border-radius: 18px;
-   font-size: 17px;
+   font-size: 16px;
    font-weight: 800;
    letter-spacing: 0.01em;
 }
@@ -634,32 +636,30 @@
    max-width: none;
    margin-top: 4px;
    color: #ffffff;
-   font-size: clamp(22px, 1.85vw, 30px);
-   white-space: nowrap;
+   font-size: 40px;
+   white-space: normal;
 }
 
 .evt-why h2 span {
-   white-space: nowrap;
+   white-space: normal;
 }
 
 .evt-why-banner p {
    max-width: 640px;
    margin-top: 10px;
    color: #ffffff;
-   font-size: 18px;
+   font-size: 17px;
    font-weight: 500;
 }
 
 .evt-why-banner p.evt-why-kicker {
    max-width: none;
    margin: 0 0 6px;
-   color: #f6c400;
-   font-size: 20px;
+   color: var(--evt-gold);
+   font-size: 13px;
    font-weight: 800;
    letter-spacing: 0.04em;
-   line-height: 1;
-   -webkit-text-stroke: 1.5px #000;
-   paint-order: stroke fill;
+   line-height: 1.2;
 }
 
 .evt-why-grid {
@@ -705,8 +705,8 @@
 .evt-why-card h3 {
    margin-top: 3px;
    color: var(--evt-navy);
-   font-size: 16px;
-   font-weight: 900;
+   font-size: 18px;
+   font-weight: 800;
    letter-spacing: -0.02em;
    line-height: 1.15;
 }
@@ -714,8 +714,8 @@
 .evt-why-card small {
    display: block;
    margin-top: 6px;
-   color: #4d647c;
-   font-size: 14px;
+   color: var(--evt-navy);
+   font-size: 16px;
    font-weight: 600;
 }
 
@@ -726,14 +726,18 @@
 
 .evt-paths h2 {
    color: var(--evt-navy);
-   font-size: clamp(28px, 3.2vw, 40px);
    text-align: center;
+}
+
+.evt-paths h2 span,
+.evt-footer h2 span {
+   white-space: nowrap;
 }
 
 .evt-paths-lead {
    margin-top: 8px;
-   color: #1d466f;
-   font-size: 18px;
+   color: var(--evt-navy);
+   font-size: 17px;
    font-weight: 600;
    text-align: center;
 }
@@ -763,9 +767,9 @@
    margin-bottom: 14px;
    padding: 5px 14px;
    border-radius: 999px;
-   background: #f6b000;
+   background: var(--evt-gold);
    color: #ffffff;
-   font-size: 12px;
+   font-size: 13px;
    font-weight: 800;
    letter-spacing: 0.04em;
    line-height: 1.2;
@@ -787,8 +791,8 @@
 
 .evt-path h3 {
    color: var(--evt-navy);
-   font-size: 20px;
-   font-weight: 900;
+   font-size: 18px;
+   font-weight: 800;
    letter-spacing: -0.03em;
    line-height: 1.05;
 }
@@ -801,18 +805,18 @@
 .evt-path-copy {
    flex: 1;
    margin-top: 14px;
-   color: #1c4574;
+   color: var(--evt-navy);
    font-size: 17px;
    font-weight: 600;
 }
 
 .evt-path .evt-btn {
    width: 100%;
-   min-height: 44px;
+   min-height: 48px;
    margin-top: 14px;
    padding: 10px 16px;
    border-radius: 999px;
-   font-size: 13px;
+   font-size: 16px;
 }
 
 .evt-path-featured {
@@ -850,7 +854,7 @@
 .evt-qualify svg {
    flex: 0 0 auto;
    margin-top: 2px;
-   color: #f6b000;
+   color: var(--evt-gold);
 }
 
 .evt-footer {
@@ -884,14 +888,13 @@
 
 .evt-footer h2 {
    position: relative;
-   font-size: clamp(28px, 3.6vw, 44px);
 }
 
 .evt-footer p {
    position: relative;
    max-width: 720px;
    margin: 10px auto 0;
-   font-size: 18px;
+   font-size: 17px;
    font-weight: 500;
 }
 
@@ -936,7 +939,7 @@
    }
 
    .evt-hero h1 {
-      font-size: clamp(34px, 8.2vw, 64px);
+      font-size: clamp(40px, 6.2vw, 56px);
    }
 
    .evt-mascot {
@@ -988,7 +991,7 @@
 
    .evt-topbar {
       padding: 10px 16px;
-      font-size: 14px;
+      font-size: 16px;
       line-height: 1.35;
    }
 
@@ -1038,8 +1041,8 @@
    }
 
    .evt-kicker {
-      font-size: 11px;
-      letter-spacing: 0.06em;
+      font-size: 13px;
+      letter-spacing: 0.04em;
       line-height: 1.35;
    }
 
@@ -1048,16 +1051,38 @@
    }
 
    .evt-hero h1 {
-      font-size: clamp(34px, 11.2vw, 48px);
+      font-size: 36px;
       line-height: 0.9;
    }
 
    .evt-intro {
-      font-size: clamp(20px, 5.6vw, 26px);
+      font-size: 20px;
    }
 
-   .evt-lead {
-      font-size: 17px;
+   .evt-lead,
+   .evt-step p,
+   .evt-checks,
+   .evt-session-items article,
+   .evt-free,
+   .evt-why-banner p,
+   .evt-why-card small,
+   .evt-paths-lead,
+   .evt-path-copy,
+   .evt-footer p {
+      font-size: 16px;
+   }
+
+   .evt-why-banner p.evt-why-kicker,
+   .evt-why-card p,
+   .evt-path-badge,
+   .evt-section-kicker {
+      font-size: 13px;
+   }
+
+   .evt-step h3,
+   .evt-why-card h3,
+   .evt-path h3 {
+      font-size: 16px;
    }
 
    .evt-features {
@@ -1128,7 +1153,7 @@
       align-items: center;
       gap: 8px;
       padding: 14px 16px;
-      font-size: 12px;
+      font-size: 13px;
       line-height: 1.3;
       text-align: center;
    }
@@ -1145,19 +1170,14 @@
    }
 
    .evt-section-kicker {
-      font-size: 15px;
       line-height: 1.25;
    }
 
    .evt-lower .evt-steps h2,
    .evt-paths h2,
+   .evt-why h2,
    .evt-footer h2 {
-      font-size: clamp(26px, 8vw, 34px);
-   }
-
-   .evt-paths-lead,
-   .evt-footer p {
-      font-size: 16px;
+      font-size: 28px;
    }
 
    .evt-session {
@@ -1210,17 +1230,12 @@
    }
 
    .evt-why h2 {
-      font-size: clamp(22px, 6.4vw, 28px);
       line-height: 1.05;
    }
 
    .evt-why h2,
    .evt-why h2 span {
       white-space: normal;
-   }
-
-   .evt-why-banner p {
-      font-size: 16px;
    }
 
    .evt-why-card p {
