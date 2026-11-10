@@ -631,10 +631,11 @@
 }
 
 .evt-why h2 {
-   max-width: 760px;
+   max-width: none;
    margin-top: 4px;
    color: #ffffff;
-   font-size: clamp(28px, 3.2vw, 40px);
+   font-size: clamp(22px, 1.85vw, 30px);
+   white-space: nowrap;
 }
 
 .evt-why h2 span {
@@ -1067,6 +1068,7 @@
       padding: 16px 24px 0;
    }
 
+   .evt-why h2,
    .evt-why h2 span {
       white-space: normal;
    }

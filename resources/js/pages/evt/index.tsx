@@ -334,13 +334,13 @@ export default function EvtLanding() {
                <section className="evt-why">
                   <div className="evt-why-banner">
                      <div className="evt-wrap">
-                        <p className="evt-why-kicker">WHY CHOOSE EVT?</p>
+                        <p className="evt-why-kicker">EVT PROGRAM</p>
                         <h2>
-                           NOT JUST LESSONS. <span>SKILLS YOU CAN PUT TO WORK.</span>
+                           NOT JUST LESSONS, <span>SKILLS YOU CAN PUT TO WORK.</span>
                         </h2>
                         <p>
-                           EVT goes beyond online learning with U.S.-focused estimating training, industry-experienced instructors, and practical
-                           exercises to build career-ready skills.
+                           EVT is not just online learning — it&apos;s U.S.-focused estimating training, real project exposure and instruction, and a
+                           clear pathway to build career-ready skills.
                         </p>
                      </div>
                      <img className="evt-why-photo" src="/assets/evt/hard-hat.jpg" width={1448} height={1086} alt="SSA hard hat on construction blueprints" />
@@ -351,7 +351,7 @@ export default function EvtLanding() {
                            <Icon name="gear" />
                         </span>
                         <div>
-                           <p>01. SPECIALIZED TRAINING</p>
+                           <p>U.S. STANDARDS TRAINING</p>
                            <h3>
                               U.S. PROJECT
                               <br />
@@ -365,7 +365,7 @@ export default function EvtLanding() {
                            <Icon name="helmet" />
                         </span>
                         <div>
-                           <p>02. INDUSTRY INSTRUCTORS</p>
+                           <p>REAL INDUSTRY INSTRUCTION</p>
                            <h3>
                               LEARN FROM
                               <br />
@@ -376,12 +376,12 @@ export default function EvtLanding() {
                      </article>
                      <article className="evt-why-card">
                         <span className="evt-icon-bubble">
-                           <Icon name="file" />
+                           <Icon name="clipboard" />
                         </span>
                         <div>
-                           <p>03. PRACTICAL EXPERIENCE</p>
+                           <p>PRACTICAL, HANDS-ON</p>
                            <h3>
-                              51 PROJECTS.
+                              50 PROJECTS,
                               <br />
                               REAL PRACTICE.
                            </h3>
@@ -393,13 +393,13 @@ export default function EvtLanding() {
                            <Icon name="chart" />
                         </span>
                         <div>
-                           <p>04. CAREER PREPARATION</p>
+                           <p>CAREER PREPARATION</p>
                            <h3>
                               PREPARE FOR
                               <br />
                               WHAT COMES NEXT.
                            </h3>
-                           <small>Skills, support &amp; U.S. opportunities</small>
+                           <small>Skills beyond U.S. estimating</small>
                         </div>
                      </article>
                   </div>
