@@ -48,6 +48,32 @@ class SubscriptionAccessService
             return $this->pefWindowEnded($user) ? 'completed_only' : 'full';
         }
 
+        if ($course->usesOneTimeOrInstallment()) {
+            if (! $enrollment->relationLoaded('subscription')) {
+                $enrollment->load('subscription');
+            }
+
+            $subscription = $enrollment->subscription;
+
+            if ($subscription && ! $subscription->choiceInstallmentFinished()) {
+                return InstallmentBillingRules::accessMode($subscription->status);
+            }
+
+            return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
+        }
+
+        if ($course->usesOneTimeOrMonthly()) {
+            if ($enrollment->hasFullAccess()) {
+                return 'full';
+            }
+
+            if ($enrollment->isSuspended()) {
+                return 'completed_only';
+            }
+
+            return 'none';
+        }
+
         if ($course->usesInstallmentSubscription()) {
             if (! $enrollment->relationLoaded('subscription')) {
                 $enrollment->load('subscription');

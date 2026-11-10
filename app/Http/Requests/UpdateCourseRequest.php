@@ -69,8 +69,12 @@ class UpdateCourseRequest extends FormRequest
         $isMonthlyOnly = ! $isFree && $billingModel === CourseBillingModel::SUBSCRIPTION->value;
         $isOneTime = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME->value;
         $isInstallment = ! $isFree && $billingModel === CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value;
-        $needsMonthlyPrice = $isMonthlyOnly || $isUpfrontSubscription || $launchOfferEnabled || $isInstallment;
-        $needsUpfrontPrice = $isOneTime || $isUpfrontSubscription;
+        $isChoiceMonthly = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME_OR_MONTHLY->value;
+        $isChoiceInstallment = ! $isFree && $billingModel === CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value;
+        $isChoice = $isChoiceMonthly || $isChoiceInstallment;
+        $needsMonthlyPrice = $isMonthlyOnly || $isUpfrontSubscription || $launchOfferEnabled || $isInstallment || $isChoiceMonthly;
+        $needsInstallmentPrice = $isInstallment || $isChoiceInstallment;
+        $needsUpfrontPrice = $isOneTime || $isUpfrontSubscription || $isChoice;
         $catalogPromoAllowed = ! $isFree && ($isOneTime || $isUpfrontSubscription || $launchOfferEnabled);
         $catalogPromoOn = $catalogPromoAllowed
             && filter_var($this->input('catalog_coupon_promo'), FILTER_VALIDATE_BOOLEAN);
@@ -82,11 +86,17 @@ class UpdateCourseRequest extends FormRequest
             'subscription_price' => $needsMonthlyPrice && $this->filled('subscription_price')
                 ? (float) $this->input('subscription_price')
                 : null,
-            'installment_price' => $isInstallment && $this->filled('installment_price')
+            'installment_price' => $needsInstallmentPrice && $this->filled('installment_price')
                 ? (float) $this->input('installment_price')
                 : null,
-            'installment_months' => $isInstallment && $this->filled('installment_months')
+            'installment_months' => $needsInstallmentPrice && $this->filled('installment_months')
                 ? (int) $this->input('installment_months')
+                : null,
+            'choice_one_time_compare' => $isChoice && $this->filled('choice_one_time_compare')
+                ? (float) $this->input('choice_one_time_compare')
+                : null,
+            'choice_recurring_compare' => $isChoice && $this->filled('choice_recurring_compare')
+                ? (float) $this->input('choice_recurring_compare')
                 : null,
             'discount' => $isOneTime
                 ? filter_var($this->input('discount'), FILTER_VALIDATE_BOOLEAN)
@@ -394,7 +404,9 @@ class UpdateCourseRequest extends FormRequest
         $upfrontSubscription = CourseBillingModel::UPFRONT_SUBSCRIPTION->value;
         $preRegisterSubscription = CourseBillingModel::PRE_REGISTER_SUBSCRIPTION->value;
         $installmentSubscription = CourseBillingModel::INSTALLMENT_SUBSCRIPTION->value;
-        $billingModels = "$oneTime,$subscription,$upfrontSubscription,$preRegisterSubscription,$installmentSubscription";
+        $oneTimeOrMonthly = CourseBillingModel::ONE_TIME_OR_MONTHLY->value;
+        $oneTimeOrInstallment = CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value;
+        $billingModels = "$oneTime,$subscription,$upfrontSubscription,$preRegisterSubscription,$installmentSubscription,$oneTimeOrMonthly,$oneTimeOrInstallment";
         $pricingType = (string) $this->input('pricing_type');
         $billingModel = (string) $this->input('billing_model', $oneTime);
         $isPaid = $pricingType === $paid;
@@ -402,6 +414,9 @@ class UpdateCourseRequest extends FormRequest
         $isUpfrontSubscription = $isPaid && $billingModel === $upfrontSubscription;
         $isPreRegistrationSubscription = $isPaid && $billingModel === $preRegisterSubscription;
         $isInstallment = $isPaid && $billingModel === $installmentSubscription;
+        $isChoiceMonthly = $isPaid && $billingModel === $oneTimeOrMonthly;
+        $isChoiceInstallment = $isPaid && $billingModel === $oneTimeOrInstallment;
+        $isChoice = $isChoiceMonthly || $isChoiceInstallment;
         $isSubscription = $isPaid && ($billingModel === $subscription || $isUpfrontSubscription || $isPreRegistrationSubscription);
         $launchOfferEnabled = $isPreRegistrationSubscription;
 
@@ -410,14 +425,18 @@ class UpdateCourseRequest extends FormRequest
             'billing_model' => $isPaid
                 ? "required|string|in:$billingModels"
                 : "nullable|string|in:$billingModels",
-            'price' => ($isOneTime || $isUpfrontSubscription)
+            'price' => ($isOneTime || $isUpfrontSubscription || $isChoice)
                 ? 'required|numeric|min:1'
                 : 'nullable|numeric|min:1',
-            'subscription_price' => ($isSubscription || $launchOfferEnabled || $isInstallment)
+            'subscription_price' => ($isSubscription || $launchOfferEnabled || $isInstallment || $isChoiceMonthly)
                 ? 'required|numeric|min:1'
                 : 'nullable|numeric|min:1',
-            'installment_price' => $isInstallment ? 'required|numeric|min:1' : 'nullable|numeric|min:1',
-            'installment_months' => $isInstallment ? 'required|integer|min:1' : 'nullable|integer|min:1',
+            'installment_price' => ($isInstallment || $isChoiceInstallment) ? 'required|numeric|min:1' : 'nullable|numeric|min:1',
+            'installment_months' => ($isInstallment || $isChoiceInstallment) ? 'required|integer|min:1' : 'nullable|integer|min:1',
+            'choice_one_time_compare' => $isChoice ? 'nullable|numeric|gt:price' : 'nullable',
+            'choice_recurring_compare' => $isChoiceMonthly
+                ? 'nullable|numeric|gt:subscription_price'
+                : ($isChoiceInstallment ? 'nullable|numeric|gt:installment_price' : 'nullable'),
             'discount' => 'boolean',
             'discount_price' => $isOneTime
                 ? 'nullable|numeric|min:1|lt:price|required_if:discount,true'

@@ -109,6 +109,9 @@
                   name="finalPrice"
                   value="{{ $finalPrice }}"
                />
+               @if (! empty($choice['plan']))
+                  <input type="hidden" name="plan" value="{{ $choice['plan'] }}" />
+               @endif
 
                <button
                   id="checkout"

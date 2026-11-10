@@ -13,6 +13,12 @@
                   {{ __('Enrollment price') }}
                @elseif (($checkoutMode ?? null) === 'resubscribe')
                   {{ __('Project Plans') }}
+               @elseif (($checkoutMode ?? null) === 'one_time_or_monthly' && ($choice['plan'] ?? null) === 'recurring')
+                  {{ __('Monthly plan') }}
+               @elseif (($checkoutMode ?? null) === 'one_time_or_installment' && ($choice['plan'] ?? null) === 'recurring')
+                  {{ __('Installment plan') }}
+               @elseif (\App\Support\ChoiceBilling::isChoiceMode($checkoutMode ?? null))
+                  {{ __('One-time payment') }}
                @else
                   {{ __('Price') }}
                @endif
@@ -39,6 +45,18 @@
          @elseif (($checkoutMode ?? null) === 'resubscribe')
             <p class="text-muted-foreground text-xs">
                {{ __('Pay the monthly Project Plans price today to restore full access. Monthly billing continues after this payment. Your saved lessons and progress stay on this course.') }}
+            </p>
+         @elseif (($checkoutMode ?? null) === 'one_time_or_monthly' && ($choice['plan'] ?? null) === 'recurring')
+            <p class="text-muted-foreground text-xs">
+               {{ __('You will be charged this amount monthly. Cancel anytime.') }}
+            </p>
+         @elseif (($checkoutMode ?? null) === 'one_time_or_installment' && ($choice['plan'] ?? null) === 'recurring')
+            <p class="text-muted-foreground text-xs">
+               {{ __('You will be charged this amount each month for :count payments. Billing stops after the last payment.', ['count' => (int) ($choice['months'] ?? 0)]) }}
+            </p>
+         @elseif (\App\Support\ChoiceBilling::isChoiceMode($checkoutMode ?? null))
+            <p class="text-muted-foreground text-xs">
+               {{ __('Pay in full and get complete access. There are no further charges.') }}
             </p>
          @endif
 

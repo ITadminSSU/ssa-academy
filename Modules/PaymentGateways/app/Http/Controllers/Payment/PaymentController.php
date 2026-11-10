@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Services\Course\CourseCouponService;
+use App\Support\ChoiceBilling;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
@@ -54,6 +55,28 @@ class PaymentController extends Controller
                     return redirect()
                         ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
                         ->with('info', 'Employee learners can enroll in this course for free from the course page.');
+                }
+
+                if (
+                    $course->usesOneTimeOrInstallment()
+                    && ($pastDue = CourseEnrollment::query()
+                        ->where('user_id', $user->id)
+                        ->where('course_id', $course->id)
+                        ->with('subscription')
+                        ->first())
+                    && $pastDue->subscription
+                    && ! $pastDue->subscription->choiceInstallmentFinished()
+                    && ! $pastDue->subscription->grantsFullAccess()
+                ) {
+                    $invoiceUrl = $pastDue->subscription->open_invoice_url;
+
+                    if (is_string($invoiceUrl) && $invoiceUrl !== '') {
+                        return redirect()->away($invoiceUrl);
+                    }
+
+                    return redirect()
+                        ->route('course.details', ['slug' => $course->slug, 'id' => $course->id])
+                        ->with('error', 'Your installment payment is past due. Pay the open invoice to unlock this course.');
                 }
 
                 if ($this->externalCheckout->isAlreadyEnrolled($user, $course)) {
@@ -144,6 +167,14 @@ class PaymentController extends Controller
                 ...$this->payment->calculateCustomPrice($amount, $coupon),
                 'coupon' => $coupon,
             ];
+        } elseif (ChoiceBilling::isChoiceMode($checkoutMode) && $course) {
+            $selectedPlan = ChoiceBilling::plan($request->query('plan')) ?? ChoiceBilling::PLAN_RECURRING;
+            $amount = ChoiceBilling::chargeAmount($course, $selectedPlan);
+            $checkoutItem = [
+                ...$checkoutItem,
+                ...$this->payment->calculateCustomPrice((float) ($amount ?? 0), $coupon),
+                'coupon' => $coupon,
+            ];
         } elseif ($checkoutMode === 'upfront_subscription' && isset($course)) {
             $amount = (float) ($course->price ?? 0);
             $checkoutItem = [
@@ -158,6 +189,24 @@ class PaymentController extends Controller
             ];
         }
 
+        $choice = null;
+
+        if ($course && ChoiceBilling::isChoiceMode($checkoutMode)) {
+            $selectedPlan = ChoiceBilling::plan($request->query('plan')) ?? ChoiceBilling::PLAN_RECURRING;
+            $recurringAmount = ChoiceBilling::chargeAmount($course, ChoiceBilling::PLAN_RECURRING);
+            $oneTimeAmount = ChoiceBilling::chargeAmount($course, ChoiceBilling::PLAN_ONE_TIME);
+            $choice = [
+                'plan' => $selectedPlan,
+                'mode' => $checkoutMode,
+                'one_time' => $oneTimeAmount,
+                'one_time_compare' => $course->choice_one_time_compare,
+                'recurring' => $recurringAmount,
+                'recurring_compare' => $course->choice_recurring_compare,
+                'months' => (int) ($course->installment_months ?? 0),
+                'recurring_synced' => ! empty($course->stripe_price_id),
+            ];
+        }
+
         return view('paymentgateways::payment', [
             'id' => $id,
             'from' => $from,
@@ -168,6 +217,7 @@ class PaymentController extends Controller
             'currency' => $currency,
             'launchOffer' => $launchOfferPayload,
             'checkoutMode' => $checkoutMode,
+            'choice' => $choice,
             ...$checkoutItem,
         ]);
     }
