@@ -300,7 +300,7 @@
 }
 
 .evt-experience a {
-   color: var(--evt-red);
+   color: var(--evt-navy);
    font-weight: 800;
    text-decoration: underline;
    text-underline-offset: 3px;

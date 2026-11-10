@@ -150,9 +150,7 @@ export default function EvtLanding() {
                         </span>
                         <span className="evt-h-line evt-gold-word">CONSTRUCTION ESTIMATOR</span>
                      </h1>
-                     <p className="evt-intro">
-                        Introducing the <span className="evt-red">Exclusive Virtual Training (EVT).</span>
-                     </p>
+                     <p className="evt-intro">Introducing the Exclusive Virtual Training (EVT).</p>
                      <p className="evt-lead">
                         Specialized, practical training in <strong>Roofing, Siding &amp; Drywall</strong> with a structured pathway from{' '}
                         <strong>Dec 1, 2026 – Apr 1, 2027</strong>.
