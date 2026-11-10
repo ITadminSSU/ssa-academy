@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, usePage } from '@inertiajs/react';
 import { Menu, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Actions from './partials/actions';
 
 interface NavbarProps {
@@ -21,6 +21,7 @@ const Navbar = ({ heightCover = true }: NavbarProps) => {
    const { isLoggedIn } = useAuth();
    const pathname = url.split('#')[0].split('?')[0] || '/';
    const onHome = pathname === '/';
+   const onEvt = pathname === '/evt';
    const [isSticky, setIsSticky] = useState(false);
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [activeHash, setActiveHash] = useState('academy');
@@ -75,14 +76,20 @@ const Navbar = ({ heightCover = true }: NavbarProps) => {
                </div>
 
                <nav className="hidden items-center gap-5 lg:flex" aria-label="Primary navigation">
-                  {PUBLIC_NAV.map((item) => (
-                     <a
-                        key={item.hash}
-                        href={homeSectionHref(item.hash, pathname)}
-                        className={cn('ssu-pub-nav-link', onHome && activeHash === item.hash && 'is-active')}
-                     >
-                        {item.label}
-                     </a>
+                  {PUBLIC_NAV.map((item, index) => (
+                     <Fragment key={item.hash}>
+                        {index === 1 && (
+                           <Link href={route('evt')} className={cn('ssu-pub-nav-link', onEvt && 'is-active')}>
+                              EVT
+                           </Link>
+                        )}
+                        <a
+                           href={homeSectionHref(item.hash, pathname)}
+                           className={cn('ssu-pub-nav-link', onHome && activeHash === item.hash && 'is-active')}
+                        >
+                           {item.label}
+                        </a>
+                     </Fragment>
                   ))}
                </nav>
 
@@ -94,15 +101,25 @@ const Navbar = ({ heightCover = true }: NavbarProps) => {
             {isMenuOpen && (
                <ScrollArea className="bg-[color:var(--ssu-cream-nav)] h-[calc(100vh-64px)] border-t border-[color:var(--ssu-line)] lg:hidden">
                   <div className="flex flex-col space-y-4 px-6 py-4">
-                     {PUBLIC_NAV.map((item) => (
-                        <a
-                           key={item.hash}
-                           href={homeSectionHref(item.hash, pathname)}
-                           className="ssu-pub-nav-link py-1"
-                           onClick={() => setIsMenuOpen(false)}
-                        >
-                           {item.label}
-                        </a>
+                     {PUBLIC_NAV.map((item, index) => (
+                        <Fragment key={item.hash}>
+                           {index === 1 && (
+                              <Link
+                                 href={route('evt')}
+                                 className={cn('ssu-pub-nav-link py-1', onEvt && 'is-active')}
+                                 onClick={() => setIsMenuOpen(false)}
+                              >
+                                 EVT
+                              </Link>
+                           )}
+                           <a
+                              href={homeSectionHref(item.hash, pathname)}
+                              className="ssu-pub-nav-link py-1"
+                              onClick={() => setIsMenuOpen(false)}
+                           >
+                              {item.label}
+                           </a>
+                        </Fragment>
                      ))}
                      <Link href={route('about')} className="ssu-pub-nav-link py-1" onClick={() => setIsMenuOpen(false)}>
                         About
