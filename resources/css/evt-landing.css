@@ -426,12 +426,15 @@
 .evt-step-grid {
    display: grid;
    grid-template-columns: repeat(4, minmax(0, 1fr));
-   align-items: start;
+   align-items: stretch;
    gap: 16px;
    margin-top: 28px;
 }
 
 .evt-step {
+   display: flex;
+   flex-direction: column;
+   height: 100%;
    padding: 12px 14px 12px;
    border-radius: 16px;
    background: #ffffff;
