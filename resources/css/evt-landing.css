@@ -982,6 +982,16 @@
 }
 
 @media (max-width: 700px) {
+   .evt-page {
+      overflow-x: clip;
+   }
+
+   .evt-topbar {
+      padding: 10px 16px;
+      font-size: 14px;
+      line-height: 1.35;
+   }
+
    .evt-wrap,
    .evt-header,
    .evt-hero-block {
@@ -989,16 +999,28 @@
    }
 
    .evt-header {
-      gap: 10px;
+      flex-wrap: nowrap;
+      gap: 8px;
+      min-width: 0;
    }
 
    .evt-header img {
-      height: 48px;
+      height: 40px;
+      max-width: 38%;
+      object-fit: contain;
+   }
+
+   .evt-header-rule {
+      flex: 0 0 auto;
+      height: 28px;
    }
 
    .evt-header p {
-      font-size: 12px;
-      letter-spacing: 0.04em;
+      min-width: 0;
+      font-size: clamp(10px, 3vw, 13px);
+      letter-spacing: 0.03em;
+      line-height: 1.15;
+      white-space: nowrap;
    }
 
    .evt-hero,
@@ -1015,30 +1037,76 @@
       margin: 18px auto 0;
    }
 
+   .evt-kicker {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      line-height: 1.35;
+   }
+
+   .evt-h-line {
+      white-space: normal;
+   }
+
+   .evt-hero h1 {
+      font-size: clamp(34px, 11.2vw, 48px);
+      line-height: 0.9;
+   }
+
+   .evt-intro {
+      font-size: clamp(20px, 5.6vw, 26px);
+   }
+
+   .evt-lead {
+      font-size: 17px;
+   }
+
    .evt-features {
-      flex-wrap: wrap;
-      row-gap: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      row-gap: 14px;
+      column-gap: 0;
    }
 
-   .evt-features li {
-      flex: 1 1 42%;
-      font-size: 16px;
-   }
-
-   .evt-features li:nth-child(odd) {
+   .evt-features li,
+   .evt-features li + li {
+      min-width: 0;
+      padding: 0 8px 0 0;
       border-left: 0;
-      padding-left: 0;
+      font-size: 15px;
+   }
+
+   .evt-features li:nth-child(even) {
+      padding: 0 0 0 12px;
+      border-left: 1.5px solid #d5dce4;
+   }
+
+   .evt-features .evt-icon-bubble {
+      width: 46px;
+      height: 46px;
+   }
+
+   .evt-features .evt-icon-bubble svg {
+      width: 24px;
+      height: 24px;
    }
 
    .evt-hero-cta {
       width: 100%;
    }
 
+   .evt-hero .evt-btn {
+      min-height: 64px;
+   }
+
    .evt-experience {
       width: 100%;
       max-width: 100%;
+      margin-top: 18px;
       flex-wrap: nowrap;
       justify-content: center;
+      gap: 10px;
+      font-size: 16px;
+      line-height: 1.4;
       white-space: normal;
       text-align: center;
    }
@@ -1047,8 +1115,75 @@
       min-width: 0;
    }
 
+   .evt-experience a {
+      text-underline-offset: 3px;
+   }
+
    .evt-experience i {
-      flex-basis: 28px;
+      flex: 0 0 22px;
+   }
+
+   .evt-strip {
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      font-size: 12px;
+      line-height: 1.3;
+      text-align: center;
+   }
+
+   .evt-strip span {
+      justify-content: center;
+      max-width: 100%;
+      text-align: center;
+   }
+
+   .evt-strip-rule {
+      width: 36px;
+      height: 2px;
+   }
+
+   .evt-section-kicker {
+      font-size: 15px;
+      line-height: 1.25;
+   }
+
+   .evt-lower .evt-steps h2,
+   .evt-paths h2,
+   .evt-footer h2 {
+      font-size: clamp(26px, 8vw, 34px);
+   }
+
+   .evt-paths-lead,
+   .evt-footer p {
+      font-size: 16px;
+   }
+
+   .evt-session {
+      gap: 14px;
+      padding: 16px;
+   }
+
+   .evt-session-items {
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+   }
+
+   .evt-session-items article {
+      justify-content: center;
+   }
+
+   .evt-session-rule {
+      width: 36px;
+      height: 2px;
+   }
+
+   .evt-session .evt-btn {
+      width: 100%;
+      min-height: 64px;
    }
 
    .evt-why-banner {
@@ -1058,8 +1193,8 @@
 
    .evt-why-photo {
       order: -1;
-      width: min(320px, 78%);
-      max-width: 320px;
+      width: min(280px, 72%);
+      max-width: 280px;
       height: auto;
       justify-self: center;
       -webkit-mask-image: none;
@@ -1071,12 +1206,33 @@
    }
 
    .evt-why-banner .evt-wrap {
-      padding: 16px 24px 0;
+      padding: 8px 20px 0;
+   }
+
+   .evt-why h2 {
+      font-size: clamp(22px, 6.4vw, 28px);
+      line-height: 1.05;
    }
 
    .evt-why h2,
    .evt-why h2 span {
       white-space: normal;
+   }
+
+   .evt-why-banner p {
+      font-size: 16px;
+   }
+
+   .evt-why-card p {
+      letter-spacing: 0.02em;
+   }
+
+   .evt-path .evt-btn {
+      min-height: 52px;
+   }
+
+   .evt-footer {
+      padding: 36px 48px 40px;
    }
 
    .evt-footer::before,
