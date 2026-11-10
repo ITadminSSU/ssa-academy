@@ -28,8 +28,8 @@ class CourseCouponController extends Controller
    public function index(Request $request): Response
    {
       $courses = $this->courseCoupon->getCoursesList($request->all());
-      $coupons = $this->courseCoupon->getCouponsList($request->all(), true);
       $reportFilter = $this->reportFilter($request);
+      $coupons = $this->courseCoupon->getCouponsList($request->all(), true, $reportFilter);
 
       return Inertia::render('dashboard/courses/coupons/index', [
          'courses' => $courses,
@@ -160,8 +160,13 @@ class CourseCouponController extends Controller
       ]);
    }
 
+   public function export(Request $request)
+   {
+      return $this->courseCoupon->exportCouponsCsv($request->all(), $this->reportFilter($request));
+   }
+
    /**
-    * Report filters never reach the coupon list query.
+    * The same status and category chips the summary uses. The list treats a status and a category together.
     *
     * @return array{statuses: list<string>, label_ids: list<int>, uncategorized: bool}
     */

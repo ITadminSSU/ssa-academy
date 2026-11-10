@@ -209,3 +209,126 @@ test('a trainer report includes only that trainer coupons and counts stored rede
         ->and($report['successful_redemptions'])->toBe(1)
         ->and(collect($report['rows'])->firstWhere('key', 'active')['coupons'])->toBe(1);
 });
+
+test('the coupon list keeps only the selected status and category', function () {
+    $admin = User::query()->create([
+        'name' => 'Admin',
+        'email' => 'admin@example.com',
+        'role' => 'admin',
+    ]);
+    Auth::login($admin);
+
+    $scholarsLabel = CourseCouponLabel::query()->create(['name' => 'Scholars', 'color' => '#1A344F']);
+    $holidayLabel = CourseCouponLabel::query()->create(['name' => 'Holiday Sale', 'color' => '#ca8a04']);
+
+    DB::table('courses')->insert([
+        'id' => 4,
+        'title' => 'Estimating',
+        'instructor_id' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    CourseCoupon::query()->create([
+        'code' => 'SSA26MARK3',
+        'discount_type' => 'percentage',
+        'discount' => 100,
+        'course_id' => 4,
+        'course_coupon_label_id' => $scholarsLabel->id,
+        'is_active' => true,
+    ]);
+    CourseCoupon::query()->create([
+        'code' => 'SSA26MARK2',
+        'discount_type' => 'percentage',
+        'discount' => 100,
+        'course_coupon_label_id' => $scholarsLabel->id,
+        'is_active' => true,
+        'usage_limit' => 1,
+    ]);
+    CourseCoupon::query()->create([
+        'code' => 'HOLIDAY',
+        'discount_type' => 'fixed',
+        'discount' => 50,
+        'course_coupon_label_id' => $holidayLabel->id,
+        'is_active' => true,
+    ]);
+    CourseCoupon::query()->create([
+        'code' => 'PLAIN',
+        'discount_type' => 'percentage',
+        'discount' => 10,
+        'is_active' => false,
+    ]);
+
+    DB::table('payment_histories')->insert([
+        'coupon' => 'SSA26MARK2',
+        'meta' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $service = new CourseCouponService();
+    $scholars = $service->getCouponsList([], false, ['label_ids' => [$scholarsLabel->id]]);
+    $activeScholars = $service->getCouponsList(['search' => 'ssa', 'per_page' => 1, 'page' => 1], true, [
+        'statuses' => ['active'],
+        'label_ids' => [$scholarsLabel->id],
+    ]);
+    $uncategorized = $service->getCouponsList([], false, ['uncategorized' => true]);
+
+    expect($scholars->pluck('code')->sort()->values()->all())->toBe(['SSA26MARK2', 'SSA26MARK3'])
+        ->and($activeScholars->pluck('code')->all())->toBe(['SSA26MARK3'])
+        ->and($activeScholars->total())->toBe(1)
+        ->and($uncategorized->pluck('code')->all())->toBe(['PLAIN']);
+
+    $csv = csvFromCouponExport($service->exportCouponsCsv(['search' => 'ssa'], ['label_ids' => [$scholarsLabel->id]]));
+    $byCode = collect($csv)->skip(1)->keyBy(fn (array $row) => $row[0]);
+
+    expect($csv[0])->toBe([
+        'Coupon code',
+        'Discount',
+        'Course',
+        'Allowed emails',
+        'Usage',
+        'Valid from',
+        'Valid to',
+        'Category',
+        'Status',
+    ])
+        ->and($byCode->keys()->sort()->values()->all())->toBe(['SSA26MARK2', 'SSA26MARK3'])
+        ->and($byCode['SSA26MARK3'][1])->toBe('100.00% OFF')
+        ->and($byCode['SSA26MARK3'][2])->toBe('Estimating')
+        ->and($byCode['SSA26MARK3'][3])->toBe('Any student')
+        ->and($byCode['SSA26MARK3'][7])->toBe('Scholars')
+        ->and($byCode['SSA26MARK3'][8])->toBe('Active')
+        ->and($byCode['SSA26MARK2'][4])->toBe('1 / 1')
+        ->and($byCode['SSA26MARK2'][8])->toBe('Used Up');
+
+    $empty = csvFromCouponExport($service->exportCouponsCsv(['search' => 'missing'], ['label_ids' => [$scholarsLabel->id]]));
+
+    expect($empty)->toHaveCount(1);
+
+    expect(CourseCoupon::query()->pluck('discount', 'code')->all())->toMatchArray([
+        'SSA26MARK3' => '100.00',
+        'SSA26MARK2' => '100.00',
+        'HOLIDAY' => '50.00',
+        'PLAIN' => '10.00',
+    ]);
+});
+
+function csvFromCouponExport(\Symfony\Component\HttpFoundation\StreamedResponse $response): array
+{
+    ob_start();
+    $response->sendContent();
+    $contents = ob_get_clean();
+    $contents = preg_replace('/^\xEF\xBB\xBF/', '', (string) $contents) ?? '';
+    $rows = [];
+
+    foreach (preg_split("/\r\n|\n|\r/", trim($contents)) as $line) {
+        if ($line === '') {
+            continue;
+        }
+
+        $rows[] = str_getcsv($line);
+    }
+
+    return $rows;
+}

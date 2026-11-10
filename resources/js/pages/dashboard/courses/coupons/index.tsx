@@ -121,6 +121,7 @@ const CouponsIndex = ({ coupons, courses, couponLabels, couponReport, reportFilt
                      globalSearch={true}
                      tablePageSizes={[10, 15, 20, 25]}
                      routeName="course-coupons.index"
+                     exportPath="course-coupons.export"
                   />
                   {selectedCount > 0 && (
                      <div className="flex items-center gap-2 pr-5">

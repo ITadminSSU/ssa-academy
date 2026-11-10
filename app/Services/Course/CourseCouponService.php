@@ -13,6 +13,7 @@ use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Modules\PaymentGateways\Models\PaymentHistory;
 
 class CourseCouponService
@@ -125,45 +126,43 @@ class CourseCouponService
          ->get();
    }
 
-   public function getCouponsList(array $data, bool $paginate = false): LengthAwarePaginator|Collection
+   /**
+    * @param  array{statuses?: list<string>, label_ids?: list<int>, uncategorized?: bool}  $reportFilter
+    */
+   public function getCouponsList(array $data, bool $paginate = false, array $reportFilter = []): LengthAwarePaginator|Collection
    {
-      $page = array_key_exists('coupon_per_page', $data) ? intval($data['coupon_per_page']) : 10;
+      $perPage = $this->couponPerPage($data);
+      $query = $this->couponListQuery($data, ! $this->reportFilterIsActive($reportFilter));
 
-      $search = $data['coupon_search'] ?? $data['search'] ?? null;
+      if ($this->reportFilterIsActive($reportFilter)) {
+         $matched = $this->couponsMatchingListFilter($query->orderBy('created_at', 'desc')->get(), $reportFilter);
 
-      $prefix = CourseCoupon::query()->getConnection()->getTablePrefix();
-      $couponsTable = $prefix.'course_coupons';
+         if (! $paginate) {
+            return $matched->map(fn (CourseCoupon $coupon) => $this->presentCoupon($coupon));
+         }
 
-      $with = ['course:id,title', 'label:id,name,color'];
+         $pageNumber = max(1, (int) ($data['page'] ?? 1));
+         $slice = $matched
+            ->slice(($pageNumber - 1) * $perPage, $perPage)
+            ->values()
+            ->map(fn (CourseCoupon $coupon) => $this->presentCoupon($coupon));
 
-      if (CourseCoupon::assignedEmailTableAvailable()) {
-         $with[] = 'assignedEmailRecords:id,course_coupon_id,email';
+         return new LengthAwarePaginator(
+            $slice,
+            $matched->count(),
+            $perPage,
+            $pageNumber,
+            [
+               'path' => request()->url(),
+               'query' => request()->query(),
+            ],
+         );
       }
 
-      $coupons = CourseCoupon::with($with)
-         ->select('*')
-         ->selectSub(function ($query) use ($couponsTable) {
-            $query->from('payment_histories')
-               ->selectRaw('count(*)')
-               ->where(function ($inner) use ($couponsTable) {
-                  $inner->whereRaw('LOWER(coupon) = LOWER(`'.$couponsTable.'`.`code`)')
-                     ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(meta, "$.coupon_code"))) = LOWER(`'.$couponsTable.'`.`code`)');
-               });
-         }, 'usages_count');
-
-      $this->applyAudienceScope($coupons);
-
-      $coupons = $coupons
-         ->when(!empty($search), function ($query) use ($search) {
-            $query->where('code', 'like', '%' . $search . '%');
-         })
-         ->when(isset($data['is_active']), function ($query) use ($data) {
-            $query->where('is_active', $data['is_active']);
-         })
-         ->orderBy('created_at', 'desc');
+      $query->orderBy('created_at', 'desc');
 
       if ($paginate) {
-         $result = $coupons->paginate($page);
+         $result = $query->paginate($perPage);
          $result->getCollection()->transform(function (CourseCoupon $coupon) {
             return $this->presentCoupon($coupon);
          });
@@ -171,9 +170,42 @@ class CourseCouponService
          return $result;
       }
 
-      return $coupons->get()->transform(function (CourseCoupon $coupon) {
+      return $query->get()->transform(function (CourseCoupon $coupon) {
          return $this->presentCoupon($coupon);
       });
+   }
+
+   /**
+    * @param  array{statuses?: list<string>, label_ids?: list<int>, uncategorized?: bool}  $reportFilter
+    */
+   public function exportCouponsCsv(array $data, array $reportFilter = []): StreamedResponse
+   {
+      $coupons = $this->getCouponsList($data, false, $reportFilter);
+      $filename = 'course-coupons-'.now()->format('Y-m-d').'.csv';
+
+      return response()->streamDownload(function () use ($coupons) {
+         $handle = fopen('php://output', 'w');
+         fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+         fputcsv($handle, [
+            'Coupon code',
+            'Discount',
+            'Course',
+            'Allowed emails',
+            'Usage',
+            'Valid from',
+            'Valid to',
+            'Category',
+            'Status',
+         ]);
+
+         foreach ($coupons as $coupon) {
+            fputcsv($handle, $this->couponExportRow($coupon));
+         }
+
+         fclose($handle);
+      }, $filename, [
+         'Content-Type' => 'text/csv; charset=UTF-8',
+      ]);
    }
 
    /**
@@ -299,6 +331,152 @@ class CourseCouponService
          'total_coupons' => $total,
          'successful_redemptions' => $redemptions,
          'filtered' => $filtered,
+      ];
+   }
+
+   /**
+    * Status chips and category tags both have to match when both are selected.
+    * Several statuses match any of those statuses. Several tags match any of those tags.
+    *
+    * @param  list<string>  $statuses
+    * @param  list<int>  $labelIds
+    */
+   public function couponMatchesListFilter(string $status, ?int $labelId, array $statuses, array $labelIds, bool $uncategorized): bool
+   {
+      $statusSelected = $statuses !== [];
+      $categorySelected = $labelIds !== [] || $uncategorized;
+
+      if (! $statusSelected && ! $categorySelected) {
+         return true;
+      }
+
+      if ($statusSelected && ! in_array($status, $statuses, true)) {
+         return false;
+      }
+
+      if (! $categorySelected) {
+         return true;
+      }
+
+      $matchesLabel = $labelId !== null && in_array($labelId, $labelIds, true);
+      $matchesUncategorized = $uncategorized && $labelId === null;
+
+      return $matchesLabel || $matchesUncategorized;
+   }
+
+   /**
+    * @param  array{statuses?: list<string>, label_ids?: list<int>, uncategorized?: bool}  $filter
+    */
+   private function reportFilterIsActive(array $filter): bool
+   {
+      return ($filter['statuses'] ?? []) !== []
+         || ($filter['label_ids'] ?? []) !== []
+         || (bool) ($filter['uncategorized'] ?? false);
+   }
+
+   private function couponPerPage(array $data): int
+   {
+      $raw = $data['per_page'] ?? $data['coupon_per_page'] ?? 10;
+      $perPage = (int) $raw;
+
+      return $perPage > 0 ? $perPage : 10;
+   }
+
+   private function couponListQuery(array $data, bool $withUsageCount)
+   {
+      $search = $data['coupon_search'] ?? $data['search'] ?? null;
+      $with = ['course:id,title', 'label:id,name,color'];
+
+      if (CourseCoupon::assignedEmailTableAvailable()) {
+         $with[] = 'assignedEmailRecords:id,course_coupon_id,email';
+      }
+
+      $coupons = CourseCoupon::with($with)->select('*');
+
+      if ($withUsageCount) {
+         $prefix = CourseCoupon::query()->getConnection()->getTablePrefix();
+         $couponsTable = $prefix.'course_coupons';
+         $coupons->selectSub(function ($query) use ($couponsTable) {
+            $query->from('payment_histories')
+               ->selectRaw('count(*)')
+               ->where(function ($inner) use ($couponsTable) {
+                  $inner->whereRaw('LOWER(coupon) = LOWER(`'.$couponsTable.'`.`code`)')
+                     ->orWhereRaw('LOWER(JSON_UNQUOTE(JSON_EXTRACT(meta, "$.coupon_code"))) = LOWER(`'.$couponsTable.'`.`code`)');
+               });
+         }, 'usages_count');
+      }
+
+      $this->applyAudienceScope($coupons);
+
+      return $coupons
+         ->when(! empty($search), function ($query) use ($search) {
+            $query->where('code', 'like', '%'.$search.'%');
+         })
+         ->when(isset($data['is_active']), function ($query) use ($data) {
+            $query->where('is_active', $data['is_active']);
+         });
+   }
+
+   /**
+    * @param  SupportCollection<int, CourseCoupon>  $coupons
+    * @param  array{statuses?: list<string>, label_ids?: list<int>, uncategorized?: bool}  $filter
+    * @return SupportCollection<int, CourseCoupon>
+    */
+   private function couponsMatchingListFilter(SupportCollection $coupons, array $filter): SupportCollection
+   {
+      $this->attachRedemptionCounts($coupons);
+
+      $statuses = array_values(array_intersect(CourseCouponStatus::ORDER, $filter['statuses'] ?? []));
+      $labelIds = array_values(array_unique(array_map('intval', $filter['label_ids'] ?? [])));
+      $uncategorized = (bool) ($filter['uncategorized'] ?? false);
+      $now = now();
+
+      return $coupons->filter(function (CourseCoupon $coupon) use ($statuses, $labelIds, $uncategorized, $now) {
+         $status = CourseCouponStatus::key(
+            (bool) $coupon->is_active,
+            $coupon->valid_from,
+            $coupon->valid_to,
+            $coupon->usage_limit,
+            $this->redemptionCount($coupon),
+            $now,
+         );
+         $labelId = $coupon->course_coupon_label_id !== null ? (int) $coupon->course_coupon_label_id : null;
+
+         return $this->couponMatchesListFilter($status, $labelId, $statuses, $labelIds, $uncategorized);
+      })->values();
+   }
+
+   /**
+    * @return list<string>
+    */
+   private function couponExportRow(CourseCoupon $coupon): array
+   {
+      $used = (int) ($coupon->used_count ?? 0);
+      $limit = $coupon->usage_limit;
+      $usage = $limit !== null && (int) $limit > 0 ? $used.' / '.(int) $limit : $used.' used';
+      $discount = number_format((float) $coupon->discount, 2, '.', '');
+      $discountLabel = $coupon->discount_type === 'percentage' ? $discount.'% OFF' : '$'.$discount.' OFF';
+      $emails = $coupon->assigned_emails ?? [];
+      $emailLabel = is_array($emails) && $emails !== [] ? implode(', ', $emails) : 'Any student';
+      $status = CourseCouponStatus::key(
+         (bool) $coupon->is_active,
+         $coupon->valid_from,
+         $coupon->valid_to,
+         $coupon->usage_limit,
+         $used,
+         now(),
+      );
+
+      return [
+         (string) $coupon->code,
+         $discountLabel,
+         $coupon->course?->title ?: 'Global Coupon',
+         $emailLabel,
+         $usage,
+         $coupon->valid_from ? $coupon->valid_from->timezone(config('app.timezone'))->format('M d, Y H:i') : '-',
+         $coupon->valid_to ? $coupon->valid_to->timezone(config('app.timezone'))->format('M d, Y H:i') : '-',
+         (string) ($coupon->label?->name ?? ''),
+         CourseCouponStatus::LABELS[$status] ?? $status,
       ];
    }
 
