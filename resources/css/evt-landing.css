@@ -756,7 +756,7 @@
 
 .evt-path-grid {
    display: grid;
-   grid-template-columns: repeat(3, minmax(0, 1fr));
+   grid-template-columns: repeat(2, minmax(0, 1fr));
    gap: 16px;
    align-items: stretch;
    margin-top: 28px;
@@ -831,19 +831,6 @@
    border-radius: 999px;
    color: var(--evt-navy);
    font-size: 17px;
-}
-
-.evt-path-featured {
-   z-index: 1;
-   background: var(--evt-navy-deep);
-   color: #ffffff;
-   box-shadow: 0 16px 28px rgb(3 27 56 / 22%);
-}
-
-.evt-path-featured h3,
-.evt-path-featured .evt-path-copy,
-.evt-path-featured .evt-qualify {
-   color: #ffffff;
 }
 
 .evt-qualify {
