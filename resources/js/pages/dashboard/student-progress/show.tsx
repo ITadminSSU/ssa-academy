@@ -49,7 +49,7 @@ const UsExperienceStatusBadge = ({
    translate: LanguageTranslations;
 }) => {
    if (status === 'passed') {
-      return <Badge>{translate.dashboard.passed_label}</Badge>;
+      return <Badge>{translate.dashboard.passed_label ?? 'passed'}</Badge>;
    }
 
    if (status === 'failed') {
@@ -57,7 +57,7 @@ const UsExperienceStatusBadge = ({
    }
 
    if (status === 'ongoing') {
-      return <Badge variant="secondary">{translate.dashboard.in_progress}</Badge>;
+      return <Badge variant="secondary">{translate.dashboard.in_progress ?? 'In Progress'}</Badge>;
    }
 
    return <Badge variant="outline">Not started</Badge>;
@@ -122,11 +122,11 @@ const StudentRow = ({
             </TableCell>
             <TableCell>
                <span className="text-sm font-medium">
-                  {formatPercent(row.overall_score_percent, dashboard.no_score_yet)}
+                  {formatPercent(row.overall_score_percent, dashboard.no_score_yet ?? 'No scores yet')}
                </span>
             </TableCell>
             <TableCell>
-               <span className="text-sm">{formatPercent(row.best_quiz_percent, dashboard.no_score_yet)}</span>
+               <span className="text-sm">{formatPercent(row.best_quiz_percent, dashboard.no_score_yet ?? 'No scores yet')}</span>
             </TableCell>
             <TableCell>
                <div className="space-y-1">
@@ -141,18 +141,18 @@ const StudentRow = ({
             </TableCell>
             <TableCell>
                <span className="text-sm">
-                  {submittedAssignments}/{row.assignments.length} {dashboard.submitted}
+                  {submittedAssignments}/{row.assignments.length} {dashboard.submitted ?? 'submitted'}
                </span>
             </TableCell>
             <TableCell>
                <span className="text-sm">
-                  {passedQuizzes}/{row.quizzes.length} {dashboard.passed_label}
+                  {passedQuizzes}/{row.quizzes.length} {dashboard.passed_label ?? 'passed'}
                </span>
             </TableCell>
             <TableCell>
                {row.exams.length > 0 ? (
                   <span className="text-sm">
-                     {row.exams.filter((e) => e.is_passed).length}/{row.exams.length} {dashboard.passed_label}
+                     {row.exams.filter((e) => e.is_passed).length}/{row.exams.length} {dashboard.passed_label ?? 'passed'}
                   </span>
                ) : (
                   <span className="text-muted-foreground text-sm">—</span>
@@ -160,12 +160,12 @@ const StudentRow = ({
             </TableCell>
             <TableCell>
                <Badge variant={row.course_gates.certificate_unlocked ? 'default' : 'secondary'}>
-                  {row.course_gates.certificate_unlocked ? dashboard.certificate_ready : dashboard.in_progress}
+                  {row.course_gates.certificate_unlocked ? (dashboard.certificate_ready ?? 'Ready') : (dashboard.in_progress ?? 'In Progress')}
                </Badge>
             </TableCell>
             <TableCell className="text-end">
                <Button size="sm" variant="ghost" onClick={onToggle}>
-                  {dashboard.details}
+                  {dashboard.details ?? 'Details'}
                   <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
                </Button>
             </TableCell>
@@ -211,7 +211,7 @@ const StudentRow = ({
                                              </span>
                                              <StatusBadge passed={quiz.is_passed} />
                                              <span className="text-muted-foreground text-xs">
-                                                {quiz.attempts} {dashboard.attempts}
+                                                {quiz.attempts} {dashboard.attempts ?? 'Attempts'}
                                              </span>
                                           </>
                                        ) : (
@@ -225,7 +225,7 @@ const StudentRow = ({
                      )}
 
                      <div>
-                        <p className="mb-2 text-sm font-semibold">{dashboard.standalone_exams}</p>
+                        <p className="mb-2 text-sm font-semibold">{dashboard.standalone_exams ?? 'Standalone Exams'}</p>
                         {row.exams.length > 0 ? (
                            <ul className="space-y-2">
                               {row.exams.map((exam) => (
@@ -241,7 +241,7 @@ const StudentRow = ({
                               ))}
                            </ul>
                         ) : (
-                           <p className="text-muted-foreground text-sm">{dashboard.no_standalone_exams}</p>
+                           <p className="text-muted-foreground text-sm">{dashboard.no_standalone_exams ?? 'No standalone exam attempts for this instructor.'}</p>
                         )}
                      </div>
                   </div>
@@ -274,7 +274,7 @@ const StudentRow = ({
                                        <span>{formatPercent(plan.best_percent, dashboard.no_score_yet)}</span>
                                     )}
                                     <span className="text-muted-foreground text-xs">
-                                       {plan.attempts_used}/{plan.max_attempts} {dashboard.attempts}
+                                       {plan.attempts_used}/{plan.max_attempts} {dashboard.attempts ?? 'Attempts'}
                                     </span>
                                  </div>
                                  <div className="mt-2">
@@ -332,7 +332,9 @@ const Show = ({ course, students, enrollments, summary, sort_by, translate }: Pr
                </Button>
                <h1 className="text-2xl font-bold">{course.title}</h1>
                <p className="text-muted-foreground">
-                  {dashboard.grading_roster_description ?? dashboard.student_progress_course_description}
+                  {dashboard.grading_roster_description ??
+                     dashboard.student_progress_course_description ??
+                     'Course-wide grading roster sorted by overall performance score (highest first).'}
                </p>
             </div>
          </div>
@@ -362,7 +364,7 @@ const Show = ({ course, students, enrollments, summary, sort_by, translate }: Pr
             <div className="flex flex-wrap items-center justify-between gap-4 border-b p-5 sm:p-7">
                <TableFilter
                   data={enrollments}
-                  title={dashboard.enrollment_list}
+                  title={dashboard.enrollment_list ?? 'Enrollment List'}
                   globalSearch={true}
                   tablePageSizes={[10, 15, 20, 25]}
                   routeName={progressShowRoute}
@@ -371,16 +373,16 @@ const Show = ({ course, students, enrollments, summary, sort_by, translate }: Pr
                />
 
                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">{dashboard.sort_students_by}</span>
+                  <span className="text-muted-foreground text-sm">{dashboard.sort_students_by ?? 'Sort by'}</span>
                   <Select value={sort_by} onValueChange={handleSortChange}>
                      <SelectTrigger className="w-[240px]">
                         <SelectValue />
                      </SelectTrigger>
                      <SelectContent>
-                        <SelectItem value="name">{dashboard.sort_by_name}</SelectItem>
-                        <SelectItem value="overall_score">{dashboard.sort_by_overall_score}</SelectItem>
-                        <SelectItem value="best_quiz">{dashboard.sort_by_best_quiz}</SelectItem>
-                        <SelectItem value="completion">{dashboard.sort_by_completion}</SelectItem>
+                        <SelectItem value="name">{dashboard.sort_by_name ?? 'Student name (A–Z)'}</SelectItem>
+                        <SelectItem value="overall_score">{dashboard.sort_by_overall_score ?? 'Course score (highest first)'}</SelectItem>
+                        <SelectItem value="best_quiz">{dashboard.sort_by_best_quiz ?? 'Best quiz score (highest first)'}</SelectItem>
+                        <SelectItem value="completion">{dashboard.sort_by_completion ?? 'Completion (highest first)'}</SelectItem>
                      </SelectContent>
                   </Select>
                </div>
@@ -390,14 +392,14 @@ const Show = ({ course, students, enrollments, summary, sort_by, translate }: Pr
                <TableHeader>
                   <TableRow>
                      <TableHead>{dashboard.student}</TableHead>
-                     <TableHead>{dashboard.course_score}</TableHead>
-                     <TableHead>{dashboard.best_quiz_score}</TableHead>
-                     <TableHead>{dashboard.completion}</TableHead>
+                     <TableHead>{dashboard.course_score ?? 'Course Score'}</TableHead>
+                     <TableHead>{dashboard.best_quiz_score ?? 'Best Quiz'}</TableHead>
+                     <TableHead>{dashboard.completion ?? 'Completion'}</TableHead>
                      <TableHead>{dashboard.assignments}</TableHead>
                      <TableHead>{dashboard.quizzes}</TableHead>
-                     <TableHead>{dashboard.standalone_exams}</TableHead>
-                     <TableHead>{dashboard.certificate}</TableHead>
-                     <TableHead className="text-end">{dashboard.details}</TableHead>
+                     <TableHead>{dashboard.standalone_exams ?? 'Standalone Exams'}</TableHead>
+                     <TableHead>{dashboard.certificate ?? 'Certificate'}</TableHead>
+                     <TableHead className="text-end">{dashboard.details ?? 'Details'}</TableHead>
                   </TableRow>
                </TableHeader>
                <TableBody>
