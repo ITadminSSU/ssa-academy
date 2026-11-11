@@ -92,7 +92,7 @@ const Index = ({ courses, summary, translate, auth }: Props) => {
                      <TableHead>{table.course_title}</TableHead>
                      <TableHead>{table.instructor}</TableHead>
                      <TableHead className="text-center">{dashboard.enrolled_students || 'Enrolled Students'}</TableHead>
-                     <TableHead>{dashboard.completion}</TableHead>
+                     <TableHead>{dashboard.completion ?? 'Completion'}</TableHead>
                      <TableHead>{dashboard.assignments}</TableHead>
                      <TableHead>{dashboard.quizzes}</TableHead>
                      <TableHead>{dashboard.status ?? 'Status'}</TableHead>
@@ -118,7 +118,7 @@ const Index = ({ courses, summary, translate, auth }: Props) => {
                                  {tracking?.assignments_submitted ?? 0}/{tracking?.assignment_slots ?? 0}
                               </TableCell>
                               <TableCell className="text-sm">
-                                 {tracking?.quizzes_passed ?? 0}/{tracking?.quiz_slots ?? 0} {dashboard.passed_label}
+                                 {tracking?.quizzes_passed ?? 0}/{tracking?.quiz_slots ?? 0} {dashboard.passed_label ?? 'passed'}
                               </TableCell>
                               <TableCell>
                                  <Badge variant={course.status === 'approved' ? 'default' : 'secondary'} className="capitalize">
