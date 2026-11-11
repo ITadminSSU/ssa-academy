@@ -33,6 +33,104 @@ const formatPercent = (value: number | null | undefined, fallback: string) => {
    return `${value}%`;
 };
 
+const formatVideoPercent = (value: number) => {
+   const rounded = Math.round(value * 10) / 10;
+
+   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+};
+
+const positionItemLabel = (item: { section_title?: string | null; item_title: string }) =>
+   item.section_title ? `${item.section_title} · ${item.item_title}` : item.item_title;
+
+const CoursePositionSummary = ({ position }: { position?: CourseStudentPosition }) => {
+   if (!position) {
+      return null;
+   }
+
+   if (position.status === 'not_started') {
+      return <p className="text-muted-foreground text-xs whitespace-normal">Not started</p>;
+   }
+
+   const lastActive = position.last_active_at ? new Date(position.last_active_at) : null;
+   const lastActiveLabel = lastActive && !Number.isNaN(lastActive.getTime()) ? lastActive.toLocaleString() : null;
+
+   return (
+      <div className="text-muted-foreground space-y-0.5 text-xs whitespace-normal">
+         {position.status === 'finished' && <p className="text-foreground font-medium">Finished</p>}
+         {position.now_on && (
+            <p>
+               <span>Now on: </span>
+               {position.now_on.unavailable ? (
+                  'Current item unavailable'
+               ) : (
+                  <>
+                     {positionItemLabel(position.now_on)}
+                     {position.now_on.video_percent !== null && <> · watching, {formatVideoPercent(position.now_on.video_percent)}%</>}
+                  </>
+               )}
+            </p>
+         )}
+         <p>
+            <span>Last finished: </span>
+            {position.last_finished ? positionItemLabel(position.last_finished) : 'Nothing finished yet'}
+         </p>
+         {lastActiveLabel && <p>Last active {lastActiveLabel}</p>}
+      </div>
+   );
+};
+
+const outlineStatusLabel = (item: CourseStudentPositionItem) => {
+   if (item.status === 'watching' && item.video_percent !== null) {
+      return `Watching, ${formatVideoPercent(item.video_percent)}%`;
+   }
+
+   if (item.status === 'watching') {
+      return 'Watching';
+   }
+
+   if (item.status === 'finished') {
+      return 'Finished';
+   }
+
+   return 'Not started';
+};
+
+const CoursePositionOutline = ({ position }: { position?: CourseStudentPosition }) => {
+   if (!position) {
+      return null;
+   }
+
+   return (
+      <div className="mb-4">
+         <p className="mb-2 text-sm font-semibold">Course position</p>
+         {position.outline.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Not started</p>
+         ) : (
+            <div className="space-y-3">
+               {position.outline.map((section) => (
+                  <div key={section.section_id}>
+                     <p className="text-sm font-medium">{section.section_title}</p>
+                     <ul className="mt-1 space-y-1">
+                        {section.items.map((item) => (
+                           <li
+                              key={`${item.type}-${item.id}`}
+                              className={`flex items-start justify-between gap-3 rounded-md px-2 py-1 text-sm ${
+                                 item.current ? 'bg-background border-primary border-l-2' : ''
+                              }`}
+                           >
+                              <span className="min-w-0 break-words">{item.title}</span>
+                              <span className="text-muted-foreground shrink-0 text-xs">{outlineStatusLabel(item)}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </div>
+               ))}
+            </div>
+         )}
+      </div>
+   );
+};
+
 const StatusBadge = ({ passed, label }: { passed: boolean | null | undefined; label?: string }) => {
    if (passed === null || passed === undefined) {
       return <Badge variant="secondary">{label ?? '—'}</Badge>;
@@ -137,6 +235,7 @@ const StudentRow = ({
                      </span>
                   </div>
                   <Progress value={row.completion.completion} className="h-2" />
+                  <CoursePositionSummary position={row.position} />
                </div>
             </TableCell>
             <TableCell>
@@ -173,6 +272,7 @@ const StudentRow = ({
          {expanded && (
             <TableRow className="bg-muted/30 hover:bg-muted/30">
                <TableCell colSpan={9} className="p-4">
+                  <CoursePositionOutline position={row.position} />
                   <div className="grid gap-4 md:grid-cols-3">
                      {row.assignments.length > 0 && (
                         <div>

@@ -14,6 +14,8 @@ use App\Models\Course\UsExperiencePlan;
 use App\Models\Course\WatchHistory;
 use App\Models\User;
 use App\Support\CourseWelcomeEmailCopy;
+use App\Support\CurriculumSequence;
+use DateTimeInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -47,11 +49,11 @@ class CourseStudentProgressService
         $query = Course::query()
             ->with(['instructor.user'])
             ->withCount('enrollments')
-            ->when(!isAdmin() && $user->role === 'instructor', function ($query) use ($user) {
+            ->when(! isAdmin() && $user->role === 'instructor', function ($query) use ($user) {
                 $query->where('instructor_id', $user->instructor_id);
             })
-            ->when(!empty($data['search']), function ($query) use ($data) {
-                $query->where('title', 'LIKE', '%' . $data['search'] . '%');
+            ->when(! empty($data['search']), function ($query) use ($data) {
+                $query->where('title', 'LIKE', '%'.$data['search'].'%');
             })
             ->orderByDesc('created_at');
 
@@ -68,7 +70,7 @@ class CourseStudentProgressService
     public function getTrackingDashboardSummary(User $user): array
     {
         $courseQuery = Course::query()
-            ->when(!isAdmin() && $user->role === 'instructor', function ($query) use ($user) {
+            ->when(! isAdmin() && $user->role === 'instructor', function ($query) use ($user) {
                 $query->where('instructor_id', $user->instructor_id);
             });
 
@@ -115,7 +117,7 @@ class CourseStudentProgressService
                 ->count();
 
         return [
-            'avg_completion_percent' => !empty($completionSamples)
+            'avg_completion_percent' => ! empty($completionSamples)
                 ? round(array_sum($completionSamples) / count($completionSamples), 1)
                 : 0,
             'assignment_slots' => $assignmentIds->count() * max(1, $enrollmentCount),
@@ -141,10 +143,10 @@ class CourseStudentProgressService
 
         $enrollmentsQuery = CourseEnrollment::with('user')
             ->where('course_id', $course->id)
-            ->when(!empty($data['search']), function ($query) use ($data) {
+            ->when(! empty($data['search']), function ($query) use ($data) {
                 $query->whereHas('user', function ($userQuery) use ($data) {
-                    $userQuery->where('name', 'LIKE', '%' . $data['search'] . '%')
-                        ->orWhere('email', 'LIKE', '%' . $data['search'] . '%');
+                    $userQuery->where('name', 'LIKE', '%'.$data['search'].'%')
+                        ->orWhere('email', 'LIKE', '%'.$data['search'].'%');
                 });
             });
 
@@ -208,6 +210,7 @@ class CourseStudentProgressService
                 ),
                 'best_quiz_percent' => $scores['best_quiz_percent'],
                 'overall_score_percent' => $scores['overall_score_percent'],
+                'position' => $this->buildCoursePosition($course, $watchHistory, $completion),
             ];
         });
 
@@ -237,6 +240,210 @@ class CourseStudentProgressService
             ],
             'sort_by' => $sortBy,
         ];
+    }
+
+    /**
+     * Read-only curriculum location for one learner. Uses the course relations
+     * already loaded for the roster and does not write watch history.
+     *
+     * @param  array{total_items?: int, completed_items?: int, completion?: float|int}  $completion
+     * @return array{
+     *     status: 'not_started'|'in_progress'|'finished',
+     *     now_on: array{section_title: ?string, item_title: string, item_type: ?string, video_percent: ?float, unavailable: bool}|null,
+     *     last_finished: array{section_title: string, item_title: string, item_type: string}|null,
+     *     last_active_at: ?string,
+     *     outline: list<array{section_id: string, section_title: string, items: list<array{id: string, type: string, title: string, status: string, current: bool, video_percent: ?float}>}>
+     * }
+     */
+    public function buildCoursePosition(Course $course, ?WatchHistory $watchHistory, array $completion): array
+    {
+        $items = $this->curriculumItems($course);
+        $completed = $watchHistory ? $this->completedItemKeys($watchHistory) : [];
+        $currentKey = $watchHistory ? $this->currentItemKey($watchHistory) : null;
+        $outline = [];
+        $nowOn = null;
+        $lastFinished = null;
+
+        foreach ($items as $item) {
+            $key = $item['id'].'|'.$item['type'];
+            $isCompleted = isset($completed[$key]);
+            $isCurrent = $currentKey !== null && $currentKey === $key;
+            $videoPercent = null;
+
+            if ($isCurrent && ! $isCompleted && $this->isVideoLessonType($item['lesson_type'])) {
+                $videoPercent = $this->storedVideoPercent($watchHistory, $item['id']);
+            }
+
+            $status = $isCompleted ? 'finished' : ($isCurrent ? 'watching' : 'not_started');
+
+            if (! isset($outline[$item['section_id']])) {
+                $outline[$item['section_id']] = [
+                    'section_id' => $item['section_id'],
+                    'section_title' => $item['section_title'],
+                    'items' => [],
+                ];
+            }
+
+            $outline[$item['section_id']]['items'][] = [
+                'id' => $item['id'],
+                'type' => $item['type'],
+                'title' => $item['title'],
+                'status' => $status,
+                'current' => $isCurrent,
+                'video_percent' => $videoPercent,
+            ];
+
+            if ($isCompleted) {
+                $lastFinished = [
+                    'section_title' => $item['section_title'],
+                    'item_title' => $item['title'],
+                    'item_type' => $item['type'],
+                ];
+            }
+
+            if ($isCurrent) {
+                $nowOn = [
+                    'section_title' => $item['section_title'],
+                    'item_title' => $item['title'],
+                    'item_type' => $item['type'],
+                    'video_percent' => $videoPercent,
+                    'unavailable' => false,
+                ];
+            }
+        }
+
+        if (! $watchHistory) {
+            return [
+                'status' => 'not_started',
+                'now_on' => null,
+                'last_finished' => null,
+                'last_active_at' => null,
+                'outline' => array_values($outline),
+            ];
+        }
+
+        if ($currentKey !== null && $nowOn === null) {
+            $nowOn = [
+                'section_title' => null,
+                'item_title' => 'Current item unavailable',
+                'item_type' => null,
+                'video_percent' => null,
+                'unavailable' => true,
+            ];
+        }
+
+        $finished = (float) ($completion['completion'] ?? 0) >= 100 || filled($watchHistory->completion_date);
+
+        return [
+            'status' => $finished ? 'finished' : 'in_progress',
+            'now_on' => $nowOn,
+            'last_finished' => $lastFinished,
+            'last_active_at' => $this->lastActiveAt($watchHistory),
+            'outline' => array_values($outline),
+        ];
+    }
+
+    /**
+     * @return list<array{id: string, type: string, title: string, section_id: string, section_title: string, lesson_type: ?string}>
+     */
+    private function curriculumItems(Course $course): array
+    {
+        $items = [];
+
+        foreach (CurriculumSequence::flattenCourse($course) as $item) {
+            $section = $item['section'];
+            $id = (string) $item['id'];
+            $model = $item['type'] === 'lesson'
+                ? $section->section_lessons->first(fn ($lesson) => (string) $lesson->id === $id)
+                : $section->section_quizzes->first(fn ($quiz) => (string) $quiz->id === $id);
+
+            if (! $model) {
+                continue;
+            }
+
+            $items[] = [
+                'id' => $id,
+                'type' => $item['type'],
+                'title' => (string) $model->title,
+                'section_id' => (string) $section->id,
+                'section_title' => (string) $section->title,
+                'lesson_type' => $item['type'] === 'lesson' ? (string) ($model->lesson_type ?? '') : null,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array<string, true>
+     */
+    private function completedItemKeys(WatchHistory $watchHistory): array
+    {
+        $keys = [];
+
+        foreach ($watchHistory->getCompletedWatchingItems() as $item) {
+            $keys[(string) $item['id'].'|'.$item['type']] = true;
+        }
+
+        return $keys;
+    }
+
+    private function currentItemKey(WatchHistory $watchHistory): ?string
+    {
+        $id = $watchHistory->current_watching_id;
+        $type = $watchHistory->current_watching_type;
+
+        if ($id === null || $id === '' || ! in_array($type, ['lesson', 'quiz'], true)) {
+            return null;
+        }
+
+        return (string) $id.'|'.$type;
+    }
+
+    private function isVideoLessonType(?string $lessonType): bool
+    {
+        return in_array($lessonType, ['video', 'video_url'], true);
+    }
+
+    private function storedVideoPercent(?WatchHistory $watchHistory, string $lessonId): ?float
+    {
+        if (! $watchHistory) {
+            return null;
+        }
+
+        $raw = $watchHistory->lesson_watch_progress;
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : null;
+        }
+
+        if (! is_array($raw)) {
+            return null;
+        }
+
+        $entry = $raw[$lessonId] ?? $raw[(int) $lessonId] ?? null;
+
+        if (! is_array($entry) || ! array_key_exists('percent', $entry) || $entry['percent'] === null || $entry['percent'] === '') {
+            return null;
+        }
+
+        return (float) $entry['percent'];
+    }
+
+    private function lastActiveAt(WatchHistory $watchHistory): ?string
+    {
+        $updatedAt = $watchHistory->updated_at;
+
+        if ($updatedAt instanceof DateTimeInterface) {
+            return $updatedAt->format(DateTimeInterface::ATOM);
+        }
+
+        if (is_string($updatedAt) && $updatedAt !== '') {
+            return $updatedAt;
+        }
+
+        return null;
     }
 
     /**
@@ -364,7 +571,7 @@ class CourseStudentProgressService
             'best_quiz_percent' => $this->bestQuizPercent($quizzes),
             'graded_assessments' => count($percentages),
             'course_size' => $courseSize,
-            'overall_score_percent' => !empty($percentages)
+            'overall_score_percent' => ! empty($percentages)
                 ? round(array_sum($percentages) / count($percentages), 1)
                 : null,
         ];
@@ -375,7 +582,7 @@ class CourseStudentProgressService
         $best = null;
 
         foreach ($quizzes as $quiz) {
-            if (!$quiz['attempted'] || $quiz['total_mark'] <= 0 || $quiz['score'] === null) {
+            if (! $quiz['attempted'] || $quiz['total_mark'] <= 0 || $quiz['score'] === null) {
                 continue;
             }
 
@@ -524,8 +731,8 @@ class CourseStudentProgressService
     }
 
     /**
-     * @param Collection<int, UsExperiencePlan> $plans
-     * @param Collection<int|string, Collection<int, UsExperienceAttempt>> $attemptsByPlan
+     * @param  Collection<int, UsExperiencePlan>  $plans
+     * @param  Collection<int|string, Collection<int, UsExperienceAttempt>>  $attemptsByPlan
      * @return list<array<string, mixed>>
      */
     private function mapUsExperienceProgress($plans, $attemptsByPlan): array
@@ -538,7 +745,7 @@ class CourseStudentProgressService
             );
             $passed = $planAttempts->contains(fn (UsExperienceAttempt $attempt) => $attempt->isPassed());
             $attemptsUsed = $planAttempts->count();
-            $exhausted = !$passed && $attemptsUsed >= (int) $plan->max_attempts;
+            $exhausted = ! $passed && $attemptsUsed >= (int) $plan->max_attempts;
             $bestPercent = $planAttempts->max('lines_percent');
             $latest = $planAttempts->sortByDesc('id')->first();
 
@@ -574,7 +781,7 @@ class CourseStudentProgressService
 
         $examQuery = Exam::query()->where('status', 'approved');
 
-        if (!isAdmin()) {
+        if (! isAdmin()) {
             $examQuery->where('instructor_id', $course->instructor_id);
         }
 
