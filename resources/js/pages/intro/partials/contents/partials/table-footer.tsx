@@ -1,6 +1,5 @@
+import PageNumberMenu from '@/components/table/page-number-menu';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { getQueryParams } from '@/lib/route';
 import { SharedData } from '@/types/global';
 import { router, usePage } from '@inertiajs/react';
@@ -18,21 +17,6 @@ const TableFooter = (props: Props) => {
    const { current_page, last_page, first_page_url, last_page_url, next_page_url, prev_page_url } = paginationInfo;
    const page = usePage<SharedData>();
    const urlParams = getQueryParams(page.url);
-
-   const dropdownList = [];
-   if (last_page > 0) {
-      for (let i = 1; i <= last_page; i++) {
-         dropdownList.push({
-            key: `${i}`,
-            value: i,
-         });
-      }
-   } else {
-      dropdownList.push({
-         key: '1',
-         value: 1,
-      });
-   }
 
    const gotoPage = (pageNumber: number) => {
       router.get(
@@ -60,10 +44,6 @@ const TableFooter = (props: Props) => {
       );
    };
 
-   const menuItem = (e: number) => {
-      return `text-center py-1 ${current_page === e && 'bg-primary-50'}`;
-   };
-
    return (
       <div className={`space-y-4 ${props.className}`}>
          <div className="flex items-center justify-center">
@@ -73,22 +53,13 @@ const TableFooter = (props: Props) => {
                </strong>
             </span>
             <span className="mr-3">| Go to page:</span>
-            <DropdownMenu>
-               <DropdownMenuTrigger>
-                  <Button type="button" variant="outline" className="h-8 w-[60px] rounded-md border">
-                     {current_page}
-                  </Button>
-               </DropdownMenuTrigger>
-               <DropdownMenuContent align="end" className="min-w-[60px]">
-                  <ScrollArea className="">
-                     {dropdownList.map((item) => (
-                        <DropdownMenuItem key={item.key} onClick={() => gotoPage(item.value)} className={menuItem(item.value)}>
-                           {item.value}
-                        </DropdownMenuItem>
-                     ))}
-                  </ScrollArea>
-               </DropdownMenuContent>
-            </DropdownMenu>
+            <PageNumberMenu
+               currentPage={current_page}
+               lastPage={last_page}
+               onSelect={gotoPage}
+               triggerVariant="outline"
+               triggerClassName="h-8 w-[60px] rounded-md border"
+            />
          </div>
 
          <div className="flex items-center justify-center">
