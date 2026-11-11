@@ -42,6 +42,43 @@ interface CourseStudentUsExperienceProgress {
    latest_attempt_id: number | null;
 }
 
+interface CourseStudentPositionItem {
+   id: string;
+   type: 'lesson' | 'quiz' | string;
+   title: string;
+   status: 'finished' | 'watching' | 'not_started';
+   current: boolean;
+   video_percent: number | null;
+}
+
+interface CourseStudentPositionSection {
+   section_id: string;
+   section_title: string;
+   items: CourseStudentPositionItem[];
+}
+
+interface CourseStudentPositionNowOn {
+   section_title: string | null;
+   item_title: string;
+   item_type: 'lesson' | 'quiz' | string | null;
+   video_percent: number | null;
+   unavailable: boolean;
+}
+
+interface CourseStudentPositionFinished {
+   section_title: string;
+   item_title: string;
+   item_type: 'lesson' | 'quiz' | string;
+}
+
+interface CourseStudentPosition {
+   status: 'not_started' | 'in_progress' | 'finished';
+   now_on: CourseStudentPositionNowOn | null;
+   last_finished: CourseStudentPositionFinished | null;
+   last_active_at: string | null;
+   outline: CourseStudentPositionSection[];
+}
+
 interface CourseStudentProgressRow {
    enrollment: CourseEnrollment;
    completion: CourseCompletion;
@@ -52,6 +89,7 @@ interface CourseStudentProgressRow {
    us_experience?: CourseStudentUsExperienceProgress[];
    best_quiz_percent: number | null;
    overall_score_percent: number | null;
+   position?: CourseStudentPosition;
 }
 
 type StudentProgressSortBy = 'name' | 'completion' | 'overall_score' | 'best_quiz';
