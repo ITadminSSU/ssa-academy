@@ -119,16 +119,6 @@ const Icon = ({ name }: { name: string }) => {
             <circle cx="20" cy="16.2" r="1.25" fill="#f5b400" stroke="none" />
          </>
       ),
-      pathPeople: (
-         <>
-            <circle cx="12" cy="7" r="2.15" />
-            <circle cx="7.2" cy="8.5" r="1.65" />
-            <circle cx="16.8" cy="8.5" r="1.65" />
-            <path d="M8.3 18.2c.35-2.3 1.7-3.5 3.7-3.5s3.35 1.2 3.7 3.5" />
-            <path d="M4 18.2c.25-1.7 1.1-2.6 2.4-2.6" />
-            <path d="M20 18.2c-.25-1.7-1.1-2.6-2.4-2.6" />
-         </>
-      ),
       pathCase: (
          <>
             <rect x="3" y="8" width="18" height="11" rx="1.6" />
@@ -288,8 +278,7 @@ export default function EvtLanding() {
                   <p className="evt-experience">
                      <i aria-hidden="true" />
                      <span>
-                        Have 1 year U.S. experience? <a href="#evt-estimator">Apply as an Estimator</a> or{' '}
-                        <a href="#evt-scholarship">Check for Scholarship.</a>
+                        Have 1 year U.S. experience? <a href="#evt-estimator">Apply as an Estimator</a>
                      </span>
                      <i aria-hidden="true" />
                   </p>
@@ -504,33 +493,10 @@ export default function EvtLanding() {
                            <a className="evt-btn" href="/register">
                               JOIN THE FREE WEBINAR →
                            </a>
-                           <div className="evt-qualify" />
-                        </article>
-                        <article className="evt-path evt-path-featured" id="evt-scholarship">
-                           <span className="evt-path-badge">PATH 02</span>
-                           <div className="evt-path-title">
-                              <Icon name="pathPeople" />
-                              <h3>
-                                 WITH U.S. EXPERIENCE?
-                                 <span>APPLY FOR A SCHOLARSHIP.</span>
-                              </h3>
-                           </div>
-                           <p className="evt-path-copy">
-                              Qualified participants may receive a scholarship, advanced learning, and a chance to help mentor other EVT trainees.
-                           </p>
-                           <a className="evt-btn" href="/register">
-                              APPLY FOR SCHOLARSHIP →
-                           </a>
-                           <div className="evt-qualify">
-                              <strong>Who qualifies:</strong>
-                              <p>
-                                 <Icon name="check" />
-                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 51+ U.S. projects.</span>
-                              </p>
-                           </div>
+                           <div className="evt-qualify" aria-hidden="true" />
                         </article>
                         <article className="evt-path" id="evt-estimator">
-                           <span className="evt-path-badge">PATH 03</span>
+                           <span className="evt-path-badge">PATH 02</span>
                            <div className="evt-path-title">
                               <Icon name="pathCase" />
                               <h3>READY FOR A DIRECT OPPORTUNITY?</h3>
@@ -545,7 +511,7 @@ export default function EvtLanding() {
                               <strong>Who qualifies:</strong>
                               <p>
                                  <Icon name="check" />
-                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 51+ U.S. projects.</span>
+                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 50 U.S. projects.</span>
                               </p>
                            </div>
                         </article>
