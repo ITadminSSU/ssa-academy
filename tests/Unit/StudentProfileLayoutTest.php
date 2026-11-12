@@ -165,6 +165,49 @@ test('an assessment result does not release a certificate', function () {
         ->and($replaced->getFirstMedia('criteria_assessment')?->file_name)->toBe('updated-result.pdf');
 });
 
+test('removing a saved cv holds the certificate until both files are back', function () {
+    $user = layoutStudent();
+    $saved = app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+        'id_document' => UploadedFile::fake()->createWithContent('id.pdf', "%PDF-1.4\n% id\n"),
+    ], (string) $user->id);
+
+    $certificates = app(CourseCertificateIssuanceService::class);
+
+    expect($certificates->hasReleaseDocuments($saved))->toBeTrue();
+
+    $cleared = app(StudentService::class)->updateProfile([
+        'remove_cv' => true,
+    ], (string) $user->id);
+
+    expect($cleared->getMedia('cv_resume'))->toHaveCount(0)
+        ->and($cleared->hasMedia('id_document'))->toBeTrue()
+        ->and($certificates->hasReleaseDocuments($cleared))->toBeFalse();
+
+    $replaced = app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('new-cv.pdf', "%PDF-1.4\n% new\n"),
+        'remove_cv' => true,
+    ], (string) $user->id);
+
+    expect($replaced->getFirstMedia('cv_resume')?->file_name)->toBe('new-cv.pdf')
+        ->and($certificates->hasReleaseDocuments($replaced))->toBeTrue();
+});
+
+test('removing an assessment result leaves the cv and government id in place', function () {
+    $user = layoutStudent();
+    app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+        'criteria_assessment' => UploadedFile::fake()->createWithContent('result.pdf', "%PDF-1.4\n% assessment\n"),
+    ], (string) $user->id);
+
+    $cleared = app(StudentService::class)->updateProfile([
+        'remove_criteria_assessment' => true,
+    ], (string) $user->id);
+
+    expect($cleared->getMedia('criteria_assessment'))->toHaveCount(0)
+        ->and($cleared->hasMedia('cv_resume'))->toBeTrue();
+});
+
 test('the profile form no longer requires the background questions', function () {
     $request = UpdateStudentProfileRequest::create('/student/profile', 'POST', [
         'given_name' => 'Raiza',

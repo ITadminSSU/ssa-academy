@@ -36,6 +36,9 @@ const MyProfile = () => {
    const idInputRef = useRef<HTMLInputElement>(null);
    const assessmentInputRef = useRef<HTMLInputElement>(null);
    const [removePhoto, setRemovePhoto] = useState(false);
+   const [removeCv, setRemoveCv] = useState(false);
+   const [removeIdDocument, setRemoveIdDocument] = useState(false);
+   const [removeAssessment, setRemoveAssessment] = useState(false);
 
    const { data, post, setData, processing } = useForm({
       given_name: user.given_name ?? user.name.split(' ')[0] ?? '',
@@ -97,6 +100,9 @@ const MyProfile = () => {
                remove_photo: removePhoto ? 1 : 0,
                facebook: form.facebook.trim(),
                has_us_estimating_experience: form.has_us_estimating_experience ? 1 : 0,
+               remove_cv: removeCv ? 1 : 0,
+               remove_id_document: removeIdDocument ? 1 : 0,
+               remove_criteria_assessment: removeAssessment ? 1 : 0,
             };
 
             if (!form.cv_resume) {
@@ -116,6 +122,9 @@ const MyProfile = () => {
          onSuccess: (page) => {
             photoFileRef.current = null;
             setRemovePhoto(false);
+            setRemoveCv(false);
+            setRemoveIdDocument(false);
+            setRemoveAssessment(false);
             setData((form) => ({
                ...form,
                photo: null,
@@ -267,20 +276,36 @@ const MyProfile = () => {
                <div className="grid gap-4 md:grid-cols-2">
                   <div className="grid gap-2">
                      <Label htmlFor="cv_resume">CV / resume</Label>
-                     {profileDocuments?.cv && (
+                     {profileDocuments?.cv && !removeCv && (
                         <p className="text-sm">
                            Current file: {profileDocuments.cv.file_name}{' '}
                            <a href={profileDocuments.cv.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
                               View
-                           </a>
+                           </a>{' '}
+                           <button type="button" className="font-medium underline" onClick={() => setRemoveCv(true)}>
+                              Remove
+                           </button>
                         </p>
                      )}
+                     {removeCv && !data.cv_resume ? (
+                        <p className="text-sm">This file will be removed when you click Update.</p>
+                     ) : null}
+                     <div className="flex flex-wrap items-center gap-3">
+                        <Button type="button" variant="outline" onClick={() => cvInputRef.current?.click()}>
+                           Choose file
+                        </Button>
+                        {data.cv_resume ? <span className="text-sm">{data.cv_resume.name}</span> : null}
+                     </div>
                      <input
                         ref={cvInputRef}
                         id="cv_resume"
+                        hidden
                         type="file"
                         accept=".pdf,.doc,.docx,application/pdf"
-                        onChange={(event) => setData('cv_resume', event.target.files?.[0] ?? null)}
+                        onChange={(event) => {
+                           setRemoveCv(false);
+                           setData('cv_resume', event.target.files?.[0] ?? null);
+                        }}
                      />
                      <p className="text-muted-foreground text-xs">PDF, DOC, or DOCX up to 10 MB. A new file replaces the saved one.</p>
                      <InputError message={errors.cv_resume} />
@@ -288,20 +313,36 @@ const MyProfile = () => {
 
                   <div className="grid gap-2">
                      <Label htmlFor="id_document">Government ID</Label>
-                     {profileDocuments?.id && (
+                     {profileDocuments?.id && !removeIdDocument && (
                         <p className="text-sm">
                            Current file: {profileDocuments.id.file_name}{' '}
                            <a href={profileDocuments.id.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
                               View
-                           </a>
+                           </a>{' '}
+                           <button type="button" className="font-medium underline" onClick={() => setRemoveIdDocument(true)}>
+                              Remove
+                           </button>
                         </p>
                      )}
+                     {removeIdDocument && !data.id_document ? (
+                        <p className="text-sm">This file will be removed when you click Update.</p>
+                     ) : null}
+                     <div className="flex flex-wrap items-center gap-3">
+                        <Button type="button" variant="outline" onClick={() => idInputRef.current?.click()}>
+                           Choose file
+                        </Button>
+                        {data.id_document ? <span className="text-sm">{data.id_document.name}</span> : null}
+                     </div>
                      <input
                         ref={idInputRef}
                         id="id_document"
+                        hidden
                         type="file"
                         accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-                        onChange={(event) => setData('id_document', event.target.files?.[0] ?? null)}
+                        onChange={(event) => {
+                           setRemoveIdDocument(false);
+                           setData('id_document', event.target.files?.[0] ?? null);
+                        }}
                      />
                      <p className="text-muted-foreground text-xs">JPG, PNG, WEBP, or PDF up to 10 MB. A new file replaces the saved one.</p>
                      <InputError message={errors.id_document} />
@@ -323,12 +364,13 @@ const MyProfile = () => {
                   Discover your strengths, work preferences, and how you approach different situations through the Criteria Assessment.
                </p>
                <div className="flex flex-col items-center gap-2 text-sm">
-                  <div className="flex flex-wrap items-center justify-center gap-3 text-[#1d4ed8]">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
                      <span>Upload your result here</span>
-                     <label htmlFor="criteria_assessment" className="inline-flex cursor-pointer items-center gap-1 font-medium">
+                     <Button type="button" variant="outline" onClick={() => assessmentInputRef.current?.click()}>
                         <Upload className="h-4 w-4" />
                         Upload File
-                     </label>
+                     </Button>
+                     {data.criteria_assessment ? <span className="text-sm">{data.criteria_assessment.name}</span> : null}
                   </div>
                   <input
                      ref={assessmentInputRef}
@@ -336,17 +378,25 @@ const MyProfile = () => {
                      hidden
                      type="file"
                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-                     onChange={(event) => setData('criteria_assessment', event.target.files?.[0] ?? null)}
+                     onChange={(event) => {
+                        setRemoveAssessment(false);
+                        setData('criteria_assessment', event.target.files?.[0] ?? null);
+                     }}
                   />
-                  {data.criteria_assessment && <p className="text-sm">{data.criteria_assessment.name}</p>}
-                  {profileDocuments?.assessment && (
+                  {profileDocuments?.assessment && !removeAssessment && (
                      <p className="text-sm">
                         Current file: {profileDocuments.assessment.file_name}{' '}
                         <a href={profileDocuments.assessment.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
                            View
-                        </a>
+                        </a>{' '}
+                        <button type="button" className="font-medium underline" onClick={() => setRemoveAssessment(true)}>
+                           Remove
+                        </button>
                      </p>
                   )}
+                  {removeAssessment && !data.criteria_assessment ? (
+                     <p className="text-sm">This file will be removed when you click Update.</p>
+                  ) : null}
                   <p className="text-muted-foreground text-center text-xs">
                      PDF, DOC, DOCX, JPG, PNG, or WEBP up to 10 MB. A new file replaces the saved one.
                   </p>
@@ -354,19 +404,23 @@ const MyProfile = () => {
                </div>
             </div>
 
-            <div className="flex items-start gap-3">
+            <div className="flex items-center justify-center gap-3 text-center">
                <Checkbox
                   id="has_us_estimating_experience"
                   checked={data.has_us_estimating_experience}
                   disabled={processing}
                   onCheckedChange={(value) => setData('has_us_estimating_experience', value === true)}
                />
-               <Label htmlFor="has_us_estimating_experience" className="text-xs leading-5 font-semibold tracking-wide uppercase">
+               <Label htmlFor="has_us_estimating_experience" className="text-base leading-6 font-semibold tracking-wide uppercase">
                   Do you have at least 1 year of U.S. estimating experience in roofing, siding, or drywall, or have you completed at least 50 U.S.
                   projects?
                </Label>
             </div>
             <InputError message={errors.has_us_estimating_experience} />
+
+            <div className="flex items-center justify-end">
+               <LoadingButton loading={processing}>{button.update}</LoadingButton>
+            </div>
 
             <div className="space-y-6">
                <div className="flex items-center gap-4">
@@ -378,28 +432,29 @@ const MyProfile = () => {
                </div>
                <p className="text-center text-sm text-[#012447]">Submit your profile for consideration for U.S. construction opportunities.</p>
 
-               <div className="rounded-2xl border-2 border-[#012447] bg-[#fff7e8] p-6 md:p-8">
-                  <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                     <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border-2 border-[#012447] bg-white">
-                        <Briefcase className="h-12 w-12 text-[#012447]" />
+               <div className="rounded-2xl border-2 border-[#012447] bg-[#fff7e8] px-6 py-8 md:px-10">
+                  <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 md:flex-row md:justify-center">
+                     <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl border-2 border-[#012447] bg-white">
+                        <Briefcase className="h-14 w-14 text-[#012447]" />
                      </div>
-                     <div className="space-y-3 text-[#012447]">
+                     <div className="hidden h-36 w-px shrink-0 bg-[#012447]/25 md:block" />
+                     <div className="space-y-3 text-center text-[#012447] md:text-left">
                         <div>
-                           <h3 className="text-xl font-bold tracking-wide uppercase">Direct Estimator Path</h3>
-                           <p className="text-sm font-semibold tracking-wide uppercase">For career-focused estimators</p>
+                           <h3 className="text-2xl font-bold tracking-wide uppercase md:text-3xl">Direct Estimator Path</h3>
+                           <p className="text-base font-semibold tracking-wide uppercase">For career-focused estimators</p>
                         </div>
                         <div>
-                           <p className="font-semibold">What you'll gain:</p>
-                           <ul className="mt-2 space-y-2 text-sm">
-                              <li className="flex items-center gap-2">
-                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
-                                    <Check className="h-3 w-3" strokeWidth={3} />
+                           <p className="text-lg font-semibold">What you'll gain:</p>
+                           <ul className="mt-3 space-y-2 text-base">
+                              <li className="flex items-center justify-center gap-2 md:justify-start">
+                                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
+                                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
                                  </span>
                                  Direct hiring consideration
                               </li>
-                              <li className="flex items-center gap-2">
-                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
-                                    <Check className="h-3 w-3" strokeWidth={3} />
+                              <li className="flex items-center justify-center gap-2 md:justify-start">
+                                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
+                                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
                                  </span>
                                  Access to relevant job openings
                               </li>
@@ -407,19 +462,17 @@ const MyProfile = () => {
                         </div>
                      </div>
                   </div>
-                  <a
-                     href={ESTIMATOR_APPLICATION_URL}
-                     target="_blank"
-                     rel="noreferrer"
-                     className="mt-6 flex w-full items-center justify-center rounded-full bg-[#f5b400] px-6 py-3 text-center text-sm font-bold tracking-wide text-[#012447] uppercase"
-                  >
-                     Apply as an estimator →
-                  </a>
+                  <div className="mt-8 flex justify-center">
+                     <a
+                        href={ESTIMATOR_APPLICATION_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-full bg-[#f5b400] px-10 py-3 text-center text-base font-bold tracking-wide text-[#012447] uppercase"
+                     >
+                        Apply as an estimator →
+                     </a>
+                  </div>
                </div>
-            </div>
-
-            <div className="flex items-center justify-end">
-               <LoadingButton loading={processing}>{button.update}</LoadingButton>
             </div>
          </form>
 
