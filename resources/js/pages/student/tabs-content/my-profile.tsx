@@ -277,11 +277,11 @@ const MyProfile = () => {
                   <div className="grid gap-2">
                      <Label htmlFor="cv_resume">CV / resume</Label>
                      {profileDocuments?.cv && !removeCv && (
-                        <p className="text-sm">
-                           Current file: {profileDocuments.cv.file_name}{' '}
+                        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                           <span>Current file: {profileDocuments.cv.file_name}</span>
                            <a href={profileDocuments.cv.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
                               View
-                           </a>{' '}
+                           </a>
                            <button type="button" className="font-medium underline" onClick={() => setRemoveCv(true)}>
                               Remove
                            </button>
@@ -314,11 +314,11 @@ const MyProfile = () => {
                   <div className="grid gap-2">
                      <Label htmlFor="id_document">Government ID</Label>
                      {profileDocuments?.id && !removeIdDocument && (
-                        <p className="text-sm">
-                           Current file: {profileDocuments.id.file_name}{' '}
+                        <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                           <span>Current file: {profileDocuments.id.file_name}</span>
                            <a href={profileDocuments.id.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
                               View
-                           </a>{' '}
+                           </a>
                            <button type="button" className="font-medium underline" onClick={() => setRemoveIdDocument(true)}>
                               Remove
                            </button>
@@ -384,11 +384,11 @@ const MyProfile = () => {
                      }}
                   />
                   {profileDocuments?.assessment && !removeAssessment && (
-                     <p className="text-sm">
-                        Current file: {profileDocuments.assessment.file_name}{' '}
+                     <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
+                        <span>Current file: {profileDocuments.assessment.file_name}</span>
                         <a href={profileDocuments.assessment.view_url} target="_blank" rel="noreferrer" className="font-medium underline">
                            View
-                        </a>{' '}
+                        </a>
                         <button type="button" className="font-medium underline" onClick={() => setRemoveAssessment(true)}>
                            Remove
                         </button>
