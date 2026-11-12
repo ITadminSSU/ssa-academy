@@ -204,7 +204,7 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
                      </Tabs>
                   </div>
 
-                  <div className="relative z-10 min-w-0 md:sticky md:top-24 md:self-start">
+                  <div className="relative z-10 min-w-0 md:sticky md:top-[calc(4rem+var(--site-alert-offset,0px))] md:max-h-[calc(100dvh-4rem-var(--site-alert-offset,0px))] md:self-start md:overflow-y-auto">
                      <CoursePreview />
                   </div>
                </div>
