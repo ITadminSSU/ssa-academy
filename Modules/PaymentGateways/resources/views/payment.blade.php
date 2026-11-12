@@ -22,11 +22,16 @@
    @vite(['resources/css/app.css'])
 </head>
 
-<body class="ssu-page-shell flex min-h-screen items-center justify-center font-sans">
-   <div class="payment mx-auto w-full max-w-[1200px] p-6 py-8 md:p-7">
-      <div class="mb-6">
-         <p class="ssu-kicker">Secure checkout</p>
-         <h1 class="font-display text-2xl font-semibold tracking-tight">{{ config('branding.name') }}</h1>
+<body class="ssu-page-shell min-h-screen font-sans">
+   <div class="payment mx-auto w-full max-w-[1200px] px-6 pt-6 pb-8 md:px-7">
+      <a href="{{ url('/courses/all') }}" class="text-primary mb-4 inline-flex text-sm font-semibold underline-offset-4 hover:underline">Back</a>
+
+      <div class="mb-6 rounded-xl bg-[#1a344f] px-6 py-5 text-white">
+         <p class="text-xs font-bold tracking-[0.14em] text-[#e89a1b] uppercase">Secure checkout</p>
+         <h1 class="mt-1 font-display text-2xl font-semibold tracking-tight">{{ $item->title }}</h1>
+         @if (filled($item->short_description ?? null) && $item->short_description !== $item->title)
+            <p class="mt-1 text-sm text-white/80">{{ $item->short_description }}</p>
+         @endif
       </div>
       <div class="grid grid-cols-12 items-start gap-7">
          <div class="ssu-surface-card col-span-12 p-6 md:col-span-8">
@@ -116,7 +121,7 @@
                <button
                   id="checkout"
                   type="submit"
-                  class="w-full cursor-pointer rounded-lg bg-blue-500 p-3 text-white hover:bg-blue-600/95"
+                  class="w-full cursor-pointer rounded-full bg-[#e89a1b] p-3 font-semibold text-[#1a344f] hover:bg-[#f0ac3a]"
                >
                   {{ __('Checkout') }}
                </button>

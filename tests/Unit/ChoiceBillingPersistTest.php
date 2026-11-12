@@ -336,6 +336,70 @@ it('describes the selected plan under the checkout total', function () {
         ->and($installment)->toContain('USD 20.00');
 });
 
+it('describes the selected plan under the larger checkout total', function () {
+    $summary = view('paymentgateways::partials.payment.OrderSummery', [
+        'checkoutMode' => 'one_time_or_monthly',
+        'currency' => 'USD',
+        'subtotal' => 15,
+        'coupon' => null,
+        'couponDiscount' => 0,
+        'taxAmount' => 0,
+        'finalPrice' => 15,
+        'discountedPrice' => 15,
+        'choice' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'recurring' => 15,
+            'months' => 0,
+        ],
+    ])->render();
+
+    expect($summary)->toContain('text-2xl')
+        ->and($summary)->toContain('You pay USD 15.00 today, then USD 15.00 each month until you cancel.')
+        ->and(strpos($summary, 'Total:'))->toBeLessThan(strpos($summary, 'You pay USD 15.00 today'));
+
+    $once = view('paymentgateways::partials.payment.OrderSummery', [
+        'checkoutMode' => 'one_time_or_monthly',
+        'currency' => 'USD',
+        'subtotal' => 49,
+        'coupon' => null,
+        'couponDiscount' => 0,
+        'taxAmount' => 0,
+        'finalPrice' => 49,
+        'discountedPrice' => 49,
+        'choice' => [
+            'plan' => 'one_time',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'recurring' => 15,
+            'months' => 0,
+        ],
+    ])->render();
+
+    expect($once)->toContain('You pay USD 49.00 once.');
+
+    $installment = view('paymentgateways::partials.payment.OrderSummery', [
+        'checkoutMode' => 'one_time_or_installment',
+        'currency' => 'USD',
+        'subtotal' => 20,
+        'coupon' => null,
+        'couponDiscount' => 0,
+        'taxAmount' => 0,
+        'finalPrice' => 20,
+        'discountedPrice' => 20,
+        'choice' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_installment',
+            'one_time' => 120,
+            'recurring' => 20,
+            'months' => 6,
+        ],
+    ])->render();
+
+    expect($installment)->toContain('You pay USD 20.00 today, then 6 payments. Billing stops after the last one.');
+});
+
 function checkoutCardHtml(object $item, array $overrides): string
 {
     return view('paymentgateways::partials.payment.CourseCard', array_merge([
