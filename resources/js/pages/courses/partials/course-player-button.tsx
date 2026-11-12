@@ -208,13 +208,9 @@ const EnrollmentButton = () => {
             </Button>
          ) : null}
 
-         <button
-            type="button"
-            onClick={handleWishlist}
-            className="text-primary hover:text-accent w-full text-center text-sm font-medium underline-offset-4 hover:underline"
-         >
+         <Button className="w-full px-1 sm:px-3" size="lg" variant="outline" onClick={handleWishlist}>
             {isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}
-         </button>
+         </Button>
       </>
    );
 };
