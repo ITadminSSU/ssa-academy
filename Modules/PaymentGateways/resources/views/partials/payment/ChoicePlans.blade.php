@@ -33,7 +33,14 @@
       @if ($bestValue === 'one_time')
          <span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">{{ __('Best value') }}</span>
       @endif
-      <p class="font-semibold">{{ __('One-Time Payment') }}</p>
+      <div class="flex items-start gap-2 {{ $bestValue === 'one_time' ? 'pr-16' : '' }}">
+         <span class="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 {{ $plan === 'one_time' ? 'border-blue-600' : 'border-slate-400' }}" aria-hidden="true">
+            @if ($plan === 'one_time')
+               <span class="choice-plan-radio-selected h-2 w-2 rounded-full bg-blue-600"></span>
+            @endif
+         </span>
+         <p class="font-semibold">{{ __('One-Time Payment') }}</p>
+      </div>
       <p class="text-muted-foreground mt-1 text-sm">{{ __('Pay in full and get complete access.') }}</p>
       <p class="mt-3 text-lg font-semibold">
          @if ($showOneTimeCompare)
@@ -50,7 +57,14 @@
       @if ($bestValue === 'recurring')
          <span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">{{ __('Best value') }}</span>
       @endif
-      <p class="font-semibold">{{ $isInstallment ? __('Payment plan') : __('Monthly plan') }}</p>
+      <div class="flex items-start gap-2 {{ $bestValue === 'recurring' ? 'pr-16' : '' }}">
+         <span class="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 {{ $plan === 'recurring' ? 'border-blue-600' : 'border-slate-400' }}" aria-hidden="true">
+            @if ($plan === 'recurring')
+               <span class="choice-plan-radio-selected h-2 w-2 rounded-full bg-blue-600"></span>
+            @endif
+         </span>
+         <p class="font-semibold">{{ $isInstallment ? __('Payment plan') : __('Monthly plan') }}</p>
+      </div>
       <p class="text-muted-foreground mt-1 text-sm">
          @if ($isInstallment)
             {{ __(':count payments, then billing stops.', ['count' => $months]) }}
