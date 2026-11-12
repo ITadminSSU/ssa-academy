@@ -37,6 +37,7 @@ it('saves one-time or monthly over an installment course and clears the installm
         ->and($saved->installment_months)->toBeNull()
         ->and((float) $saved->choice_one_time_compare)->toBe(99.0)
         ->and((float) $saved->choice_recurring_compare)->toBe(20.0)
+        ->and($saved->choice_best_value)->toBe('recurring')
         ->and($saved->stripe_price_id)->toBe('price_installment')
         ->and($saved->stripe_ongoing_price_id)->toBe('price_ongoing');
 });
@@ -66,7 +67,79 @@ it('saves one-time or installment and clears the later monthly price', function 
         ->and((float) $saved->installment_price)->toBe(15.0)
         ->and((int) $saved->installment_months)->toBe(6)
         ->and((float) $saved->choice_recurring_compare)->toBe(20.0)
+        ->and($saved->choice_best_value)->toBe('recurring')
         ->and($saved->stripe_product_id)->toBe('prod_installment');
+});
+
+it('saves the best value badge on the one-time card without changing prices', function () {
+    createChoiceBillingCourseTable();
+
+    $course = installmentCourse();
+    $request = pricingSaveRequest([
+        'billing_model' => 'one_time_or_monthly',
+        'price' => 49,
+        'subscription_price' => 6,
+        'choice_one_time_compare' => 99,
+        'choice_best_value' => 'one_time',
+    ]);
+    $request->validateResolved();
+
+    app(CourseService::class)->updateCourse((string) $course->id, $request->validated());
+
+    $saved = Course::query()->findOrFail($course->id);
+
+    expect($saved->choice_best_value)->toBe('one_time')
+        ->and((float) $saved->price)->toBe(49.0)
+        ->and((float) $saved->subscription_price)->toBe(6.0)
+        ->and((float) $saved->choice_one_time_compare)->toBe(99.0)
+        ->and($saved->stripe_price_id)->toBe('price_installment')
+        ->and($saved->stripe_ongoing_price_id)->toBe('price_ongoing');
+});
+
+it('saves no best value badge and leaves the charge amounts alone', function () {
+    createChoiceBillingCourseTable();
+
+    $course = installmentCourse();
+    $request = pricingSaveRequest([
+        'billing_model' => 'one_time_or_installment',
+        'price' => 49,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'choice_best_value' => 'none',
+    ]);
+    $request->validateResolved();
+
+    app(CourseService::class)->updateCourse((string) $course->id, $request->validated());
+
+    $saved = Course::query()->findOrFail($course->id);
+
+    expect($saved->choice_best_value)->toBe('none')
+        ->and((float) $saved->price)->toBe(49.0)
+        ->and((float) $saved->installment_price)->toBe(15.0)
+        ->and((int) $saved->installment_months)->toBe(6)
+        ->and($saved->stripe_product_id)->toBe('prod_installment');
+});
+
+it('does not keep a best value badge on a billing model that has one price', function () {
+    createChoiceBillingCourseTable();
+
+    $course = installmentCourse();
+    $course->forceFill(['choice_best_value' => 'one_time'])->save();
+    $request = pricingSaveRequest([
+        'billing_model' => 'one_time',
+        'price' => 49,
+        'choice_best_value' => 'one_time',
+    ]);
+    $request->validateResolved();
+
+    app(CourseService::class)->updateCourse((string) $course->id, $request->validated());
+
+    $saved = Course::query()->findOrFail($course->id);
+
+    expect($saved->billing_model)->toBe(CourseBillingModel::ONE_TIME)
+        ->and($saved->choice_best_value)->toBeNull()
+        ->and((float) $saved->price)->toBe(49.0)
+        ->and($saved->stripe_price_id)->toBe('price_installment');
 });
 
 it('saves a choice billing model when the compare price columns are missing', function () {
@@ -90,6 +163,54 @@ it('saves a choice billing model when the compare price columns are missing', fu
         ->and($saved->installment_price)->toBeNull()
         ->and($saved->installment_months)->toBeNull()
         ->and((float) $saved->subscription_price)->toBe(6.0);
+});
+
+it('shows the best value badge on the card the course saved', function () {
+    $item = new class {
+        public int $id = 9;
+    };
+    $formatMoney = fn (float $amount) => 'USD '.number_format($amount, 2);
+
+    $monthly = view('paymentgateways::partials.payment.ChoicePlans', [
+        'choicePlan' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'one_time_compare' => 99,
+            'recurring' => 6,
+            'recurring_compare' => null,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'one_time',
+        ],
+        'item' => $item,
+        'item_type' => 'course',
+        'coupon' => null,
+        'formatMoney' => $formatMoney,
+    ])->render();
+
+    expect(substr_count($monthly, 'Best value'))->toBe(1)
+        ->and(strpos($monthly, 'Best value'))->toBeLessThan(strpos($monthly, 'Monthly plan'));
+
+    $hidden = view('paymentgateways::partials.payment.ChoicePlans', [
+        'choicePlan' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'recurring' => 6,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'none',
+        ],
+        'item' => $item,
+        'item_type' => 'course',
+        'coupon' => null,
+        'formatMoney' => $formatMoney,
+    ])->render();
+
+    expect($hidden)->not->toContain('Best value')
+        ->and($hidden)->toContain('USD 49.00')
+        ->and($hidden)->toContain('USD 6.00');
 });
 
 function pricingSaveRequest(array $overrides = []): UpdateCourseRequest
@@ -158,6 +279,7 @@ function createChoiceBillingCourseTable(bool $choiceColumns = true): void
         if ($choiceColumns) {
             $table->decimal('choice_one_time_compare', 10, 2)->nullable();
             $table->decimal('choice_recurring_compare', 10, 2)->nullable();
+            $table->string('choice_best_value', 20)->nullable();
         }
         $table->string('stripe_product_id')->nullable();
         $table->string('stripe_price_id')->nullable();

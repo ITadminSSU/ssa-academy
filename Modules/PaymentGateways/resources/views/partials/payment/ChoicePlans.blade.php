@@ -6,6 +6,10 @@
    $recurring = (float) ($choicePlan['recurring'] ?? 0);
    $recurringCompare = (float) ($choicePlan['recurring_compare'] ?? 0);
    $months = (int) ($choicePlan['months'] ?? 0);
+   $bestValue = $choicePlan['best_value'] ?? 'recurring';
+   if (! in_array($bestValue, ['one_time', 'recurring', 'none'], true)) {
+      $bestValue = 'recurring';
+   }
    $showOneTimeCompare = $oneTimeCompare > $oneTime + 0.009;
    $showRecurringCompare = $recurringCompare > $recurring + 0.009;
    $planUrl = function (string $next) use ($item, $item_type, $coupon) {
@@ -24,8 +28,11 @@
 <div class="grid gap-3 sm:grid-cols-2">
    <a
       href="{{ $planUrl('one_time') }}"
-      class="rounded-xl border p-4 {{ $plan === 'one_time' ? 'border-blue-500 bg-blue-50' : 'border-border bg-background' }}"
+      class="relative rounded-xl border p-4 {{ $plan === 'one_time' ? 'border-blue-500 bg-blue-50' : 'border-border bg-background' }}"
    >
+      @if ($bestValue === 'one_time')
+         <span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">{{ __('Best value') }}</span>
+      @endif
       <p class="font-semibold">{{ __('One-Time Payment') }}</p>
       <p class="text-muted-foreground mt-1 text-sm">{{ __('Pay in full and get complete access.') }}</p>
       <p class="mt-3 text-lg font-semibold">
@@ -40,7 +47,9 @@
       href="{{ $planUrl('recurring') }}"
       class="relative rounded-xl border p-4 {{ $plan === 'recurring' ? 'border-blue-500 bg-blue-50' : 'border-border bg-background' }}"
    >
-      <span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">{{ __('Best value') }}</span>
+      @if ($bestValue === 'recurring')
+         <span class="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">{{ __('Best value') }}</span>
+      @endif
       <p class="font-semibold">{{ $isInstallment ? __('Payment plan') : __('Monthly plan') }}</p>
       <p class="text-muted-foreground mt-1 text-sm">
          @if ($isInstallment)
