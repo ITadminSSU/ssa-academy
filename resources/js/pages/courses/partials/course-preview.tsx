@@ -127,7 +127,7 @@ const CoursePreview = () => {
       !offer.enabled;
 
    return (
-      <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
+      <div className="ssu-enrollment-shell space-y-5 p-5">
          <div className="space-y-4">
             <div className="relative isolate overflow-clip rounded-lg">
                {course.thumbnail ? (
