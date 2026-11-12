@@ -13,7 +13,6 @@ import CourseReviews from './partials/course-reviews';
 import Curriculum from './partials/curriculum';
 import Details from './partials/details';
 import Faqs from './partials/faqs';
-import Instructor from './partials/instructor';
 import Overview from './partials/overview';
 import UsExperience from './partials/us-experience';
 
@@ -203,8 +202,6 @@ const Show = ({ course, system, translate, showUsExperience = false, canViewUsEx
                            </TabsContent>
                         ))}
                      </Tabs>
-
-                     {course.instructor ? <Instructor course={course} /> : null}
                   </div>
 
                   <div className="relative z-10 min-w-0 md:sticky md:top-24 md:self-start">

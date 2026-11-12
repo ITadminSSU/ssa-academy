@@ -360,7 +360,7 @@ const DrywallEstimating = ({ landing, course }: DrywallPageProps) => {
 
                <TabsContent value="instructor" className="mt-0 rounded-b-2xl border border-t-0 border-[#e7e1d6] bg-[#f7f6f3] p-6 md:p-8">
                   {course?.instructor ? (
-                     <Instructor course={course} />
+                     <Instructor course={course} showBiography />
                   ) : (
                      <p className="text-[#3a4654]">Instructor details will appear here when the course is published.</p>
                   )}

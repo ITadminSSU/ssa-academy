@@ -200,6 +200,24 @@
             <span>Total Payment</span>
             <span>{{ $isLaunchCheckout ? $formatMoney($discountedPrice) : $currency.' '.$discountedPrice }}</span>
          </div>
+
+         @if ($isChoiceCheckout && $choicePlan)
+            @php
+               $choicePlanKey = ($choicePlan['plan'] ?? '') === 'one_time' ? 'one_time' : 'recurring';
+               $choicePayNow = $formatMoney((float) ($discountedPrice ?? ($choicePlan[$choicePlanKey] ?? 0)));
+               $choiceRecurringPay = $formatMoney((float) ($choicePlan['recurring'] ?? 0));
+               $choiceMonths = (int) ($choicePlan['months'] ?? 0);
+            @endphp
+            <p class="text-muted-foreground text-sm">
+               @if (($choicePlan['plan'] ?? '') === 'one_time')
+                  You pay {{ $choicePayNow }} once.
+               @elseif (($choicePlan['mode'] ?? '') === 'one_time_or_installment')
+                  You pay {{ $choicePayNow }} today, then {{ $choiceMonths }} payments. Billing stops after the last one.
+               @else
+                  You pay {{ $choicePayNow }} today, then {{ $choiceRecurringPay }} each month until you cancel.
+               @endif
+            </p>
+         @endif
       </div>
    @else
       <div class="rounded-lg border border-dashed border-emerald-500 bg-emerald-50 p-4 text-emerald-700">

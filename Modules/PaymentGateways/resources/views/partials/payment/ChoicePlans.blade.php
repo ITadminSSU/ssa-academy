@@ -6,9 +6,9 @@
    $recurring = (float) ($choicePlan['recurring'] ?? 0);
    $recurringCompare = (float) ($choicePlan['recurring_compare'] ?? 0);
    $months = (int) ($choicePlan['months'] ?? 0);
-   $bestValue = $choicePlan['best_value'] ?? 'recurring';
+   $bestValue = $choicePlan['best_value'] ?? 'none';
    if (! in_array($bestValue, ['one_time', 'recurring', 'none'], true)) {
-      $bestValue = 'recurring';
+      $bestValue = 'none';
    }
    $showOneTimeCompare = $oneTimeCompare > $oneTime + 0.009;
    $showRecurringCompare = $recurringCompare > $recurring + 0.009;

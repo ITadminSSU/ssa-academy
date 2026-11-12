@@ -1,8 +1,8 @@
 import SsuCheckoutButton from '@/components/ssu-checkout-button';
 import { Button } from '@/components/ui/button';
-import { canEnrollCourseWithoutPayment, requiresCoursePayment } from '@/lib/learner-access';
 import { canPreviewCourseBeforeLaunch, formatCourseLaunchDateTime, isCourseComingSoon } from '@/lib/course-launch';
-import { getLaunchOfferView, formatLaunchOfferDateTime } from '@/lib/launch-offer';
+import { formatLaunchOfferDateTime, getLaunchOfferView } from '@/lib/launch-offer';
+import { canEnrollCourseWithoutPayment, requiresCoursePayment } from '@/lib/learner-access';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -99,9 +99,7 @@ const ComingSoonButton = () => {
 
    return (
       <Button disabled size="lg" className="w-full">
-         {launchLabel
-            ? (frontend.available_on ?? 'Available on {date}').replace('{date}', launchLabel)
-            : (frontend.coming_soon ?? 'Coming Soon')}
+         {launchLabel ? (frontend.available_on ?? 'Available on {date}').replace('{date}', launchLabel) : (frontend.coming_soon ?? 'Coming Soon')}
       </Button>
    );
 };
@@ -138,16 +136,13 @@ const StaffPreviewButton = () => {
 const ReservedSeatPanel = () => {
    const { course, launchOffer, enrollment } = usePage<CourseDetailsProps>().props;
    const offer = getLaunchOfferView(course, launchOffer, enrollment);
-   const balanceDueLabel =
-      formatLaunchOfferDateTime(course.launch_at) ??
-      formatLaunchOfferDateTime(offer.balanceDueAt) ??
-      'launch day';
+   const balanceDueLabel = formatLaunchOfferDateTime(course.launch_at) ?? formatLaunchOfferDateTime(offer.balanceDueAt) ?? 'launch day';
 
    return (
       <div className="space-y-3">
          <p className="text-muted-foreground text-left text-sm">
-            Seat reserved. Full access unlocks after you pay the remaining ${offer.balanceAmount.toFixed(0)} on{' '}
-            {balanceDueLabel}. Your ${offer.depositAmount.toFixed(0)} deposit is non-refundable.
+            Seat reserved. Full access unlocks after you pay the remaining ${offer.balanceAmount.toFixed(0)} on {balanceDueLabel}. Your $
+            {offer.depositAmount.toFixed(0)} deposit is non-refundable.
          </p>
          {offer.canPayBalance ? (
             <SsuCheckoutButton item="course" item_id={course.id}>
@@ -203,23 +198,23 @@ const EnrollmentButton = () => {
 
    return (
       <>
-         <Button className="w-full px-1 sm:px-3" size="lg" onClick={handleWishlist}>
-            {isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}
-         </Button>
-
          {requiresCoursePayment(auth.user, course) || canResubscribe || offer.canPreRegister || offer.canFullEnroll ? (
-            <SsuCheckoutButton
-               item="course"
-               item_id={course.id}
-               className="!bg-primary !text-primary-foreground uppercase hover:!bg-primary-dark"
-            >
-               {checkoutText ?? frontend.buy_now}
+            <SsuCheckoutButton item="course" item_id={course.id} className={checkoutText ? 'uppercase' : undefined}>
+               {checkoutText ?? 'Enroll'}
             </SsuCheckoutButton>
          ) : canEnrollCourseWithoutPayment(auth.user, course) ? (
             <Button size="lg" variant="brand" className="w-full uppercase" onClick={() => enrollmentHandler(course)}>
                {frontend.enroll_now}
             </Button>
          ) : null}
+
+         <button
+            type="button"
+            onClick={handleWishlist}
+            className="text-primary hover:text-accent w-full text-center text-sm font-medium underline-offset-4 hover:underline"
+         >
+            {isWishlisted ? frontend.remove_from_wishlist : frontend.add_to_wishlist}
+         </button>
       </>
    );
 };

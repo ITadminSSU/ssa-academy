@@ -13,6 +13,94 @@ import SsuEnrollmentPanel from '@/components/ssu-enrollment-panel';
 import CourseLaunchNotifyForm from '@/components/course-launch-notify-form';
 import EnrollOrPlayerButton from './course-player-button';
 
+const choiceAmount = (value: number | string | null | undefined): number => {
+   const amount = Number(value ?? 0);
+
+   return Number.isFinite(amount) ? amount : 0;
+};
+
+const savedCompare = (value: number | string | null | undefined, price: number): number | null => {
+   if (value === null || value === undefined || value === '') {
+      return null;
+   }
+
+   const compare = Number(value);
+   if (!Number.isFinite(compare) || compare <= price + 0.009) {
+      return null;
+   }
+
+   return compare;
+};
+
+const savedBestValue = (course: Course): 'recurring' | 'one_time' | 'none' => {
+   if (course.choice_best_value === 'recurring' || course.choice_best_value === 'one_time' || course.choice_best_value === 'none') {
+      return course.choice_best_value;
+   }
+
+   return 'none';
+};
+
+const ChoicePriceCard = ({
+   title,
+   price,
+   compare,
+   note,
+   badge,
+   extra,
+}: {
+   title: string;
+   price: string;
+   compare: string | null;
+   note: string;
+   badge: boolean;
+   extra: string | null;
+}) => (
+   <div className="border-border bg-background relative rounded-xl border p-3">
+      {badge ? (
+         <span className="absolute top-3 right-3 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">Best value</span>
+      ) : null}
+      <p className={`text-sm font-semibold ${badge ? 'pr-20' : ''}`}>{title}</p>
+      <p className="mt-2 text-lg font-semibold">
+         {compare ? <span className="text-muted-foreground mr-2 text-sm font-medium line-through">{compare}</span> : null}
+         {price}
+      </p>
+      <p className="text-muted-foreground mt-1 text-sm">{note}</p>
+      {extra ? <p className="mt-1 text-sm font-medium">{extra}</p> : null}
+   </div>
+);
+
+const ChoiceEnrollmentOptions = ({ course, symbol }: { course: Course; symbol: string }) => {
+   const installment = course.billing_model === 'one_time_or_installment';
+   const oneTime = choiceAmount(course.price);
+   const recurring = choiceAmount(installment ? course.installment_price : course.subscription_price);
+   const months = Math.max(0, Math.trunc(choiceAmount(course.installment_months)));
+   const oneTimeCompare = savedCompare(course.choice_one_time_compare, oneTime);
+   const recurringCompare = savedCompare(course.choice_recurring_compare, recurring);
+   const best = savedBestValue(course);
+   const money = (amount: number) => `${symbol}${formatOfferAmount(amount)}`;
+
+   return (
+      <div className="grid gap-3">
+         <ChoicePriceCard
+            title="Pay once"
+            price={money(oneTime)}
+            compare={oneTimeCompare === null ? null : money(oneTimeCompare)}
+            note="One payment. Access stays."
+            badge={best === 'one_time'}
+            extra={best === 'one_time' ? 'One payment, no monthly bill' : null}
+         />
+         <ChoicePriceCard
+            title={installment ? 'Payment plan' : 'Monthly'}
+            price={installment ? `${money(recurring)} × ${months} payments` : `${money(recurring)}/month`}
+            compare={recurringCompare === null ? null : installment ? money(recurringCompare) : `${money(recurringCompare)}/month`}
+            note={installment ? 'Billing stops after the last payment. Access stays.' : 'Billed every month until you cancel.'}
+            badge={best === 'recurring'}
+            extra={best === 'recurring' ? 'Lower payment today' : null}
+         />
+      </div>
+   );
+};
+
 const CoursePreview = () => {
    const { course, system, translate, launchOffer, enrollment, courseHero } = usePage<CourseDetailsProps>().props;
    const previewVideo = courseHero?.video || course.preview;
@@ -33,6 +121,10 @@ const CoursePreview = () => {
    const thenFullPrice = formatOfferAmount(catalogPromo?.full_upfront_price ?? offer.fullUpfrontPrice);
    const symbol = currency?.symbol ?? '$';
    const installmentLabel = installmentPlanLabel(course, symbol);
+   const isChoiceOffer =
+      course.pricing_type === 'paid' &&
+      (course.billing_model === 'one_time_or_monthly' || course.billing_model === 'one_time_or_installment') &&
+      !offer.enabled;
 
    return (
       <div className="ssu-enrollment-shell sticky top-24 space-y-5 p-5">
@@ -73,6 +165,9 @@ const CoursePreview = () => {
                )}
             </div>
 
+            {isChoiceOffer ? (
+               <ChoiceEnrollmentOptions course={course} symbol={symbol} />
+            ) : (
             <h2 className="font-display text-primary text-3xl font-bold capitalize">
                {course.pricing_type === 'free' ? (
                   course.pricing_type
@@ -199,6 +294,7 @@ const CoursePreview = () => {
                   </>
                )}
             </h2>
+            )}
 
             {offer.enabled && offer.phase === 'pre_register' ? (
                <div className="text-muted-foreground space-y-3 text-sm leading-relaxed">
