@@ -433,10 +433,16 @@ class StudentService extends MediaService
             $user->name = \App\Support\PersonName::join($given, $last);
          }
 
-         if (array_key_exists('social_links', $data) && $data['social_links'] !== null) {
+         if (array_key_exists('facebook', $data)) {
+            $this->mergeFacebookLink($user, $data['facebook']);
+         } elseif (array_key_exists('social_links', $data) && $data['social_links'] !== null) {
             $user->social_links = is_string($data['social_links'])
                ? json_decode($data['social_links'], true)
                : $data['social_links'];
+         }
+
+         if (array_key_exists('has_us_estimating_experience', $data) && $data['has_us_estimating_experience'] !== null) {
+            $user->has_us_estimating_experience = (bool) $data['has_us_estimating_experience'];
          }
 
          if (array_key_exists('professional_type_id', $data)) {
@@ -495,7 +501,7 @@ class StudentService extends MediaService
 
          $user->save();
 
-         foreach (['cv_resume', 'id_document'] as $collection) {
+         foreach (['cv_resume', 'id_document', 'criteria_assessment'] as $collection) {
             if (empty($data[$collection])) {
                continue;
             }
@@ -508,6 +514,40 @@ class StudentService extends MediaService
 
          return $user->fresh(['media']) ?? $user;
       }, 5);
+   }
+
+   /**
+    * Replace only the Facebook profile URL. Other saved social links stay on the account.
+    */
+   private function mergeFacebookLink(User $user, mixed $facebook): void
+   {
+      $existing = $user->social_links;
+
+      if (is_string($existing)) {
+         $decoded = json_decode($existing, true);
+         $existing = is_array($decoded) ? $decoded : [];
+      }
+
+      $links = [];
+
+      foreach (is_array($existing) ? $existing : [] as $link) {
+         if (! is_array($link) || ($link['host'] ?? '') === 'facebook') {
+            continue;
+         }
+
+         $links[] = $link;
+      }
+
+      $url = trim((string) ($facebook ?? ''));
+
+      if ($url !== '') {
+         $links[] = [
+            'host' => 'facebook',
+            'profile_link' => $url,
+         ];
+      }
+
+      $user->social_links = $links;
    }
 
    public function getEnrolledCourse(string $id, User $user): Course

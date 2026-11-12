@@ -57,24 +57,10 @@ export interface IntroPageProps extends SharedData {
 export interface StudentDashboardProps extends SharedData {
    tab: string;
    status?: string;
-   profileAnswers?: {
-      professional_type_id: string;
-      professional_type_other: string;
-      estimating_software: string[];
-      estimating_software_other: string;
-      construction_experience: string;
-      worked_as_construction_va: boolean | null;
-      referred_by: string;
-      referrer_is_employee: boolean | null;
-   };
    profileDocuments?: {
       cv: { file_name: string; view_url: string } | null;
       id: { file_name: string; view_url: string } | null;
-   };
-   profileSetup?: {
-      professionalTypes: { id: number; name: string }[];
-      estimatingSoftwareOptions: string[];
-      constructionExperienceOptions: string[];
+      assessment: { file_name: string; view_url: string } | null;
    };
    instructor: Instructor;
    courseEnrollments?: CourseEnrollment[];

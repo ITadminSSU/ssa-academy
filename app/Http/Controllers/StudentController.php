@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateStudentProfileRequest;
-use App\Models\ProfessionalType;
 use App\Services\AuthService;
-use App\Support\RegistrationProfileOptions;
 use App\Models\Course\WatchHistory;
 use App\Services\Course\CourseCategoryService;
 use App\Services\Course\CourseCertificateIssuanceService;
@@ -62,16 +60,7 @@ class StudentController extends Controller
         $props = $this->studentService->getStudentData($tab, $request->only(['filter', 'course_id']));
 
         if ($tab === 'profile') {
-            $props['profileAnswers'] = $request->user()->profileBackgroundAnswers();
             $props['profileDocuments'] = $this->profileDocuments($request->user());
-            $props['profileSetup'] = [
-                'professionalTypes' => ProfessionalType::query()
-                    ->where('is_active', true)
-                    ->orderBy('sort_order')
-                    ->get(['id', 'name', 'is_active', 'sort_order']),
-                'estimatingSoftwareOptions' => RegistrationProfileOptions::estimatingSoftware(),
-                'constructionExperienceOptions' => RegistrationProfileOptions::constructionExperience(),
-            ];
         }
 
         return Inertia::render('student/index', [
@@ -274,7 +263,7 @@ class StudentController extends Controller
             unset($data['photo']);
         }
 
-        foreach (['cv_resume', 'id_document'] as $field) {
+        foreach (['cv_resume', 'id_document', 'criteria_assessment'] as $field) {
             if ($request->hasFile($field)) {
                 $data[$field] = $request->file($field);
             } else {
@@ -294,6 +283,7 @@ class StudentController extends Controller
         [$collection, $label] = match ($type) {
             'cv' => ['cv_resume', 'CV/Resume'],
             'id' => ['id_document', 'ID document'],
+            'assessment' => ['criteria_assessment', 'Assessment result'],
             default => abort(404),
         };
 
@@ -347,22 +337,31 @@ class StudentController extends Controller
     }
 
     /**
-     * @return array{cv: ?array{file_name: string, view_url: string}, id: ?array{file_name: string, view_url: string}}
+     * @return array{cv: ?array{file_name: string, view_url: string}, id: ?array{file_name: string, view_url: string}, assessment: ?array{file_name: string, view_url: string}}
      */
     private function profileDocuments(\App\Models\User $user): array
     {
-        $cv = $user->getFirstMedia('cv_resume');
-        $id = $user->getFirstMedia('id_document');
+        return [
+            'cv' => $this->profileDocumentLink($user, 'cv_resume', 'cv'),
+            'id' => $this->profileDocumentLink($user, 'id_document', 'id'),
+            'assessment' => $this->profileDocumentLink($user, 'criteria_assessment', 'assessment'),
+        ];
+    }
+
+    /**
+     * @return array{file_name: string, view_url: string}|null
+     */
+    private function profileDocumentLink(\App\Models\User $user, string $collection, string $type): ?array
+    {
+        $media = $user->getFirstMedia($collection);
+
+        if (! $media) {
+            return null;
+        }
 
         return [
-            'cv' => $cv ? [
-                'file_name' => $cv->file_name,
-                'view_url' => route('student.profile.document', ['type' => 'cv']),
-            ] : null,
-            'id' => $id ? [
-                'file_name' => $id->file_name,
-                'view_url' => route('student.profile.document', ['type' => 'id']),
-            ] : null,
+            'file_name' => $media->file_name,
+            'view_url' => route('student.profile.document', ['type' => $type]),
         ];
     }
 

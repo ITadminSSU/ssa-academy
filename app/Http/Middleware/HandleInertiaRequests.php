@@ -6,6 +6,7 @@ use App\Support\Branding;
 use App\Support\Features;
 use App\Support\SiteAlert;
 use App\Services\Auth\TwoFactorAuthenticationService;
+use App\Services\Course\CourseCertificateIssuanceService;
 use App\Services\AuthService;
 use App\Services\LegalAgreementService;
 use App\Services\Chat\ChatService;
@@ -118,6 +119,10 @@ class HandleInertiaRequests extends Middleware
             $locale = Cookie::get('locale', 'en');
         }
 
+        $missingCertificateDocuments = $user && $user->role === 'student'
+            ? app(CourseCertificateIssuanceService::class)->missingReleaseDocuments($user)
+            : null;
+
         return [
             ...parent::share($request),
             'page' => app('intro_page'),
@@ -127,7 +132,9 @@ class HandleInertiaRequests extends Middleware
                 'dashboardRoute' => $user ? app(AuthService::class)->dashboardRouteNameFor($user) : null,
                 'legalAgreementRequired' => $user ? $this->legalAgreement->requiresAcceptance($user) : false,
                 'legalAgreementUrl' => route('legal.agreement.show'),
-                'profileSetupRequired' => $user && $user->role === 'student' && ! $user->hasCompletedProfileSetup(),
+                'profileSetupRequired' => $missingCertificateDocuments !== null
+                    && ($missingCertificateDocuments['needs_cv'] || $missingCertificateDocuments['needs_id']),
+                'certificateDocuments' => $missingCertificateDocuments,
                 'profileUrl' => $user && $user->role === 'student'
                     ? app(AuthService::class)->homeUrlFor($user, ['tab' => 'profile'])
                     : null,
