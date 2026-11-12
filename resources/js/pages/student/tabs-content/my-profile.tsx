@@ -11,12 +11,21 @@ import { onHandleChange } from '@/lib/inertia';
 import { SharedData } from '@/types/global';
 import { StudentDashboardProps } from '@/types/page';
 import { useForm, usePage } from '@inertiajs/react';
-import { Briefcase, Camera, Check, Upload } from 'lucide-react';
+import { Camera, Check, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const CRITERIA_ASSESSMENT_URL = 'https://www.ondemandassessment.com/o/JB-EXX9G89Q8/landing?u=1313719';
 const ESTIMATOR_APPLICATION_URL = 'https://smartsourcing-usa.breezy.hr/p/9396bbe98a9a-evt-construction-estimators';
+
+const EstimatorBagIcon = ({ className }: { className?: string }) => (
+   <svg viewBox="0 0 128 96" className={className} aria-hidden="true">
+      <path d="M47 26V16c0-5 4-8 8-8h18c4 0 8 3 8 8v10" fill="none" stroke="#04315A" strokeWidth="8" strokeLinecap="round" />
+      <rect x="4" y="24" width="120" height="68" rx="14" fill="#04315A" />
+      <path d="M18 40c16 0 22 10 46 10s30-10 46-10" fill="none" stroke="#F4F7F8" strokeWidth="8" strokeLinecap="round" />
+      <rect x="58" y="42" width="12" height="16" rx="2" fill="#F6C20C" />
+   </svg>
+);
 
 const facebookLink = (links: { host: string; profile_link: string }[] | null | undefined) => {
    if (!Array.isArray(links)) {
@@ -422,39 +431,39 @@ const MyProfile = () => {
                <LoadingButton loading={processing}>{button.update}</LoadingButton>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
                <div className="flex items-center gap-4">
                   <span className="h-px flex-1 bg-[#f5b400]" />
-                  <h2 className="text-center text-xl font-bold tracking-wide text-[#012447] uppercase md:text-2xl">
-                     Ready for a <span className="text-[#f5b400]">direct</span> opportunity?
+                  <h2 className="text-center text-2xl leading-tight font-bold tracking-wide text-[#012447] uppercase md:text-4xl">
+                     Ready for a <span className="text-[#f5b400]">direct opportunity</span>?
                   </h2>
                   <span className="h-px flex-1 bg-[#f5b400]" />
                </div>
-               <p className="text-center text-sm text-[#012447]">Submit your profile for consideration for U.S. construction opportunities.</p>
+               <p className="text-center text-2xl leading-tight font-bold text-[#012447] md:text-4xl">
+                  Submit your profile for consideration for U.S. construction opportunities.
+               </p>
 
-               <div className="rounded-2xl border-2 border-[#012447] bg-[#fff7e8] px-6 py-8 md:px-10">
-                  <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 md:flex-row md:justify-center">
-                     <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl border-2 border-[#012447] bg-white">
-                        <Briefcase className="h-14 w-14 text-[#012447]" />
-                     </div>
-                     <div className="hidden h-36 w-px shrink-0 bg-[#012447]/25 md:block" />
-                     <div className="space-y-3 text-center text-[#012447] md:text-left">
+               <div className="rounded-2xl border-2 border-[#012447] bg-[#fff7e8] px-4 py-4 md:px-6">
+                  <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 md:flex-row md:justify-center">
+                     <EstimatorBagIcon className="h-16 w-20 shrink-0" />
+                     <div className="hidden h-16 w-px shrink-0 bg-[#012447]/25 md:block" />
+                     <div className="space-y-1 text-center text-[#012447] md:text-left">
                         <div>
-                           <h3 className="text-2xl font-bold tracking-wide uppercase md:text-3xl">Direct Estimator Path</h3>
-                           <p className="text-base font-semibold tracking-wide uppercase">For career-focused estimators</p>
+                           <h3 className="text-lg font-bold tracking-wide uppercase md:text-xl">Direct Estimator Path</h3>
+                           <p className="text-xs font-semibold tracking-wide uppercase">For career-focused estimators</p>
                         </div>
                         <div>
-                           <p className="text-lg font-semibold">What you'll gain:</p>
-                           <ul className="mt-3 space-y-2 text-base">
+                           <p className="text-sm font-semibold">What you'll gain:</p>
+                           <ul className="mt-1 space-y-1 text-sm">
                               <li className="flex items-center justify-center gap-2 md:justify-start">
-                                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
-                                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
+                                    <Check className="h-3 w-3" strokeWidth={3} />
                                  </span>
                                  Direct hiring consideration
                               </li>
                               <li className="flex items-center justify-center gap-2 md:justify-start">
-                                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
-                                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#f5b400] text-[#012447]">
+                                    <Check className="h-3 w-3" strokeWidth={3} />
                                  </span>
                                  Access to relevant job openings
                               </li>
@@ -462,12 +471,12 @@ const MyProfile = () => {
                         </div>
                      </div>
                   </div>
-                  <div className="mt-8 flex justify-center">
+                  <div className="mt-3 flex justify-center">
                      <a
                         href={ESTIMATOR_APPLICATION_URL}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center justify-center rounded-full bg-[#f5b400] px-10 py-3 text-center text-base font-bold tracking-wide text-[#012447] uppercase"
+                        className="inline-flex items-center justify-center rounded-full bg-[#f5b400] px-6 py-2 text-center text-sm font-bold tracking-wide text-[#012447] uppercase"
                      >
                         Apply as an estimator →
                      </a>
