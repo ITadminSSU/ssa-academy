@@ -76,10 +76,28 @@
 
          <div class="bg-border my-2 h-[1px] w-full"></div>
 
-         <div class="flex justify-between font-bold">
-            <span>{{ __('Total:') }}</span>
-            <span>{{ number_format($finalPrice, 2) }} {{ $currency }}</span>
+         <div class="flex items-baseline justify-between">
+            <span class="font-bold">{{ __('Total:') }}</span>
+            <span class="text-2xl font-bold">{{ number_format($finalPrice, 2) }} {{ $currency }}</span>
          </div>
+
+         @if (\App\Support\ChoiceBilling::isChoiceMode($checkoutMode ?? null) && is_array($choice ?? null))
+            @php
+               $choicePlanKey = ($choice['plan'] ?? '') === 'one_time' ? 'one_time' : 'recurring';
+               $choicePayNow = $currency.' '.number_format((float) ($discountedPrice ?? ($choice[$choicePlanKey] ?? 0)), 2);
+               $choiceRecurringPay = $currency.' '.number_format((float) ($choice['recurring'] ?? 0), 2);
+               $choiceMonths = (int) ($choice['months'] ?? 0);
+            @endphp
+            <p class="text-muted-foreground text-sm">
+               @if (($choice['plan'] ?? '') === 'one_time')
+                  You pay {{ $choicePayNow }} once.
+               @elseif (($choice['mode'] ?? $checkoutMode ?? '') === 'one_time_or_installment')
+                  You pay {{ $choicePayNow }} today, then {{ $choiceMonths }} payments. Billing stops after the last one.
+               @else
+                  You pay {{ $choicePayNow }} today, then {{ $choiceRecurringPay }} each month until you cancel.
+               @endif
+            </p>
+         @endif
       </div>
 
       <div class="summery-body">
