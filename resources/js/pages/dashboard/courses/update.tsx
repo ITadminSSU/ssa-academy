@@ -18,7 +18,6 @@ import {
    Settings,
    UserRound,
 } from 'lucide-react';
-import { nanoid } from 'nanoid';
 import { ReactNode } from 'react';
 import ActivitySubmissions from './partials/activity-submissions';
 import Basic from './partials/basic';
@@ -73,84 +72,72 @@ const Update = (props: CourseUpdateProps) => {
 
    const tabs = [
       {
-         id: nanoid(),
          name: button.curriculum,
          slug: 'curriculum',
          Icon: FilePenLine,
          Component: Curriculum,
       },
       {
-         id: nanoid(),
          name: button.build_your_us_experience ?? 'Build Your US Experience',
          slug: 'us-experience',
          Icon: Ruler,
          Component: UsExperiencePlans,
       },
       {
-         id: nanoid(),
          name: 'Activity Reviews',
          slug: 'activity-reviews',
          Icon: ClipboardCheck,
          Component: ActivitySubmissions,
       },
       {
-         id: nanoid(),
          name: button.basic,
          slug: 'basic',
          Icon: Settings,
          Component: Basic,
       },
       {
-         id: nanoid(),
          name: button.pricing,
          slug: 'pricing',
          Icon: CircleDollarSign,
          Component: Pricing,
       },
       {
-         id: nanoid(),
          name: button.info,
          slug: 'info',
          Icon: BookText,
          Component: Info,
       },
       {
-         id: nanoid(),
          name: button.media,
          slug: 'media',
          Icon: FolderInput,
          Component: Media,
       },
       {
-         id: nanoid(),
          name: 'Public hero',
          slug: 'hero',
          Icon: ImageIcon,
          Component: Hero,
       },
       {
-         id: nanoid(),
          name: 'Review carousel',
          slug: 'review-carousel',
          Icon: Images,
          Component: ReviewCarousel,
       },
       {
-         id: nanoid(),
          name: 'Instructor card',
          slug: 'instructor-card',
          Icon: UserRound,
          Component: InstructorCard,
       },
       {
-         id: nanoid(),
          name: button.seo,
          slug: 'seo',
          Icon: FlaskConical,
          Component: SEO,
       },
       {
-         id: nanoid(),
          name: 'Landing page',
          slug: 'landing',
          Icon: LayoutTemplate,
@@ -179,9 +166,9 @@ const Update = (props: CourseUpdateProps) => {
          <Tabs value={tab ?? tabs[0].slug} className="grid grid-rows-1 gap-5 md:grid-cols-4">
             <div className="col-span-full md:col-span-1">
                <TabsList className="horizontal-tabs-list space-y-1">
-                  {tabs.map(({ id, name, slug, Icon }) => (
+                  {tabs.map(({ name, slug, Icon }) => (
                      <TabsTrigger
-                        key={id}
+                        key={slug}
                         value={slug}
                         className="horizontal-tabs-trigger"
                         onClick={() =>
@@ -201,9 +188,9 @@ const Update = (props: CourseUpdateProps) => {
             </div>
 
             <div className="col-span-full md:col-span-3">
-               {tabs.map(({ id, slug, Component }) =>
+               {tabs.map(({ slug, Component }) =>
                   (tab ?? tabs[0].slug) === slug ? (
-                     <TabsContent key={id} value={slug} className="m-0" forceMount>
+                     <TabsContent key={slug} value={slug} className="m-0" forceMount>
                         <Component />
                      </TabsContent>
                   ) : null,

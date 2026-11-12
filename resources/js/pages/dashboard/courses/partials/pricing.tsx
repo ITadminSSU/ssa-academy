@@ -246,6 +246,7 @@ const CatalogCouponPromoFields = ({
 
 const Pricing = () => {
    const { props } = usePage<CourseUpdateProps>();
+   const pageErrors = (props as CourseUpdateProps & { errors?: Record<string, string | undefined> }).errors ?? {};
    const { translate, appTimezone } = props;
    const { dashboard, input, button } = translate;
    const { prices, expiries, course, billingModels = [], stripeActive, stripeSynced } = props;
@@ -293,7 +294,7 @@ const Pricing = () => {
          ? 'pre_register_subscription'
          : storedBillingModel;
 
-   const { data, setData, post, errors, processing, transform } = useForm({
+   const { data, setData, post, errors: formErrors, processing, transform } = useForm({
       tab: 'pricing',
       pricing_type: asOptionValue(course.pricing_type) || paidValue,
       billing_model: initialBillingModel,
@@ -338,6 +339,7 @@ const Pricing = () => {
       appTimezone,
       setData,
    ]);
+   const errors = { ...pageErrors, ...formErrors };
 
    transform((form) => {
       const isPaidForm = form.pricing_type === paidValue;
@@ -355,7 +357,9 @@ const Pricing = () => {
          launch_offer_enabled: launchEnabled,
          price: form.price === '' || form.price === null ? null : Number(form.price),
          subscription_price:
-            form.subscription_price === '' || form.subscription_price === null ? null : Number(form.subscription_price),
+            form.billing_model === 'one_time_or_installment' || form.subscription_price === '' || form.subscription_price === null
+               ? null
+               : Number(form.subscription_price),
          installment_price:
             (form.billing_model === 'installment_subscription' || form.billing_model === 'one_time_or_installment') &&
             form.installment_price !== '' &&
@@ -420,6 +424,7 @@ const Pricing = () => {
       e.preventDefault();
       post(route('courses.update', { id: course.id }), {
          preserveScroll: true,
+         preserveState: 'errors',
       });
    };
 
