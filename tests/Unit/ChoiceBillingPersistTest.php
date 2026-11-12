@@ -230,6 +230,33 @@ it('shows the best value badge on the card the course saved', function () {
     expect($missing)->not->toContain('Best value')
         ->and($missing)->toContain('USD 49.00')
         ->and($missing)->toContain('USD 15.00');
+
+    expect(substr_count($monthly, 'choice-plan-radio-selected'))->toBe(1)
+        ->and(strpos($monthly, 'choice-plan-radio-selected'))->toBeGreaterThan(strpos($monthly, 'One-Time Payment'))
+        ->and(strpos($monthly, 'choice-plan-radio-selected'))->toBeLessThan(strpos($monthly, 'Monthly plan'));
+
+    $oneTimeSelected = view('paymentgateways::partials.payment.ChoicePlans', [
+        'choicePlan' => [
+            'plan' => 'one_time',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'recurring' => 15,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'recurring',
+        ],
+        'item' => $item,
+        'item_type' => 'course',
+        'coupon' => null,
+        'formatMoney' => $formatMoney,
+    ])->render();
+
+    expect(substr_count($oneTimeSelected, 'choice-plan-radio-selected'))->toBe(1)
+        ->and(strpos($oneTimeSelected, 'choice-plan-radio-selected'))->toBeLessThan(strpos($oneTimeSelected, 'One-Time Payment'))
+        ->and($oneTimeSelected)->toContain('plan=one_time')
+        ->and($oneTimeSelected)->toContain('plan=recurring')
+        ->and($oneTimeSelected)->toContain('USD 49.00')
+        ->and($oneTimeSelected)->toContain('USD 15.00');
 });
 
 it('describes the selected plan under the checkout total', function () {
