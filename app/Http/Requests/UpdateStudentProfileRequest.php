@@ -40,6 +40,14 @@ class UpdateStudentProfileRequest extends FormRequest
                 ),
             ]);
         }
+
+        foreach (['remove_cv', 'remove_id_document', 'remove_criteria_assessment'] as $flag) {
+            if ($this->has($flag)) {
+                $this->merge([
+                    $flag => filter_var($this->input($flag), FILTER_VALIDATE_BOOLEAN),
+                ]);
+            }
+        }
     }
 
     /**
@@ -59,6 +67,9 @@ class UpdateStudentProfileRequest extends FormRequest
             'cv_resume' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'id_document' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
             'criteria_assessment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp|max:10240',
+            'remove_cv' => 'nullable|boolean',
+            'remove_id_document' => 'nullable|boolean',
+            'remove_criteria_assessment' => 'nullable|boolean',
         ];
     }
 

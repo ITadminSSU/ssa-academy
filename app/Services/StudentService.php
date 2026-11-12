@@ -501,15 +501,24 @@ class StudentService extends MediaService
 
          $user->save();
 
-         foreach (['cv_resume', 'id_document', 'criteria_assessment'] as $collection) {
-            if (empty($data[$collection])) {
+         foreach ([
+            'cv_resume' => 'remove_cv',
+            'id_document' => 'remove_id_document',
+            'criteria_assessment' => 'remove_criteria_assessment',
+         ] as $collection => $removeFlag) {
+            if (! empty($data[$collection])) {
+               $user->addMedia($data[$collection])
+                  ->withCustomProperties(['name' => $collection])
+                  ->toMediaCollection($collection);
+               $user->unsetRelation('media');
+
                continue;
             }
 
-            $user->addMedia($data[$collection])
-               ->withCustomProperties(['name' => $collection])
-               ->toMediaCollection($collection);
-            $user->unsetRelation('media');
+            if (! empty($data[$removeFlag])) {
+               $user->clearMediaCollection($collection);
+               $user->unsetRelation('media');
+            }
          }
 
          return $user->fresh(['media']) ?? $user;
