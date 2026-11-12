@@ -2,11 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Models\ProfessionalType;
 use App\Support\PersonName;
-use App\Support\RegistrationProfileOptions;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class UpdateStudentProfileRequest extends FormRequest
@@ -27,25 +24,20 @@ class UpdateStudentProfileRequest extends FormRequest
             ]);
         }
 
-        if ($this->has('worked_as_construction_va')) {
+        if ($this->has('facebook')) {
+            $facebook = trim((string) $this->input('facebook'));
             $this->merge([
-                'worked_as_construction_va' => filter_var(
-                    $this->input('worked_as_construction_va'),
-                    FILTER_VALIDATE_BOOLEAN,
-                    FILTER_NULL_ON_FAILURE
-                ),
+                'facebook' => $facebook === '' ? null : $facebook,
             ]);
         }
 
-        if ($this->exists('referred_by') || $this->exists('referrer_is_employee')) {
-            $referred = trim((string) $this->input('referred_by', ''));
-            $team = $this->input('referrer_is_employee');
-
+        if ($this->has('has_us_estimating_experience')) {
             $this->merge([
-                'referred_by' => $referred,
-                'referrer_is_employee' => $referred === '' || $team === null || $team === ''
-                    ? null
-                    : filter_var($team, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+                'has_us_estimating_experience' => filter_var(
+                    $this->input('has_us_estimating_experience'),
+                    FILTER_VALIDATE_BOOLEAN,
+                    FILTER_NULL_ON_FAILURE
+                ),
             ]);
         }
     }
@@ -57,43 +49,16 @@ class UpdateStudentProfileRequest extends FormRequest
      */
     public function rules(): array
     {
-        $softwareOptions = RegistrationProfileOptions::estimatingSoftware();
-        $experienceOptions = RegistrationProfileOptions::constructionExperience();
-        $selected = array_values(array_filter((array) $this->input('estimating_software', [])));
-        $type = ProfessionalType::query()->find($this->input('professional_type_id'));
-        $typeIsOther = $type && strcasecmp((string) $type->name, 'other') === 0;
-
         return [
             'given_name' => 'required|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
             'remove_photo' => 'nullable|boolean',
-            'social_links' => 'nullable',
-            'professional_type_id' => 'required|exists:professional_types,id',
-            'professional_type_other' => [
-                Rule::requiredIf($typeIsOther),
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'estimating_software' => 'required|array|min:1',
-            'estimating_software.*' => ['string', Rule::in($softwareOptions)],
-            'estimating_software_other' => [
-                Rule::requiredIf(in_array('Others', $selected, true)),
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'construction_experience' => ['required', 'string', Rule::in($experienceOptions)],
-            'worked_as_construction_va' => 'required|boolean',
-            'referred_by' => 'nullable|string|max:255',
-            'referrer_is_employee' => [
-                Rule::requiredIf(filled($this->input('referred_by'))),
-                'nullable',
-                'boolean',
-            ],
+            'facebook' => ['nullable', 'string', 'max:255', 'url'],
+            'has_us_estimating_experience' => 'nullable|boolean',
             'cv_resume' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'id_document' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
+            'criteria_assessment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp|max:10240',
         ];
     }
 
@@ -104,18 +69,13 @@ class UpdateStudentProfileRequest extends FormRequest
     {
         return [
             'given_name.required' => 'Please enter your given name.',
-            'professional_type_id.required' => 'Please select your professional type.',
-            'professional_type_other.required' => 'Please specify your professional type.',
-            'estimating_software.required' => 'Please select at least one estimating software option.',
-            'estimating_software.min' => 'Please select at least one estimating software option.',
-            'estimating_software_other.required' => 'Please specify the other estimating software you have used.',
-            'construction_experience.required' => 'Please select your years of construction experience.',
-            'worked_as_construction_va.required' => 'Please indicate whether you have worked as a Construction Virtual Assistant.',
-            'referrer_is_employee.required' => 'Please say whether your referrer is part of the SMARTSOURCING USA team.',
+            'facebook.url' => 'Enter a valid Facebook profile URL.',
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
             'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
             'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
             'id_document.max' => 'ID must not be larger than 10MB.',
+            'criteria_assessment.mimes' => 'Assessment result must be a PDF, DOC, DOCX, JPG, PNG, or WEBP file.',
+            'criteria_assessment.max' => 'Assessment result must not be larger than 10MB.',
         ];
     }
 

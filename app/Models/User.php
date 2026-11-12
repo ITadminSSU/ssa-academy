@@ -57,6 +57,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'worked_as_construction_va',
         'referred_by',
         'referrer_is_employee',
+        'has_us_estimating_experience',
         'candidate_status',
         'candidate_notes',
         'candidate_status_updated_at',
@@ -95,6 +96,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'estimating_software' => 'array',
         'worked_as_construction_va' => 'boolean',
         'referrer_is_employee' => 'boolean',
+        'has_us_estimating_experience' => 'boolean',
         'status' => 'integer',
         'can_manage_platform_settings' => 'boolean',
         'email_verification_expires_at' => 'datetime',
@@ -196,6 +198,17 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         $this->addMediaCollection('id_document')
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
+
+        $this->addMediaCollection('criteria_assessment')
+            ->singleFile()
+            ->acceptsMimeTypes([
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ]);
     }
 
     public function sendEmailVerificationNotification(): void

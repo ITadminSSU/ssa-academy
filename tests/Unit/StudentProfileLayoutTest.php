@@ -1,0 +1,188 @@
+<?php
+
+use App\Http\Requests\UpdateStudentProfileRequest;
+use App\Models\Course\Course;
+use App\Models\Course\CourseCertificate;
+use App\Models\User;
+use App\Services\Course\CourseCertificateIssuanceService;
+use App\Services\StudentService;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
+
+beforeEach(function () {
+    Schema::disableForeignKeyConstraints();
+
+    Schema::dropIfExists('media');
+    Schema::dropIfExists('course_certificates');
+    Schema::dropIfExists('users');
+
+    Schema::create('users', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('given_name')->nullable();
+        $table->string('last_name')->nullable();
+        $table->string('email')->unique();
+        $table->string('password')->nullable();
+        $table->string('role')->default('student');
+        $table->unsignedTinyInteger('status')->default(1);
+        $table->text('social_links')->nullable();
+        $table->unsignedBigInteger('professional_type_id')->nullable();
+        $table->string('professional_type_other')->nullable();
+        $table->text('estimating_software')->nullable();
+        $table->string('estimating_software_other')->nullable();
+        $table->string('construction_experience')->nullable();
+        $table->boolean('worked_as_construction_va')->nullable();
+        $table->string('referred_by')->nullable();
+        $table->boolean('referrer_is_employee')->nullable();
+        $table->boolean('has_us_estimating_experience')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::create('course_certificates', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id');
+        $table->unsignedBigInteger('course_id');
+        $table->string('identifier')->nullable();
+        $table->string('certificate_id')->nullable();
+        $table->string('verification_reference')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::create('media', function (Blueprint $table) {
+        $table->id();
+        $table->string('model_type');
+        $table->unsignedBigInteger('model_id');
+        $table->uuid('uuid')->nullable();
+        $table->string('collection_name');
+        $table->string('name');
+        $table->string('file_name');
+        $table->string('mime_type')->nullable();
+        $table->string('disk');
+        $table->string('conversions_disk')->nullable();
+        $table->unsignedBigInteger('size');
+        $table->json('manipulations');
+        $table->json('custom_properties');
+        $table->json('generated_conversions');
+        $table->json('responsive_images');
+        $table->unsignedInteger('order_column')->nullable()->index();
+        $table->nullableTimestamps();
+    });
+
+    Schema::enableForeignKeyConstraints();
+});
+
+function layoutStudent(): User
+{
+    return User::create([
+        'name' => 'Raiza Limpiada',
+        'given_name' => 'Raiza',
+        'last_name' => 'Limpiada',
+        'email' => 'student-'.uniqid().'@example.com',
+        'password' => Hash::make('password'),
+        'role' => 'student',
+        'status' => 1,
+        'social_links' => [
+            ['host' => 'website', 'profile_link' => 'https://example.com'],
+            ['host' => 'facebook', 'profile_link' => 'https://facebook.com/old'],
+            ['host' => 'twitter', 'profile_link' => 'https://x.com/old'],
+            ['host' => 'linkedin', 'profile_link' => 'https://linkedin.com/in/old'],
+        ],
+        'professional_type_id' => 4,
+        'estimating_software' => ['Excel'],
+        'construction_experience' => '1–3 Years',
+        'worked_as_construction_va' => false,
+        'referred_by' => 'Alex',
+        'referrer_is_employee' => true,
+    ]);
+}
+
+test('saving the new profile keeps stored background answers and other social links', function () {
+    $user = layoutStudent();
+
+    $saved = app(StudentService::class)->updateProfile([
+        'given_name' => 'Raiza',
+        'last_name' => 'Limpiada',
+        'facebook' => 'https://facebook.com/raiza',
+        'has_us_estimating_experience' => false,
+    ], (string) $user->id);
+
+    $hosts = collect($saved->social_links)->pluck('profile_link', 'host');
+
+    expect($saved->professional_type_id)->toBe(4)
+        ->and($saved->estimating_software)->toBe(['Excel'])
+        ->and($saved->construction_experience)->toBe('1–3 Years')
+        ->and($saved->worked_as_construction_va)->toBeFalse()
+        ->and($saved->referred_by)->toBe('Alex')
+        ->and($saved->referrer_is_employee)->toBeTrue()
+        ->and($saved->has_us_estimating_experience)->toBeFalse()
+        ->and($hosts->get('facebook'))->toBe('https://facebook.com/raiza')
+        ->and($hosts->get('website'))->toBe('https://example.com')
+        ->and($hosts->get('twitter'))->toBe('https://x.com/old')
+        ->and($hosts->get('linkedin'))->toBe('https://linkedin.com/in/old');
+});
+
+test('clearing facebook removes only the facebook link', function () {
+    $user = layoutStudent();
+
+    $saved = app(StudentService::class)->updateProfile([
+        'facebook' => null,
+        'has_us_estimating_experience' => true,
+    ], (string) $user->id);
+
+    $hosts = collect($saved->social_links)->pluck('host');
+
+    expect($hosts->all())->not->toContain('facebook')
+        ->and($hosts->all())->toContain('website', 'twitter', 'linkedin')
+        ->and($saved->has_us_estimating_experience)->toBeTrue();
+});
+
+test('an assessment result does not release a certificate', function () {
+    $user = layoutStudent();
+    $saved = app(StudentService::class)->updateProfile([
+        'criteria_assessment' => UploadedFile::fake()->createWithContent('result.pdf', "%PDF-1.4\n% assessment\n"),
+    ], (string) $user->id);
+
+    $course = new Course;
+    $course->id = 9;
+    $course->exists = true;
+    $certificates = app(CourseCertificateIssuanceService::class);
+
+    expect($saved->getMedia('criteria_assessment'))->toHaveCount(1)
+        ->and($saved->getFirstMedia('criteria_assessment')?->file_name)->toBe('result.pdf')
+        ->and($certificates->hasReleaseDocuments($saved))->toBeFalse()
+        ->and($certificates->issueForCourse($course, $saved))->toBeNull()
+        ->and($certificates->finishCourseNotice($saved, false))->toBe('Course completed successfully. Upload your CV/resume and government ID on your profile to release your certificate.')
+        ->and(CourseCertificate::query()->count())->toBe(0);
+
+    $replaced = app(StudentService::class)->updateProfile([
+        'criteria_assessment' => UploadedFile::fake()->createWithContent('updated-result.pdf', "%PDF-1.4\n% replacement\n"),
+    ], (string) $user->id);
+
+    expect($replaced->getMedia('criteria_assessment'))->toHaveCount(1)
+        ->and($replaced->getFirstMedia('criteria_assessment')?->file_name)->toBe('updated-result.pdf');
+});
+
+test('the profile form no longer requires the background questions', function () {
+    $request = UpdateStudentProfileRequest::create('/student/profile', 'POST', [
+        'given_name' => 'Raiza',
+        'last_name' => 'Limpiada',
+        'facebook' => '',
+        'has_us_estimating_experience' => '0',
+    ]);
+    $request->setContainer(app());
+    $request->setRedirector(app('redirect'));
+
+    expect(fn () => $request->validateResolved())->not->toThrow(ValidationException::class);
+
+    $invalid = UpdateStudentProfileRequest::create('/student/profile', 'POST', [
+        'given_name' => 'Raiza',
+        'facebook' => 'not a url',
+    ]);
+    $invalid->setContainer(app());
+    $invalid->setRedirector(app('redirect'));
+
+    expect(fn () => $invalid->validateResolved())->toThrow(ValidationException::class);
+});

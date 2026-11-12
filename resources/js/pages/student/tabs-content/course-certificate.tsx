@@ -42,16 +42,15 @@ const CertificateReleaseForm = () => {
          <CardContent className="space-y-4 p-6">
             <div className="space-y-2">
                <h3 className="text-lg font-semibold">Upload documents to release your certificate</h3>
-               <p className="text-sm">
-                  Upload your {missingDocumentLabels(certificateRelease)} on your profile to release your certificate.
-               </p>
+               <p className="text-sm">Upload your {missingDocumentLabels(certificateRelease)} on your profile to release your certificate.</p>
                {auth.profileUrl && (
-                  <Link href={auth.profileUrl} className="text-sm font-medium underline">
+                  <Link href={`${auth.profileUrl}#documents`} className="text-sm font-medium underline">
                      Go to profile
                   </Link>
                )}
                <p className="text-muted-foreground text-sm">
-                  You can also upload the missing file here. This is asked once for your account. After these files are saved, later courses use the same documents.
+                  You can also upload the missing file here. This is asked once for your account. After these files are saved, later courses use the
+                  same documents.
                </p>
             </div>
             <form onSubmit={submit} className="space-y-4">
@@ -88,7 +87,18 @@ const CertificateReleaseForm = () => {
 
 const CourseCertificate = () => {
    const { props } = usePage<StudentCourseProps>();
-   const { course, watchHistory, completion, courseGates, certificate, certificateRelease, certificateTemplate, marksheetTemplate, studentMarks, auth } = props;
+   const {
+      course,
+      watchHistory,
+      completion,
+      courseGates,
+      certificate,
+      certificateRelease,
+      certificateTemplate,
+      marksheetTemplate,
+      studentMarks,
+      auth,
+   } = props;
    const verificationReference = certificate?.verification_reference || certificate?.identifier;
 
    const certificateUnlocked = courseGates?.certificate_unlocked ?? (watchHistory?.completion_date || completion?.completion === 100);

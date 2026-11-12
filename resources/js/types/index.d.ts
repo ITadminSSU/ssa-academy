@@ -6,6 +6,7 @@ interface Auth {
    legalAgreementRequired?: boolean;
    legalAgreementUrl?: string;
    profileSetupRequired?: boolean;
+   certificateDocuments?: { needs_cv: boolean; needs_id: boolean } | null;
    profileUrl?: string | null;
    twoFactorEnabled?: boolean;
    canManageTwoFactor?: boolean;
@@ -53,6 +54,7 @@ interface User extends TableCommon {
    worked_as_construction_va?: boolean | null;
    referred_by?: string | null;
    referrer_is_employee?: boolean | null;
+   has_us_estimating_experience?: boolean | null;
    cv_resume_url?: string | null;
    cv_resume_name?: string | null;
    has_cv?: boolean;

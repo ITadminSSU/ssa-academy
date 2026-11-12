@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
 use App\Models\Course\SectionLesson;
 use App\Models\Course\WatchHistory;
+use App\Services\AuthService;
 use App\Services\Course\CourseCertificateIssuanceService;
 use App\Services\Course\CourseCompletionGateService;
 use App\Services\Course\CourseFinalExamService;
@@ -463,9 +464,18 @@ class PlayerController extends Controller
         $certificate = $this->certificateIssuance->issueForCourse($course, $user);
         $this->courseFinalExamService->ensureFinalExamEnrollment($course, $user);
 
+        $issued = $certificate !== null;
+        $notice = $this->certificateIssuance->finishCourseNotice($user, $issued);
+
+        if (! $issued && ! $this->certificateIssuance->hasReleaseDocuments($user)) {
+            return redirect()
+                ->to(app(AuthService::class)->homeUrlFor($user, ['tab' => 'profile']).'#documents')
+                ->with('success', $notice);
+        }
+
         return redirect()
             ->route('student.course.show', ['id' => $course->id, 'tab' => 'certificate'])
-            ->with('success', $this->certificateIssuance->finishCourseNotice($user, $certificate !== null));
+            ->with('success', $notice);
     }
 
     /**

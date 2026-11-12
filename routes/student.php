@@ -35,7 +35,7 @@ Route::get('student/courses/{id}/{tab}', [StudentController::class, 'show_course
 Route::get('student/exams/{id}/{tab}', [StudentController::class, 'show_exam'])->name('student.exam.show');
 Route::post('student/profile', [StudentController::class, 'update_profile'])->name('student.profile.update');
 Route::get('student/profile/documents/{type}', [StudentController::class, 'showOwnDocument'])
-    ->where('type', 'cv|id')
+    ->where('type', 'cv|id|assessment')
     ->name('student.profile.document');
 Route::post('student/courses/{id}/certificate-documents', [StudentController::class, 'storeCertificateDocuments'])
     ->name('student.certificate-documents.store');
