@@ -205,7 +205,7 @@ class PaymentController extends Controller
                 'recurring_compare' => $course->choice_recurring_compare,
                 'months' => (int) ($course->installment_months ?? 0),
                 'recurring_synced' => ! empty($course->stripe_price_id),
-                'best_value' => in_array($bestValue, ['one_time', 'none'], true) ? $bestValue : 'recurring',
+                'best_value' => in_array($bestValue, ['recurring', 'one_time', 'none'], true) ? $bestValue : 'none',
             ];
         }
 

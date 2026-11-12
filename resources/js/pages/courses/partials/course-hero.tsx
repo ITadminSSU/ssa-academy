@@ -9,6 +9,7 @@ import { SharedData } from '@/types/global';
 import { usePage } from '@inertiajs/react';
 import { Clock, GraduationCap, Languages, Users } from 'lucide-react';
 import { ReactNode } from 'react';
+import Instructor from './instructor';
 
 const HeroFact = ({ children }: { children: ReactNode }) => (
    <li className="sm:border-border/70 flex min-w-0 items-center gap-2 sm:flex-1 sm:justify-center sm:border-l sm:px-4 sm:first:border-l-0">
@@ -91,6 +92,8 @@ const CourseHero = ({ course }: { course: Course }) => {
                      </span>
                   ))}
                </h1>
+
+               {course.instructor ? <Instructor course={course} tone="light" /> : null}
 
                {paragraph ? <p className="max-w-2xl text-base text-white/80 md:text-lg">{paragraph}</p> : null}
             </div>

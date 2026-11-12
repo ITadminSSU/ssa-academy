@@ -211,7 +211,120 @@ it('shows the best value badge on the card the course saved', function () {
     expect($hidden)->not->toContain('Best value')
         ->and($hidden)->toContain('USD 49.00')
         ->and($hidden)->toContain('USD 6.00');
+
+    $missing = view('paymentgateways::partials.payment.ChoicePlans', [
+        'choicePlan' => [
+            'plan' => 'one_time',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'recurring' => 15,
+            'months' => 0,
+            'recurring_synced' => true,
+        ],
+        'item' => $item,
+        'item_type' => 'course',
+        'coupon' => null,
+        'formatMoney' => $formatMoney,
+    ])->render();
+
+    expect($missing)->not->toContain('Best value')
+        ->and($missing)->toContain('USD 49.00')
+        ->and($missing)->toContain('USD 15.00');
 });
+
+it('describes the selected plan under the checkout total', function () {
+    $item = new class
+    {
+        public int $id = 36;
+
+        public string $pricing_type = 'paid';
+
+        public string $title = 'Copy of Test Duplicate course';
+
+        public string $short_description = 'A short description';
+
+        public bool $discount = false;
+    };
+
+    $once = checkoutCardHtml($item, [
+        'checkoutMode' => 'one_time_or_monthly',
+        'discountedPrice' => 49,
+        'choice' => [
+            'plan' => 'one_time',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'one_time_compare' => 99,
+            'recurring' => 15,
+            'recurring_compare' => 20,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'recurring',
+        ],
+    ]);
+
+    expect($once)->toContain('You pay USD 49.00 once.')
+        ->and($once)->toContain('USD 49.00')
+        ->and($once)->toContain('USD 15.00')
+        ->and(substr_count($once, 'Best value'))->toBe(1)
+        ->and(strpos($once, 'Best value'))->toBeGreaterThan(strpos($once, 'One-Time Payment'))
+        ->and($once)->toContain('Enter coupon code if you have one')
+        ->and(substr_count($once, 'Total Payment'))->toBe(1);
+
+    $monthly = checkoutCardHtml($item, [
+        'checkoutMode' => 'one_time_or_monthly',
+        'discountedPrice' => 15,
+        'choice' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 49,
+            'recurring' => 15,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'one_time',
+        ],
+    ]);
+
+    expect($monthly)->toContain('You pay USD 15.00 today, then USD 15.00 each month until you cancel.')
+        ->and(substr_count($monthly, 'Best value'))->toBe(1)
+        ->and(strpos($monthly, 'Best value'))->toBeLessThan(strpos($monthly, 'One-Time Payment'));
+
+    $installment = checkoutCardHtml($item, [
+        'checkoutMode' => 'one_time_or_installment',
+        'discountedPrice' => 20,
+        'choice' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_installment',
+            'one_time' => 120,
+            'recurring' => 20,
+            'months' => 6,
+            'recurring_synced' => true,
+            'best_value' => 'none',
+        ],
+    ]);
+
+    expect($installment)->toContain('You pay USD 20.00 today, then 6 payments. Billing stops after the last one.')
+        ->and($installment)->not->toContain('Best value')
+        ->and($installment)->toContain('Payment plan')
+        ->and($installment)->toContain('USD 120.00')
+        ->and($installment)->toContain('USD 20.00');
+});
+
+function checkoutCardHtml(object $item, array $overrides): string
+{
+    return view('paymentgateways::partials.payment.CourseCard', array_merge([
+        'item' => $item,
+        'item_type' => 'course',
+        'currency' => 'USD',
+        'discountedPrice' => 0,
+        'coupon' => null,
+        'couponDiscount' => 0,
+        'couponInput' => null,
+        'couponError' => null,
+        'checkoutMode' => null,
+        'choice' => null,
+        'launchOffer' => null,
+    ], $overrides))->render();
+}
 
 function pricingSaveRequest(array $overrides = []): UpdateCourseRequest
 {
