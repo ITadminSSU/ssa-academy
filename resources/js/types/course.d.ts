@@ -82,6 +82,7 @@ interface Course extends TableCommon {
    installment_months?: number | null;
    choice_one_time_compare?: number | null;
    choice_recurring_compare?: number | null;
+   choice_best_value?: 'recurring' | 'one_time' | 'none' | null;
    launch_offer_enabled?: boolean;
    launch_offer_starts_at?: string | null;
    launch_offer_ends_at?: string | null;

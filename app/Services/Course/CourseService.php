@@ -143,6 +143,11 @@ class CourseService extends MediaService
                $pricing['choice_recurring_compare'] = $data['choice_recurring_compare'] ?? null;
             }
 
+            if (Schema::hasColumn('courses', 'choice_best_value')) {
+               $badge = $data['choice_best_value'] ?? null;
+               $pricing['choice_best_value'] = in_array($badge, ['recurring', 'one_time', 'none'], true) ? $badge : null;
+            }
+
             $course->forceFill($pricing)->save();
 
             $this->syncReservedSeatBalanceDates($course->fresh() ?? $course);

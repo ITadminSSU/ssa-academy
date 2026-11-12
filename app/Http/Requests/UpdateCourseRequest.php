@@ -98,6 +98,9 @@ class UpdateCourseRequest extends FormRequest
             'choice_recurring_compare' => $isChoice && $this->filled('choice_recurring_compare')
                 ? (float) $this->input('choice_recurring_compare')
                 : null,
+            'choice_best_value' => $isChoice && in_array($this->input('choice_best_value'), ['one_time', 'none'], true)
+                ? (string) $this->input('choice_best_value')
+                : ($isChoice ? 'recurring' : null),
             'discount' => $isOneTime
                 ? filter_var($this->input('discount'), FILTER_VALIDATE_BOOLEAN)
                 : false,
@@ -434,6 +437,7 @@ class UpdateCourseRequest extends FormRequest
             'installment_price' => ($isInstallment || $isChoiceInstallment) ? 'required|numeric|min:1' : 'nullable|numeric|min:1',
             'installment_months' => ($isInstallment || $isChoiceInstallment) ? 'required|integer|min:1' : 'nullable|integer|min:1',
             'choice_one_time_compare' => $isChoice ? 'nullable|numeric|gt:price' : 'nullable',
+            'choice_best_value' => 'nullable|string|in:recurring,one_time,none',
             'choice_recurring_compare' => $isChoiceMonthly
                 ? 'nullable|numeric|gt:subscription_price'
                 : ($isChoiceInstallment ? 'nullable|numeric|gt:installment_price' : 'nullable'),

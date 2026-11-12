@@ -53,6 +53,7 @@ class Course extends Model implements HasMedia
         'installment_months',
         'choice_one_time_compare',
         'choice_recurring_compare',
+        'choice_best_value',
         'launch_offer_enabled',
         'launch_offer_starts_at',
         'launch_offer_ends_at',

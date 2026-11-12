@@ -195,6 +195,7 @@ class PaymentController extends Controller
             $selectedPlan = ChoiceBilling::plan($request->query('plan')) ?? ChoiceBilling::PLAN_RECURRING;
             $recurringAmount = ChoiceBilling::chargeAmount($course, ChoiceBilling::PLAN_RECURRING);
             $oneTimeAmount = ChoiceBilling::chargeAmount($course, ChoiceBilling::PLAN_ONE_TIME);
+            $bestValue = $course->choice_best_value;
             $choice = [
                 'plan' => $selectedPlan,
                 'mode' => $checkoutMode,
@@ -204,6 +205,7 @@ class PaymentController extends Controller
                 'recurring_compare' => $course->choice_recurring_compare,
                 'months' => (int) ($course->installment_months ?? 0),
                 'recurring_synced' => ! empty($course->stripe_price_id),
+                'best_value' => in_array($bestValue, ['one_time', 'none'], true) ? $bestValue : 'recurring',
             ];
         }
 

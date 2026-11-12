@@ -1,8 +1,8 @@
 import Combobox from '@/components/combobox';
 import InputError from '@/components/input-error';
 import LoadingButton from '@/components/loading-button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem } from '@/components/ui/accordion';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -94,12 +94,7 @@ const catalogPromoMoney = (value: number) => {
    return Number.isInteger(rounded) ? `$${rounded}` : `$${rounded.toFixed(2)}`;
 };
 
-const catalogPromoPreview = (
-   deposit: string | number,
-   remaining: string | number,
-   off: string | number,
-   full: string | number,
-) => {
+const catalogPromoPreview = (deposit: string | number, remaining: string | number, off: string | number, full: string | number) => {
    const depositAmount = Number(deposit) || 0;
    const remainingAmount = Number(remaining) || 0;
    const offAmount = Number(off) || 0;
@@ -168,8 +163,7 @@ const CatalogCouponPromoFields = ({
          ? {
               help: 'Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from Coupons. Taken off the course price on the catalog card.',
               amountLabel: 'Amount off price (display)',
-              amountHelp:
-                 'Taken off the listed price only. Keep the course price at the no-code amount. Create the actual codes under Coupons.',
+              amountHelp: 'Taken off the listed price only. Keep the course price at the no-code amount. Create the actual codes under Coupons.',
            }
          : variant === 'upfront'
            ? {
@@ -181,12 +175,11 @@ const CatalogCouponPromoFields = ({
            : {
                 help: 'Display only. Does not change charged prices, Stripe, or checkout. Students still enter a code from Coupons. Never taken off the deposit. After pre-register end, the card shows the full upfront price.',
                 amountLabel: 'Amount off remaining (display)',
-                amountHelp:
-                   'Taken off remaining only. Keep remaining at the no-code amount. Create the actual codes under Coupons.',
+                amountHelp: 'Taken off remaining only. Keep remaining at the no-code amount. Create the actual codes under Coupons.',
              };
 
    return (
-      <div className="sm:col-span-2 space-y-3 rounded-md border bg-muted/20 p-3">
+      <div className="bg-muted/20 space-y-3 rounded-md border p-3 sm:col-span-2">
          <div className="flex items-start justify-between gap-4">
             <div>
                <Label htmlFor={switchId}>Show coupon price on catalog card</Label>
@@ -216,26 +209,24 @@ const CatalogCouponPromoFields = ({
                </div>
                {variant === 'one_time' && Boolean(data.discount) ? (
                   <p className="text-muted-foreground text-xs">
-                     The discount checkbox is a real sale price. This coupon amount is advertising only. Avoid using both
-                     stories on the catalog card.
+                     The discount checkbox is a real sale price. This coupon amount is advertising only. Avoid using both stories on the catalog card.
                   </p>
                ) : null}
                {variant === 'pre_register' && preview.off > 0 ? (
                   <p className="text-muted-foreground text-xs">
-                     Card preview: ${preview.totalWith} with coupon (${preview.deposit} + ${preview.remainingWith} remaining).
-                     No-code remaining stays ${preview.remaining}. After {windowLabel ?? 'pre-register end'}: ${preview.full}.
+                     Card preview: ${preview.totalWith} with coupon (${preview.deposit} + ${preview.remainingWith} remaining). No-code remaining stays
+                     ${preview.remaining}. After {windowLabel ?? 'pre-register end'}: ${preview.full}.
                   </p>
                ) : null}
                {variant === 'one_time' && off > 0 && price > 0 ? (
                   <p className="text-muted-foreground text-xs">
-                     Card preview: {catalogPromoMoney(price)} course price, {catalogPromoMoney(priceWithCoupon)} with
-                     coupon.
+                     Card preview: {catalogPromoMoney(price)} course price, {catalogPromoMoney(priceWithCoupon)} with coupon.
                   </p>
                ) : null}
                {variant === 'upfront' && off > 0 && price > 0 ? (
                   <p className="text-muted-foreground text-xs">
-                     Card preview: {catalogPromoMoney(price)} course price, {catalogPromoMoney(priceWithCoupon)} with
-                     coupon + {catalogPromoMoney(monthly)}/mo.
+                     Card preview: {catalogPromoMoney(price)} course price, {catalogPromoMoney(priceWithCoupon)} with coupon +{' '}
+                     {catalogPromoMoney(monthly)}/mo.
                   </p>
                ) : null}
             </>
@@ -252,14 +243,8 @@ const Pricing = () => {
    const { prices, expiries, course, billingModels = [], stripeActive, stripeSynced } = props;
    const dateTimezoneLabel = timezoneHint(appTimezone);
 
-   const priceOptions = useMemo(
-      () => (Array.isArray(prices) ? prices.map(asOptionValue) : ['free', 'paid']),
-      [prices],
-   );
-   const expiryOptions = useMemo(
-      () => (Array.isArray(expiries) ? expiries.map(asOptionValue) : ['lifetime', 'limited_time']),
-      [expiries],
-   );
+   const priceOptions = useMemo(() => (Array.isArray(prices) ? prices.map(asOptionValue) : ['free', 'paid']), [prices]);
+   const expiryOptions = useMemo(() => (Array.isArray(expiries) ? expiries.map(asOptionValue) : ['lifetime', 'limited_time']), [expiries]);
    const paidValue = priceOptions.find((value) => value === 'paid') ?? 'paid';
    const limitedValue = expiryOptions.find((value) => value === 'limited_time') ?? 'limited_time';
 
@@ -288,13 +273,21 @@ const Pricing = () => {
       ];
    }, [billingModels]);
 
+   const storedBestValue = course.choice_best_value;
+   const initialBestValue =
+      storedBestValue === 'one_time' || storedBestValue === 'none' || storedBestValue === 'recurring' ? storedBestValue : 'recurring';
    const storedBillingModel = asOptionValue(course.billing_model) || 'one_time';
    const initialBillingModel =
-      course.launch_offer_enabled && storedBillingModel === 'subscription'
-         ? 'pre_register_subscription'
-         : storedBillingModel;
+      course.launch_offer_enabled && storedBillingModel === 'subscription' ? 'pre_register_subscription' : storedBillingModel;
 
-   const { data, setData, post, errors: formErrors, processing, transform } = useForm({
+   const {
+      data,
+      setData,
+      post,
+      errors: formErrors,
+      processing,
+      transform,
+   } = useForm({
       tab: 'pricing',
       pricing_type: asOptionValue(course.pricing_type) || paidValue,
       billing_model: initialBillingModel,
@@ -304,6 +297,7 @@ const Pricing = () => {
       installment_months: course.installment_months ?? '',
       choice_one_time_compare: course.choice_one_time_compare ?? '',
       choice_recurring_compare: course.choice_recurring_compare ?? '',
+      choice_best_value: initialBestValue,
       discount: Boolean(course.discount),
       discount_price: course.discount_price ?? '',
       expiry_type: asOptionValue(course.expiry_type) || 'lifetime',
@@ -316,8 +310,7 @@ const Pricing = () => {
       launch_deposit_amount: course.launch_deposit_amount ?? '20',
       launch_balance_amount: course.launch_balance_amount ?? '50',
       launch_balance_grace_days: course.launch_balance_grace_days ?? 5,
-      launch_subscription_trial_ends_at:
-         toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) || '2026-10-15T23:59',
+      launch_subscription_trial_ends_at: toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) || '2026-10-15T23:59',
       launch_full_upfront_price: course.launch_full_upfront_price ?? '75',
       catalog_coupon_promo: Boolean(course.catalog_coupon_promo),
       catalog_coupon_off_remaining: course.catalog_coupon_off_remaining ?? '29',
@@ -329,16 +322,9 @@ const Pricing = () => {
          launch_offer_starts_at: toDateTimeLocalValue(course.launch_offer_starts_at, appTimezone) || current.launch_offer_starts_at,
          launch_offer_ends_at: toDateTimeLocalValue(course.launch_offer_ends_at, appTimezone) || current.launch_offer_ends_at,
          launch_subscription_trial_ends_at:
-            toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) ||
-            current.launch_subscription_trial_ends_at,
+            toDateTimeLocalValue(course.launch_subscription_trial_ends_at, appTimezone) || current.launch_subscription_trial_ends_at,
       }));
-   }, [
-      course.launch_offer_starts_at,
-      course.launch_offer_ends_at,
-      course.launch_subscription_trial_ends_at,
-      appTimezone,
-      setData,
-   ]);
+   }, [course.launch_offer_starts_at, course.launch_offer_ends_at, course.launch_subscription_trial_ends_at, appTimezone, setData]);
    const errors = { ...pageErrors, ...formErrors };
 
    transform((form) => {
@@ -346,8 +332,7 @@ const Pricing = () => {
       const isUpfront = form.billing_model === 'upfront_subscription';
       const isPreRegister = form.billing_model === 'pre_register_subscription';
       const launchEnabled = isPaidForm && isPreRegister;
-      const catalogPromoAllowed =
-         isPaidForm && (form.billing_model === 'one_time' || isUpfront || launchEnabled);
+      const catalogPromoAllowed = isPaidForm && (form.billing_model === 'one_time' || isUpfront || launchEnabled);
       const catalogPromoOn = catalogPromoAllowed && Boolean(form.catalog_coupon_promo);
 
       return {
@@ -384,10 +369,13 @@ const Pricing = () => {
             form.choice_recurring_compare !== null
                ? Number(form.choice_recurring_compare)
                : null,
-         discount_price:
-            form.discount && form.discount_price !== '' && form.discount_price !== null
-               ? Number(form.discount_price)
+         choice_best_value:
+            form.billing_model === 'one_time_or_monthly' || form.billing_model === 'one_time_or_installment'
+               ? form.choice_best_value === 'one_time' || form.choice_best_value === 'none'
+                  ? form.choice_best_value
+                  : 'recurring'
                : null,
+         discount_price: form.discount && form.discount_price !== '' && form.discount_price !== null ? Number(form.discount_price) : null,
          expiry_duration: form.expiry_type === limitedValue ? form.expiry_duration || null : null,
          launch_list_price: launchEnabled ? Number(form.launch_list_price) : null,
          launch_offer_price: launchEnabled ? Number(form.launch_offer_price) : null,
@@ -495,13 +483,9 @@ const Pricing = () => {
                                        ? '6'
                                        : current.subscription_price,
                                  installment_price:
-                                    value === 'installment_subscription' && !current.installment_price
-                                       ? '15'
-                                       : current.installment_price,
+                                    value === 'installment_subscription' && !current.installment_price ? '15' : current.installment_price,
                                  installment_months:
-                                    value === 'installment_subscription' && !current.installment_months
-                                       ? '6'
-                                       : current.installment_months,
+                                    value === 'installment_subscription' && !current.installment_months ? '6' : current.installment_months,
                               }));
                            }}
                         >
@@ -556,11 +540,7 @@ const Pricing = () => {
                                           name="discount_price"
                                           min="1"
                                           step="0.01"
-                                          value={
-                                             data.discount_price === null || data.discount_price === undefined
-                                                ? ''
-                                                : String(data.discount_price)
-                                          }
+                                          value={data.discount_price === null || data.discount_price === undefined ? '' : String(data.discount_price)}
                                           onChange={(e) => setData('discount_price', e.target.value)}
                                           placeholder={input.discount_price_placeholder}
                                        />
@@ -570,9 +550,7 @@ const Pricing = () => {
                               </div>
                            ) : null}
 
-                           {isOneTime ? (
-                              <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="one_time" />
-                           ) : null}
+                           {isOneTime ? <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="one_time" /> : null}
                         </>
                      ) : null}
 
@@ -679,6 +657,33 @@ const Pricing = () => {
                               />
                               <InputError message={errors.choice_recurring_compare} />
                            </div>
+                           <div className="space-y-2">
+                              <Label>Best value badge</Label>
+                              <RadioGroup
+                                 value={data.choice_best_value}
+                                 onValueChange={(value) => {
+                                    if (value === 'recurring' || value === 'one_time' || value === 'none') {
+                                       setData('choice_best_value', value);
+                                    }
+                                 }}
+                                 className="grid gap-2 sm:grid-cols-3"
+                              >
+                                 {[
+                                    { value: 'recurring', label: isChoiceInstallment ? 'Payment plan' : 'Monthly plan' },
+                                    { value: 'one_time', label: 'One-time payment' },
+                                    { value: 'none', label: 'None' },
+                                 ].map((option) => (
+                                    <div key={option.value} className="flex items-center space-x-2 rounded-md border p-3">
+                                       <RadioGroupItem className="cursor-pointer" id={`best-value-${option.value}`} value={option.value} />
+                                       <Label htmlFor={`best-value-${option.value}`} className="cursor-pointer">
+                                          {option.label}
+                                       </Label>
+                                    </div>
+                                 ))}
+                              </RadioGroup>
+                              <p className="text-muted-foreground text-xs">Shown on one checkout card. This does not change the price.</p>
+                              <InputError message={errors.choice_best_value} />
+                           </div>
                            <Separator />
                            <div className="space-y-3">
                               <div className="flex flex-wrap items-center gap-2">
@@ -743,9 +748,7 @@ const Pricing = () => {
                                        onChange={(e) => setData('installment_months', e.target.value)}
                                        placeholder="6"
                                     />
-                                    <p className="text-muted-foreground mt-1 text-xs">
-                                       The checkout payment counts as month 1.
-                                    </p>
+                                    <p className="text-muted-foreground mt-1 text-xs">The checkout payment counts as month 1.</p>
                                     <InputError message={errors.installment_months} />
                                  </div>
                               </div>
@@ -758,9 +761,7 @@ const Pricing = () => {
                                  min="1"
                                  step="0.01"
                                  value={
-                                    data.subscription_price === null || data.subscription_price === undefined
-                                       ? ''
-                                       : String(data.subscription_price)
+                                    data.subscription_price === null || data.subscription_price === undefined ? '' : String(data.subscription_price)
                                  }
                                  onChange={(e) => setData('subscription_price', e.target.value)}
                                  placeholder="6.00"
@@ -769,10 +770,10 @@ const Pricing = () => {
                                  {isInstallment
                                     ? 'Charged on the invoice after the last paid installment. Build Your US Experience stays on this same course. This does not change the installment invoices already due.'
                                     : isUpfrontSubscription
-                                    ? 'Students pay the upfront amount plus this first monthly charge today, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
-                                    : isPreRegisterSubscription
-                                      ? 'Only students who pay the launch balance on time get one free subscription month, then this amount monthly. Full-upfront enrollments after pre-reg pay the course price plus this first month today (no free month).'
-                                      : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
+                                      ? 'Students pay the upfront amount plus this first monthly charge today, then this amount every month until they cancel (tax-inclusive). This is not a free-month offer.'
+                                      : isPreRegisterSubscription
+                                        ? 'Only students who pay the launch balance on time get one free subscription month, then this amount monthly. Full-upfront enrollments after pre-reg pay the course price plus this first month today (no free month).'
+                                        : 'Students are billed this amount every month while subscribed (tax-inclusive).'}
                               </p>
                               {isInstallment &&
                               Number(data.installment_price) >= 1 &&
@@ -780,8 +781,7 @@ const Pricing = () => {
                               Number(data.subscription_price) >= 1 ? (
                                  <p className="text-muted-foreground mt-1 text-xs">
                                     Card preview: ${Number(data.installment_price)}/mo for {Number(data.installment_months)}{' '}
-                                    {Number(data.installment_months) === 1 ? 'month' : 'months'}, then $
-                                    {Number(data.subscription_price)}/mo
+                                    {Number(data.installment_months) === 1 ? 'month' : 'months'}, then ${Number(data.subscription_price)}/mo
                                  </p>
                               ) : null}
                               <InputError message={errors.subscription_price} />
@@ -796,144 +796,135 @@ const Pricing = () => {
                                  <Separator />
 
                                  <div className="space-y-4 rounded-md border p-4">
-                                          <div>
-                                             <Label className="text-base">Pre-registration setup</Label>
-                                             <p className="text-muted-foreground mt-1 text-xs">
-                                                Students can pay a DP during the pre-registration window to reserve a seat only.
-                                                They get no access until they pay the balance on launch day (or within the grace
-                                                days). Paying the balance on time unlocks the course and one free subscription
-                                                month, then the first monthly charge the following month. Missing the grace
-                                                deadline forfeits the seat and the free month; they may still buy later at the
-                                                full upfront price.
-                                             </p>
-                                          </div>
-                                          <InputError message={errors.launch_offer_enabled} />
+                                    <div>
+                                       <Label className="text-base">Pre-registration setup</Label>
+                                       <p className="text-muted-foreground mt-1 text-xs">
+                                          Students can pay a DP during the pre-registration window to reserve a seat only. They get no access until
+                                          they pay the balance on launch day (or within the grace days). Paying the balance on time unlocks the course
+                                          and one free subscription month, then the first monthly charge the following month. Missing the grace
+                                          deadline forfeits the seat and the free month; they may still buy later at the full upfront price.
+                                       </p>
+                                    </div>
+                                    <InputError message={errors.launch_offer_enabled} />
 
-                                          <div className="grid gap-4 sm:grid-cols-2">
-                                             <div className="sm:col-span-2">
-                                                <p className="text-muted-foreground text-xs">
-                                                   All pre-registration dates below use {dateTimezoneLabel}. DP checkout does not
-                                                   allow coupons. Balance and full-upfront checkout can use coupons.
-                                                </p>
-                                             </div>
-                                             <div>
-                                                <Label>Pre-register start ({dateTimezoneLabel})</Label>
-                                                <Input
-                                                   type="datetime-local"
-                                                   value={data.launch_offer_starts_at}
-                                                   onChange={(e) => setData('launch_offer_starts_at', e.target.value)}
-                                                />
-                                                <InputError message={errors.launch_offer_starts_at} />
-                                             </div>
-                                             <div>
-                                                <Label>Pre-register end ({dateTimezoneLabel})</Label>
-                                                <Input
-                                                   type="datetime-local"
-                                                   value={data.launch_offer_ends_at}
-                                                   onChange={(e) => setData('launch_offer_ends_at', e.target.value)}
-                                                />
-                                                <InputError message={errors.launch_offer_ends_at} />
-                                             </div>
-                                             <div>
-                                                <Label>List price (display only)</Label>
-                                                <Input
-                                                   type="number"
-                                                   min="1"
-                                                   step="0.01"
-                                                   value={String(data.launch_list_price)}
-                                                   onChange={(e) => setData('launch_list_price', e.target.value)}
-                                                />
-                                                <InputError message={errors.launch_list_price} />
-                                             </div>
-                                             <div>
-                                                <Label>Pre-registration total (display only)</Label>
-                                                <Input
-                                                   type="number"
-                                                   min="1"
-                                                   step="0.01"
-                                                   value={String(data.launch_offer_price)}
-                                                   onChange={(e) => setData('launch_offer_price', e.target.value)}
-                                                />
-                                                <InputError message={errors.launch_offer_price} />
-                                             </div>
-                                             <div>
-                                                <Label>Deposit / DP (pay now)</Label>
-                                                <Input
-                                                   type="number"
-                                                   min="1"
-                                                   step="0.01"
-                                                   value={String(data.launch_deposit_amount)}
-                                                   onChange={(e) => setData('launch_deposit_amount', e.target.value)}
-                                                />
-                                                <InputError message={errors.launch_deposit_amount} />
-                                             </div>
-                                             <div>
-                                                <Label>Balance (pay on launch)</Label>
-                                                <Input
-                                                   type="number"
-                                                   min="1"
-                                                   step="0.01"
-                                                   value={String(data.launch_balance_amount)}
-                                                   onChange={(e) => setData('launch_balance_amount', e.target.value)}
-                                                />
-                                                <p className="text-muted-foreground mt-1 text-xs">
-                                                   No-code remaining amount. Keep this at the full launch balance (for example
-                                                   $79). The catalog coupon amount below is display only. Do not lower this to
-                                                   the coupon price.
-                                                </p>
-                                                <InputError message={errors.launch_balance_amount} />
-                                             </div>
-                                             <CatalogCouponPromoFields
-                                                data={data}
-                                                setData={setData}
-                                                errors={errors}
-                                                variant="pre_register"
-                                             />
-                                             <div>
-                                                <Label>Grace days after launch</Label>
-                                                <Input
-                                                   type="number"
-                                                   min="1"
-                                                   max="30"
-                                                   value={String(data.launch_balance_grace_days)}
-                                                   onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
-                                                />
-                                                <InputError message={errors.launch_balance_grace_days} />
-                                                <p className="text-muted-foreground mt-1 text-xs">
-                                                   Days after launch to pay the balance and keep the free subscription month.
-                                                   After this, the seat and free month are cancelled.
-                                                </p>
-                                             </div>
-                                             <div>
-                                                <Label>Full upfront (after launch)</Label>
-                                                <Input
-                                                   type="number"
-                                                   min="1"
-                                                   step="0.01"
-                                                   value={String(data.launch_full_upfront_price)}
-                                                   onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
-                                                />
-                                                <p className="text-muted-foreground mt-1 text-xs">
-                                                   Price for new enrollments after pre-reg ends, and for students who miss the
-                                                   balance grace deadline. Charged today with the first month of Project Plans
-                                                   (no free month). Monthly billing continues after that. Coupons allowed. The
-                                                   catalog card uses this as the price after pre-register end.
-                                                </p>
-                                                <InputError message={errors.launch_full_upfront_price} />
-                                             </div>
-                                             <div className="sm:col-span-2">
-                                                <p className="text-muted-foreground text-xs">
-                                                   Free subscription month: one month free from the date the launch balance is
-                                                   paid, then the first monthly charge the following month. Only on-time balance payments qualify.
-                                                </p>
-                                             </div>
-                                          </div>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                       <div className="sm:col-span-2">
+                                          <p className="text-muted-foreground text-xs">
+                                             All pre-registration dates below use {dateTimezoneLabel}. DP checkout does not allow coupons. Balance and
+                                             full-upfront checkout can use coupons.
+                                          </p>
+                                       </div>
+                                       <div>
+                                          <Label>Pre-register start ({dateTimezoneLabel})</Label>
+                                          <Input
+                                             type="datetime-local"
+                                             value={data.launch_offer_starts_at}
+                                             onChange={(e) => setData('launch_offer_starts_at', e.target.value)}
+                                          />
+                                          <InputError message={errors.launch_offer_starts_at} />
+                                       </div>
+                                       <div>
+                                          <Label>Pre-register end ({dateTimezoneLabel})</Label>
+                                          <Input
+                                             type="datetime-local"
+                                             value={data.launch_offer_ends_at}
+                                             onChange={(e) => setData('launch_offer_ends_at', e.target.value)}
+                                          />
+                                          <InputError message={errors.launch_offer_ends_at} />
+                                       </div>
+                                       <div>
+                                          <Label>List price (display only)</Label>
+                                          <Input
+                                             type="number"
+                                             min="1"
+                                             step="0.01"
+                                             value={String(data.launch_list_price)}
+                                             onChange={(e) => setData('launch_list_price', e.target.value)}
+                                          />
+                                          <InputError message={errors.launch_list_price} />
+                                       </div>
+                                       <div>
+                                          <Label>Pre-registration total (display only)</Label>
+                                          <Input
+                                             type="number"
+                                             min="1"
+                                             step="0.01"
+                                             value={String(data.launch_offer_price)}
+                                             onChange={(e) => setData('launch_offer_price', e.target.value)}
+                                          />
+                                          <InputError message={errors.launch_offer_price} />
+                                       </div>
+                                       <div>
+                                          <Label>Deposit / DP (pay now)</Label>
+                                          <Input
+                                             type="number"
+                                             min="1"
+                                             step="0.01"
+                                             value={String(data.launch_deposit_amount)}
+                                             onChange={(e) => setData('launch_deposit_amount', e.target.value)}
+                                          />
+                                          <InputError message={errors.launch_deposit_amount} />
+                                       </div>
+                                       <div>
+                                          <Label>Balance (pay on launch)</Label>
+                                          <Input
+                                             type="number"
+                                             min="1"
+                                             step="0.01"
+                                             value={String(data.launch_balance_amount)}
+                                             onChange={(e) => setData('launch_balance_amount', e.target.value)}
+                                          />
+                                          <p className="text-muted-foreground mt-1 text-xs">
+                                             No-code remaining amount. Keep this at the full launch balance (for example $79). The catalog coupon
+                                             amount below is display only. Do not lower this to the coupon price.
+                                          </p>
+                                          <InputError message={errors.launch_balance_amount} />
+                                       </div>
+                                       <CatalogCouponPromoFields data={data} setData={setData} errors={errors} variant="pre_register" />
+                                       <div>
+                                          <Label>Grace days after launch</Label>
+                                          <Input
+                                             type="number"
+                                             min="1"
+                                             max="30"
+                                             value={String(data.launch_balance_grace_days)}
+                                             onChange={(e) => setData('launch_balance_grace_days', e.target.value)}
+                                          />
+                                          <InputError message={errors.launch_balance_grace_days} />
+                                          <p className="text-muted-foreground mt-1 text-xs">
+                                             Days after launch to pay the balance and keep the free subscription month. After this, the seat and free
+                                             month are cancelled.
+                                          </p>
+                                       </div>
+                                       <div>
+                                          <Label>Full upfront (after launch)</Label>
+                                          <Input
+                                             type="number"
+                                             min="1"
+                                             step="0.01"
+                                             value={String(data.launch_full_upfront_price)}
+                                             onChange={(e) => setData('launch_full_upfront_price', e.target.value)}
+                                          />
+                                          <p className="text-muted-foreground mt-1 text-xs">
+                                             Price for new enrollments after pre-reg ends, and for students who miss the balance grace deadline.
+                                             Charged today with the first month of Project Plans (no free month). Monthly billing continues after
+                                             that. Coupons allowed. The catalog card uses this as the price after pre-register end.
+                                          </p>
+                                          <InputError message={errors.launch_full_upfront_price} />
+                                       </div>
+                                       <div className="sm:col-span-2">
+                                          <p className="text-muted-foreground text-xs">
+                                             Free subscription month: one month free from the date the launch balance is paid, then the first monthly
+                                             charge the following month. Only on-time balance payments qualify.
+                                          </p>
+                                       </div>
+                                    </div>
                                  </div>
                               </>
                            ) : isUpfrontSubscription ? (
                               <p className="text-muted-foreground text-sm">
-                                 Regular pricing: students pay the upfront amount now for full access, then the monthly
-                                 subscription after 30 days. Early-bird / deposit setup is not used with this model.
+                                 Regular pricing: students pay the upfront amount now for full access, then the monthly subscription after 30 days.
+                                 Early-bird / deposit setup is not used with this model.
                               </p>
                            ) : null}
 
@@ -955,9 +946,7 @@ const Pricing = () => {
                               {!stripeActive ? (
                                  <Alert>
                                     <AlertTitle>Stripe inactive</AlertTitle>
-                                    <AlertDescription>
-                                       Enable Stripe in payment settings before syncing subscription checkout.
-                                    </AlertDescription>
+                                    <AlertDescription>Enable Stripe in payment settings before syncing subscription checkout.</AlertDescription>
                                  </Alert>
                               ) : (
                                  <>
@@ -976,9 +965,8 @@ const Pricing = () => {
                                     )}
 
                                     <p className="text-muted-foreground text-sm">
-                                       Save your pricing changes first, then sync to Stripe. Changing the monthly price
-                                       creates a new Stripe price; existing subscribers keep their current price until you
-                                       migrate them in Stripe.
+                                       Save your pricing changes first, then sync to Stripe. Changing the monthly price creates a new Stripe price;
+                                       existing subscribers keep their current price until you migrate them in Stripe.
                                     </p>
 
                                     <Button type="button" variant="outline" disabled={syncing || processing} onClick={handleStripeSync}>
