@@ -202,7 +202,9 @@ const MyProfile = () => {
       assessment: null,
    });
    const [pending, setPending] = useState<PendingConfirm | null>(null);
-   const [hasUsEstimatingExperience, setHasUsEstimatingExperience] = useState(false);
+   const [hasUsEstimatingExperience, setHasUsEstimatingExperience] = useState(user.has_us_estimating_experience === true);
+   const [pendingExperience, setPendingExperience] = useState<boolean | null>(null);
+   const [savingExperience, setSavingExperience] = useState(false);
 
    documentsRef.current = documents;
 
@@ -372,6 +374,41 @@ const MyProfile = () => {
       }
 
       void beginUpload(key, file);
+   };
+
+   const requestExperienceChange = (next: boolean) => {
+      if (savingExperience || next === hasUsEstimatingExperience) {
+         return;
+      }
+
+      setPendingExperience(next);
+   };
+
+   const confirmExperience = async () => {
+      if (pendingExperience === null || savingExperience) {
+         return;
+      }
+
+      const next = pendingExperience;
+      setSavingExperience(true);
+
+      try {
+         await axios.post(
+            route('student.profile.experience'),
+            { has_us_estimating_experience: next ? 1 : 0 },
+            {
+               headers: { Accept: 'application/json', ...csrfHeaders() },
+               withCredentials: true,
+            },
+         );
+         setHasUsEstimatingExperience(next);
+         setPendingExperience(null);
+         toast.success('Answer saved');
+      } catch (error) {
+         toast.error(uploadErrorMessage(error, 'has_us_estimating_experience', 'Could not save this answer'));
+      } finally {
+         setSavingExperience(false);
+      }
    };
 
    const confirmPending = () => {
@@ -620,7 +657,8 @@ const MyProfile = () => {
                <Checkbox
                   id="has_us_estimating_experience"
                   checked={hasUsEstimatingExperience}
-                  onCheckedChange={(value) => setHasUsEstimatingExperience(value === true)}
+                  disabled={savingExperience}
+                  onCheckedChange={(value) => requestExperienceChange(value === true)}
                />
                <Label htmlFor="has_us_estimating_experience" className="text-base leading-6 font-semibold tracking-wide uppercase">
                   Do you have at least 1 year of U.S. estimating experience in roofing, siding, or drywall, or have you completed at least 50 U.S.
@@ -683,6 +721,34 @@ const MyProfile = () => {
                </div>
             ) : null}
          </form>
+
+         <AlertDialog
+            open={pendingExperience !== null}
+            onOpenChange={(open) => {
+               if (!open && !savingExperience) {
+                  setPendingExperience(null);
+               }
+            }}
+         >
+            <AlertDialogContent>
+               <AlertDialogHeader>
+                  <AlertDialogTitle>Save this answer?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                     {pendingExperience
+                        ? 'This saves that you have U.S. estimating experience and keeps Ready for a direct opportunity visible.'
+                        : 'This saves that you do not have U.S. estimating experience and hides Ready for a direct opportunity.'}
+                  </AlertDialogDescription>
+               </AlertDialogHeader>
+               <AlertDialogFooter>
+                  <AlertDialogCancel type="button" disabled={savingExperience} onClick={() => setPendingExperience(null)}>
+                     Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction type="button" disabled={savingExperience} onClick={() => void confirmExperience()}>
+                     {savingExperience ? 'Saving…' : 'Save'}
+                  </AlertDialogAction>
+               </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
 
          <AlertDialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
             <AlertDialogContent>

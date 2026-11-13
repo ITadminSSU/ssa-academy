@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Requests\StoreStudentProfileDocumentRequest;
+use App\Http\Requests\UpdateStudentExperienceRequest;
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCertificate;
@@ -347,6 +348,54 @@ test('save changes leaves the experience answer and uploaded documents in place'
         ->and($saved->has_us_estimating_experience)->toBeTrue()
         ->and($saved->getFirstMedia('cv_resume')?->file_name)->toBe('cv.pdf')
         ->and($facebook['profile_link'] ?? null)->toBe('https://facebook.com/alexis');
+});
+
+test('confirming the experience answer saves only that answer', function () {
+    $this->withoutMiddleware();
+    $user = layoutStudent();
+    $user->forceFill([
+        'given_name' => 'Raiza',
+        'has_us_estimating_experience' => false,
+    ])->save();
+
+    $savedYes = $this->actingAs($user->fresh())->post(
+        route('student.profile.experience'),
+        ['has_us_estimating_experience' => '1'],
+        ['Accept' => 'application/json'],
+    );
+
+    $savedYes->assertOk();
+    expect($savedYes->json('has_us_estimating_experience'))->toBeTrue()
+        ->and($user->fresh()->has_us_estimating_experience)->toBeTrue()
+        ->and($user->fresh()->given_name)->toBe('Raiza');
+
+    $savedNo = $this->actingAs($user->fresh())->post(
+        route('student.profile.experience'),
+        ['has_us_estimating_experience' => '0'],
+        ['Accept' => 'application/json'],
+    );
+
+    $savedNo->assertOk();
+    expect($savedNo->json('has_us_estimating_experience'))->toBeFalse()
+        ->and($user->fresh()->has_us_estimating_experience)->toBeFalse()
+        ->and($user->fresh()->given_name)->toBe('Raiza');
+});
+
+test('the experience answer requires a yes or no', function () {
+    $request = UpdateStudentExperienceRequest::create('/student/profile/experience', 'POST', []);
+    $request->setContainer(app());
+    $request->setRedirector(app('redirect'));
+
+    expect(fn () => $request->validateResolved())->toThrow(ValidationException::class);
+
+    $yes = UpdateStudentExperienceRequest::create('/student/profile/experience', 'POST', [
+        'has_us_estimating_experience' => '1',
+    ]);
+    $yes->setContainer(app());
+    $yes->setRedirector(app('redirect'));
+    $yes->validateResolved();
+
+    expect($yes->boolean('has_us_estimating_experience'))->toBeTrue();
 });
 
 test('a chosen document saves immediately and replaces only that file', function () {

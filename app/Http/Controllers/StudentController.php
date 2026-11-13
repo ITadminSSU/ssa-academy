@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreStudentProfileDocumentRequest;
+use App\Http\Requests\UpdateStudentExperienceRequest;
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Services\AuthService;
 use App\Services\Course\CourseCategoryService;
@@ -270,6 +271,17 @@ class StudentController extends Controller
         Auth::setUser($user);
 
         return redirect()->back()->with('success', 'Changes saved');
+    }
+
+    public function updateOwnExperience(UpdateStudentExperienceRequest $request)
+    {
+        $user = $request->user();
+        $user->has_us_estimating_experience = $request->boolean('has_us_estimating_experience');
+        $user->save();
+
+        return response()->json([
+            'has_us_estimating_experience' => (bool) $user->has_us_estimating_experience,
+        ]);
     }
 
     public function storeOwnDocument(StoreStudentProfileDocumentRequest $request, string $type)

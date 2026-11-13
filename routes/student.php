@@ -34,6 +34,7 @@ Route::get('dashboard/browse/{category}', [StudentController::class, 'browse_cat
 Route::get('student/courses/{id}/{tab}', [StudentController::class, 'show_course'])->name('student.course.show');
 Route::get('student/exams/{id}/{tab}', [StudentController::class, 'show_exam'])->name('student.exam.show');
 Route::post('student/profile', [StudentController::class, 'update_profile'])->name('student.profile.update');
+Route::post('student/profile/experience', [StudentController::class, 'updateOwnExperience'])->name('student.profile.experience');
 Route::post('student/profile/documents/{type}', [StudentController::class, 'storeOwnDocument'])
     ->where('type', 'cv|id|assessment')
     ->name('student.profile.document.store');
