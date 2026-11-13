@@ -3,7 +3,6 @@
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ChunkedUploadController;
-use App\Http\Controllers\Course\UsExperienceStudentController;
 use App\Http\Controllers\Course\AssignmentSampleController;
 use App\Http\Controllers\Course\AssignmentSubmissionController;
 use App\Http\Controllers\Course\CourseEnrollmentController;
@@ -15,9 +14,10 @@ use App\Http\Controllers\Course\CourseWishlistController;
 use App\Http\Controllers\Course\LessonResourceController;
 use App\Http\Controllers\Course\PlayerController;
 use App\Http\Controllers\Course\ProtectedMediaController;
-use App\Http\Controllers\Course\VideoStreamController;
 use App\Http\Controllers\Course\QuizSubmissionController;
 use App\Http\Controllers\Course\TopPerformerController;
+use App\Http\Controllers\Course\UsExperienceStudentController;
+use App\Http\Controllers\Course\VideoStreamController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\LiveClassController;
 use App\Http\Controllers\NotificationController;
@@ -34,6 +34,12 @@ Route::get('dashboard/browse/{category}', [StudentController::class, 'browse_cat
 Route::get('student/courses/{id}/{tab}', [StudentController::class, 'show_course'])->name('student.course.show');
 Route::get('student/exams/{id}/{tab}', [StudentController::class, 'show_exam'])->name('student.exam.show');
 Route::post('student/profile', [StudentController::class, 'update_profile'])->name('student.profile.update');
+Route::post('student/profile/documents/{type}', [StudentController::class, 'storeOwnDocument'])
+    ->where('type', 'cv|id|assessment')
+    ->name('student.profile.document.store');
+Route::delete('student/profile/documents/{type}', [StudentController::class, 'destroyOwnDocument'])
+    ->where('type', 'cv|id|assessment')
+    ->name('student.profile.document.destroy');
 Route::get('student/profile/documents/{type}', [StudentController::class, 'showOwnDocument'])
     ->where('type', 'cv|id|assessment')
     ->name('student.profile.document');
