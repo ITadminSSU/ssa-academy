@@ -162,7 +162,7 @@ const Index = (props: CoursesIndexProps) => {
             </script>
          </Head>
 
-         <div className={cn(urlParams['view'] === 'list' ? 'space-y-3' : 'grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3')}>
+         <div className={cn(urlParams['view'] === 'list' ? 'space-y-3' : 'grid grid-cols-1 items-start gap-5 sm:grid-cols-2 xl:grid-cols-3')}>
             {courses.data.map((course) => (
                <CourseCard1
                   key={course.id}

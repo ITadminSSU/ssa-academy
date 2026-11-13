@@ -58,7 +58,7 @@ const CategoryCourses = ({ category, categorySlug, categoryChild, courses, wishl
 
             {courses.data.length > 0 ? (
                <>
-                  <div className={cn(viewType === 'list' ? 'space-y-3' : 'grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3')}>
+                  <div className={cn(viewType === 'list' ? 'space-y-3' : 'grid grid-cols-1 items-start gap-5 sm:grid-cols-2 xl:grid-cols-3')}>
                      {courses.data.map((course) => (
                         <CourseCard1 key={course.id} course={course} wishlists={wishlists} viewType={viewType} variant="catalog" />
                      ))}

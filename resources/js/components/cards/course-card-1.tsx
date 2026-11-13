@@ -212,7 +212,7 @@ const CourseCard1 = ({ course, viewType = 'grid', variant = 'default', className
 
    if (variant === 'catalog') {
       return (
-         <article className={cn('border-border/70 bg-card overflow-hidden rounded-xl border', className)}>
+         <article className={cn('border-border/70 bg-card h-fit self-start overflow-hidden rounded-xl border', className)}>
             <div className="relative">
                {poster('aspect-[16/10]')}
                {wishlist}
@@ -221,15 +221,15 @@ const CourseCard1 = ({ course, viewType = 'grid', variant = 'default', className
             <div className="bg-primary text-primary-foreground flex flex-nowrap items-center gap-x-3 px-3 py-2 text-xs">
                {course.level ? <span className="shrink-0 font-semibold tracking-wide whitespace-nowrap uppercase">{course.level}</span> : null}
                <span className="shrink-0 whitespace-nowrap">{duration}</span>
-               <div className="ml-auto grid shrink-0 grid-rows-2 justify-items-end text-right leading-tight">
-                  <div className="min-h-[1.15em]">
-                     {choicePrices ? (
+               <div className="ml-auto flex shrink-0 flex-col items-end text-right leading-tight">
+                  {choicePrices ? (
+                     <>
                         <span className="font-semibold">{choicePrices.once}</span>
-                     ) : (
-                        <CoursePriceAmount course={course} symbol={symbol} freeLabel={common.free} tone="on-navy" />
-                     )}
-                  </div>
-                  <div className="min-h-[1.15em]">{choicePrices ? choicePrices.recurring : null}</div>
+                        <span>{choicePrices.recurring}</span>
+                     </>
+                  ) : (
+                     <CoursePriceAmount course={course} symbol={symbol} freeLabel={common.free} tone="on-navy" />
+                  )}
                </div>
                {viewCourse}
             </div>
