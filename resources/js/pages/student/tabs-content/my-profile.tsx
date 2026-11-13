@@ -235,7 +235,6 @@ const MyProfile = () => {
                      autoComplete="given-name"
                      value={data.given_name}
                      onChange={(e) => onHandleChange(e, setData)}
-                     placeholder="Alexis"
                   />
                   <InputError message={errors.given_name} />
                </div>
@@ -249,7 +248,6 @@ const MyProfile = () => {
                      autoComplete="family-name"
                      value={data.last_name}
                      onChange={(e) => onHandleChange(e, setData)}
-                     placeholder="Pacapac"
                   />
                   <InputError message={errors.last_name} />
                </div>
@@ -427,7 +425,7 @@ const MyProfile = () => {
             </div>
             <InputError message={errors.has_us_estimating_experience} />
 
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-center">
                <LoadingButton loading={processing}>{button.update}</LoadingButton>
             </div>
 
@@ -439,12 +437,12 @@ const MyProfile = () => {
                   </h2>
                   <span className="h-px flex-1 bg-[#f5b400]" />
                </div>
-               <p className="text-center text-2xl leading-tight font-bold text-[#012447] md:text-4xl">
+               <p className="text-center text-xl leading-tight font-bold text-[#012447] md:text-3xl">
                   Submit your profile for consideration for U.S. construction opportunities.
                </p>
 
-               <div className="rounded-2xl border-2 border-[#012447] bg-[#fff7e8] px-4 py-4 md:px-6">
-                  <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 md:flex-row md:justify-center">
+               <div className="mx-auto w-fit max-w-full rounded-2xl border-2 border-[#012447] bg-[#fff7e8] px-4 py-4 md:px-6">
+                  <div className="flex flex-col items-center gap-3 md:flex-row md:justify-center">
                      <EstimatorBagIcon className="h-16 w-20 shrink-0" />
                      <div className="hidden h-16 w-px shrink-0 bg-[#012447]/25 md:block" />
                      <div className="space-y-1 text-center text-[#012447] md:text-left">
