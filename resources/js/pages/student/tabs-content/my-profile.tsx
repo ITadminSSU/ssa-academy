@@ -314,7 +314,7 @@ const MyProfile = () => {
                            setData('cv_resume', event.target.files?.[0] ?? null);
                         }}
                      />
-                     <p className="text-muted-foreground text-xs">PDF, DOC, or DOCX up to 10 MB. A new file replaces the saved one.</p>
+                     <p className="text-muted-foreground text-xs">PDF, DOC, or DOCX up to 5 GB. A new file replaces the saved one.</p>
                      <InputError message={errors.cv_resume} />
                   </div>
 
@@ -351,7 +351,7 @@ const MyProfile = () => {
                            setData('id_document', event.target.files?.[0] ?? null);
                         }}
                      />
-                     <p className="text-muted-foreground text-xs">JPG, PNG, WEBP, or PDF up to 10 MB. A new file replaces the saved one.</p>
+                     <p className="text-muted-foreground text-xs">JPG, PNG, WEBP, or PDF up to 5 GB. A new file replaces the saved one.</p>
                      <InputError message={errors.id_document} />
                   </div>
                </div>
@@ -405,7 +405,7 @@ const MyProfile = () => {
                      <p className="text-sm">This file will be removed when you click Update.</p>
                   ) : null}
                   <p className="text-muted-foreground text-center text-xs">
-                     PDF, DOC, DOCX, JPG, PNG, or WEBP up to 10 MB. A new file replaces the saved one.
+                     PDF, DOC, DOCX, JPG, PNG, or WEBP up to 5 GB. A new file replaces the saved one.
                   </p>
                   <InputError message={errors.criteria_assessment} />
                </div>

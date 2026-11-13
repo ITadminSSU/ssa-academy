@@ -8,6 +8,9 @@ use Illuminate\Validation\Validator;
 
 class UpdateStudentProfileRequest extends FormRequest
 {
+    /** 5 GB, in kilobytes. Laravel's file max rule uses kilobytes. */
+    public const PROFILE_DOCUMENT_MAX_KILOBYTES = 5 * 1024 * 1024;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -64,9 +67,9 @@ class UpdateStudentProfileRequest extends FormRequest
             'remove_photo' => 'nullable|boolean',
             'facebook' => ['nullable', 'string', 'max:255', 'url'],
             'has_us_estimating_experience' => 'nullable|boolean',
-            'cv_resume' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-            'id_document' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:10240',
-            'criteria_assessment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp|max:10240',
+            'cv_resume' => 'nullable|file|mimes:pdf,doc,docx|max:'.self::PROFILE_DOCUMENT_MAX_KILOBYTES,
+            'id_document' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:'.self::PROFILE_DOCUMENT_MAX_KILOBYTES,
+            'criteria_assessment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png,webp|max:'.self::PROFILE_DOCUMENT_MAX_KILOBYTES,
             'remove_cv' => 'nullable|boolean',
             'remove_id_document' => 'nullable|boolean',
             'remove_criteria_assessment' => 'nullable|boolean',
@@ -82,11 +85,11 @@ class UpdateStudentProfileRequest extends FormRequest
             'given_name.required' => 'Please enter your given name.',
             'facebook.url' => 'Enter a valid Facebook profile URL.',
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
-            'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
+            'cv_resume.max' => 'CV / resume must not be larger than 5 GB.',
             'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
-            'id_document.max' => 'ID must not be larger than 10MB.',
+            'id_document.max' => 'ID must not be larger than 5 GB.',
             'criteria_assessment.mimes' => 'Assessment result must be a PDF, DOC, DOCX, JPG, PNG, or WEBP file.',
-            'criteria_assessment.max' => 'Assessment result must not be larger than 10MB.',
+            'criteria_assessment.max' => 'Assessment result must not be larger than 5 GB.',
         ];
     }
 

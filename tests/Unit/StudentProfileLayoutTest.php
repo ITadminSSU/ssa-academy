@@ -229,3 +229,77 @@ test('the profile form no longer requires the background questions', function ()
 
     expect(fn () => $invalid->validateResolved())->toThrow(ValidationException::class);
 });
+
+test('a student can view their own saved documents', function () {
+    $this->withoutMiddleware();
+    $user = layoutStudent();
+
+    app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+        'id_document' => UploadedFile::fake()->createWithContent('id.pdf', "%PDF-1.4\n% id\n"),
+        'criteria_assessment' => UploadedFile::fake()->createWithContent('result.pdf', "%PDF-1.4\n% assessment\n"),
+    ], (string) $user->id);
+
+    $viewer = $user->fresh();
+
+    foreach (['cv' => 'cv.pdf', 'id' => 'id.pdf', 'assessment' => 'result.pdf'] as $type => $name) {
+        $response = $this->actingAs($viewer)->get(route('student.profile.document', ['type' => $type]));
+
+        $response->assertOk();
+        expect($response->headers->get('content-disposition'))->toContain($name);
+    }
+});
+
+test('view does not open another student document', function () {
+    $this->withoutMiddleware();
+    $owner = layoutStudent();
+
+    app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+    ], (string) $owner->id);
+
+    $other = layoutStudent();
+
+    $this->actingAs($other)->get(route('student.profile.document', ['type' => 'cv']))->assertNotFound();
+});
+
+test('viewing a document stored on cloudflare r2 redirects to a temporary link', function () {
+    $this->withoutMiddleware();
+    config([
+        'filesystems.disks.s3.bucket' => 'ssa-academy-files',
+        'filesystems.disks.s3.endpoint' => 'https://example.r2.cloudflarestorage.com',
+        'filesystems.disks.s3.region' => 'auto',
+        'filesystems.disks.s3.key' => 'test-key',
+        'filesystems.disks.s3.secret' => 'test-secret',
+        'filesystems.disks.s3.use_path_style_endpoint' => false,
+    ]);
+
+    $user = layoutStudent();
+    app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+    ], (string) $user->id);
+
+    $media = $user->fresh()->getFirstMedia('cv_resume');
+    $media->disk = 's3';
+    $media->save();
+
+    $response = $this->actingAs($user->fresh())->get(route('student.profile.document', ['type' => 'cv']));
+
+    $response->assertRedirect();
+    expect((string) $response->headers->get('Location'))->not->toBe('');
+});
+
+test('profile documents may be larger than 10 MB and up to 5 GB', function () {
+    $request = UpdateStudentProfileRequest::create('/student/profile', 'POST', [
+        'given_name' => 'Raiza',
+        'last_name' => 'Limpiada',
+    ], [], [
+        'cv_resume' => UploadedFile::fake()->create('cv.pdf', 11 * 1024, 'application/pdf'),
+    ]);
+    $request->setContainer(app());
+    $request->setRedirector(app('redirect'));
+
+    expect(fn () => $request->validateResolved())->not->toThrow(ValidationException::class)
+        ->and($request->rules()['cv_resume'])->toContain('max:'.UpdateStudentProfileRequest::PROFILE_DOCUMENT_MAX_KILOBYTES)
+        ->and(UpdateStudentProfileRequest::PROFILE_DOCUMENT_MAX_KILOBYTES)->toBe(5 * 1024 * 1024);
+});
