@@ -12,6 +12,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Support\ChoiceBilling;
+use Illuminate\Validation\ValidationException;
 use Modules\PaymentGateways\Services\PaymentService;
 
 function choiceRequest(array $overrides = []): UpdateCourseRequest
@@ -83,13 +84,24 @@ it('keeps a one-time course on the one-time price only', function () {
         ->and($request->input('choice_one_time_compare'))->toBeNull();
 });
 
+it('rejects a discounted display that is not lower than the charged price', function () {
+    $request = choiceRequest([
+        'billing_model' => 'one_time_or_monthly',
+        'price' => 99,
+        'subscription_price' => 15,
+        'choice_one_time_compare' => 99,
+    ]);
+
+    expect(fn () => $request->validateResolved())->toThrow(ValidationException::class);
+});
+
 it('stores one-time or monthly prices without an installment schedule', function () {
     $request = choiceRequest([
         'billing_model' => 'one_time_or_monthly',
         'price' => 49,
         'subscription_price' => 15,
-        'choice_one_time_compare' => 99,
-        'choice_recurring_compare' => 20,
+        'choice_one_time_compare' => 39,
+        'choice_recurring_compare' => 10,
         'installment_price' => 15,
         'installment_months' => 6,
     ]);
@@ -99,8 +111,8 @@ it('stores one-time or monthly prices without an installment schedule', function
     expect($request->input('billing_model'))->toBe('one_time_or_monthly')
         ->and($request->input('price'))->toEqual(49)
         ->and($request->input('subscription_price'))->toEqual(15)
-        ->and($request->input('choice_one_time_compare'))->toEqual(99)
-        ->and($request->input('choice_recurring_compare'))->toEqual(20)
+        ->and($request->input('choice_one_time_compare'))->toEqual(39)
+        ->and($request->input('choice_recurring_compare'))->toEqual(10)
         ->and($request->input('installment_price'))->toBeNull()
         ->and($request->input('installment_months'))->toBeNull();
 });
@@ -112,7 +124,7 @@ it('stores a fixed installment and does not keep a later monthly price', functio
         'installment_price' => 15,
         'installment_months' => 6,
         'subscription_price' => 9,
-        'choice_recurring_compare' => 20,
+        'choice_recurring_compare' => 10,
     ]);
 
     $request->validateResolved();
@@ -121,11 +133,11 @@ it('stores a fixed installment and does not keep a later monthly price', functio
         ->and($request->input('installment_price'))->toEqual(15)
         ->and($request->input('installment_months'))->toBe(6)
         ->and($request->input('subscription_price'))->toBeNull()
-        ->and($request->input('choice_recurring_compare'))->toEqual(20);
+        ->and($request->input('choice_recurring_compare'))->toEqual(10);
 });
 
 it('prices the selected card and applies a voucher only to that card', function () {
-    $settings = new stdClass();
+    $settings = new stdClass;
     $settings->fields = ['selling_tax' => 0];
     app()->instance('system_settings', $settings);
 

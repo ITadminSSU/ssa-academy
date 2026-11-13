@@ -350,6 +350,10 @@ class UpdateCourseRequest extends FormRequest
             'launch_at.after' => 'Launch date and time must be in the future.',
             'launch_at.required_if' => 'Launch date is required for Coming Soon courses.',
             'price.required' => 'Please enter a course price.',
+            'choice_one_time_compare.lt' => 'Discounted display must be less than the one-time price.',
+            'choice_one_time_compare.min' => 'Discounted display must be less than the one-time price.',
+            'choice_recurring_compare.lt' => 'Discounted display must be less than the price charged for that plan.',
+            'choice_recurring_compare.min' => 'Discounted display must be less than the price charged for that plan.',
             'subscription_price.required' => 'Please enter a monthly subscription price.',
             'catalog_coupon_off_remaining.lt' => 'The coupon amount must be less than the course price.',
             'catalog_coupon_off_remaining.lte' => 'The coupon amount cannot be more than the remaining balance.',
@@ -436,11 +440,11 @@ class UpdateCourseRequest extends FormRequest
                 : 'nullable|numeric|min:1',
             'installment_price' => ($isInstallment || $isChoiceInstallment) ? 'required|numeric|min:1' : 'nullable|numeric|min:1',
             'installment_months' => ($isInstallment || $isChoiceInstallment) ? 'required|integer|min:1' : 'nullable|integer|min:1',
-            'choice_one_time_compare' => $isChoice ? 'nullable|numeric|gt:price' : 'nullable',
+            'choice_one_time_compare' => $isChoice ? 'nullable|numeric|min:0.01|lt:price' : 'nullable',
             'choice_best_value' => 'nullable|string|in:recurring,one_time,none',
             'choice_recurring_compare' => $isChoiceMonthly
-                ? 'nullable|numeric|gt:subscription_price'
-                : ($isChoiceInstallment ? 'nullable|numeric|gt:installment_price' : 'nullable'),
+                ? 'nullable|numeric|min:0.01|lt:subscription_price'
+                : ($isChoiceInstallment ? 'nullable|numeric|min:0.01|lt:installment_price' : 'nullable'),
             'discount' => 'boolean',
             'discount_price' => $isOneTime
                 ? 'nullable|numeric|min:1|lt:price|required_if:discount,true'

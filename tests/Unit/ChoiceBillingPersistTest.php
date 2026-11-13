@@ -21,8 +21,8 @@ it('saves one-time or monthly over an installment course and clears the installm
         'subscription_price' => 6,
         'installment_price' => 15,
         'installment_months' => 6,
-        'choice_one_time_compare' => 99,
-        'choice_recurring_compare' => 20,
+        'choice_one_time_compare' => 39,
+        'choice_recurring_compare' => 4,
     ]);
     $request->validateResolved();
 
@@ -35,8 +35,8 @@ it('saves one-time or monthly over an installment course and clears the installm
         ->and((float) $saved->subscription_price)->toBe(6.0)
         ->and($saved->installment_price)->toBeNull()
         ->and($saved->installment_months)->toBeNull()
-        ->and((float) $saved->choice_one_time_compare)->toBe(99.0)
-        ->and((float) $saved->choice_recurring_compare)->toBe(20.0)
+        ->and((float) $saved->choice_one_time_compare)->toBe(39.0)
+        ->and((float) $saved->choice_recurring_compare)->toBe(4.0)
         ->and($saved->choice_best_value)->toBe('recurring')
         ->and($saved->stripe_price_id)->toBe('price_installment')
         ->and($saved->stripe_ongoing_price_id)->toBe('price_ongoing');
@@ -52,8 +52,8 @@ it('saves one-time or installment and clears the later monthly price', function 
         'subscription_price' => 6,
         'installment_price' => 15,
         'installment_months' => 6,
-        'choice_one_time_compare' => 99,
-        'choice_recurring_compare' => 20,
+        'choice_one_time_compare' => 39,
+        'choice_recurring_compare' => 10,
     ]);
     $request->validateResolved();
 
@@ -66,7 +66,7 @@ it('saves one-time or installment and clears the later monthly price', function 
         ->and($saved->subscription_price)->toBeNull()
         ->and((float) $saved->installment_price)->toBe(15.0)
         ->and((int) $saved->installment_months)->toBe(6)
-        ->and((float) $saved->choice_recurring_compare)->toBe(20.0)
+        ->and((float) $saved->choice_recurring_compare)->toBe(10.0)
         ->and($saved->choice_best_value)->toBe('recurring')
         ->and($saved->stripe_product_id)->toBe('prod_installment');
 });
@@ -79,7 +79,7 @@ it('saves the best value badge on the one-time card without changing prices', fu
         'billing_model' => 'one_time_or_monthly',
         'price' => 49,
         'subscription_price' => 6,
-        'choice_one_time_compare' => 99,
+        'choice_one_time_compare' => 39,
         'choice_best_value' => 'one_time',
     ]);
     $request->validateResolved();
@@ -91,7 +91,7 @@ it('saves the best value badge on the one-time card without changing prices', fu
     expect($saved->choice_best_value)->toBe('one_time')
         ->and((float) $saved->price)->toBe(49.0)
         ->and((float) $saved->subscription_price)->toBe(6.0)
-        ->and((float) $saved->choice_one_time_compare)->toBe(99.0)
+        ->and((float) $saved->choice_one_time_compare)->toBe(39.0)
         ->and($saved->stripe_price_id)->toBe('price_installment')
         ->and($saved->stripe_ongoing_price_id)->toBe('price_ongoing');
 });
@@ -166,7 +166,8 @@ it('saves a choice billing model when the compare price columns are missing', fu
 });
 
 it('shows the best value badge on the card the course saved', function () {
-    $item = new class {
+    $item = new class
+    {
         public int $id = 9;
     };
     $formatMoney = fn (float $amount) => 'USD '.number_format($amount, 2);
@@ -314,6 +315,30 @@ it('describes the selected plan under the checkout total', function () {
     expect($monthly)->toContain('You pay USD 15.00 today, then USD 15.00 each month until you cancel.')
         ->and(substr_count($monthly, 'Best value'))->toBe(1)
         ->and(strpos($monthly, 'Best value'))->toBeLessThan(strpos($monthly, 'One-Time Payment'));
+
+    $display = checkoutCardHtml($item, [
+        'checkoutMode' => 'one_time_or_monthly',
+        'discountedPrice' => 99,
+        'choice' => [
+            'plan' => 'one_time',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 99,
+            'one_time_compare' => 49,
+            'recurring' => 20,
+            'recurring_compare' => 15,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'recurring',
+        ],
+    ]);
+
+    expect($display)->toContain('line-through')
+        ->and($display)->toContain('USD 99.00')
+        ->and($display)->toContain('USD 49.00')
+        ->and($display)->toContain('USD 20.00')
+        ->and($display)->toContain('USD 15.00')
+        ->and(substr_count($display, 'Apply a coupon to get this price.'))->toBe(2)
+        ->and($display)->toContain('You pay USD 99.00 once.');
 
     $installment = checkoutCardHtml($item, [
         'checkoutMode' => 'one_time_or_installment',

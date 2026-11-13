@@ -571,10 +571,10 @@ const Pricing = () => {
                               <InputError message={errors.price} />
                            </div>
                            <div>
-                              <Label>Crossed-out one-time price</Label>
+                              <Label>Discounted display</Label>
                               <Input
                                  type="number"
-                                 min="1"
+                                 min="0.01"
                                  step="0.01"
                                  value={
                                     data.choice_one_time_compare === null || data.choice_one_time_compare === undefined
@@ -582,8 +582,12 @@ const Pricing = () => {
                                        : String(data.choice_one_time_compare)
                                  }
                                  onChange={(e) => setData('choice_one_time_compare', e.target.value)}
-                                 placeholder="99.00"
+                                 placeholder="49.00"
                               />
+                              <p className="text-muted-foreground mt-1 text-xs">
+                                 Optional. Checkout crosses out the one-time price and shows this amount. Students can get this price when they apply
+                                 a coupon.
+                              </p>
                               <InputError message={errors.choice_one_time_compare} />
                            </div>
                            {isChoiceInstallment ? (
@@ -642,10 +646,10 @@ const Pricing = () => {
                               </div>
                            )}
                            <div>
-                              <Label>{isChoiceInstallment ? 'Crossed-out installment amount' : 'Crossed-out monthly price'}</Label>
+                              <Label>Discounted display</Label>
                               <Input
                                  type="number"
-                                 min="1"
+                                 min="0.01"
                                  step="0.01"
                                  value={
                                     data.choice_recurring_compare === null || data.choice_recurring_compare === undefined
@@ -653,8 +657,12 @@ const Pricing = () => {
                                        : String(data.choice_recurring_compare)
                                  }
                                  onChange={(e) => setData('choice_recurring_compare', e.target.value)}
-                                 placeholder="20.00"
+                                 placeholder="10.00"
                               />
+                              <p className="text-muted-foreground mt-1 text-xs">
+                                 Optional. Checkout crosses out the {isChoiceInstallment ? 'installment amount' : 'monthly price'} and shows this
+                                 amount. Students can get this price when they apply a coupon.
+                              </p>
                               <InputError message={errors.choice_recurring_compare} />
                            </div>
                            <div className="space-y-2">

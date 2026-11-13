@@ -10,8 +10,8 @@
    if (! in_array($bestValue, ['one_time', 'recurring', 'none'], true)) {
       $bestValue = 'none';
    }
-   $showOneTimeCompare = $oneTimeCompare > $oneTime + 0.009;
-   $showRecurringCompare = $recurringCompare > $recurring + 0.009;
+   $showOneTimeDisplay = $oneTimeCompare > 0 && $oneTimeCompare < $oneTime - 0.009;
+   $showRecurringDisplay = $recurringCompare > 0 && $recurringCompare < $recurring - 0.009;
    $planUrl = function (string $next) use ($item, $item_type, $coupon) {
       return route('payments.index', array_filter([
          'from' => 'web',
@@ -43,11 +43,14 @@
       </div>
       <p class="text-muted-foreground mt-1 text-sm">{{ __('Pay in full and get complete access.') }}</p>
       <p class="mt-3 text-lg font-semibold">
-         @if ($showOneTimeCompare)
-            <span class="text-muted-foreground mr-2 text-sm line-through">{{ $formatMoney($oneTimeCompare) }}</span>
+         @if ($showOneTimeDisplay)
+            <span class="text-muted-foreground mr-2 text-sm line-through">{{ $formatMoney($oneTime) }}</span>
          @endif
-         {{ $formatMoney($oneTime) }}
+         {{ $formatMoney($showOneTimeDisplay ? $oneTimeCompare : $oneTime) }}
       </p>
+      @if ($showOneTimeDisplay)
+         <p class="text-muted-foreground mt-1 text-xs">{{ __('Apply a coupon to get this price.') }}</p>
+      @endif
    </a>
 
    <a
@@ -73,11 +76,14 @@
          @endif
       </p>
       <p class="mt-3 text-lg font-semibold">
-         @if ($showRecurringCompare)
-            <span class="text-muted-foreground mr-2 text-sm line-through">{{ $formatMoney($recurringCompare) }} / {{ __('month') }}</span>
+         @if ($showRecurringDisplay)
+            <span class="text-muted-foreground mr-2 text-sm line-through">{{ $formatMoney($recurring) }} / {{ __('month') }}</span>
          @endif
-         {{ $formatMoney($recurring) }} / {{ __('month') }}
+         {{ $formatMoney($showRecurringDisplay ? $recurringCompare : $recurring) }} / {{ __('month') }}
       </p>
+      @if ($showRecurringDisplay)
+         <p class="text-muted-foreground mt-1 text-xs">{{ __('Apply a coupon to get this price.') }}</p>
+      @endif
       @if (! ($choicePlan['recurring_synced'] ?? false))
          <p class="mt-2 text-xs text-amber-700">{{ __('This option needs a Stripe sync before checkout.') }}</p>
       @endif
