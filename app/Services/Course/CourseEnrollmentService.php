@@ -37,9 +37,9 @@ class CourseEnrollmentService extends MediaService
     * Enrollment rows per course for the course enrollment chart. A student in
     * two courses counts twice. Search and pagination are ignored so the chart
     * is not the current page. Tag ids limit the chart to students who have any
-    * of those labels.
+    * of those labels. A course id and a coupon keep the same rows as the list.
     *
-    * @param  array{instructor_id?: int, user_id?: int, label_ids?: list<int>}  $scope
+    * @param  array{instructor_id?: int, user_id?: int, label_ids?: list<int>, course_id?: int, coupon?: string}  $scope
     * @return list<array{course: string, enrollments: int}>
     */
    public function enrollmentCountsByCourse(array $scope): array
@@ -65,6 +65,12 @@ class CourseEnrollmentService extends MediaService
          })
          ->when(! empty($scope['label_ids']), function ($query) use ($scope, $enrollments) {
             $this->whereStudentHasAnyLabel($query, $enrollments, $scope['label_ids']);
+         })
+         ->when(! empty($scope['course_id']), function ($query) use ($scope, $enrollments) {
+            $query->where("{$enrollments}.course_id", (int) $scope['course_id']);
+         })
+         ->when(filled($scope['coupon'] ?? null), function ($query) use ($scope) {
+            $this->whereLatestCoupon($query, (string) $scope['coupon']);
          })
          ->groupBy("{$courses}.id")
          ->selectRaw("{$courseTitle} as course_title")
@@ -136,7 +142,52 @@ class CourseEnrollmentService extends MediaService
          })
          ->when(! empty($data['label_ids']), function ($query) use ($data, $enrollments) {
             $this->whereStudentHasAnyLabel($query, $enrollments, $data['label_ids']);
+         })
+         ->when(! empty($data['course_id']), function ($query) use ($data, $enrollments) {
+            $query->where("{$enrollments}.course_id", (int) $data['course_id']);
+         })
+         ->when(filled($data['coupon'] ?? null), function ($query) use ($data) {
+            $this->whereLatestCoupon($query, (string) $data['coupon']);
          });
+   }
+
+   /**
+    * Coupon codes used on enrollments in this scope, matching the code shown
+    * on the list. The scope is the viewer, not the course or coupon filter.
+    *
+    * @param  array{instructor_id?: int, user_id?: int}  $scope
+    * @return list<string>
+    */
+   public function couponCodesInScope(array $scope): array
+   {
+      $filters = array_filter(
+         [
+            'instructor_id' => $scope['instructor_id'] ?? null,
+            'user_id' => $scope['user_id'] ?? null,
+         ],
+         static fn ($value) => $value !== null && $value !== '',
+      );
+      $enrollments = $this->filteredEnrollments($filters)->get(['user_id', 'course_id']);
+      if ($enrollments->isEmpty()) {
+         return [];
+      }
+
+      $codes = array_values(array_unique($this->couponCodesFor($enrollments)));
+      sort($codes, SORT_STRING);
+
+      return $codes;
+   }
+
+   /**
+    * @param  \Illuminate\Database\Eloquent\Builder<CourseEnrollment>|\Illuminate\Database\Query\Builder  $query
+    */
+   private function whereLatestCoupon($query, string $coupon): void
+   {
+      $subquery = $this->couponSortQuery();
+      $sql = "UPPER(TRIM(COALESCE((".$subquery->toSql()."), '')))";
+      $target = $coupon === 'none' ? '' : strtoupper(trim($coupon));
+
+      $query->whereRaw($sql.' = ?', [...$subquery->getBindings(), $target]);
    }
 
    /**
@@ -288,6 +339,7 @@ class CourseEnrollmentService extends MediaService
             'Course expiry',
             'Subscription status',
             'Subscription expiry',
+            'Student tags',
          ]);
 
          foreach ($enrollments as $enrollment) {
@@ -304,6 +356,7 @@ class CourseEnrollmentService extends MediaService
                $enrollment->subscription_expires_at
                   ? \Carbon\Carbon::parse($enrollment->subscription_expires_at)->format('Y-m-d')
                   : '',
+               $enrollment->user?->studentLabels?->pluck('name')->implode(', ') ?? '',
             ]);
          }
 

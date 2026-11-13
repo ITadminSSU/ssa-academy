@@ -21,7 +21,22 @@ export interface EnrollmentLabelOption {
 
 type GraphView = 'number' | 'bar' | 'line';
 
-const EnrollmentCourseChart = ({ rows, labels }: { rows: EnrollmentChartRow[]; labels: EnrollmentLabelOption[] }) => {
+export interface EnrollmentCourseOption {
+   id: number;
+   title: string;
+}
+
+const EnrollmentCourseChart = ({
+   rows,
+   labels,
+   courses,
+   couponCodes,
+}: {
+   rows: EnrollmentChartRow[];
+   labels: EnrollmentLabelOption[];
+   courses: EnrollmentCourseOption[];
+   couponCodes: string[];
+}) => {
    const page = usePage();
    const appliedIds = useMemo(() => {
       const raw = getQueryParams(page.url).tags ?? '';
@@ -31,13 +46,19 @@ const EnrollmentCourseChart = ({ rows, labels }: { rows: EnrollmentChartRow[]; l
          .map((id) => Number(id))
          .filter((id) => Number.isInteger(id) && id > 0);
    }, [page.url]);
+   const appliedCourse = getQueryParams(page.url).course ?? '';
+   const appliedCoupon = getQueryParams(page.url).coupon ?? '';
    const [view, setView] = useState<GraphView>('bar');
    const [selectedIds, setSelectedIds] = useState<number[]>(appliedIds);
    const [tagSearch, setTagSearch] = useState('');
+   const [courseId, setCourseId] = useState(appliedCourse);
+   const [coupon, setCoupon] = useState(appliedCoupon);
 
    useEffect(() => {
       setSelectedIds(appliedIds);
-   }, [appliedIds]);
+      setCourseId(appliedCourse);
+      setCoupon(appliedCoupon);
+   }, [appliedIds, appliedCourse, appliedCoupon]);
 
    const chartData = rows.map((row) => ({
       name: row.course.length > 28 ? `${row.course.slice(0, 28)}…` : row.course,
@@ -49,7 +70,7 @@ const EnrollmentCourseChart = ({ rows, labels }: { rows: EnrollmentChartRow[]; l
    const visibleLabels = labels.filter((label) => label.name.toLowerCase().includes(search));
    const allSelected = selectedIds.length === 0;
 
-   const visit = (ids: number[]) => {
+   const visit = (ids: number[], nextCourse: string, nextCoupon: string) => {
       const params: Record<string, string> = { ...getQueryParams(page.url) };
       delete params.page;
 
@@ -57,6 +78,18 @@ const EnrollmentCourseChart = ({ rows, labels }: { rows: EnrollmentChartRow[]; l
          params.tags = ids.join(',');
       } else {
          delete params.tags;
+      }
+
+      if (nextCourse !== '') {
+         params.course = nextCourse;
+      } else {
+         delete params.course;
+      }
+
+      if (nextCoupon !== '') {
+         params.coupon = nextCoupon;
+      } else {
+         delete params.coupon;
       }
 
       router.get(route('course-enrollments.index'), params, {
@@ -73,43 +106,80 @@ const EnrollmentCourseChart = ({ rows, labels }: { rows: EnrollmentChartRow[]; l
    return (
       <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
          <Card className="p-4 sm:p-6">
-            <div className="space-y-3">
-               <p className="text-sm font-medium">Filter by student tags</p>
-               <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                     value={tagSearch}
-                     onChange={(event) => setTagSearch(event.target.value)}
-                     placeholder="Search tags..."
-                     aria-label="Search tags"
-                  />
-                  <div className="flex gap-2">
-                     <Button type="button" onClick={() => visit(selectedIds)}>
-                        Apply Filters
-                     </Button>
-                     <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                           setSelectedIds([]);
-                           setTagSearch('');
-                           visit([]);
-                        }}
-                     >
-                        Clear
-                     </Button>
+            <div className="grid gap-4 lg:grid-cols-2">
+               <div className="space-y-3">
+                  <p className="text-sm font-medium">Filter by student tags</p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                     <Input
+                        value={tagSearch}
+                        onChange={(event) => setTagSearch(event.target.value)}
+                        placeholder="Search tags..."
+                        aria-label="Search tags"
+                     />
+                     <div className="flex gap-2">
+                        <Button type="button" onClick={() => visit(selectedIds, courseId, coupon)}>
+                           Apply Filters
+                        </Button>
+                        <Button
+                           type="button"
+                           variant="outline"
+                           onClick={() => {
+                              setSelectedIds([]);
+                              setTagSearch('');
+                              setCourseId('');
+                              setCoupon('');
+                              visit([], '', '');
+                           }}
+                        >
+                           Clear
+                        </Button>
+                     </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                     {(!search || 'all tags'.includes(search)) && <Chip label="All tags" selected={allSelected} onClick={() => setSelectedIds([])} />}
+                     {visibleLabels.map((label) => (
+                        <Chip
+                           key={label.id}
+                           label={label.name}
+                           color={label.color}
+                           selected={selectedIds.includes(label.id)}
+                           onClick={() => toggleLabel(label.id)}
+                        />
+                     ))}
                   </div>
                </div>
-               <div className="flex flex-wrap gap-2">
-                  {(!search || 'all tags'.includes(search)) && <Chip label="All tags" selected={allSelected} onClick={() => setSelectedIds([])} />}
-                  {visibleLabels.map((label) => (
-                     <Chip
-                        key={label.id}
-                        label={label.name}
-                        color={label.color}
-                        selected={selectedIds.includes(label.id)}
-                        onClick={() => toggleLabel(label.id)}
-                     />
-                  ))}
+               <div className="space-y-3">
+                  <label className="block space-y-1.5 text-sm font-medium">
+                     Enrolled course
+                     <select
+                        value={courseId}
+                        onChange={(event) => setCourseId(event.target.value)}
+                        className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm font-normal"
+                     >
+                        <option value="">All courses</option>
+                        {courses.map((course) => (
+                           <option key={course.id} value={String(course.id)}>
+                              {course.title}
+                           </option>
+                        ))}
+                     </select>
+                  </label>
+                  <label className="block space-y-1.5 text-sm font-medium">
+                     Coupon used
+                     <select
+                        value={coupon}
+                        onChange={(event) => setCoupon(event.target.value)}
+                        className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm font-normal"
+                     >
+                        <option value="">All coupons</option>
+                        <option value="none">No coupon</option>
+                        {couponCodes.map((code) => (
+                           <option key={code} value={code}>
+                              {code}
+                           </option>
+                        ))}
+                     </select>
+                  </label>
                </div>
             </div>
 

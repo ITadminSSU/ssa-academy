@@ -13,7 +13,7 @@ import { router, usePage } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import AdminTableColumn from './partials/admin-table-columns';
-import EnrollmentCourseChart, { EnrollmentChartRow, EnrollmentLabelOption } from './partials/enrollment-course-chart';
+import EnrollmentCourseChart, { EnrollmentChartRow, EnrollmentCourseOption, EnrollmentLabelOption } from './partials/enrollment-course-chart';
 import { EnrollmentListControls } from './partials/enrollment-list-controls';
 import EnrollmentModal from './partials/enrollment-modal';
 import InstructorTableColumn from './partials/instructor-table-columns';
@@ -22,6 +22,8 @@ interface Props extends SharedData {
    enrollments: Pagination<CourseEnrollment>;
    enrollmentChart?: EnrollmentChartRow[];
    studentLabels?: EnrollmentLabelOption[];
+   courses?: EnrollmentCourseOption[];
+   couponCodes?: string[];
    matchingEnrollmentIds?: number[];
 }
 
@@ -29,10 +31,10 @@ const Courses = (props: Props) => {
    const { isAdmin } = useAuth();
    const page = usePage();
    const params = getQueryParams(page.url);
-   const { translate, enrollments, enrollmentChart = [], studentLabels = [], matchingEnrollmentIds = [] } = props;
+   const { translate, enrollments, enrollmentChart = [], studentLabels = [], courses = [], couponCodes = [], matchingEnrollmentIds = [] } = props;
    const { button, dashboard } = translate;
    const [selectedIds, setSelectedIds] = useState<number[]>([]);
-   const filterKey = `${params.search ?? ''}|${params.tags ?? ''}`;
+   const filterKey = `${params.search ?? ''}|${params.tags ?? ''}|${params.course ?? ''}|${params.coupon ?? ''}`;
 
    useEffect(() => {
       setSelectedIds([]);
@@ -80,7 +82,7 @@ const Courses = (props: Props) => {
 
          <Separator className="my-6" />
 
-         <EnrollmentCourseChart rows={enrollmentChart} labels={studentLabels} />
+         <EnrollmentCourseChart rows={enrollmentChart} labels={studentLabels} courses={courses} couponCodes={couponCodes} />
 
          <Card>
             <p className="text-muted-foreground px-6 pt-4 text-sm">{selectedCount} selected</p>
