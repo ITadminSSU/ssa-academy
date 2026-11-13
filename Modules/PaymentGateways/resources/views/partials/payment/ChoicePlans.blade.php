@@ -12,13 +12,13 @@
    }
    $showOneTimeDisplay = $oneTimeCompare > 0 && $oneTimeCompare < $oneTime - 0.009;
    $showRecurringDisplay = $recurringCompare > 0 && $recurringCompare < $recurring - 0.009;
-   $planUrl = function (string $next) use ($item, $item_type, $coupon) {
+   $planUrl = function (string $next) use ($item, $item_type, $coupon, $plan) {
       return route('payments.index', array_filter([
          'from' => 'web',
          'item' => $item_type,
          'id' => $item->id,
          'plan' => $next,
-         'coupon' => $coupon?->code,
+         'coupon' => $next === 'one_time' && $plan === 'one_time' ? $coupon?->code : null,
       ]));
    };
 @endphp
@@ -81,9 +81,6 @@
          @endif
          {{ $formatMoney($showRecurringDisplay ? $recurringCompare : $recurring) }} / {{ __('month') }}
       </p>
-      @if ($showRecurringDisplay)
-         <p class="text-muted-foreground mt-1 text-xs">{{ __('Apply a coupon to get this price.') }}</p>
-      @endif
       @if (! ($choicePlan['recurring_synced'] ?? false))
          <p class="mt-2 text-xs text-amber-700">{{ __('This option needs a Stripe sync before checkout.') }}</p>
       @endif

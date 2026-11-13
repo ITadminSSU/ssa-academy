@@ -258,6 +258,30 @@ it('shows the best value badge on the card the course saved', function () {
         ->and($oneTimeSelected)->toContain('plan=recurring')
         ->and($oneTimeSelected)->toContain('USD 49.00')
         ->and($oneTimeSelected)->toContain('USD 15.00');
+
+    $keptCoupon = view('paymentgateways::partials.payment.ChoicePlans', [
+        'choicePlan' => [
+            'plan' => 'one_time',
+            'mode' => 'one_time_or_monthly',
+            'one_time' => 99,
+            'one_time_compare' => 49,
+            'recurring' => 20,
+            'recurring_compare' => 15,
+            'months' => 0,
+            'recurring_synced' => true,
+            'best_value' => 'recurring',
+        ],
+        'item' => $item,
+        'item_type' => 'course',
+        'coupon' => (object) ['code' => 'SAVE50'],
+        'formatMoney' => $formatMoney,
+    ])->render();
+
+    expect(substr_count($keptCoupon, 'coupon=SAVE50'))->toBe(1)
+        ->and(substr_count($keptCoupon, 'Apply a coupon to get this price.'))->toBe(1)
+        ->and($keptCoupon)->toContain('plan=recurring')
+        ->and($keptCoupon)->not->toContain('plan=recurring&amp;coupon=SAVE50')
+        ->and($keptCoupon)->not->toContain('plan=recurring&coupon=SAVE50');
 });
 
 it('describes the selected plan under the checkout total', function () {
@@ -314,7 +338,9 @@ it('describes the selected plan under the checkout total', function () {
 
     expect($monthly)->toContain('You pay USD 15.00 today, then USD 15.00 each month until you cancel.')
         ->and(substr_count($monthly, 'Best value'))->toBe(1)
-        ->and(strpos($monthly, 'Best value'))->toBeLessThan(strpos($monthly, 'One-Time Payment'));
+        ->and(strpos($monthly, 'Best value'))->toBeLessThan(strpos($monthly, 'One-Time Payment'))
+        ->and($monthly)->not->toContain('Enter coupon code if you have one')
+        ->and($monthly)->not->toContain('Apply Coupon');
 
     $display = checkoutCardHtml($item, [
         'checkoutMode' => 'one_time_or_monthly',
@@ -337,7 +363,7 @@ it('describes the selected plan under the checkout total', function () {
         ->and($display)->toContain('USD 49.00')
         ->and($display)->toContain('USD 20.00')
         ->and($display)->toContain('USD 15.00')
-        ->and(substr_count($display, 'Apply a coupon to get this price.'))->toBe(2)
+        ->and(substr_count($display, 'Apply a coupon to get this price.'))->toBe(1)
         ->and($display)->toContain('You pay USD 99.00 once.');
 
     $installment = checkoutCardHtml($item, [
@@ -356,6 +382,7 @@ it('describes the selected plan under the checkout total', function () {
 
     expect($installment)->toContain('You pay USD 20.00 today, then 6 payments. Billing stops after the last one.')
         ->and($installment)->not->toContain('Best value')
+        ->and($installment)->not->toContain('Enter coupon code if you have one')
         ->and($installment)->toContain('Payment plan')
         ->and($installment)->toContain('USD 120.00')
         ->and($installment)->toContain('USD 20.00');

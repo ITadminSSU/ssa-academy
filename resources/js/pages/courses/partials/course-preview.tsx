@@ -109,7 +109,6 @@ const ChoiceEnrollmentOptions = ({ course, symbol }: { course: Course; symbol: s
             note={installment ? 'Billing stops after the last payment. Access stays.' : 'Billed every month until you cancel.'}
             badge={best === 'recurring'}
             extra={best === 'recurring' ? 'Lower payment today' : null}
-            couponNote={recurringDisplay === null ? null : couponNote}
          />
       </div>
    );

@@ -492,8 +492,12 @@ class StripeController extends Controller
             'plan' => $plan,
         ];
 
-        if ($request->filled('coupon')) {
-            $back['coupon'] = $request->coupon;
+        $couponCode = ChoiceBilling::acceptsCoupon($plan) && $request->filled('coupon')
+            ? trim((string) $request->coupon)
+            : null;
+
+        if ($couponCode) {
+            $back['coupon'] = $couponCode;
         }
 
         if ($plan === ChoiceBilling::PLAN_RECURRING && empty($course->stripe_price_id)) {
@@ -512,7 +516,9 @@ class StripeController extends Controller
                 ->with('error', 'This payment option is not ready yet.');
         }
 
-        $coupon = $this->resolveSubmittedCoupon($course, $request->coupon, $user->id);
+        $coupon = $couponCode
+            ? $this->resolveSubmittedCoupon($course, $couponCode, $user->id)
+            : null;
         $pricing = $this->payment->calculateCustomPrice($amount, $coupon);
 
         if ($plan === ChoiceBilling::PLAN_ONE_TIME) {
