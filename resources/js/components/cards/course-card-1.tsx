@@ -3,11 +3,62 @@ import { Button } from '@/components/ui/button';
 import { CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCourseLaunchDate, formatLaunchCountdownShort, isCourseComingSoon } from '@/lib/course-launch';
+import { formatOfferAmount } from '@/lib/launch-offer';
 import { isSubscriptionCourse } from '@/lib/subscription-billing';
 import { cn, getCourseDuration, systemCurrency } from '@/lib/utils';
 import { SharedData } from '@/types/global';
 import { Link, router, usePage } from '@inertiajs/react';
 import { ArrowRight, Clock, Heart, Star, Users } from 'lucide-react';
+
+const paidAmount = (value: number | string | null | undefined): number | null => {
+   const amount = Number(value);
+
+   return Number.isFinite(amount) ? amount : null;
+};
+
+const catalogChoicePrices = (course: Course, symbol: string): { once: string; recurring: string; list: string } | null => {
+   if (course.pricing_type !== 'paid') {
+      return null;
+   }
+
+   if (course.billing_model !== 'one_time_or_monthly' && course.billing_model !== 'one_time_or_installment') {
+      return null;
+   }
+
+   const onceAmount = paidAmount(course.price);
+
+   if (onceAmount === null) {
+      return null;
+   }
+
+   const once = `${symbol}${formatOfferAmount(onceAmount)}`;
+
+   if (course.billing_model === 'one_time_or_installment') {
+      const installment = paidAmount(course.installment_price);
+
+      if (installment === null) {
+         return null;
+      }
+
+      const months = Math.trunc(Number(course.installment_months));
+      const recurring =
+         Number.isInteger(months) && months > 0
+            ? `${symbol}${formatOfferAmount(installment)} × ${months}`
+            : `${symbol}${formatOfferAmount(installment)}`;
+
+      return { once, recurring, list: `${once} once · ${recurring}` };
+   }
+
+   const monthly = paidAmount(course.subscription_price);
+
+   if (monthly === null) {
+      return null;
+   }
+
+   const recurring = `${symbol}${formatOfferAmount(monthly)}/mo`;
+
+   return { once, recurring, list: `${once} once · ${recurring}` };
+};
 
 interface Props {
    course: Course;
@@ -32,6 +83,7 @@ const CourseCard1 = ({ course, viewType = 'grid', variant = 'default', className
    const showPreviewCta = Boolean(course.can_preview_before_launch) && comingSoon;
    const isSubscription = isSubscriptionCourse(course);
    const symbol = currency?.symbol ?? '$';
+   const choicePrices = catalogChoicePrices(course, symbol);
    const duration = getCourseDuration(course, 'readable');
    const reviewCount = Number(course.reviews_count || 0);
    const outcome = (course.short_description || '')
@@ -145,7 +197,11 @@ const CourseCard1 = ({ course, viewType = 'grid', variant = 'default', className
                   </p>
                </div>
                <div className="flex shrink-0 flex-col items-start gap-2 sm:max-w-xs sm:items-end">
-                  <CoursePriceAmount course={course} symbol={symbol} freeLabel={common.free} />
+                  {choicePrices ? (
+                     <p className="text-primary text-sm font-semibold">{choicePrices.list}</p>
+                  ) : (
+                     <CoursePriceAmount course={course} symbol={symbol} freeLabel={common.free} />
+                  )}
                   <CoursePriceNotes course={course} symbol={symbol} />
                   {viewCourse}
                </div>
@@ -162,11 +218,18 @@ const CourseCard1 = ({ course, viewType = 'grid', variant = 'default', className
                {wishlist}
             </div>
             {rating ? <div className="px-3 pt-2">{rating}</div> : null}
-            <div className="bg-primary text-primary-foreground flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 text-xs">
-               {course.level ? <span className="font-semibold tracking-wide uppercase">{course.level}</span> : null}
-               <span>{duration}</span>
-               <div className="ml-auto min-w-0">
-                  <CoursePriceAmount course={course} symbol={symbol} freeLabel={common.free} tone="on-navy" />
+            <div className="bg-primary text-primary-foreground flex flex-nowrap items-center gap-x-3 px-3 py-2 text-xs">
+               {course.level ? <span className="shrink-0 font-semibold tracking-wide whitespace-nowrap uppercase">{course.level}</span> : null}
+               <span className="shrink-0 whitespace-nowrap">{duration}</span>
+               <div className="ml-auto grid shrink-0 grid-rows-2 justify-items-end text-right leading-tight">
+                  <div className="min-h-[1.15em]">
+                     {choicePrices ? (
+                        <span className="font-semibold">{choicePrices.once}</span>
+                     ) : (
+                        <CoursePriceAmount course={course} symbol={symbol} freeLabel={common.free} tone="on-navy" />
+                     )}
+                  </div>
+                  <div className="min-h-[1.15em]">{choicePrices ? choicePrices.recurring : null}</div>
                </div>
                {viewCourse}
             </div>
