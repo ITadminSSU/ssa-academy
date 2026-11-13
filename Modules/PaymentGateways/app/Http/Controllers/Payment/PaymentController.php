@@ -6,16 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Services\Course\CourseCouponService;
-use App\Support\ChoiceBilling;
 use App\Services\Payment\ExternalCheckoutService;
 use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\LaunchOfferService;
 use App\Services\SettingsService;
+use App\Support\ChoiceBilling;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Modules\PaymentGateways\Http\Requests\GatewayRequest;
 use Modules\PaymentGateways\Services\PaymentService;
-use Inertia\Inertia;
 
 class PaymentController extends Controller
 {
@@ -116,7 +116,13 @@ class PaymentController extends Controller
         }
 
         $currency = app('system_settings')->fields['selling_currency'] ?? 'USD';
+        $selectedPlan = $course && ChoiceBilling::isChoiceMode($checkoutMode)
+            ? ChoiceBilling::selectedPlan($request->query('plan'))
+            : null;
         $submittedCouponCode = $request->filled('coupon') ? trim($request->coupon) : null;
+        if ($selectedPlan && ! ChoiceBilling::acceptsCoupon($selectedPlan)) {
+            $submittedCouponCode = null;
+        }
         $coupon = null;
         $couponError = null;
 
@@ -168,8 +174,7 @@ class PaymentController extends Controller
                 'coupon' => $coupon,
             ];
         } elseif (ChoiceBilling::isChoiceMode($checkoutMode) && $course) {
-            $selectedPlan = ChoiceBilling::plan($request->query('plan')) ?? ChoiceBilling::PLAN_RECURRING;
-            $amount = ChoiceBilling::chargeAmount($course, $selectedPlan);
+            $amount = ChoiceBilling::chargeAmount($course, $selectedPlan ?? ChoiceBilling::PLAN_ONE_TIME);
             $checkoutItem = [
                 ...$checkoutItem,
                 ...$this->payment->calculateCustomPrice((float) ($amount ?? 0), $coupon),
@@ -192,7 +197,6 @@ class PaymentController extends Controller
         $choice = null;
 
         if ($course && ChoiceBilling::isChoiceMode($checkoutMode)) {
-            $selectedPlan = ChoiceBilling::plan($request->query('plan')) ?? ChoiceBilling::PLAN_RECURRING;
             $recurringAmount = ChoiceBilling::chargeAmount($course, ChoiceBilling::PLAN_RECURRING);
             $oneTimeAmount = ChoiceBilling::chargeAmount($course, ChoiceBilling::PLAN_ONE_TIME);
             $bestValue = $course->choice_best_value;

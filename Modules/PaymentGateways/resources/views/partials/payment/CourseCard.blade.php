@@ -26,7 +26,8 @@
    $formatMoney = fn ($amount) => $currency.' '.number_format((float) $amount, 2);
    $isChoiceCheckout = in_array($resolvedCheckoutMode, ['one_time_or_monthly', 'one_time_or_installment'], true);
    $choicePlan = is_array($choice ?? null) ? $choice : null;
-   $allowsCoupons = in_array($resolvedCheckoutMode, [
+   $choiceAcceptsCoupons = ! $isChoiceCheckout || (($choicePlan['plan'] ?? 'one_time') === 'one_time');
+   $allowsCoupons = $choiceAcceptsCoupons && in_array($resolvedCheckoutMode, [
       null,
       'balance',
       'full_launch',

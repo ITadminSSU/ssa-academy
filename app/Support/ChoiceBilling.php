@@ -37,6 +37,16 @@ class ChoiceBilling
         return in_array($plan, [self::PLAN_ONE_TIME, self::PLAN_RECURRING], true) ? $plan : null;
     }
 
+    public static function selectedPlan(?string $plan): string
+    {
+        return self::plan($plan) ?? self::PLAN_ONE_TIME;
+    }
+
+    public static function acceptsCoupon(string $plan): bool
+    {
+        return $plan === self::PLAN_ONE_TIME;
+    }
+
     public static function chargeAmount(Course $course, string $plan): ?float
     {
         if (! self::plan($plan)) {

@@ -84,6 +84,15 @@ it('keeps a one-time course on the one-time price only', function () {
         ->and($request->input('choice_one_time_compare'))->toBeNull();
 });
 
+it('opens checkout on one-time payment and keeps coupons off the monthly plan', function () {
+    expect(ChoiceBilling::selectedPlan(null))->toBe(ChoiceBilling::PLAN_ONE_TIME)
+        ->and(ChoiceBilling::selectedPlan('one_time'))->toBe(ChoiceBilling::PLAN_ONE_TIME)
+        ->and(ChoiceBilling::selectedPlan('recurring'))->toBe(ChoiceBilling::PLAN_RECURRING)
+        ->and(ChoiceBilling::selectedPlan('later'))->toBe(ChoiceBilling::PLAN_ONE_TIME)
+        ->and(ChoiceBilling::acceptsCoupon(ChoiceBilling::PLAN_ONE_TIME))->toBeTrue()
+        ->and(ChoiceBilling::acceptsCoupon(ChoiceBilling::PLAN_RECURRING))->toBeFalse();
+});
+
 it('rejects a discounted display that is not lower than the charged price', function () {
     $request = choiceRequest([
         'billing_model' => 'one_time_or_monthly',
