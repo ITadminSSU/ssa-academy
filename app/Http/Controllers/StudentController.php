@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Services\AuthService;
-use App\Models\Course\WatchHistory;
 use App\Services\Course\CourseCategoryService;
 use App\Services\Course\CourseCertificateIssuanceService;
 use App\Services\Course\CourseCompletionGateService;
@@ -18,6 +17,7 @@ use App\Services\StudentService;
 use App\Services\UsExperience\UsExperienceCertificateIssuanceService;
 use App\Services\UsExperience\UsExperienceUnlockService;
 use App\Support\CourseWelcomeEmailCopy;
+use App\Support\S3CompatibleStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -26,6 +26,7 @@ use Modules\Exam\Models\ExamAttempt;
 use Modules\Exam\Services\ExamAttemptService;
 use Modules\Exam\Services\ExamEnrollmentService;
 use Modules\Exam\Services\ExamQuantityTakeoffService;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class StudentController extends Controller
 {
@@ -51,7 +52,7 @@ class StudentController extends Controller
      */
     public function index(Request $request, string $tab)
     {
-        if (!in_array($tab, ['home', 'courses'], true) && !$request->user()->hasVerifiedEmail()) {
+        if (! in_array($tab, ['home', 'courses'], true) && ! $request->user()->hasVerifiedEmail()) {
             return redirect()
                 ->to(app(AuthService::class)->homeUrlFor($request->user(), ['tab' => 'home']))
                 ->with('error', 'Please verify your email address.');
@@ -164,7 +165,7 @@ class StudentController extends Controller
         $courseGates = $this->courseCompletionGateService->getGateStatus($course, $user->id, $completion, $watchHistory);
         $subscriptionAccess = $this->subscriptionAccess->toFrontendPayload($user, $course);
 
-        if ($tab === 'quizzes' && !$courseGates['quizzes_unlocked'] && !$course->isStaffPreviewer($user)) {
+        if ($tab === 'quizzes' && ! $courseGates['quizzes_unlocked'] && ! $course->isStaffPreviewer($user)) {
             return redirect()
                 ->route('student.course.show', ['id' => $id, 'tab' => 'modules'])
                 ->with('error', 'Complete all video lessons before accessing quizzes.');
@@ -172,7 +173,7 @@ class StudentController extends Controller
 
         $certificate = null;
         $certificateRelease = null;
-        if ($tab === 'certificate' && !$courseGates['certificate_unlocked']) {
+        if ($tab === 'certificate' && ! $courseGates['certificate_unlocked']) {
             $props['certificateTemplate'] = null;
             $props['marksheetTemplate'] = null;
             $props['studentMarks'] = null;
@@ -287,30 +288,18 @@ class StudentController extends Controller
             default => abort(404),
         };
 
-        $media = $request->user()->getFirstMedia($collection);
+        $media = $request->user()?->getFirstMedia($collection);
 
-        if (!$media) {
+        if (! $media) {
             abort(404, $label.' not found');
-        }
-
-        try {
-            return $media->toInlineResponse($request);
-        } catch (\Throwable) {
-            // Fall through to a signed URL or local path for this student's own file.
         }
 
         $fileName = str_replace(['"', '\\', "\r", "\n"], '', (string) $media->file_name);
         $mimeType = $media->mime_type ?: 'application/octet-stream';
         $disposition = 'inline; filename="'.$fileName.'"';
 
-        if ($media->disk === 's3') {
-            try {
-                $fileUrl = $media->getTemporaryUrl(now()->addHours(12), '', [
-                    'ResponseContentDisposition' => $disposition,
-                ]);
-            } catch (\Throwable) {
-                $fileUrl = media_public_url($media);
-            }
+        if ($this->mediaUsesCloudDisk($media)) {
+            $fileUrl = $this->inlineCloudUrl($media, $fileName);
 
             if ($fileUrl === '') {
                 abort(404, $label.' file not found');
@@ -320,20 +309,45 @@ class StudentController extends Controller
         }
 
         $localPath = $media->getPath();
-        if (is_string($localPath) && $localPath !== '' && file_exists($localPath)) {
+        if (is_string($localPath) && $localPath !== '' && is_file($localPath)) {
             return response()->file($localPath, [
                 'Content-Type' => $mimeType,
                 'Content-Disposition' => $disposition,
             ]);
         }
 
-        $fileUrl = media_public_url($media);
+        abort(404, $label.' file not found');
+    }
 
-        if ($fileUrl === '') {
-            abort(404, $label.' file not found');
+    private function mediaUsesCloudDisk(Media $media): bool
+    {
+        $disk = (string) $media->disk;
+
+        return $disk === 's3' || config("filesystems.disks.{$disk}.driver") === 's3';
+    }
+
+    /**
+     * Signed inline URL for a file on Cloudflare R2 or another S3-compatible disk.
+     * An unsigned object URL 404s when the bucket is private.
+     */
+    private function inlineCloudUrl(Media $media, string $fileName): string
+    {
+        $mimeType = $media->mime_type ?: 'application/octet-stream';
+
+        try {
+            return $media->getTemporaryUrl(now()->addHours(12), '', [
+                'ResponseContentType' => $mimeType,
+                'ResponseContentDisposition' => 'inline; filename="'.$fileName.'"',
+            ]);
+        } catch (\Throwable) {
+            $key = ltrim((string) $media->getPathRelativeToRoot(), '/');
+
+            if ($key === '') {
+                $key = ltrim($media->id.'/'.$media->file_name, '/');
+            }
+
+            return S3CompatibleStorage::temporaryObjectUrl($key);
         }
-
-        return redirect()->away($fileUrl);
     }
 
     /**
@@ -373,25 +387,27 @@ class StudentController extends Controller
 
         $rules = [];
 
+        $maxKilobytes = UpdateStudentProfileRequest::PROFILE_DOCUMENT_MAX_KILOBYTES;
+
         if ($missing['needs_cv']) {
-            $rules['cv_resume'] = 'required|file|mimes:pdf,doc,docx|max:10240';
+            $rules['cv_resume'] = 'required|file|mimes:pdf,doc,docx|max:'.$maxKilobytes;
         } elseif ($request->hasFile('cv_resume')) {
-            $rules['cv_resume'] = 'file|mimes:pdf,doc,docx|max:10240';
+            $rules['cv_resume'] = 'file|mimes:pdf,doc,docx|max:'.$maxKilobytes;
         }
 
         if ($missing['needs_id']) {
-            $rules['id_document'] = 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:10240';
+            $rules['id_document'] = 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:'.$maxKilobytes;
         } elseif ($request->hasFile('id_document')) {
-            $rules['id_document'] = 'file|mimes:jpg,jpeg,png,webp,pdf|max:10240';
+            $rules['id_document'] = 'file|mimes:jpg,jpeg,png,webp,pdf|max:'.$maxKilobytes;
         }
 
         $request->validate($rules, [
             'cv_resume.required' => 'Please upload your CV or resume.',
             'cv_resume.mimes' => 'CV / resume must be a PDF, DOC, or DOCX file.',
-            'cv_resume.max' => 'CV / resume must not be larger than 10MB.',
+            'cv_resume.max' => 'CV / resume must not be larger than 5 GB.',
             'id_document.required' => 'Please upload a government-issued ID for verification.',
             'id_document.mimes' => 'ID must be a JPG, PNG, WEBP, or PDF file.',
-            'id_document.max' => 'ID must not be larger than 10MB.',
+            'id_document.max' => 'ID must not be larger than 5 GB.',
         ]);
 
         if ($request->hasFile('cv_resume')) {
