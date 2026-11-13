@@ -42,6 +42,15 @@ class CourseEnrollmentController extends Controller
                 'instructor_id' => $data['instructor_id'] ?? null,
                 'user_id' => $data['user_id'] ?? null,
                 'label_ids' => $data['label_ids'] ?? null,
+                'course_id' => $data['course_id'] ?? null,
+                'coupon' => $data['coupon'] ?? null,
+            ],
+            static fn ($value) => $value !== null && $value !== '',
+        );
+        $couponScope = array_filter(
+            [
+                'instructor_id' => $data['instructor_id'] ?? null,
+                'user_id' => $data['user_id'] ?? null,
             ],
             static fn ($value) => $value !== null && $value !== '',
         );
@@ -53,6 +62,7 @@ class CourseEnrollmentController extends Controller
             'enrollments' => $enrollments,
             'enrollmentChart' => $this->courseEnrollment->enrollmentCountsByCourse($chartScope),
             'studentLabels' => StudentLabel::query()->orderBy('name')->get(['id', 'name', 'color']),
+            'couponCodes' => $this->courseEnrollment->couponCodesInScope($couponScope),
             'matchingEnrollmentIds' => $this->courseEnrollment->matchingEnrollmentIds($data),
         ]);
     }
@@ -147,6 +157,18 @@ class CourseEnrollmentController extends Controller
 
         if ($labelIds !== []) {
             $filters['label_ids'] = $labelIds;
+        }
+
+        $courseId = (int) $request->input('course', 0);
+        if ($courseId > 0) {
+            $filters['course_id'] = $courseId;
+        }
+
+        $coupon = trim((string) $request->input('coupon', ''));
+        if (strtolower($coupon) === 'none') {
+            $filters['coupon'] = 'none';
+        } elseif ($coupon !== '') {
+            $filters['coupon'] = strtoupper($coupon);
         }
 
         if (in_array($sort, $sorts, true)) {
