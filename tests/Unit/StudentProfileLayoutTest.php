@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Requests\StoreStudentProfileDocumentRequest;
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Models\Course\Course;
 use App\Models\Course\CourseCertificate;
@@ -8,6 +9,7 @@ use App\Services\Course\CourseCertificateIssuanceService;
 use App\Services\StudentService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
@@ -218,7 +220,11 @@ test('the profile form no longer requires the background questions', function ()
     $request->setContainer(app());
     $request->setRedirector(app('redirect'));
 
-    expect(fn () => $request->validateResolved())->not->toThrow(ValidationException::class);
+    expect(fn () => $request->validateResolved())->not->toThrow(ValidationException::class)
+        ->and($request->rules())->not->toHaveKey('has_us_estimating_experience')
+        ->and($request->rules())->not->toHaveKey('cv_resume')
+        ->and($request->rules())->not->toHaveKey('id_document')
+        ->and($request->rules())->not->toHaveKey('criteria_assessment');
 
     $invalid = UpdateStudentProfileRequest::create('/student/profile', 'POST', [
         'given_name' => 'Raiza',
@@ -289,17 +295,118 @@ test('viewing a document stored on cloudflare r2 redirects to a temporary link',
     expect((string) $response->headers->get('Location'))->not->toBe('');
 });
 
-test('profile documents may be larger than 10 MB and up to 5 GB', function () {
-    $request = UpdateStudentProfileRequest::create('/student/profile', 'POST', [
-        'given_name' => 'Raiza',
-        'last_name' => 'Limpiada',
-    ], [], [
-        'cv_resume' => UploadedFile::fake()->create('cv.pdf', 11 * 1024, 'application/pdf'),
-    ]);
+function documentRequest(string $type, array $files = []): StoreStudentProfileDocumentRequest
+{
+    $request = StoreStudentProfileDocumentRequest::create('/student/profile/documents/'.$type, 'POST', [], [], $files);
     $request->setContainer(app());
     $request->setRedirector(app('redirect'));
+    $request->setRouteResolver(function () use ($request, $type) {
+        $route = new Route('POST', 'student/profile/documents/{type}', []);
+        $route->bind($request);
+        $route->setParameter('type', $type);
+
+        return $route;
+    });
+
+    return $request;
+}
+
+test('profile documents may be larger than 10 MB and up to 5 GB', function () {
+    $request = documentRequest('cv', [
+        'cv_resume' => UploadedFile::fake()->create('cv.pdf', 11 * 1024, 'application/pdf'),
+    ]);
 
     expect(fn () => $request->validateResolved())->not->toThrow(ValidationException::class)
         ->and($request->rules()['cv_resume'])->toContain('max:'.UpdateStudentProfileRequest::PROFILE_DOCUMENT_MAX_KILOBYTES)
         ->and(UpdateStudentProfileRequest::PROFILE_DOCUMENT_MAX_KILOBYTES)->toBe(5 * 1024 * 1024);
+});
+
+test('save changes leaves the experience answer and uploaded documents in place', function () {
+    $this->withoutMiddleware();
+    $user = layoutStudent();
+    $user->forceFill(['has_us_estimating_experience' => true])->save();
+
+    app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+    ], (string) $user->id);
+
+    $this->actingAs($user->fresh())->post(route('student.profile.update'), [
+        'given_name' => 'Alexis',
+        'last_name' => 'Pacapac',
+        'facebook' => 'https://facebook.com/alexis',
+        'has_us_estimating_experience' => '0',
+        'remove_cv' => '1',
+        'cv_resume' => UploadedFile::fake()->createWithContent('other.pdf', "%PDF-1.4\n% other\n"),
+    ])->assertRedirect();
+
+    $saved = $user->fresh();
+    $facebook = collect($saved->social_links)->firstWhere('host', 'facebook');
+
+    expect($saved->given_name)->toBe('Alexis')
+        ->and($saved->last_name)->toBe('Pacapac')
+        ->and($saved->has_us_estimating_experience)->toBeTrue()
+        ->and($saved->getFirstMedia('cv_resume')?->file_name)->toBe('cv.pdf')
+        ->and($facebook['profile_link'] ?? null)->toBe('https://facebook.com/alexis');
+});
+
+test('a chosen document saves immediately and replaces only that file', function () {
+    $this->withoutMiddleware();
+    $user = layoutStudent();
+
+    app(StudentService::class)->updateProfile([
+        'id_document' => UploadedFile::fake()->createWithContent('id.pdf', "%PDF-1.4\n% id\n"),
+    ], (string) $user->id);
+
+    $stored = $this->actingAs($user->fresh())->post(
+        route('student.profile.document.store', ['type' => 'cv']),
+        ['cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n")],
+        ['Accept' => 'application/json'],
+    );
+
+    $stored->assertOk();
+    expect($stored->json('document.file_name'))->toBe('cv.pdf')
+        ->and($stored->json('document.view_url'))->toContain('/student/profile/documents/cv');
+
+    $replaced = $this->actingAs($user->fresh())->post(
+        route('student.profile.document.store', ['type' => 'cv']),
+        ['cv_resume' => UploadedFile::fake()->createWithContent('new-cv.pdf', "%PDF-1.4\n% new\n")],
+        ['Accept' => 'application/json'],
+    );
+
+    $replaced->assertOk();
+    $saved = $user->fresh();
+
+    expect($replaced->json('document.file_name'))->toBe('new-cv.pdf')
+        ->and($saved->getMedia('cv_resume'))->toHaveCount(1)
+        ->and($saved->getFirstMedia('id_document')?->file_name)->toBe('id.pdf');
+});
+
+test('removing a document deletes only that file', function () {
+    $this->withoutMiddleware();
+    $owner = layoutStudent();
+    $other = layoutStudent();
+
+    app(StudentService::class)->updateProfile([
+        'cv_resume' => UploadedFile::fake()->createWithContent('cv.pdf', "%PDF-1.4\n% cv\n"),
+        'criteria_assessment' => UploadedFile::fake()->createWithContent('result.pdf', "%PDF-1.4\n% assessment\n"),
+    ], (string) $owner->id);
+
+    $this->actingAs($other)->delete(
+        route('student.profile.document.destroy', ['type' => 'cv']),
+        [],
+        ['Accept' => 'application/json'],
+    )->assertOk();
+
+    expect($owner->fresh()->getFirstMedia('cv_resume')?->file_name)->toBe('cv.pdf');
+
+    $this->actingAs($owner->fresh())->delete(
+        route('student.profile.document.destroy', ['type' => 'assessment']),
+        [],
+        ['Accept' => 'application/json'],
+    )->assertOk();
+
+    $saved = $owner->fresh();
+
+    expect($saved->getMedia('criteria_assessment'))->toHaveCount(0)
+        ->and($saved->getFirstMedia('cv_resume')?->file_name)->toBe('cv.pdf');
 });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreStudentProfileDocumentRequest;
 use App\Http\Requests\UpdateStudentProfileRequest;
 use App\Services\AuthService;
 use App\Services\Course\CourseCategoryService;
@@ -264,29 +265,54 @@ class StudentController extends Controller
             unset($data['photo']);
         }
 
-        foreach (['cv_resume', 'id_document', 'criteria_assessment'] as $field) {
-            if ($request->hasFile($field)) {
-                $data[$field] = $request->file($field);
-            } else {
-                unset($data[$field]);
-            }
-        }
-
         $user = $this->studentService->updateProfile($data, (string) Auth::id());
 
         Auth::setUser($user);
 
-        return redirect()->back()->with('success', 'Profile updated successfully');
+        return redirect()->back()->with('success', 'Changes saved');
+    }
+
+    public function storeOwnDocument(StoreStudentProfileDocumentRequest $request, string $type)
+    {
+        [$collection, $field] = $this->profileDocumentTarget($type);
+        $user = $request->user();
+
+        $user->addMediaFromRequest($field)
+            ->withCustomProperties(['name' => $collection])
+            ->toMediaCollection($collection);
+        $user->unsetRelation('media');
+
+        return response()->json([
+            'document' => $this->profileDocumentLink($user->fresh() ?? $user, $collection, $type),
+        ]);
+    }
+
+    public function destroyOwnDocument(Request $request, string $type)
+    {
+        [$collection] = $this->profileDocumentTarget($type);
+        $request->user()?->clearMediaCollection($collection);
+
+        return response()->json([
+            'document' => null,
+        ]);
+    }
+
+    /**
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function profileDocumentTarget(string $type): array
+    {
+        return match ($type) {
+            'cv' => ['cv_resume', 'cv_resume', 'CV/Resume'],
+            'id' => ['id_document', 'id_document', 'ID document'],
+            'assessment' => ['criteria_assessment', 'criteria_assessment', 'Assessment result'],
+            default => abort(404),
+        };
     }
 
     public function showOwnDocument(Request $request, string $type)
     {
-        [$collection, $label] = match ($type) {
-            'cv' => ['cv_resume', 'CV/Resume'],
-            'id' => ['id_document', 'ID document'],
-            'assessment' => ['criteria_assessment', 'Assessment result'],
-            default => abort(404),
-        };
+        [$collection, , $label] = $this->profileDocumentTarget($type);
 
         $media = $request->user()?->getFirstMedia($collection);
 
