@@ -6,9 +6,11 @@ use App\Enums\CoursePricingType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCourseEnrollmentRequest;
 use App\Models\Course\Course;
+use App\Models\Course\CourseEnrollment;
 use App\Models\StudentLabel;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseService;
+use App\Services\Payment\RetainedAccessService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -113,6 +115,17 @@ class CourseEnrollmentController extends Controller
         $this->courseEnrollment->deleteEnrollment($id);
 
         return back()->with('success', 'Enrollment is successfully deleted');
+    }
+
+    public function keepCourse(CourseEnrollment $enrollment, RetainedAccessService $retainedAccess)
+    {
+        try {
+            $retainedAccess->keepCourse($enrollment);
+        } catch (\Throwable $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', 'Billing is stopped and this student keeps full access to the course.');
     }
 
     /**

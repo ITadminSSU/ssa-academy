@@ -3,6 +3,7 @@
 namespace App\Services\Course;
 
 use App\Enums\CourseStatusType;
+use App\Enums\SubscriptionStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\StudentLabel;
@@ -385,6 +386,12 @@ class CourseEnrollmentService extends MediaService
          $enrollment->setAttribute('subscription_status', $summary['status']);
          $enrollment->setAttribute('subscription_status_label', $summary['label']);
          $enrollment->setAttribute('subscription_expires_at', $summary['expires_at']);
+         $billingStopped = $enrollment->subscription?->status === SubscriptionStatus::CANCELED;
+         $enrollment->setAttribute(
+            'can_keep_course',
+            $enrollment->subscription !== null && (! $enrollment->subscription->accessRetained() || ! $billingStopped),
+         );
+         $enrollment->setAttribute('access_retained', ($enrollment->subscription?->accessRetained() ?? false) && $billingStopped);
          $enrollment->makeHidden(['subscription']);
       }
    }

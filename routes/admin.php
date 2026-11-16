@@ -89,6 +89,7 @@ Route::prefix('dashboard/admin')->group(function () {
 
     // course enrolment
     Route::resource('enrollments', CourseEnrollmentController::class)->only(['create', 'destroy']);
+    Route::post('enrollments/{enrollment}/keep-course', [CourseEnrollmentController::class, 'keepCourse'])->name('enrollments.keep-course');
 
     // notification
     Route::resource('newsletters', NewsletterController::class)->only(['index', 'store', 'update', 'destroy']);
