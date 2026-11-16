@@ -120,6 +120,51 @@ it('saves no best value badge and leaves the charge amounts alone', function () 
         ->and($saved->stripe_product_id)->toBe('prod_installment');
 });
 
+it('saves free pricing over a choice installment course', function () {
+    createChoiceBillingCourseTable();
+
+    $course = installmentCourse();
+    $course->forceFill([
+        'billing_model' => CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value,
+        'price' => 99,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'choice_one_time_compare' => 49,
+        'choice_recurring_compare' => 20,
+        'choice_best_value' => 'one_time',
+        'launch_offer_enabled' => false,
+    ])->save();
+
+    $request = pricingSaveRequest([
+        'pricing_type' => 'free',
+        'billing_model' => 'one_time_or_installment',
+        'price' => 99,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'subscription_price' => 6,
+        'choice_one_time_compare' => 49,
+        'choice_recurring_compare' => 20,
+        'choice_best_value' => 'one_time',
+    ]);
+    $request->validateResolved();
+
+    app(CourseService::class)->updateCourse((string) $course->id, $request->validated());
+
+    $saved = Course::query()->findOrFail($course->id);
+
+    expect($saved->pricing_type)->toBe('free')
+        ->and($saved->billing_model)->toBe(CourseBillingModel::ONE_TIME)
+        ->and($saved->price)->toBeNull()
+        ->and($saved->installment_price)->toBeNull()
+        ->and($saved->installment_months)->toBeNull()
+        ->and($saved->subscription_price)->toBeNull()
+        ->and($saved->choice_one_time_compare)->toBeNull()
+        ->and($saved->choice_recurring_compare)->toBeNull()
+        ->and($saved->choice_best_value)->toBeNull()
+        ->and((bool) $saved->launch_offer_enabled)->toBeFalse()
+        ->and((bool) $saved->discount)->toBeFalse();
+});
+
 it('does not keep a best value badge on a billing model that has one price', function () {
     createChoiceBillingCourseTable();
 
