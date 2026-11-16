@@ -19,13 +19,28 @@ const choiceAmount = (value: number | string | null | undefined): number => {
    return Number.isFinite(amount) ? amount : 0;
 };
 
-const savedDiscountDisplay = (value: number | string | null | undefined, price: number): number | null => {
+const savedAmount = (value: number | string | null | undefined): number | null => {
    if (value === null || value === undefined || value === '') {
       return null;
    }
 
    const display = Number(value);
-   if (!Number.isFinite(display) || display <= 0 || display >= price - 0.009) {
+
+   return Number.isFinite(display) && display > 0 ? display : null;
+};
+
+const savedDiscountDisplay = (value: number | string | null | undefined, price: number): number | null => {
+   const display = savedAmount(value);
+   if (display === null || display >= price - 0.009) {
+      return null;
+   }
+
+   return display;
+};
+
+const savedAnchorDisplay = (value: number | string | null | undefined, price: number): number | null => {
+   const display = savedAmount(value);
+   if (display === null || display <= price + 0.009) {
       return null;
    }
 
@@ -78,7 +93,8 @@ const ChoiceEnrollmentOptions = ({ course, symbol }: { course: Course; symbol: s
    const recurring = choiceAmount(installment ? course.installment_price : course.subscription_price);
    const months = Math.max(0, Math.trunc(choiceAmount(course.installment_months)));
    const oneTimeDisplay = savedDiscountDisplay(course.choice_one_time_compare, oneTime);
-   const recurringDisplay = savedDiscountDisplay(course.choice_recurring_compare, recurring);
+   const recurringDisplay = installment ? null : savedDiscountDisplay(course.choice_recurring_compare, recurring);
+   const installmentAnchor = installment ? savedAnchorDisplay(course.choice_recurring_compare, recurring) : null;
    const couponNote = 'Apply a coupon to get this price.';
    const best = savedBestValue(course);
    const money = (amount: number) => `${symbol}${formatOfferAmount(amount)}`;
@@ -97,15 +113,21 @@ const ChoiceEnrollmentOptions = ({ course, symbol }: { course: Course; symbol: s
          <ChoicePriceCard
             title={installment ? 'Payment plan' : 'Monthly'}
             price={
-               recurringDisplay === null
-                  ? installment
-                     ? `${money(recurring)} × ${months} payments`
-                     : `${money(recurring)}/month`
-                  : installment
-                    ? `${money(recurringDisplay)} × ${months} payments`
+               installment
+                  ? `${money(recurring)} × ${months} payments`
+                  : recurringDisplay === null
+                    ? `${money(recurring)}/month`
                     : `${money(recurringDisplay)}/month`
             }
-            compare={recurringDisplay === null ? null : installment ? money(recurring) : `${money(recurring)}/month`}
+            compare={
+               installment
+                  ? installmentAnchor === null
+                     ? null
+                     : `${money(installmentAnchor)} × ${months} payments`
+                  : recurringDisplay === null
+                    ? null
+                    : `${money(recurring)}/month`
+            }
             note={installment ? 'Billing stops after the last payment. Access stays.' : 'Billed every month until you cancel.'}
             badge={best === 'recurring'}
             extra={best === 'recurring' ? 'Lower payment today' : null}

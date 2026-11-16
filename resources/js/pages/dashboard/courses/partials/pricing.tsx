@@ -657,11 +657,12 @@ const Pricing = () => {
                                        : String(data.choice_recurring_compare)
                                  }
                                  onChange={(e) => setData('choice_recurring_compare', e.target.value)}
-                                 placeholder="10.00"
+                                 placeholder={isChoiceInstallment ? '20.00' : '10.00'}
                               />
                               <p className="text-muted-foreground mt-1 text-xs">
-                                 Optional. Checkout crosses out the {isChoiceInstallment ? 'installment amount' : 'monthly price'} and shows this
-                                 amount. Students can get this price when they apply a coupon.
+                                 {isChoiceInstallment
+                                    ? 'Optional. The course page and checkout cross out this amount and show the installment amount. The student still pays the installment amount.'
+                                    : 'Optional. Checkout crosses out the monthly price and shows this amount. Students can get this price when they apply a coupon.'}
                               </p>
                               <InputError message={errors.choice_recurring_compare} />
                            </div>
