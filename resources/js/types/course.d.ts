@@ -443,6 +443,8 @@ interface CourseEnrollment extends TableCommon {
    coupon_code?: string | null;
    subscription_status?: SubscriptionStatus | null;
    subscription_status_label?: string | null;
+   can_keep_course?: boolean;
+   access_retained?: boolean;
    subscription_expires_at?: string | null;
    deposit_amount?: number | null;
    deposit_paid_at?: string | null;

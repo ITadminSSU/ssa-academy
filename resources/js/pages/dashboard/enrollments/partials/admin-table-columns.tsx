@@ -1,6 +1,7 @@
 import DeleteModal from '@/components/inertia/delete-modal';
 import StudentTagPills from '@/components/student-tag-pills';
 import { Button } from '@/components/ui/button';
+import { router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
 import { enrollmentBillingColumns } from './enrollment-billing-columns';
@@ -86,8 +87,32 @@ const AdminTableColumn = (
          id: 'actions',
          header: () => <div className="pr-4 text-end">{table.action}</div>,
          cell: ({ row }) => {
+            const courseEnrollment = enrollmentType === 'course' ? (row.original as CourseEnrollment) : null;
+
             return (
-               <div className="flex justify-end pr-4">
+               <div className="flex items-center justify-end gap-2 pr-4">
+                  {courseEnrollment?.can_keep_course ? (
+                     <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                           if (
+                              !window.confirm(
+                                 'Stop Stripe billing for this student and keep their full access to the course?',
+                              )
+                           ) {
+                              return;
+                           }
+
+                           router.post(route('enrollments.keep-course', courseEnrollment.id), {}, { preserveScroll: true });
+                        }}
+                     >
+                        Keep course
+                     </Button>
+                  ) : courseEnrollment?.access_retained ? (
+                     <span className="text-muted-foreground text-xs">Access kept</span>
+                  ) : null}
                   <DeleteModal
                      routePath={route(deleteRoute, row.original.id)}
                      actionComponent={

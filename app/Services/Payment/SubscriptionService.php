@@ -54,7 +54,7 @@ class SubscriptionService
 
     public function userCanManageBilling(User $user): bool
     {
-        if (!empty($user->stripe_customer_id)) {
+        if (! empty($user->stripe_customer_id)) {
             return true;
         }
 
@@ -85,7 +85,7 @@ class SubscriptionService
             $userId = (int) ($context['user_id'] ?? $stripeSubscription->metadata['user_id'] ?? 0);
             $courseId = (int) ($context['course_id'] ?? $stripeSubscription->metadata['course_id'] ?? 0);
 
-            if (!$userId || !$courseId) {
+            if (! $userId || ! $courseId) {
                 throw new \RuntimeException('Subscription metadata is missing user_id or course_id.');
             }
 
@@ -108,6 +108,24 @@ class SubscriptionService
 
     public function suspend(Subscription $subscription): void
     {
+        if ($subscription->accessRetained()) {
+            $subscription->update([
+                'status' => SubscriptionStatus::CANCELED,
+                'canceled_at' => $subscription->canceled_at ?? now(),
+                'grace_ends_at' => null,
+            ]);
+
+            CourseEnrollment::query()
+                ->where('subscription_id', $subscription->id)
+                ->update([
+                    'enrollment_type' => 'paid',
+                    'access_status' => EnrollmentAccessStatus::ACTIVE,
+                    'suspended_at' => null,
+                ]);
+
+            return;
+        }
+
         if ($subscription->choiceInstallmentFinished()) {
             $this->setEnrollmentAccess($subscription, EnrollmentAccessStatus::ACTIVE);
 
@@ -131,7 +149,7 @@ class SubscriptionService
             ->where('stripe_subscription_id', $stripeSubscription->id)
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return;
         }
 

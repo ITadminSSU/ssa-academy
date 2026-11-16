@@ -48,6 +48,12 @@ class SubscriptionAccessService
             return $this->pefWindowEnded($user) ? 'completed_only' : 'full';
         }
 
+        $enrollment->loadMissing('subscription');
+
+        if ($enrollment->subscription?->accessRetained()) {
+            return 'full';
+        }
+
         if ($course->usesOneTimeOrInstallment()) {
             if (! $enrollment->relationLoaded('subscription')) {
                 $enrollment->load('subscription');
