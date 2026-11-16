@@ -133,7 +133,8 @@ it('stores a fixed installment and does not keep a later monthly price', functio
         'installment_price' => 15,
         'installment_months' => 6,
         'subscription_price' => 9,
-        'choice_recurring_compare' => 10,
+        'choice_one_time_compare' => 39,
+        'choice_recurring_compare' => 20,
     ]);
 
     $request->validateResolved();
@@ -142,7 +143,28 @@ it('stores a fixed installment and does not keep a later monthly price', functio
         ->and($request->input('installment_price'))->toEqual(15)
         ->and($request->input('installment_months'))->toBe(6)
         ->and($request->input('subscription_price'))->toBeNull()
-        ->and($request->input('choice_recurring_compare'))->toEqual(10);
+        ->and($request->input('choice_one_time_compare'))->toEqual(39)
+        ->and($request->input('choice_recurring_compare'))->toEqual(20);
+});
+
+it('rejects an installment discounted display that is not higher than the installment amount', function () {
+    $lower = choiceRequest([
+        'billing_model' => 'one_time_or_installment',
+        'price' => 49,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'choice_recurring_compare' => 10,
+    ]);
+    $same = choiceRequest([
+        'billing_model' => 'one_time_or_installment',
+        'price' => 49,
+        'installment_price' => 15,
+        'installment_months' => 6,
+        'choice_recurring_compare' => 15,
+    ]);
+
+    expect(fn () => $lower->validateResolved())->toThrow(ValidationException::class)
+        ->and(fn () => $same->validateResolved())->toThrow(ValidationException::class);
 });
 
 it('prices the selected card and applies a voucher only to that card', function () {

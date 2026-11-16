@@ -11,7 +11,8 @@
       $bestValue = 'none';
    }
    $showOneTimeDisplay = $oneTimeCompare > 0 && $oneTimeCompare < $oneTime - 0.009;
-   $showRecurringDisplay = $recurringCompare > 0 && $recurringCompare < $recurring - 0.009;
+   $showMonthlyDisplay = ! $isInstallment && $recurringCompare > 0 && $recurringCompare < $recurring - 0.009;
+   $showInstallmentAnchor = $isInstallment && $recurringCompare > $recurring + 0.009;
    $planUrl = function (string $next) use ($item, $item_type, $coupon, $plan) {
       return route('payments.index', array_filter([
          'from' => 'web',
@@ -76,10 +77,12 @@
          @endif
       </p>
       <p class="mt-3 text-lg font-semibold">
-         @if ($showRecurringDisplay)
+         @if ($showInstallmentAnchor)
+            <span class="text-muted-foreground mr-2 text-sm line-through">{{ $formatMoney($recurringCompare) }} / {{ __('month') }}</span>
+         @elseif ($showMonthlyDisplay)
             <span class="text-muted-foreground mr-2 text-sm line-through">{{ $formatMoney($recurring) }} / {{ __('month') }}</span>
          @endif
-         {{ $formatMoney($showRecurringDisplay ? $recurringCompare : $recurring) }} / {{ __('month') }}
+         {{ $formatMoney($showMonthlyDisplay ? $recurringCompare : $recurring) }} / {{ __('month') }}
       </p>
       @if (! ($choicePlan['recurring_synced'] ?? false))
          <p class="mt-2 text-xs text-amber-700">{{ __('This option needs a Stripe sync before checkout.') }}</p>

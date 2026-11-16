@@ -353,6 +353,7 @@ class UpdateCourseRequest extends FormRequest
             'choice_one_time_compare.lt' => 'Discounted display must be less than the one-time price.',
             'choice_one_time_compare.min' => 'Discounted display must be less than the one-time price.',
             'choice_recurring_compare.lt' => 'Discounted display must be less than the price charged for that plan.',
+            'choice_recurring_compare.gt' => 'Discounted display must be higher than the installment amount.',
             'choice_recurring_compare.min' => 'Discounted display must be less than the price charged for that plan.',
             'subscription_price.required' => 'Please enter a monthly subscription price.',
             'catalog_coupon_off_remaining.lt' => 'The coupon amount must be less than the course price.',
@@ -444,7 +445,7 @@ class UpdateCourseRequest extends FormRequest
             'choice_best_value' => 'nullable|string|in:recurring,one_time,none',
             'choice_recurring_compare' => $isChoiceMonthly
                 ? 'nullable|numeric|min:0.01|lt:subscription_price'
-                : ($isChoiceInstallment ? 'nullable|numeric|min:0.01|lt:installment_price' : 'nullable'),
+                : ($isChoiceInstallment ? 'nullable|numeric|min:0.01|gt:installment_price' : 'nullable'),
             'discount' => 'boolean',
             'discount_price' => $isOneTime
                 ? 'nullable|numeric|min:1|lt:price|required_if:discount,true'

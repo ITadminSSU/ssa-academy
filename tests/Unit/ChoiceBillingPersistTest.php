@@ -53,7 +53,7 @@ it('saves one-time or installment and clears the later monthly price', function 
         'installment_price' => 15,
         'installment_months' => 6,
         'choice_one_time_compare' => 39,
-        'choice_recurring_compare' => 10,
+        'choice_recurring_compare' => 20,
     ]);
     $request->validateResolved();
 
@@ -66,7 +66,7 @@ it('saves one-time or installment and clears the later monthly price', function 
         ->and($saved->subscription_price)->toBeNull()
         ->and((float) $saved->installment_price)->toBe(15.0)
         ->and((int) $saved->installment_months)->toBe(6)
-        ->and((float) $saved->choice_recurring_compare)->toBe(10.0)
+        ->and((float) $saved->choice_recurring_compare)->toBe(20.0)
         ->and($saved->choice_best_value)->toBe('recurring')
         ->and($saved->stripe_product_id)->toBe('prod_installment');
 });
@@ -386,6 +386,52 @@ it('describes the selected plan under the checkout total', function () {
         ->and($installment)->toContain('Payment plan')
         ->and($installment)->toContain('USD 120.00')
         ->and($installment)->toContain('USD 20.00');
+
+    $promo = checkoutCardHtml($item, [
+        'checkoutMode' => 'one_time_or_installment',
+        'discountedPrice' => 15,
+        'choice' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_installment',
+            'one_time' => 99,
+            'one_time_compare' => 49,
+            'recurring' => 15,
+            'recurring_compare' => 20,
+            'months' => 6,
+            'recurring_synced' => true,
+            'best_value' => 'none',
+        ],
+    ]);
+
+    expect($promo)->toContain('line-through">USD 20.00 / month')
+        ->and($promo)->toContain('USD 15.00 / month')
+        ->and($promo)->not->toContain('line-through">USD 15.00')
+        ->and($promo)->toContain('line-through">USD 99.00')
+        ->and($promo)->toContain('USD 49.00')
+        ->and(substr_count($promo, 'Apply a coupon to get this price.'))->toBe(1)
+        ->and($promo)->toContain('You pay USD 15.00 today, then 6 payments. Billing stops after the last one.')
+        ->and($promo)->not->toContain('Enter coupon code if you have one');
+
+    $plainInstallment = view('paymentgateways::partials.payment.ChoicePlans', [
+        'choicePlan' => [
+            'plan' => 'recurring',
+            'mode' => 'one_time_or_installment',
+            'one_time' => 99,
+            'recurring' => 15,
+            'recurring_compare' => 10,
+            'months' => 6,
+            'recurring_synced' => true,
+            'best_value' => 'none',
+        ],
+        'item' => $item,
+        'item_type' => 'course',
+        'coupon' => null,
+        'formatMoney' => fn (float $amount) => 'USD '.number_format($amount, 2),
+    ])->render();
+
+    expect($plainInstallment)->not->toContain('line-through')
+        ->and($plainInstallment)->toContain('USD 15.00 / month')
+        ->and($plainInstallment)->not->toContain('USD 10.00');
 });
 
 it('describes the selected plan under the larger checkout total', function () {
