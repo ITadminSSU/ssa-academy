@@ -241,7 +241,7 @@ it('keeps one-time access, waits on a missed installment, and restores access wh
     ]));
 
     expect($service->getAccessMode($user, $course, $oneTime))->toBe('full')
-        ->and($service->getAccessMode($user, $course, $pastDue))->toBe('installment_locked')
+        ->and($service->getAccessMode($user, $course, $pastDue))->toBe('completed_only')
         ->and($service->getAccessMode($user, $course, $finished))->toBe('full');
 
     $monthly = choiceCourse();

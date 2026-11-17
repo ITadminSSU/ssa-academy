@@ -19,18 +19,16 @@ const SubscriptionAccessBanner = ({ subscriptionAccess: accessProp, course: cour
       return null;
    }
 
-   if (subscriptionAccess.mode === 'installment_locked') {
+   if (subscriptionAccess.can_pay_invoice && subscriptionAccess.invoice_url) {
       return (
          <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-50">
             <Lock className="h-4 w-4" />
             <AlertTitle>Payment past due</AlertTitle>
             <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-               <span>This course is locked until the open invoice is paid. Paying it unlocks the same enrollment.</span>
-               {subscriptionAccess.invoice_url ? (
-                  <Button asChild size="sm" className="sm:w-auto">
-                     <a href={subscriptionAccess.invoice_url}>Pay open invoice</a>
-                  </Button>
-               ) : null}
+               <span>Finished lessons and quizzes stay available. Unfinished items stay locked until this invoice is paid.</span>
+               <Button asChild size="sm" className="sm:w-auto">
+                  <a href={subscriptionAccess.invoice_url}>Pay open invoice</a>
+               </Button>
             </AlertDescription>
          </Alert>
       );

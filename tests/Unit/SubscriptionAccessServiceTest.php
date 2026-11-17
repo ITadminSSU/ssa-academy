@@ -183,7 +183,7 @@ it('hides public us experience from guests staff and anyone not enrolled in the 
     expect($this->service->canViewPublicUsExperience($student, $oneTimeCourse, $lapsed))->toBeFalse();
 });
 
-it('locks an installment course immediately without using the subscription grace period', function () {
+it('keeps finished installment lessons open without using the subscription grace period', function () {
     $user = makeUser();
     $course = makeCourse([
         'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION,
@@ -198,14 +198,17 @@ it('locks an installment course immediately without using the subscription grace
     ]);
     $enrollment = makeEnrollment(EnrollmentAccessStatus::SUSPENDED, $subscription);
     $watchHistory = new WatchHistory([
-        'completed_watching' => json_encode([
+        'completed_watching' => [
             ['id' => '10', 'type' => 'lesson'],
-        ]),
+        ],
     ]);
 
-    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('installment_locked');
-    expect($this->service->canAccessPlayer($user, $course, $enrollment))->toBeFalse();
-    expect($this->service->canAccessItem($user, $course, 10, 'lesson', $watchHistory, $enrollment))->toBeFalse();
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('completed_only');
+    expect($this->service->canAccessPlayer($user, $course, $enrollment))->toBeTrue();
+    expect($this->service->canAccessItem($user, $course, 10, 'lesson', $watchHistory, $enrollment))->toBeTrue();
+    expect($this->service->canAccessItem($user, $course, 11, 'lesson', $watchHistory, $enrollment))->toBeFalse();
+    expect($this->service->canSubmitAssignments($user, $course, $enrollment))->toBeFalse();
+    expect($this->service->canFinishCourse($user, $course, $enrollment))->toBeFalse();
 
     $payload = $this->service->toFrontendPayload($user, $course, $enrollment);
 
@@ -213,6 +216,75 @@ it('locks an installment course immediately without using the subscription grace
     expect($payload['can_pay_invoice'])->toBeTrue();
     expect($payload['invoice_url'])->toBe('https://pay.stripe.test/in_123');
     expect($payload['can_mark_progress'])->toBeFalse();
+});
+
+it('opens completed lessons after an installment cancel when no invoice is waiting', function () {
+    $user = makeUser();
+    $course = makeCourse([
+        'billing_model' => CourseBillingModel::ONE_TIME_OR_INSTALLMENT,
+    ]);
+    $enrollment = makeEnrollment(
+        EnrollmentAccessStatus::SUSPENDED,
+        new Subscription(['status' => SubscriptionStatus::CANCELED]),
+    );
+    $watchHistory = new WatchHistory([
+        'completed_watching' => [
+            ['id' => '10', 'type' => 'lesson'],
+        ],
+    ]);
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('completed_only');
+    expect($this->service->canAccessItem($user, $course, 10, 'lesson', $watchHistory, $enrollment))->toBeTrue();
+    expect($this->service->canAccessItem($user, $course, 12, 'quiz', $watchHistory, $enrollment))->toBeFalse();
+
+    $payload = $this->service->toFrontendPayload($user, $course, $enrollment);
+
+    expect($payload['can_pay_invoice'])->toBeFalse();
+    expect($payload['invoice_url'])->toBeNull();
+    expect($payload['can_mark_progress'])->toBeFalse();
+});
+
+it('keeps completed lessons when a lapsed subscription course is later saved as one-time', function () {
+    $user = makeUser();
+    $course = makeCourse([
+        'billing_model' => CourseBillingModel::ONE_TIME,
+        'pricing_type' => 'free',
+    ]);
+    $enrollment = makeEnrollment(
+        EnrollmentAccessStatus::SUSPENDED,
+        new Subscription(['status' => SubscriptionStatus::CANCELED]),
+    );
+    $watchHistory = new WatchHistory([
+        'completed_watching' => [
+            ['id' => '4', 'type' => 'quiz'],
+        ],
+    ]);
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('completed_only');
+    expect($this->service->canAccessItem($user, $course, 4, 'quiz', $watchHistory, $enrollment))->toBeTrue();
+    expect($this->service->canAccessItem($user, $course, 5, 'lesson', $watchHistory, $enrollment))->toBeFalse();
+    expect($this->service->toFrontendPayload($user, $course, $enrollment)['can_pay_invoice'])->toBeFalse();
+});
+
+it('keeps an active subscription open after the course price is changed to one-time', function () {
+    $user = makeUser();
+    $course = makeCourse(['billing_model' => CourseBillingModel::ONE_TIME]);
+    $enrollment = makeEnrollment(
+        EnrollmentAccessStatus::SUSPENDED,
+        new Subscription(['status' => SubscriptionStatus::ACTIVE]),
+    );
+
+    expect($this->service->getAccessMode($user, $course, $enrollment))->toBe('full');
+    expect($this->service->canMarkProgress($user, $course, $enrollment))->toBeTrue();
+});
+
+it('leaves a one-time enrollment with no subscription on the normal rule', function () {
+    $user = makeUser();
+    $course = makeCourse(['billing_model' => CourseBillingModel::ONE_TIME]);
+    $suspended = makeEnrollment(EnrollmentAccessStatus::SUSPENDED);
+
+    expect($this->service->getAccessMode($user, $course, $suspended))->toBe('none');
+    expect($this->service->canAccessPlayer($user, $course, $suspended))->toBeFalse();
 });
 
 it('gives full access to an active installment subscription', function () {
