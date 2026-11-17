@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Enums\EnrollmentAccessStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Course\WatchHistory;
@@ -61,8 +62,14 @@ class SubscriptionAccessService
 
             $subscription = $enrollment->subscription;
 
-            if ($subscription && ! $subscription->choiceInstallmentFinished()) {
-                return InstallmentBillingRules::accessMode($subscription->status);
+            if ($subscription?->choiceInstallmentFinished()) {
+                return 'full';
+            }
+
+            if ($subscription) {
+                return InstallmentBillingRules::accessMode($subscription->status) === 'full'
+                    ? 'full'
+                    : 'completed_only';
             }
 
             return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
@@ -85,11 +92,17 @@ class SubscriptionAccessService
                 $enrollment->load('subscription');
             }
 
-            return InstallmentBillingRules::accessMode($enrollment->subscription?->status);
+            if (! $enrollment->subscription) {
+                return 'installment_locked';
+            }
+
+            return InstallmentBillingRules::accessMode($enrollment->subscription->status) === 'full'
+                ? 'full'
+                : 'completed_only';
         }
 
         if (! $course->usesSubscriptionBilling()) {
-            return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
+            return $this->oneTimeAccessMode($enrollment);
         }
 
         if ($enrollment->hasFullAccess()) {
@@ -245,21 +258,60 @@ class SubscriptionAccessService
 
         $mode = $this->getAccessMode($user, $course, $enrollment);
         $pefLimited = $mode === 'completed_only' && (bool) $enrollment?->pef_granted;
+        $invoiceUrl = $this->openInvoiceUrl($enrollment);
 
         return [
             'mode' => $mode,
             'can_mark_progress' => $mode === 'full',
             'can_submit_assignments' => $mode === 'full',
             'can_finish_course' => $mode === 'full',
-            'can_resubscribe' => $mode === 'completed_only' && $course->usesSubscriptionBilling() && ! $pefLimited,
+            'can_resubscribe' => $mode === 'completed_only' && $course->usesSubscriptionBilling() && ! $pefLimited && $invoiceUrl === null,
             'pef_limited' => $pefLimited,
-            'can_pay_invoice' => $mode === 'installment_locked',
-            'invoice_url' => $mode === 'installment_locked' ? ($enrollment?->subscription?->open_invoice_url ?: null) : null,
+            'can_pay_invoice' => $invoiceUrl !== null,
+            'invoice_url' => $invoiceUrl,
             'is_subscription_course' => $course->usesSubscriptionBilling(),
             'staff_preview' => $course->isStaffPreviewer($user),
             'access_status' => $enrollment?->access_status?->value,
             'subscription_status' => $enrollment?->subscription?->status?->value,
         ];
+    }
+
+    private function oneTimeAccessMode(CourseEnrollment $enrollment): string
+    {
+        $subscription = $enrollment->subscription;
+
+        if ($subscription?->choiceInstallmentFinished() || $subscription?->accessRetained()) {
+            return 'full';
+        }
+
+        if ($subscription?->status === SubscriptionStatus::ACTIVE || $subscription?->status === SubscriptionStatus::TRIALING) {
+            return 'full';
+        }
+
+        if ($subscription) {
+            return 'completed_only';
+        }
+
+        return $enrollment->access_status === EnrollmentAccessStatus::ACTIVE ? 'full' : 'none';
+    }
+
+    private function openInvoiceUrl(?CourseEnrollment $enrollment): ?string
+    {
+        $subscription = $enrollment?->subscription;
+
+        if (
+            ! $subscription
+            || $subscription->accessRetained()
+            || $subscription->choiceInstallmentFinished()
+            || $subscription->status === SubscriptionStatus::ACTIVE
+            || $subscription->status === SubscriptionStatus::TRIALING
+        ) {
+            return null;
+        }
+
+        $url = $subscription->open_invoice_url;
+
+        return is_string($url) && $url !== '' ? $url : null;
     }
 
     private function pefWindowEnded(User $user): bool
