@@ -120,7 +120,7 @@ const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
                            value={data.given_name}
                            onChange={(e) => setData('given_name', e.target.value)}
                            disabled={processing}
-                           placeholder="Alexis"
+                           placeholder="Given name"
                         />
                         <InputError message={errors.given_name} />
                      </div>
@@ -134,7 +134,7 @@ const Register = ({ googleLogIn, recaptcha, legalDocument }: RegisterProps) => {
                            value={data.last_name}
                            onChange={(e) => setData('last_name', e.target.value)}
                            disabled={processing}
-                           placeholder="Pacapac"
+                           placeholder="Last name"
                         />
                         <InputError message={errors.last_name} />
                      </div>
