@@ -257,7 +257,7 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                      value={data.given_name}
                      onChange={(e) => onHandleChange(e, setData)}
                      className="mt-1"
-                     placeholder="Alexis"
+                     placeholder="Given name"
                   />
                   <InputError message={errors.given_name} />
                </div>
@@ -270,7 +270,7 @@ const UpdateProfile = ({ instructor }: { instructor: Instructor }) => {
                      value={data.last_name}
                      onChange={(e) => onHandleChange(e, setData)}
                      className="mt-1"
-                     placeholder="Pacapac"
+                     placeholder="Last name"
                   />
                   <InputError message={errors.last_name} />
                </div>
