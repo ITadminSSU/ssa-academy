@@ -45,6 +45,7 @@ class SubscriptionService
                 'canceled_at' => $subscription->canceled_at?->toIso8601String(),
                 'grace_ends_at' => $subscription->grace_ends_at?->toIso8601String(),
                 'grants_full_access' => $subscription->grantsFullAccess(),
+                'access_retained' => $subscription->accessRetained(),
                 'access_status' => $subscription->enrollment?->access_status?->value,
                 'course' => $subscription->course,
             ])
@@ -220,6 +221,10 @@ class SubscriptionService
 
     protected function syncEnrollment(Subscription $subscription): CourseEnrollment
     {
+        if ($subscription->accessRetained()) {
+            return $this->keepRetainedEnrollment($subscription);
+        }
+
         if ($subscription->choiceInstallmentFinished()) {
             $this->setEnrollmentAccess($subscription, EnrollmentAccessStatus::ACTIVE);
             $existing = CourseEnrollment::query()
@@ -265,6 +270,33 @@ class SubscriptionService
             'enrollment_type' => 'subscription',
             'access_status' => $accessStatus,
             'subscription_id' => $subscription->id,
+        ]);
+    }
+
+    protected function keepRetainedEnrollment(Subscription $subscription): CourseEnrollment
+    {
+        $enrollment = CourseEnrollment::query()
+            ->where('user_id', $subscription->user_id)
+            ->where('course_id', $subscription->course_id)
+            ->first();
+
+        $attributes = [
+            'enrollment_type' => 'paid',
+            'access_status' => EnrollmentAccessStatus::ACTIVE,
+            'subscription_id' => $subscription->id,
+            'suspended_at' => null,
+        ];
+
+        if ($enrollment) {
+            $enrollment->update($attributes);
+
+            return $enrollment->fresh();
+        }
+
+        return $this->courseEnrollment->createCourseEnroll([
+            'user_id' => $subscription->user_id,
+            'course_id' => $subscription->course_id,
+            ...$attributes,
         ]);
     }
 

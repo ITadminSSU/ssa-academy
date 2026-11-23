@@ -43,6 +43,7 @@ interface UserSubscriptionSummary {
    canceled_at?: string | null;
    grace_ends_at?: string | null;
    grants_full_access: boolean;
+   access_retained?: boolean;
    access_status?: EnrollmentAccessStatus | null;
    course?: Course;
 }

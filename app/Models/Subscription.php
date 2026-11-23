@@ -76,6 +76,10 @@ class Subscription extends Model
 
     public function grantsFullAccess(): bool
     {
+        if ($this->accessRetained()) {
+            return true;
+        }
+
         if ($this->status->grantsFullAccess()) {
             return true;
         }

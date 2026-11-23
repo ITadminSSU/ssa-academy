@@ -7,11 +7,16 @@ use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\Payment\InstallmentBillingService;
+use App\Services\Payment\LaunchOfferEnrollmentService;
 use App\Services\Payment\RetainedAccessService;
+use App\Services\Payment\StripeCustomerService;
+use App\Services\Payment\StripeWebhookService;
 use App\Services\Payment\SubscriptionAccessService;
 use App\Services\Payment\SubscriptionService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Modules\PaymentGateways\Services\PaymentService;
 
 beforeEach(function () {
     Schema::dropIfExists('course_enrollments');
@@ -33,6 +38,8 @@ beforeEach(function () {
         $table->string('slug')->nullable();
         $table->string('pricing_type')->nullable();
         $table->string('billing_model')->nullable();
+        $table->string('thumbnail')->nullable();
+        $table->decimal('subscription_price', 10, 2)->nullable();
         $table->timestamps();
     });
 
@@ -45,7 +52,10 @@ beforeEach(function () {
         $table->string('stripe_price_id')->nullable();
         $table->string('status');
         $table->timestamp('access_retained_at')->nullable();
+        $table->string('open_invoice_url')->nullable();
         $table->timestamp('choice_installment_completed_at')->nullable();
+        $table->timestamp('current_period_start')->nullable();
+        $table->timestamp('current_period_end')->nullable();
         $table->boolean('cancel_at_period_end')->default(false);
         $table->timestamp('canceled_at')->nullable();
         $table->timestamp('grace_ends_at')->nullable();
@@ -128,3 +138,132 @@ it('keeps a payment-plan course open when billing was stopped on purpose', funct
 
     expect(app(SubscriptionAccessService::class)->getAccessMode($user, $course, $enrollment))->toBe('full');
 });
+
+it('offers the whole course to a kept student on a canceled old plan', function () {
+    $user = User::query()->create(['name' => 'Aireen', 'email' => 'aireen@example.com', 'role' => 'student']);
+    $course = Course::query()->create([
+        'title' => 'Siding Estimating',
+        'slug' => 'siding-estimating',
+        'pricing_type' => 'paid',
+        'billing_model' => CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value,
+    ]);
+    $subscription = Subscription::query()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'stripe_customer_id' => 'cus_kept',
+        'stripe_subscription_id' => 'sub_kept',
+        'stripe_price_id' => 'price_old_monthly',
+        'status' => SubscriptionStatus::CANCELED,
+        'access_retained_at' => now(),
+        'open_invoice_url' => 'https://pay.stripe.com/invoice/old',
+        'current_period_end' => now()->addMonth(),
+        'canceled_at' => now(),
+    ]);
+    $enrollment = CourseEnrollment::query()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'enrollment_type' => 'paid',
+        'access_status' => EnrollmentAccessStatus::SUSPENDED,
+        'suspended_at' => now(),
+        'subscription_id' => $subscription->id,
+    ]);
+
+    $card = collect(app(SubscriptionService::class)->listForUser($user))->first();
+
+    expect($card['grants_full_access'])->toBeTrue()
+        ->and($card['access_retained'])->toBeTrue()
+        ->and($card['status'])->toBe('canceled')
+        ->and($card['course']->id)->toBe($course->id);
+
+    expect(app(LaunchOfferEnrollmentService::class)->resolveCheckoutMode($user, $course->fresh()))->toBeNull();
+
+    $enrollment->subscription->open_invoice_url = 'https://pay.stripe.com/invoice/old';
+    $access = app(SubscriptionAccessService::class)->toFrontendPayload($user, $course->fresh(), $enrollment->fresh('subscription'));
+
+    expect($access['mode'])->toBe('full')
+        ->and($access['can_mark_progress'])->toBeTrue()
+        ->and($access['can_resubscribe'])->toBeFalse()
+        ->and($access['can_pay_invoice'])->toBeFalse()
+        ->and($access['invoice_url'])->toBeNull();
+
+    $enrollment->update([
+        'access_status' => EnrollmentAccessStatus::SUSPENDED,
+        'suspended_at' => now(),
+    ]);
+
+    retainedSubscriptionUpdated($user, $course, 'past_due');
+
+    expect($enrollment->fresh()->access_status)->toBe(EnrollmentAccessStatus::ACTIVE)
+        ->and($enrollment->fresh()->suspended_at)->toBeNull()
+        ->and($enrollment->fresh()->enrollment_type)->toBe('paid');
+
+    retainedSubscriptionUpdated($user, $course, 'canceled');
+
+    expect($enrollment->fresh()->access_status)->toBe(EnrollmentAccessStatus::ACTIVE)
+        ->and($subscription->fresh()->accessRetained())->toBeTrue();
+});
+
+it('still sends a canceled student who was not kept to the open installment', function () {
+    $user = User::query()->create(['name' => 'Late Payer', 'email' => 'late@example.com', 'role' => 'student']);
+    $course = Course::query()->create([
+        'title' => 'Siding Estimating',
+        'slug' => 'siding-late',
+        'pricing_type' => 'paid',
+        'billing_model' => CourseBillingModel::ONE_TIME_OR_INSTALLMENT->value,
+    ]);
+    $subscription = Subscription::query()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'stripe_customer_id' => 'cus_late',
+        'stripe_subscription_id' => 'sub_late',
+        'stripe_price_id' => 'price_installment',
+        'status' => SubscriptionStatus::CANCELED,
+        'open_invoice_url' => 'https://pay.stripe.com/invoice/due',
+        'canceled_at' => now(),
+    ]);
+    CourseEnrollment::query()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'enrollment_type' => 'subscription',
+        'access_status' => EnrollmentAccessStatus::SUSPENDED,
+        'suspended_at' => now(),
+        'subscription_id' => $subscription->id,
+    ]);
+
+    expect($subscription->fresh()->grantsFullAccess())->toBeFalse()
+        ->and(app(LaunchOfferEnrollmentService::class)->resolveCheckoutMode($user, $course->fresh()))->toBe('choice_installment_past_due');
+});
+
+function retainedSubscriptionUpdated(User $user, Course $course, string $status): void
+{
+    $stripeCustomer = Mockery::mock(StripeCustomerService::class);
+    $stripeCustomer->shouldReceive('configureStripe');
+
+    $webhook = new StripeWebhookService(
+        $stripeCustomer,
+        app(SubscriptionService::class),
+        app(LaunchOfferEnrollmentService::class),
+        Mockery::mock(PaymentService::class),
+        app(InstallmentBillingService::class),
+    );
+
+    $method = new ReflectionMethod(StripeWebhookService::class, 'handleSubscriptionUpdated');
+    $method->invoke($webhook, (object) [
+        'id' => 'sub_kept',
+        'customer' => 'cus_kept',
+        'status' => $status,
+        'metadata' => [
+            'user_id' => (string) $user->id,
+            'course_id' => (string) $course->id,
+        ],
+        'items' => (object) [
+            'data' => [
+                (object) ['price' => (object) ['id' => 'price_old_monthly']],
+            ],
+        ],
+        'current_period_start' => now()->subMonth()->timestamp,
+        'current_period_end' => now()->addMonth()->timestamp,
+        'cancel_at_period_end' => false,
+        'canceled_at' => $status === 'canceled' ? now()->timestamp : null,
+    ]);
+}
