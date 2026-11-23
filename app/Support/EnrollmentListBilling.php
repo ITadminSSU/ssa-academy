@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\PaymentBillingType;
 use App\Enums\SubscriptionStatus;
 use App\Models\Course\Course;
 use App\Models\Subscription;
@@ -19,6 +20,32 @@ class EnrollmentListBilling
             ?: PaymentVoucherCopy::normalizeCode(data_get($payment->meta, 'coupon_code'));
 
         return $code;
+    }
+
+    /**
+     * Label for the charge that created the enrollment. Empty when that charge
+     * is missing or is not a one-time payment or an installment plan.
+     */
+    public static function paymentTypeLabel(?Course $course, ?PaymentHistory $payment): string
+    {
+        if (! $payment) {
+            return '';
+        }
+
+        $billing = $payment->billing_type;
+        $value = $billing instanceof PaymentBillingType ? $billing->value : (string) $billing;
+
+        if ($value === PaymentBillingType::ONE_TIME->value) {
+            return 'One-time';
+        }
+
+        $installmentCourse = $course?->usesOneTimeOrInstallment() || $course?->usesInstallmentSubscription();
+
+        if ($value === PaymentBillingType::SUBSCRIPTION->value && $installmentCourse) {
+            return 'Installment';
+        }
+
+        return '';
     }
 
     /**

@@ -45,6 +45,7 @@ beforeEach(function () {
         $table->unsignedBigInteger('purchase_id');
         $table->string('purchase_type');
         $table->string('coupon')->nullable();
+        $table->string('billing_type')->nullable();
         $table->text('meta')->nullable();
         $table->timestamps();
     });
@@ -217,16 +218,102 @@ test('the enrollment download keeps the list columns and adds student tags', fun
         ['user_id' => 1, 'student_label_id' => 8],
     ]);
 
-    $response = (new CourseEnrollmentService())->exportEnrollmentsCsv(['coupon' => 'none']);
+    $response = (new CourseEnrollmentService)->exportEnrollmentsCsv(['coupon' => 'none']);
     ob_start();
     $response->sendContent();
     $csv = ob_get_clean();
 
     expect($csv)->toContain('Student name')
+        ->and($csv)->toContain('Payment type')
         ->and($csv)->toContain('Student tags')
         ->and($csv)->toContain('Alexis')
         ->and($csv)->toContain('alexis@example.com')
         ->and($csv)->toContain('Alumni, PEF wait');
+
+    Schema::dropIfExists('users');
+});
+
+test('the enrollment download shows installment and one-time from the creating charge', function () {
+    Schema::table('courses', function (Blueprint $table) {
+        $table->string('billing_model')->nullable();
+    });
+
+    Schema::create('users', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->string('email');
+    });
+
+    $now = now();
+
+    DB::table('users')->insert([
+        ['id' => 1, 'name' => 'Aireen', 'email' => 'aireen@example.com'],
+        ['id' => 2, 'name' => 'John', 'email' => 'john@example.com'],
+        ['id' => 3, 'name' => 'Open', 'email' => 'open@example.com'],
+    ]);
+    DB::table('courses')->insert([
+        ['id' => 1, 'title' => 'Siding Estimating', 'billing_model' => 'one_time_or_installment', 'created_at' => $now, 'updated_at' => $now],
+        ['id' => 2, 'title' => 'Drywall Estimating', 'billing_model' => 'one_time', 'created_at' => $now, 'updated_at' => $now],
+    ]);
+    DB::table('course_enrollments')->insert([
+        ['id' => 1, 'user_id' => 1, 'course_id' => 1, 'entry_date' => $now, 'created_at' => $now, 'updated_at' => $now],
+        ['id' => 2, 'user_id' => 2, 'course_id' => 2, 'entry_date' => $now, 'created_at' => $now, 'updated_at' => $now],
+        ['id' => 3, 'user_id' => 3, 'course_id' => 1, 'entry_date' => $now, 'created_at' => $now, 'updated_at' => $now],
+    ]);
+    DB::table('payment_histories')->insert([
+        [
+            'user_id' => 1,
+            'purchase_id' => 1,
+            'purchase_type' => Course::class,
+            'coupon' => 'SIDING10',
+            'billing_type' => 'subscription',
+            'meta' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'user_id' => 1,
+            'purchase_id' => 1,
+            'purchase_type' => Course::class,
+            'coupon' => null,
+            'billing_type' => 'subscription_renewal',
+            'meta' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'user_id' => 2,
+            'purchase_id' => 2,
+            'purchase_type' => Course::class,
+            'coupon' => '3G82X560',
+            'billing_type' => 'one_time',
+            'meta' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+    ]);
+
+    $response = (new CourseEnrollmentService)->exportEnrollmentsCsv([]);
+    ob_start();
+    $response->sendContent();
+    $csv = ob_get_clean();
+    $rows = array_map('str_getcsv', preg_split("/\r\n|\n|\r/", trim($csv)));
+    $header = array_shift($rows);
+    $paymentIndex = array_search('Payment type', $header, true);
+    $subscriptionIndex = array_search('Subscription status', $header, true);
+    $couponIndex = array_search('Coupon', $header, true);
+
+    $byName = [];
+    foreach ($rows as $row) {
+        $byName[$row[0]] = $row;
+    }
+
+    expect($header[$couponIndex + 1])->toBe('Payment type')
+        ->and($byName['Aireen'][$paymentIndex])->toBe('Installment')
+        ->and($byName['Aireen'][$subscriptionIndex])->toBe('Not a subscription')
+        ->and($byName['Aireen'][$couponIndex])->toBe('SIDING10')
+        ->and($byName['John'][$paymentIndex])->toBe('One-time')
+        ->and($byName['Open'][$paymentIndex])->toBe('—');
 
     Schema::dropIfExists('users');
 });
