@@ -21,6 +21,7 @@ interface LoginProps {
    status?: string;
    canResetPassword: boolean;
    googleLogIn: boolean;
+   sourceCourseId?: number | null;
    recaptcha: {
       status: boolean;
       siteKey: string;
@@ -29,10 +30,11 @@ interface LoginProps {
    testAccounts?: TestAccount[] | null;
 }
 
-export default function Login({ status, recaptcha, canResetPassword, googleLogIn, testAccounts }: LoginProps) {
+export default function Login({ status, recaptcha, canResetPassword, googleLogIn, testAccounts, sourceCourseId }: LoginProps) {
    const { props } = usePage<SharedData>();
    const { auth, input, button } = props.translate;
    const recaptchaRef = useRef<ReCAPTCHA | null>(null);
+   const signUpHref = sourceCourseId ? route('register', { source_course_id: sourceCourseId }) : route('register');
 
    const { data, setData, post, processing, errors, reset } = useForm({
       email: '',
@@ -164,7 +166,7 @@ export default function Login({ status, recaptcha, canResetPassword, googleLogIn
             </div>
             <div className="text-muted-foreground text-center text-sm">
                {auth.login_external_register_note}{' '}
-               <Link href={route('register')} className="text-foreground font-medium underline underline-offset-4">
+               <Link href={signUpHref} className="text-foreground font-medium underline underline-offset-4">
                   {button.sign_up}
                </Link>
             </div>

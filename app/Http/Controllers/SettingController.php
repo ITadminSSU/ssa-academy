@@ -2,31 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Page;
-use App\Models\Footer;
-use App\Models\FooterItem;
-use App\Models\Navbar;
-use App\Models\NavbarItem;
-use App\Models\Setting;
-use Illuminate\Http\Request;
-use App\Services\StudentService;
-use App\Services\SettingsService;
-use App\Services\InstructorService;
-use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
-use App\Services\PageService;
 use App\Http\Requests\FooterItemRequest;
 use App\Http\Requests\NavbarItemRequest;
 use App\Http\Requests\StoreCustomPageRequest;
 use App\Http\Requests\UpdateAuthRequest;
-use App\Http\Requests\UpdateCustomPageRequest;
-use App\Http\Requests\UpdateInstructorProfileRequest;
-use App\Http\Requests\UpdateSmtpSettingsRequest;
 use App\Http\Requests\UpdateBunnyStreamRequest;
+use App\Http\Requests\UpdateCustomPageRequest;
+use App\Http\Requests\UpdateDashboardWelcomeOverlayRequest;
 use App\Http\Requests\UpdateGoHighLevelSettingsRequest;
+use App\Http\Requests\UpdateInstructorProfileRequest;
+use App\Http\Requests\UpdateLandingOverlayRequest;
+use App\Http\Requests\UpdateSmtpSettingsRequest;
 use App\Http\Requests\UpdateStorageRequest;
 use App\Http\Requests\UpdateZoomConfigRequest;
-use App\Http\Requests\UpdateLandingOverlayRequest;
-use App\Http\Requests\UpdateDashboardWelcomeOverlayRequest;
+use App\Models\Footer;
+use App\Models\FooterItem;
+use App\Models\Navbar;
+use App\Models\NavbarItem;
+use App\Models\Page;
+use App\Models\Setting;
+use App\Services\InstructorService;
+use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
+use App\Services\PageService;
+use App\Services\SettingsService;
+use App\Services\StudentService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -45,7 +45,7 @@ class SettingController extends Controller
     public function account(Request $request)
     {
         $instructor = null;
-        if (!$request->tab || $request->tab === 'profile-update') {
+        if (! $request->tab || $request->tab === 'profile-update') {
             $instructor = $this->instructorService->getInstructorByUserId(Auth::user()->id);
         }
 
@@ -268,7 +268,7 @@ class SettingController extends Controller
     {
         $bunnyStream = $this->settingsService->getSetting(['type' => 'bunny_stream']);
 
-        if (!$bunnyStream) {
+        if (! $bunnyStream) {
             abort(404, 'Bunny Stream settings are not installed. Run database migrations.');
         }
 
@@ -323,6 +323,7 @@ class SettingController extends Controller
             $setting,
             $request->boolean('enabled'),
             $request->input('webhook_url'),
+            $request->exists('registration_webhook_url') ? $request->input('registration_webhook_url') : null,
         );
 
         return back()->with('success', 'Go High Level settings updated successfully.');
@@ -334,6 +335,14 @@ class SettingController extends Controller
         app(GoHighLevelEnrollmentWebhook::class)->clear($setting);
 
         return back()->with('success', 'Go High Level webhook URL removed.');
+    }
+
+    public function go_high_level_clear_registration(string $id)
+    {
+        $setting = Setting::query()->where('type', GoHighLevelEnrollmentWebhook::SETTING_TYPE)->findOrFail($id);
+        app(GoHighLevelEnrollmentWebhook::class)->clearRegistration($setting);
+
+        return back()->with('success', 'Go High Level registration webhook URL removed.');
     }
 
     /**
@@ -390,7 +399,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Navbar item created successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to create navbar item: ' . $e->getMessage());
+            return back()->with('error', 'Failed to create navbar item: '.$e->getMessage());
         }
     }
 
@@ -404,7 +413,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Navbar item updated successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to update navbar item: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update navbar item: '.$e->getMessage());
         }
     }
 
@@ -418,7 +427,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Navbar item deleted successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to delete navbar item: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete navbar item: '.$e->getMessage());
         }
     }
 
@@ -432,7 +441,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Navbar items reordered successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to reorder navbar items: ' . $e->getMessage());
+            return back()->with('error', 'Failed to reorder navbar items: '.$e->getMessage());
         }
     }
 
@@ -446,7 +455,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Footer item created successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to create footer item: ' . $e->getMessage());
+            return back()->with('error', 'Failed to create footer item: '.$e->getMessage());
         }
     }
 
@@ -460,7 +469,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Footer item updated successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to update footer item: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update footer item: '.$e->getMessage());
         }
     }
 
@@ -474,7 +483,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Footer item deleted successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to delete footer item: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete footer item: '.$e->getMessage());
         }
     }
 
@@ -488,7 +497,7 @@ class SettingController extends Controller
 
             return back()->with('success', 'Footer items reordered successfully');
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to reorder footer items: ' . $e->getMessage());
+            return back()->with('error', 'Failed to reorder footer items: '.$e->getMessage());
         }
     }
 }

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\SendEmailVerificationNotificationJob;
+use App\Models\Course\Course;
 use App\Models\User;
 use App\Services\Auth\SingleSessionService;
 use App\Services\AuthService;
+use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
 use App\Services\LearnerTypeResolver;
 use App\Services\LegalAgreementService;
 use App\Support\PersonName;
@@ -37,10 +39,16 @@ class RegisteredUserController extends Controller
         $authStatus = $this->authService->googleAuthStatus();
         $recaptchaStatus = $this->authService->recaptchaStatus();
 
+        $sourceCourse = $this->sourceCourse($request->query('source_course_id'));
+
         return Inertia::render('auth/register', [
             'googleLogIn' => $authStatus['authStatus'],
             'recaptcha' => $recaptchaStatus,
             'legalDocument' => $this->legalAgreement->documentPayload(),
+            'sourceCourse' => $sourceCourse ? [
+                'id' => $sourceCourse->id,
+                'title' => $sourceCourse->title,
+            ] : null,
         ]);
     }
 
@@ -60,6 +68,7 @@ class RegisteredUserController extends Controller
             'recaptcha' => 'nullable|captcha|required_if:recaptcha_status,true',
             'accept_terms' => 'accepted',
             'accept_legal_age' => 'accepted',
+            'source_course_id' => ['nullable', 'integer'],
         ], [
             'given_name.required' => 'Please enter your given name.',
             'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
@@ -82,6 +91,11 @@ class RegisteredUserController extends Controller
             'status' => 1,
             'password' => Hash::make($validated['password']),
         ]);
+
+        app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration(
+            $user,
+            $this->sourceCourse($validated['source_course_id'] ?? null),
+        );
 
         $verificationError = null;
 
@@ -108,5 +122,16 @@ class RegisteredUserController extends Controller
         }
 
         return $redirect->with('status', 'verification-code-sent');
+    }
+
+    private function sourceCourse(mixed $courseId): ?Course
+    {
+        $id = (int) $courseId;
+
+        if ($id <= 0) {
+            return null;
+        }
+
+        return Course::query()->find($id);
     }
 }

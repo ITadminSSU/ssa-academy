@@ -64,6 +64,8 @@ beforeEach(function () {
         $table->timestamp('launch_at')->nullable();
         $table->string('expiry_type')->nullable();
         $table->string('expiry_duration')->nullable();
+        $table->string('billing_model')->nullable();
+        $table->unsignedSmallInteger('installment_months')->nullable();
         $table->timestamps();
     });
 
@@ -103,6 +105,8 @@ beforeEach(function () {
         $table->json('meta')->nullable();
         $table->decimal('amount', 10, 2)->nullable();
         $table->string('billing_type')->nullable();
+        $table->string('purchase_type')->nullable();
+        $table->unsignedBigInteger('purchase_id')->nullable();
         $table->string('refund_status')->nullable();
         $table->timestamps();
     });
@@ -156,6 +160,10 @@ test('an active enrollment posts only the allowed keys', function () {
                 'course',
                 'courses',
                 'enrolled_at',
+                'course_id',
+                'payment_plan',
+                'coupon',
+                'amount',
             ])
             ->and($body)->toBe([
                 'first_name' => 'Jane',
@@ -164,6 +172,10 @@ test('an active enrollment posts only the allowed keys', function () {
                 'course' => 'Alpha Takeoff',
                 'courses' => 'Alpha Takeoff',
                 'enrolled_at' => $enrollment->fresh()->entry_date->toIso8601String(),
+                'course_id' => (string) $enrollment->course_id,
+                'payment_plan' => 'one_time',
+                'coupon' => '',
+                'amount' => '',
             ]);
 
         return true;
@@ -234,6 +246,10 @@ test('a second active course sends one new request with every active title', fun
                 'course',
                 'courses',
                 'enrolled_at',
+                'course_id',
+                'payment_plan',
+                'coupon',
+                'amount',
             ]);
     });
 
@@ -307,7 +323,14 @@ test('a non-allowlisted webhook url is rejected and sends nothing', function () 
 
     expect(json_encode($payload))->not->toContain('secret-token')
         ->and($payload['webhook_masked'])->toBe('https://services.leadconnectorhq.com/••••ab12')
-        ->and(array_keys($payload))->toBe(['id', 'enabled', 'webhook_configured', 'webhook_masked']);
+        ->and(array_keys($payload))->toBe([
+            'id',
+            'enabled',
+            'webhook_configured',
+            'webhook_masked',
+            'registration_webhook_configured',
+            'registration_webhook_masked',
+        ]);
 });
 
 test('a blank webhook url keeps the saved url and clear removes it', function () {
@@ -372,6 +395,153 @@ test('a webhook redirect is not followed', function () {
     Http::assertSent(fn ($request) => $request->url() === GHL_WEBHOOK_URL);
 });
 
+test('saving the registration url does not change the payment url', function () {
+    $setting = saveGoHighLevel(true, GHL_WEBHOOK_URL);
+    $webhook = app(GoHighLevelEnrollmentWebhook::class);
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+
+    $webhook->update($setting, true, '   ', $registrationUrl);
+    $setting->refresh();
+
+    expect($setting->fields['webhook_url'])->toBe(GHL_WEBHOOK_URL)
+        ->and($setting->fields['registration_webhook_url'])->toBe($registrationUrl);
+
+    $webhook->update($setting, true, 'https://services.msgsndr.com/hooks/new-pay-zz99', '   ');
+    $setting->refresh();
+
+    expect($setting->fields['webhook_url'])->toBe('https://services.msgsndr.com/hooks/new-pay-zz99')
+        ->and($setting->fields['registration_webhook_url'])->toBe($registrationUrl);
+
+    $webhook->clearRegistration($setting);
+    $setting->refresh();
+
+    expect($setting->fields['webhook_url'])->toBe('https://services.msgsndr.com/hooks/new-pay-zz99')
+        ->and($setting->fields['registration_webhook_url'])->toBe('')
+        ->and($webhook->adminPayload($setting)['registration_webhook_configured'])->toBeFalse()
+        ->and($webhook->adminPayload($setting)['webhook_configured'])->toBeTrue();
+});
+
+test('a roofing account created from the roofing page includes that course', function () {
+    Carbon\Carbon::setTestNow('2026-11-24 01:22:00');
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, $registrationUrl);
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $course = course('Roofing Estimating');
+    $user = learner('Alexis Pacapac', 'alexis@example.com');
+
+    app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration($user, $course);
+    app()->terminate();
+
+    Http::assertSentCount(1);
+    Http::assertSent(function ($request) use ($course, $user) {
+        expect($request->url())->toBe('https://services.leadconnectorhq.com/hooks/register-token-cd34')
+            ->and($request->data())->toBe([
+                'first_name' => 'Alexis',
+                'last_name' => 'Pacapac',
+                'email' => 'alexis@example.com',
+                'registered_at' => $user->fresh()->created_at->toIso8601String(),
+                'source_course' => 'Roofing Estimating',
+                'source_course_id' => (string) $course->id,
+            ]);
+
+        return true;
+    });
+});
+
+test('a homepage signup leaves the course fields empty', function () {
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, $registrationUrl);
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $user = learner('Alexis Pacapac', 'home@example.com');
+    app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration($user, null);
+    app()->terminate();
+
+    Http::assertSent(function ($request) {
+        expect($request->url())->toBe('https://services.leadconnectorhq.com/hooks/register-token-cd34')
+            ->and($request->data()['source_course'])->toBe('')
+            ->and($request->data()['source_course_id'])->toBe('');
+
+        return true;
+    });
+    Http::assertNotSent(fn ($request) => $request->url() === GHL_WEBHOOK_URL);
+});
+
+test('a siding installment enrollment sends the plan coupon and amount to the payment url', function () {
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, 'https://services.leadconnectorhq.com/hooks/register-token-cd34');
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $user = learner('Aireen Abasolo', 'aireen@example.com');
+    $course = Course::query()->create([
+        'title' => 'Siding Estimating',
+        'slug' => 'siding-estimating',
+        'status' => 'approved',
+        'expiry_type' => 'lifetime',
+        'billing_model' => 'one_time_or_installment',
+        'installment_months' => 6,
+    ]);
+    PaymentHistory::query()->create([
+        'user_id' => $user->id,
+        'purchase_type' => Course::class,
+        'purchase_id' => $course->id,
+        'billing_type' => 'subscription',
+        'coupon' => 'SIDING10',
+        'amount' => 15,
+        'transaction_id' => 'txn_siding',
+    ]);
+    PaymentHistory::query()->create([
+        'user_id' => $user->id,
+        'purchase_type' => Course::class,
+        'purchase_id' => $course->id,
+        'billing_type' => 'subscription_renewal',
+        'coupon' => 'LATER',
+        'amount' => 15,
+        'transaction_id' => 'txn_siding_2',
+    ]);
+
+    app(CourseEnrollmentService::class)->createCourseEnroll([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'enrollment_type' => 'paid',
+    ]);
+    app()->terminate();
+
+    Http::assertSentCount(1);
+    Http::assertSent(function ($request) use ($course) {
+        expect($request->url())->toBe(GHL_WEBHOOK_URL)
+            ->and($request->data()['course'])->toBe('Siding Estimating')
+            ->and($request->data()['course_id'])->toBe((string) $course->id)
+            ->and($request->data()['payment_plan'])->toBe('installment_6')
+            ->and($request->data()['coupon'])->toBe('SIDING10')
+            ->and($request->data()['amount'])->toBe('15.00');
+
+        return true;
+    });
+});
+
+test('a course page redirect is kept on the sign up link', function () {
+    $course = course('Roofing Estimating');
+    $url = '/courses/details/'.$course->slug.'/'.$course->id;
+
+    expect(\App\Support\RegistrationCourseSource::idFromUrl($url))->toBe($course->id)
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl('/register'))->toBeNull()
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl(route('home')))->toBeNull();
+
+    $request = \Illuminate\Http\Request::create('/login', 'GET', ['redirect' => $url]);
+    $request->setLaravelSession(app('session.store'));
+    $response = app(\App\Http\Controllers\Auth\AuthenticatedSessionController::class)->create($request);
+    $props = (new ReflectionClass($response))->getProperty('props')->getValue($response);
+
+    expect($props['sourceCourseId'])->toBe($course->id);
+});
+
 test('urls with credentials or the wrong scheme are rejected', function () {
     $webhook = app(GoHighLevelEnrollmentWebhook::class);
 
@@ -409,7 +579,7 @@ function expectGoHighLevelFailureLog(\ArrayObject $logged, int $enrollmentId, ?i
         ->and(str_contains((string) $encoded, 'leadconnectorhq'))->toBeFalse();
 }
 
-function saveGoHighLevel(bool $enabled, string $url): Setting
+function saveGoHighLevel(bool $enabled, string $url, string $registrationUrl = ''): Setting
 {
     return Setting::query()->updateOrCreate(
         ['type' => GoHighLevelEnrollmentWebhook::SETTING_TYPE],
@@ -418,6 +588,7 @@ function saveGoHighLevel(bool $enabled, string $url): Setting
             'fields' => [
                 'enabled' => $enabled,
                 'webhook_url' => $url,
+                'registration_webhook_url' => $registrationUrl,
             ],
         ],
     );

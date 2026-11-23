@@ -144,6 +144,7 @@ Route::prefix('dashboard/admin')->group(function () {
 
         Route::get('go-high-level', 'go_high_level')->name('settings.go-high-level');
         Route::post('go-high-level/{id}/clear', 'go_high_level_clear')->name('settings.go-high-level.clear');
+        Route::post('go-high-level/{id}/clear-registration', 'go_high_level_clear_registration')->name('settings.go-high-level.clear-registration');
         Route::post('go-high-level/{id}', 'go_high_level_update')->name('settings.go-high-level.update');
 
         Route::get('platform-tools', [PlatformToolsController::class, 'index'])->name('settings.platform-tools');
