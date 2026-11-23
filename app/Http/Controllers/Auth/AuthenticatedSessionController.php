@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Course\Course;
 use App\Services\Auth\SingleSessionService;
 use App\Services\Auth\TwoFactorAuthenticationService;
 use App\Services\AuthService;
+use App\Support\RegistrationCourseSource;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,8 +40,19 @@ class AuthenticatedSessionController extends Controller
             return redirect($this->authService->continueUrlAfterAuth($user));
         }
 
-        if ($request->filled('redirect') && $this->isSafeRedirect($request->query('redirect'))) {
-            $request->session()->put('url.intended', $request->query('redirect'));
+        $redirect = $request->query('redirect');
+        $redirect = is_string($redirect) ? $redirect : null;
+
+        if ($redirect !== null && $this->isSafeRedirect($redirect)) {
+            $request->session()->put('url.intended', $redirect);
+        }
+
+        $sourceCourseId = $this->isSafeRedirect($redirect)
+            ? RegistrationCourseSource::idFromUrl($redirect)
+            : null;
+
+        if ($sourceCourseId && ! Course::query()->whereKey($sourceCourseId)->exists()) {
+            $sourceCourseId = null;
         }
 
         $authStatus = $this->authService->googleAuthStatus();
@@ -50,6 +63,7 @@ class AuthenticatedSessionController extends Controller
             'canResetPassword' => Route::has('password.request'),
             'googleLogIn' => $authStatus['authStatus'],
             'recaptcha' => $recaptchaStatus,
+            'sourceCourseId' => $sourceCourseId,
             'testAccounts' => $this->shouldShowTestAccounts() ? [
                 ['role' => 'Admin', 'email' => 'admin-test@smartsourcingusa.com', 'password' => 'password123'],
                 ['role' => 'Trainer', 'email' => 'trainer-test@smartsourcingusa.com', 'password' => 'password123'],
@@ -130,7 +144,7 @@ class AuthenticatedSessionController extends Controller
         $fallback = $this->authService->homeUrlFor($user);
         $intended = $request->session()->pull('url.intended');
 
-        if ($this->isSafeRedirect($intended) && !$this->isAuthScreen($intended)) {
+        if ($this->isSafeRedirect($intended) && ! $this->isAuthScreen($intended)) {
             return $intended;
         }
 
@@ -139,7 +153,7 @@ class AuthenticatedSessionController extends Controller
 
     private function isSafeRedirect(?string $url): bool
     {
-        if (!$url) {
+        if (! $url) {
             return false;
         }
 

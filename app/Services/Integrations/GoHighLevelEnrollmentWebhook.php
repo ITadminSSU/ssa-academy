@@ -2,14 +2,21 @@
 
 namespace App\Services\Integrations;
 
+use App\Enums\CourseBillingModel;
 use App\Enums\EnrollmentAccessStatus;
+use App\Enums\PaymentBillingType;
+use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Setting;
+use App\Models\User;
+use App\Support\EnrollmentListBilling;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Modules\PaymentGateways\Models\PaymentHistory;
 
 class GoHighLevelEnrollmentWebhook
 {
@@ -41,33 +48,34 @@ class GoHighLevelEnrollmentWebhook
     /**
      * Admin page data. The webhook URL itself is never included.
      *
-     * @return array{id: int, enabled: bool, webhook_configured: bool, webhook_masked: string}
+     * @return array{id: int, enabled: bool, webhook_configured: bool, webhook_masked: string, registration_webhook_configured: bool, registration_webhook_masked: string}
      */
     public function adminPayload(Setting $setting): array
     {
         $url = $this->storedUrl($setting);
+        $registrationUrl = $this->storedRegistrationUrl($setting);
 
         return [
             'id' => (int) $setting->getKey(),
             'enabled' => $this->isEnabled($setting),
             'webhook_configured' => $url !== '',
             'webhook_masked' => $this->mask($url),
+            'registration_webhook_configured' => $registrationUrl !== '',
+            'registration_webhook_masked' => $this->mask($registrationUrl),
         ];
     }
 
-    public function update(Setting $setting, bool $enabled, ?string $webhookUrl): void
+    public function update(Setting $setting, bool $enabled, ?string $webhookUrl, ?string $registrationWebhookUrl = null): void
     {
         $fields = $this->fields($setting);
-        $incoming = trim((string) $webhookUrl);
+        $fields['webhook_url'] = $this->mergeUrl((string) ($fields['webhook_url'] ?? ''), $webhookUrl, 'webhook_url');
 
-        if ($incoming !== '') {
-            if (! $this->isAllowedWebhookUrl($incoming)) {
-                throw ValidationException::withMessages([
-                    'webhook_url' => 'Enter an HTTPS Go High Level inbound webhook URL.',
-                ]);
-            }
-
-            $fields['webhook_url'] = $incoming;
+        if ($registrationWebhookUrl !== null) {
+            $fields['registration_webhook_url'] = $this->mergeUrl(
+                (string) ($fields['registration_webhook_url'] ?? ''),
+                $registrationWebhookUrl,
+                'registration_webhook_url',
+            );
         }
 
         $fields['enabled'] = $enabled;
@@ -81,6 +89,40 @@ class GoHighLevelEnrollmentWebhook
         $fields['webhook_url'] = '';
         $setting->fields = $fields;
         $setting->save();
+    }
+
+    public function clearRegistration(Setting $setting): void
+    {
+        $fields = $this->fields($setting);
+        $fields['registration_webhook_url'] = '';
+        $setting->fields = $fields;
+        $setting->save();
+    }
+
+    public function queueForRegistration(User $user, ?Course $course = null): void
+    {
+        $userId = (int) $user->getKey();
+
+        if ($userId <= 0) {
+            return;
+        }
+
+        $courseId = $course ? (int) $course->getKey() : null;
+
+        DB::afterCommit(function () use ($userId, $courseId): void {
+            dispatch(function () use ($userId, $courseId): void {
+                app(self::class)->sendRegistration($userId, $courseId);
+            })->afterResponse();
+        });
+    }
+
+    public function sendRegistration(int $userId, ?int $courseId = null): void
+    {
+        try {
+            $this->deliverRegistration($userId, $courseId);
+        } catch (\Throwable) {
+            $this->logRegistrationFailure($userId, null);
+        }
     }
 
     public function queueForEnrollment(CourseEnrollment $enrollment): void
@@ -194,6 +236,12 @@ class GoHighLevelEnrollmentWebhook
         );
         $enrolledAt = $enrollment->entry_date;
 
+        $payment = $this->creatingPayment($enrollment);
+
+        if ($this->shouldWaitForCreatingPayment($enrollment, $payment) || $this->alreadySent($enrollmentId)) {
+            return;
+        }
+
         $payload = [
             'first_name' => $firstName,
             'last_name' => $lastName,
@@ -201,6 +249,10 @@ class GoHighLevelEnrollmentWebhook
             'course' => trim((string) ($enrollment->course?->title ?? '')),
             'courses' => $this->activeCourseTitles((int) $enrollment->user_id),
             'enrolled_at' => $enrolledAt?->toIso8601String() ?? '',
+            'course_id' => (string) $enrollment->course_id,
+            'payment_plan' => $this->paymentPlan($enrollment->course, $payment),
+            'coupon' => EnrollmentListBilling::couponCodeFromPayment($payment),
+            'amount' => $this->paidAmount($payment),
         ];
 
         $response = Http::timeout(5)
@@ -212,7 +264,11 @@ class GoHighLevelEnrollmentWebhook
 
         if (! $response->successful()) {
             $this->logFailure($enrollmentId, $response->status());
+
+            return;
         }
+
+        Cache::put($this->sentKey($enrollmentId), true, now()->addDays(7));
     }
 
     /**
@@ -274,9 +330,162 @@ class GoHighLevelEnrollmentWebhook
         return filter_var($this->fields($setting)['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
     }
 
+    private function deliverRegistration(int $userId, ?int $courseId): void
+    {
+        $config = $this->registrationConfiguration();
+
+        if (! $config['enabled'] || $config['webhook_url'] === '' || ! $this->isAllowedWebhookUrl($config['webhook_url'])) {
+            return;
+        }
+
+        $user = User::query()->find($userId);
+
+        if (! $user) {
+            return;
+        }
+
+        $email = trim((string) $user->email);
+
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return;
+        }
+
+        [$firstName, $lastName] = \App\Support\PersonName::webhookNames(
+            $user->given_name,
+            $user->last_name,
+            $user->name,
+        );
+        $course = $courseId ? Course::query()->find($courseId) : null;
+
+        $payload = [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $email,
+            'registered_at' => $user->created_at?->toIso8601String() ?? '',
+            'source_course' => trim((string) ($course?->title ?? '')),
+            'source_course_id' => $course ? (string) $course->id : '',
+        ];
+
+        $response = Http::timeout(5)
+            ->connectTimeout(3)
+            ->withoutRedirecting()
+            ->withOptions(['http_errors' => false])
+            ->asJson()
+            ->post($config['webhook_url'], $payload);
+
+        if (! $response->successful()) {
+            $this->logRegistrationFailure($userId, $response->status());
+        }
+    }
+
+    private function creatingPayment(CourseEnrollment $enrollment): ?PaymentHistory
+    {
+        if (! Schema::hasTable('payment_histories')) {
+            return null;
+        }
+
+        return PaymentHistory::query()
+            ->where('user_id', $enrollment->user_id)
+            ->where('purchase_id', $enrollment->course_id)
+            ->where('purchase_type', Course::class)
+            ->where(function ($query) {
+                $query->whereNull('billing_type')
+                    ->orWhere('billing_type', '!=', PaymentBillingType::SUBSCRIPTION_RENEWAL->value);
+            })
+            ->orderBy('id')
+            ->first();
+    }
+
+    private function shouldWaitForCreatingPayment(CourseEnrollment $enrollment, ?PaymentHistory $payment): bool
+    {
+        if ($payment) {
+            return false;
+        }
+
+        return $enrollment->enrollment_type === 'subscription' || filled($enrollment->subscription_id);
+    }
+
+    private function alreadySent(int $enrollmentId): bool
+    {
+        return Cache::has($this->sentKey($enrollmentId));
+    }
+
+    private function sentKey(int $enrollmentId): string
+    {
+        return 'ghl-enrollment-webhook:'.$enrollmentId;
+    }
+
+    private function paymentPlan(?Course $course, ?PaymentHistory $payment): string
+    {
+        $months = (int) ($course?->installment_months ?? 0);
+        $billing = $payment?->billing_type;
+        $billingValue = $billing instanceof PaymentBillingType ? $billing->value : (string) $billing;
+        $model = $course?->billing_model;
+        $installmentCourse = $model === CourseBillingModel::ONE_TIME_OR_INSTALLMENT
+            || $model === CourseBillingModel::INSTALLMENT_SUBSCRIPTION;
+
+        if ($installmentCourse && $months >= 1 && $billingValue === PaymentBillingType::SUBSCRIPTION->value) {
+            return 'installment_'.$months;
+        }
+
+        return 'one_time';
+    }
+
+    private function paidAmount(?PaymentHistory $payment): string
+    {
+        if (! $payment || $payment->amount === null || $payment->amount === '') {
+            return '';
+        }
+
+        return number_format((float) $payment->amount, 2, '.', '');
+    }
+
+    private function mergeUrl(string $current, ?string $incoming, string $errorKey): string
+    {
+        $incoming = trim((string) $incoming);
+
+        if ($incoming === '') {
+            return $current;
+        }
+
+        if (! $this->isAllowedWebhookUrl($incoming)) {
+            throw ValidationException::withMessages([
+                $errorKey => 'Enter an HTTPS Go High Level inbound webhook URL.',
+            ]);
+        }
+
+        return $incoming;
+    }
+
+    /**
+     * @return array{enabled: bool, webhook_url: string}
+     */
+    private function registrationConfiguration(): array
+    {
+        if (! Schema::hasTable('settings')) {
+            return ['enabled' => false, 'webhook_url' => ''];
+        }
+
+        $setting = Setting::query()->where('type', self::SETTING_TYPE)->first();
+
+        if (! $setting) {
+            return ['enabled' => false, 'webhook_url' => ''];
+        }
+
+        return [
+            'enabled' => $this->isEnabled($setting),
+            'webhook_url' => $this->storedRegistrationUrl($setting),
+        ];
+    }
+
     private function storedUrl(Setting $setting): string
     {
         return trim((string) ($this->fields($setting)['webhook_url'] ?? ''));
+    }
+
+    private function storedRegistrationUrl(Setting $setting): string
+    {
+        return trim((string) ($this->fields($setting)['registration_webhook_url'] ?? ''));
     }
 
     /**
@@ -291,6 +500,14 @@ class GoHighLevelEnrollmentWebhook
     {
         Log::warning('Go High Level enrollment webhook failed', [
             'enrollment_id' => $enrollmentId,
+            'http_status' => $status,
+        ]);
+    }
+
+    private function logRegistrationFailure(int $userId, ?int $status): void
+    {
+        Log::warning('Go High Level registration webhook failed', [
+            'user_id' => $userId,
             'http_status' => $status,
         ]);
     }

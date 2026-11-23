@@ -11,18 +11,19 @@ use App\Models\Course\CourseCoupon;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Instructor;
 use App\Models\Subscription;
-use Modules\PaymentGateways\Models\PaymentHistory;
+use App\Services\Course\CourseCouponService;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseEnrollmentWelcomeMailService;
 use App\Services\Course\CourseService;
-use App\Services\Course\CourseCouponService;
+use App\Services\Integrations\GoHighLevelEnrollmentWebhook;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Modules\Exam\Models\Exam;
+use Modules\Exam\Models\ExamCoupon;
 use Modules\Exam\Services\ExamCouponService;
 use Modules\Exam\Services\ExamEnrollmentService;
 use Modules\Exam\Services\ExamService;
-use Modules\Exam\Models\ExamCoupon;
+use Modules\PaymentGateways\Models\PaymentHistory;
 
 class PaymentService
 {
@@ -120,7 +121,7 @@ class PaymentService
                     ->where('course_id', $course->id)
                     ->exists();
 
-                if (!$alreadyEnrolled) {
+                if (! $alreadyEnrolled) {
                     $this->courseEnrollment->createCourseEnroll([
                         'user_id' => $user_id,
                         'course_id' => $course->id,
@@ -260,6 +261,19 @@ class PaymentService
 
         $this->applyCouponToPayment($history, $couponCode, $couponDiscount);
         $this->rememberCourseCharge($history, $chargedAmount);
+
+        if ($billingType !== PaymentBillingType::SUBSCRIPTION) {
+            return;
+        }
+
+        $enrollment = CourseEnrollment::query()
+            ->where('user_id', $subscription->user_id)
+            ->where('course_id', $subscription->course_id)
+            ->first();
+
+        if ($enrollment) {
+            app(GoHighLevelEnrollmentWebhook::class)->queueForEnrollment($enrollment);
+        }
     }
 
     public function recordLaunchOfferPayment(
@@ -345,7 +359,7 @@ class PaymentService
             'taxAmount' => $taxAmount,
             'couponDiscount' => $couponDiscount,
             'discountedPrice' => $discountedPrice,
-            'finalPrice' => $finalPrice
+            'finalPrice' => $finalPrice,
         ];
     }
 
@@ -446,10 +460,10 @@ class PaymentService
     /**
      * Convert currency using external API (Optional upgrade)
      * Uncomment the API call in convertCurrency() to use this
-     * 
-     * @param float $amount
-     * @param string $fromCurrency
-     * @param string $toCurrency
+     *
+     * @param  float  $amount
+     * @param  string  $fromCurrency
+     * @param  string  $toCurrency
      * @return float|null
      */
     private function convertCurrencyWithAPI($amount, $fromCurrency, $toCurrency)

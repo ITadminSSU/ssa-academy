@@ -19,6 +19,7 @@ class UpdateGoHighLevelSettingsRequest extends FormRequest
         return [
             'enabled' => ['required', 'boolean'],
             'webhook_url' => ['nullable', 'string', 'max:500'],
+            'registration_webhook_url' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

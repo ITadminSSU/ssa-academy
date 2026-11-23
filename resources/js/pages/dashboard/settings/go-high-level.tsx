@@ -15,6 +15,8 @@ interface GoHighLevelSettings {
    enabled: boolean;
    webhook_configured: boolean;
    webhook_masked: string;
+   registration_webhook_configured: boolean;
+   registration_webhook_masked: string;
 }
 
 interface Props extends SharedData {
@@ -27,6 +29,7 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
    const { data, setData, post, errors, processing } = useForm({
       enabled: goHighLevel.enabled,
       webhook_url: '',
+      registration_webhook_url: '',
    });
 
    const handleSubmit = (e: React.FormEvent) => {
@@ -34,7 +37,10 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
 
       post(route('settings.go-high-level.update', { id: goHighLevel.id }), {
          preserveScroll: true,
-         onSuccess: () => setData('webhook_url', ''),
+         onSuccess: () => {
+            setData('webhook_url', '');
+            setData('registration_webhook_url', '');
+         },
       });
    };
 
@@ -42,12 +48,17 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
       router.post(route('settings.go-high-level.clear', { id: goHighLevel.id }), {}, { preserveScroll: true });
    };
 
+   const clearRegistrationWebhook = () => {
+      router.post(route('settings.go-high-level.clear-registration', { id: goHighLevel.id }), {}, { preserveScroll: true });
+   };
+
    return (
       <div className="md:px-3">
          <div className="mb-6">
             <h1 className="text-2xl font-bold">Go High Level</h1>
             <p className="text-muted-foreground">
-               Send a learner&apos;s name, email, and enrolled courses to Go High Level when an enrollment becomes active.
+               Send a new account to Go High Level when someone registers, and send the enrollment when a learner pays. The
+               payment webhook is unchanged. The registration webhook is a second URL.
             </p>
          </div>
 
@@ -55,9 +66,9 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
             <form onSubmit={handleSubmit} className="space-y-6">
                <div className="flex items-center justify-between gap-4">
                   <div>
-                     <Label htmlFor="ghl-enabled">Send enrollments to Go High Level</Label>
+                     <Label htmlFor="ghl-enabled">Send to Go High Level</Label>
                      <p className="text-muted-foreground mt-1 text-sm">
-                        Nothing is sent until this is on and a webhook URL is saved.
+                        Nothing is sent until this is on and that webhook URL is saved. Each URL is sent on its own.
                      </p>
                   </div>
                   <Switch
@@ -68,7 +79,7 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
                </div>
 
                <div>
-                  <Label htmlFor="webhook_url">Webhook URL</Label>
+                  <Label htmlFor="webhook_url">Payment webhook URL</Label>
                   <Input
                      id="webhook_url"
                      name="webhook_url"
@@ -81,14 +92,37 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
                   {goHighLevel.webhook_configured && (
                      <p className="text-muted-foreground mt-1 text-sm">Saved URL: {goHighLevel.webhook_masked}</p>
                   )}
-                  <p className="text-muted-foreground mt-1 text-sm">Leave this blank to keep the saved URL.</p>
+                  <p className="text-muted-foreground mt-1 text-sm">Leave this blank to keep the saved payment URL.</p>
                   <InputError message={errors.webhook_url} />
                </div>
 
-               <div className="flex items-center justify-end gap-3">
+               <div>
+                  <Label htmlFor="registration_webhook_url">Registration webhook URL</Label>
+                  <Input
+                     id="registration_webhook_url"
+                     name="registration_webhook_url"
+                     type="text"
+                     autoComplete="off"
+                     value={data.registration_webhook_url}
+                     onChange={(e) => setData('registration_webhook_url', e.target.value)}
+                     placeholder="Paste a Go High Level inbound webhook URL for new accounts"
+                  />
+                  {goHighLevel.registration_webhook_configured && (
+                     <p className="text-muted-foreground mt-1 text-sm">Saved URL: {goHighLevel.registration_webhook_masked}</p>
+                  )}
+                  <p className="text-muted-foreground mt-1 text-sm">Leave this blank to keep the saved registration URL. It does not replace the payment URL.</p>
+                  <InputError message={errors.registration_webhook_url} />
+               </div>
+
+               <div className="flex flex-wrap items-center justify-end gap-3">
                   {goHighLevel.webhook_configured && (
                      <Button type="button" variant="outline" onClick={clearWebhook} disabled={processing}>
-                        Remove webhook URL
+                        Remove payment URL
+                     </Button>
+                  )}
+                  {goHighLevel.registration_webhook_configured && (
+                     <Button type="button" variant="outline" onClick={clearRegistrationWebhook} disabled={processing}>
+                        Remove registration URL
                      </Button>
                   )}
                   <LoadingButton loading={processing}>{button.save_changes}</LoadingButton>
