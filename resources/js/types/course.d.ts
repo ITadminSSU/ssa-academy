@@ -441,6 +441,7 @@ interface CourseEnrollment extends TableCommon {
    watch_history?: WatchHistory;
    watch_history_id?: number | null;
    coupon_code?: string | null;
+   payment_type?: string | null;
    subscription_status?: SubscriptionStatus | null;
    subscription_status_label?: string | null;
    can_keep_course?: boolean;

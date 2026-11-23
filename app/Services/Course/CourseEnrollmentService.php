@@ -3,6 +3,7 @@
 namespace App\Services\Course;
 
 use App\Enums\CourseStatusType;
+use App\Enums\PaymentBillingType;
 use App\Enums\SubscriptionStatus;
 use App\Models\Course\Course;
 use App\Models\Course\CourseEnrollment;
@@ -336,6 +337,7 @@ class CourseEnrollmentService extends MediaService
             'Email',
             'Course',
             'Coupon',
+            'Payment type',
             'Enrolled date',
             'Course expiry',
             'Subscription status',
@@ -349,6 +351,7 @@ class CourseEnrollmentService extends MediaService
                $enrollment->user?->email ?? '',
                $enrollment->course?->title ?? '',
                $enrollment->coupon_code ?: '',
+               $enrollment->payment_type !== '' ? $enrollment->payment_type : '—',
                optional($enrollment->entry_date)?->format('Y-m-d') ?? '',
                $enrollment->expiry_date
                   ? $enrollment->expiry_date->format('Y-m-d')
@@ -377,12 +380,14 @@ class CourseEnrollmentService extends MediaService
       }
 
       $codes = $this->couponCodesFor($enrollments);
+      $paymentTypes = $this->paymentTypesFor($enrollments);
 
       foreach ($enrollments as $enrollment) {
          $key = $enrollment->user_id.':'.$enrollment->course_id;
          $summary = EnrollmentListBilling::subscriptionSummary($enrollment->subscription, $enrollment->course);
 
          $enrollment->setAttribute('coupon_code', $codes[$key] ?? null);
+         $enrollment->setAttribute('payment_type', $paymentTypes[$key] ?? '');
          $enrollment->setAttribute('subscription_status', $summary['status']);
          $enrollment->setAttribute('subscription_status_label', $summary['label']);
          $enrollment->setAttribute('subscription_expires_at', $summary['expires_at']);
@@ -433,6 +438,53 @@ class CourseEnrollmentService extends MediaService
       return $codes;
    }
 
+   /**
+    * The first charge for each enrollment. A later installment payment is ignored.
+    *
+    * @param  Collection<int, CourseEnrollment>|SupportCollection<int, CourseEnrollment>  $enrollments
+    * @return array<string, string>
+    */
+   private function paymentTypesFor($enrollments): array
+   {
+      $payments = PaymentHistory::query()
+         ->where('purchase_type', Course::class)
+         ->where(function ($outer) use ($enrollments) {
+            foreach ($enrollments as $enrollment) {
+               $outer->orWhere(function ($inner) use ($enrollment) {
+                  $inner->where('user_id', $enrollment->user_id)
+                     ->where('purchase_id', $enrollment->course_id);
+               });
+            }
+         })
+         ->orderBy('id')
+         ->get(['id', 'user_id', 'purchase_id', 'billing_type']);
+
+      $creating = [];
+
+      foreach ($payments as $payment) {
+         $billing = $payment->billing_type;
+         $value = $billing instanceof PaymentBillingType ? $billing->value : (string) $billing;
+
+         if ($value === PaymentBillingType::SUBSCRIPTION_RENEWAL->value) {
+            continue;
+         }
+
+         $key = $payment->user_id.':'.$payment->purchase_id;
+
+         if (! isset($creating[$key])) {
+            $creating[$key] = $payment;
+         }
+      }
+
+      $labels = [];
+
+      foreach ($enrollments as $enrollment) {
+         $key = $enrollment->user_id.':'.$enrollment->course_id;
+         $labels[$key] = EnrollmentListBilling::paymentTypeLabel($enrollment->course, $creating[$key] ?? null);
+      }
+
+      return $labels;
+   }
 
    function createCourseEnroll(array $data, bool $allowBeforeLaunch = false, bool $sendWelcome = true): CourseEnrollment
    {

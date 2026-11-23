@@ -64,6 +64,19 @@ export const enrollmentBillingColumns = (
                     return <span className="font-mono text-sm font-medium">{code}</span>;
                  },
               } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
+              {
+                 id: 'payment_type',
+                 header: 'Payment type',
+                 cell: ({ row }) => {
+                    const label = (row.original as CourseEnrollment).payment_type;
+
+                    if (!label) {
+                       return <span className="text-muted-foreground">—</span>;
+                    }
+
+                    return <span>{label}</span>;
+                 },
+              } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
            ]
          : []),
       {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\CourseBillingModel;
+use App\Enums\PaymentBillingType;
 use App\Enums\SubscriptionStatus;
 use App\Models\Course\Course;
 use App\Models\Subscription;
@@ -16,6 +17,30 @@ test('coupon code prefers the coupon column then meta', function () {
         ->and(EnrollmentListBilling::couponCodeFromPayment($fromMeta))->toBe('LAUNCH50')
         ->and(EnrollmentListBilling::couponCodeFromPayment($empty))->toBe('')
         ->and(EnrollmentListBilling::couponCodeFromPayment(null))->toBe('');
+});
+
+test('payment type follows the creating charge', function () {
+    $choice = new Course([
+        'billing_model' => CourseBillingModel::ONE_TIME_OR_INSTALLMENT,
+        'installment_months' => 6,
+    ]);
+    $installmentPlan = new Course([
+        'billing_model' => CourseBillingModel::INSTALLMENT_SUBSCRIPTION,
+        'installment_months' => 6,
+    ]);
+    $oneTimeCourse = new Course(['billing_model' => CourseBillingModel::ONE_TIME]);
+
+    $oneTime = new PaymentHistory(['billing_type' => PaymentBillingType::ONE_TIME, 'coupon' => '3G82X560']);
+    $installment = new PaymentHistory(['billing_type' => PaymentBillingType::SUBSCRIPTION]);
+    $renewal = new PaymentHistory(['billing_type' => PaymentBillingType::SUBSCRIPTION_RENEWAL]);
+
+    expect(EnrollmentListBilling::paymentTypeLabel($oneTimeCourse, $oneTime))->toBe('One-time')
+        ->and(EnrollmentListBilling::paymentTypeLabel($choice, $oneTime))->toBe('One-time')
+        ->and(EnrollmentListBilling::paymentTypeLabel($choice, $installment))->toBe('Installment')
+        ->and(EnrollmentListBilling::paymentTypeLabel($installmentPlan, $installment))->toBe('Installment')
+        ->and(EnrollmentListBilling::paymentTypeLabel($choice, $renewal))->toBe('')
+        ->and(EnrollmentListBilling::paymentTypeLabel($choice, null))->toBe('')
+        ->and(EnrollmentListBilling::subscriptionSummary(null, $choice)['label'])->toBe('Not a subscription');
 });
 
 test('one-time courses are labeled as not a subscription', function () {
