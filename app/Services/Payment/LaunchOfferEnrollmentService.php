@@ -42,7 +42,7 @@ class LaunchOfferEnrollmentService
                 ->with('subscription')
                 ->first();
 
-            if ($choiceEnrollment?->hasFullAccess()) {
+            if ($choiceEnrollment?->subscription?->accessRetained() || $choiceEnrollment?->hasFullAccess()) {
                 return null;
             }
 
@@ -64,7 +64,7 @@ class LaunchOfferEnrollmentService
             ->with('subscription')
             ->first();
 
-        if ($enrollment?->hasFullAccess()) {
+        if ($enrollment?->subscription?->accessRetained() || $enrollment?->hasFullAccess()) {
             return null;
         }
 

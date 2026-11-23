@@ -76,7 +76,8 @@ const MySubscriptions = () => {
                   const course = subscription.course;
                   const periodEnd = formatDate(subscription.current_period_end);
                   const graceEnds = formatDate(subscription.grace_ends_at);
-                  const isReadOnly = !subscription.grants_full_access;
+                  const accessKept = Boolean(subscription.access_retained);
+                  const isReadOnly = !subscription.grants_full_access && !accessKept;
                   const showResubscribe = isReadOnly && course;
 
                   return (
@@ -98,9 +99,11 @@ const MySubscriptions = () => {
                               <div className="min-w-0 flex-1">
                                  <CardTitle className="line-clamp-2 text-lg">{course?.title ?? 'Course subscription'}</CardTitle>
                                  <CardDescription className="mt-1">
-                                    {course?.subscription_price != null
-                                       ? `$${Number(course.subscription_price).toFixed(2)}/month`
-                                       : 'Monthly subscription'}
+                                    {accessKept
+                                       ? 'Full access'
+                                       : course?.subscription_price != null
+                                         ? `$${Number(course.subscription_price).toFixed(2)}/month`
+                                         : 'Monthly subscription'}
                                  </CardDescription>
                               </div>
                            </div>
@@ -108,8 +111,8 @@ const MySubscriptions = () => {
 
                         <CardContent className="space-y-3">
                            <div className="flex flex-wrap gap-2">
-                              <Badge variant={statusVariant(subscription.status, subscription.grants_full_access)}>
-                                 {statusLabel[subscription.status] ?? subscription.status}
+                              <Badge variant={statusVariant(subscription.status, subscription.grants_full_access || accessKept)}>
+                                 {accessKept ? 'Access kept' : (statusLabel[subscription.status] ?? subscription.status)}
                               </Badge>
 
                               {subscription.cancel_at_period_end ? (
@@ -124,7 +127,7 @@ const MySubscriptions = () => {
                               ) : null}
                            </div>
 
-                           {periodEnd ? (
+                           {periodEnd && !accessKept ? (
                               <p className="text-muted-foreground text-sm">
                                  {subscription.cancel_at_period_end ? 'Access until' : 'Renews on'}: {periodEnd}
                               </p>
@@ -148,7 +151,7 @@ const MySubscriptions = () => {
                               </Button>
                            ) : null}
 
-                           {course && subscription.grants_full_access ? (
+                           {course && (subscription.grants_full_access || accessKept) ? (
                               <Button asChild size="sm">
                                  <Link href={route('student.course.show', { id: course.id, tab: 'modules' })}>Continue learning</Link>
                               </Button>
