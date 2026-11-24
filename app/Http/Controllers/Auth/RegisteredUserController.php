@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
     /**
      * Show the registration page.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $authStatus = $this->authService->googleAuthStatus();
         $recaptchaStatus = $this->authService->recaptchaStatus();
