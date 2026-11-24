@@ -33,6 +33,19 @@ class UpdateStudentProfileRequest extends FormRequest
                 'facebook' => $facebook === '' ? null : $facebook,
             ]);
         }
+
+        $referredBy = trim((string) $this->input('referred_by'));
+
+        if ($referredBy === '') {
+            $this->merge([
+                'referred_by' => null,
+                'referrer_is_employee' => null,
+            ]);
+        } elseif ($this->input('referrer_is_employee') === '') {
+            $this->merge([
+                'referrer_is_employee' => null,
+            ]);
+        }
     }
 
     /**
@@ -48,6 +61,8 @@ class UpdateStudentProfileRequest extends FormRequest
             'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:15360',
             'remove_photo' => 'nullable|boolean',
             'facebook' => ['nullable', 'string', 'max:255', 'url'],
+            'referred_by' => ['nullable', 'string', 'max:255'],
+            'referrer_is_employee' => ['nullable', 'boolean'],
         ];
     }
 
@@ -66,6 +81,12 @@ class UpdateStudentProfileRequest extends FormRequest
     {
         $validator->after(function (Validator $validator): void {
             PersonName::validatePair($validator, $this->input('given_name'), $this->input('last_name'));
+
+            $referredBy = trim((string) $this->input('referred_by'));
+
+            if ($referredBy !== '' && $this->input('referrer_is_employee') === null) {
+                $validator->errors()->add('referrer_is_employee', 'Say whether this person is a Smart Sourcing employee.');
+            }
         });
     }
 }

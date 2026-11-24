@@ -213,6 +213,8 @@ const MyProfile = () => {
       last_name: user.given_name != null || user.last_name != null ? (user.last_name ?? '') : user.name.split(' ').slice(1).join(' '),
       photo: null as File | null,
       facebook: facebookLink(user.social_links),
+      referred_by: user.referred_by ?? '',
+      referrer_is_employee: user.referrer_is_employee ?? null,
    });
 
    useEffect(() => {
@@ -281,6 +283,8 @@ const MyProfile = () => {
             facebook: form.facebook.trim(),
             photo: removePhoto ? null : photo,
             remove_photo: removePhoto ? 1 : 0,
+            referred_by: form.referred_by.trim(),
+            referrer_is_employee: form.referred_by.trim() === '' ? null : form.referrer_is_employee,
          }),
          onSuccess: (page) => {
             photoFileRef.current = null;
@@ -290,7 +294,14 @@ const MyProfile = () => {
             toast.success('Changes saved');
          },
          onError: (formErrors) => {
-            const message = formErrors.photo || formErrors.given_name || formErrors.last_name || formErrors.facebook || 'Failed to save changes';
+            const message =
+               formErrors.photo ||
+               formErrors.given_name ||
+               formErrors.last_name ||
+               formErrors.facebook ||
+               formErrors.referred_by ||
+               formErrors.referrer_is_employee ||
+               'Failed to save changes';
             toast.error(message);
          },
       });
@@ -529,10 +540,63 @@ const MyProfile = () => {
                   />
                   <InputError message={errors.facebook} />
                </div>
+
+               <div className="space-y-2 md:col-span-2 md:col-start-2">
+                  <Label htmlFor="referred_by">Referred by</Label>
+                  <Input
+                     id="referred_by"
+                     type="text"
+                     name="referred_by"
+                     value={data.referred_by}
+                     maxLength={255}
+                     placeholder="Optional"
+                     onChange={(e) => {
+                        const value = e.target.value;
+                        setData((form) => ({
+                           ...form,
+                           referred_by: value,
+                           referrer_is_employee: value.trim() === '' ? null : form.referrer_is_employee,
+                        }));
+                     }}
+                  />
+                  <p className="text-muted-foreground text-xs">Leave this blank if nobody referred you.</p>
+                  <InputError message={errors.referred_by} />
+                  {data.referred_by.trim() !== '' && (
+                     <fieldset className="grid gap-2 pt-1">
+                        <legend className="text-sm font-medium">Is this person a Smart Sourcing employee?</legend>
+                        <div className="flex flex-wrap gap-4">
+                           <label className="flex items-center gap-2 text-sm">
+                              <input
+                                 type="radio"
+                                 name="referrer_is_employee"
+                                 checked={data.referrer_is_employee === true}
+                                 onChange={() => setData('referrer_is_employee', true)}
+                              />
+                              Yes
+                           </label>
+                           <label className="flex items-center gap-2 text-sm">
+                              <input
+                                 type="radio"
+                                 name="referrer_is_employee"
+                                 checked={data.referrer_is_employee === false}
+                                 onChange={() => setData('referrer_is_employee', false)}
+                              />
+                              No
+                           </label>
+                        </div>
+                        <InputError message={errors.referrer_is_employee} />
+                     </fieldset>
+                  )}
+               </div>
             </div>
 
             <div className="flex items-center justify-center">
-               <LoadingButton loading={processing}>Save Changes</LoadingButton>
+               <LoadingButton
+                  loading={processing}
+                  disabled={data.referred_by.trim() !== '' && data.referrer_is_employee === null}
+               >
+                  Save Changes
+               </LoadingButton>
             </div>
 
             <div id="documents" className="scroll-mt-24 space-y-4 border-t pt-12">

@@ -49,6 +49,8 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null }
       recaptcha: '',
       recaptcha_status: recaptcha.status,
       source_course_id: sourceCourse?.id ?? null,
+      referred_by: '',
+      referrer_is_employee: null as boolean | null,
       ...emptyLegalAcknowledgements(),
    });
 
@@ -69,7 +71,8 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null }
       Boolean(data.password) &&
       Boolean(data.password_confirmation) &&
       allLegalAcknowledgementsAccepted(legalValues, ACCOUNT_LEGAL_ACKNOWLEDGEMENT_KEYS) &&
-      (!recaptcha.status || Boolean(data.recaptcha));
+      (!recaptcha.status || Boolean(data.recaptcha)) &&
+      (data.referred_by.trim() === '' || data.referrer_is_employee !== null);
 
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
@@ -185,6 +188,56 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null }
                         />
                         <InputError message={errors.password_confirmation} />
                      </div>
+                  </div>
+
+                  <div className="grid gap-3">
+                     <Label htmlFor="referred_by">Referred by</Label>
+                     <Input
+                        id="referred_by"
+                        type="text"
+                        value={data.referred_by}
+                        onChange={(e) => {
+                           const value = e.target.value;
+                           setData((form) => ({
+                              ...form,
+                              referred_by: value,
+                              referrer_is_employee: value.trim() === '' ? null : form.referrer_is_employee,
+                           }));
+                        }}
+                        disabled={processing}
+                        placeholder="Optional"
+                        maxLength={255}
+                     />
+                     <p className="text-muted-foreground text-xs">Leave this blank if nobody referred you.</p>
+                     <InputError message={errors.referred_by} />
+                     {data.referred_by.trim() !== '' && (
+                        <fieldset className="grid gap-2">
+                           <legend className="text-sm font-medium">Is this person a Smart Sourcing employee?</legend>
+                           <div className="flex flex-wrap gap-4">
+                              <label className="flex items-center gap-2 text-sm">
+                                 <input
+                                    type="radio"
+                                    name="referrer_is_employee"
+                                    checked={data.referrer_is_employee === true}
+                                    onChange={() => setData('referrer_is_employee', true)}
+                                    disabled={processing}
+                                 />
+                                 Yes
+                              </label>
+                              <label className="flex items-center gap-2 text-sm">
+                                 <input
+                                    type="radio"
+                                    name="referrer_is_employee"
+                                    checked={data.referrer_is_employee === false}
+                                    onChange={() => setData('referrer_is_employee', false)}
+                                    disabled={processing}
+                                 />
+                                 No
+                              </label>
+                           </div>
+                           <InputError message={errors.referrer_is_employee} />
+                        </fieldset>
+                     )}
                   </div>
 
                   <div className="border-border/70 space-y-6 border-t pt-8">
