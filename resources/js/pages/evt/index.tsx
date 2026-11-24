@@ -179,10 +179,9 @@ const Icon = ({ name }: { name: string }) => {
    );
 };
 
-const WebinarButton = ({ id }: { id?: string }) => (
-   <a id={id} className="evt-btn evt-webinar-target" href="/register">
-      <span>SIGN UP TO JOIN THE FREE WEBINAR</span>
-      <span>ON NOVEMBER 21 →</span>
+const EnrollButton = ({ children }: { children: ReactNode }) => (
+   <a className="evt-btn" href="/register">
+      {children}
    </a>
 );
 
@@ -272,7 +271,7 @@ export default function EvtLanding() {
                         </li>
                      </ul>
                      <div className="evt-hero-cta">
-                        <WebinarButton id="evt-webinar" />
+                        <EnrollButton>ENROLL IN EVT</EnrollButton>
                      </div>
                   </div>
                   <p className="evt-experience">
@@ -296,7 +295,7 @@ export default function EvtLanding() {
                   <span className="evt-strip-rule" aria-hidden="true" />
                   <span>
                      <Icon name="laptop" />
-                     ENTRY VIA <span className="evt-gold">FREE WEBINAR</span>
+                     ENTRY → <span className="evt-gold">FREE WEBINAR</span>
                   </span>
                </div>
 
@@ -317,7 +316,7 @@ export default function EvtLanding() {
                               </span>
                            </div>
                            <h3>THE OPPORTUNITY</h3>
-                           <p>Discover U.S. construction opportunities and in-demand skills.</p>
+                           <p>Discover U.S. construction estimating and in-demand skills.</p>
                         </article>
                         <article className="evt-step">
                            <div className="evt-step-top">
@@ -350,11 +349,7 @@ export default function EvtLanding() {
                            <ul className="evt-checks">
                               <li>
                                  <Icon name="check" />
-                                 <span>No placement by Aug 31, 2027</span>
-                              </li>
-                              <li>
-                                 <Icon name="check" />
-                                 <span>At least 50+ projects accomplished by Mar 31, 2027</span>
+                                 <span>At least 100+ projects completed by Aug 31, 2027</span>
                               </li>
                               <li>
                                  <Icon name="check" />
@@ -363,38 +358,8 @@ export default function EvtLanding() {
                            </ul>
                         </article>
                      </div>
-                     <div className="evt-session">
-                        <div className="evt-session-items">
-                           <article>
-                              <Icon name="calendar" />
-                              <span>
-                                 Saturday,
-                                 <br />
-                                 Nov 21, 2026
-                              </span>
-                           </article>
-                           <span className="evt-session-rule" aria-hidden="true" />
-                           <article>
-                              <Icon name="clock" />
-                              <span>
-                                 8:00 PM
-                                 <br />
-                                 PHT
-                              </span>
-                           </article>
-                           <span className="evt-session-rule" aria-hidden="true" />
-                           <article>
-                              <Icon name="laptop" />
-                              <span className="evt-reg">
-                                 <span className="evt-red evt-free">FREE</span>
-                                 Registration
-                              </span>
-                           </article>
-                        </div>
-                        <a className="evt-btn evt-session-btn" href="/register">
-                           <span>SIGN UP TO JOIN THE FREE</span>
-                           <span>WEBINAR ON NOVEMBER 21 →</span>
-                        </a>
+                     <div className="evt-steps-cta">
+                        <EnrollButton>ENROLL IN EVT →</EnrollButton>
                      </div>
                   </div>
                </section>
@@ -439,7 +404,7 @@ export default function EvtLanding() {
                               <br />
                               WORKING ESTIMATORS
                            </h3>
-                           <small>Real U.S. project experience</small>
+                           <small>Real U.S. project exposure</small>
                         </div>
                      </article>
                      <article className="evt-why-card">
@@ -490,9 +455,7 @@ export default function EvtLanding() {
                               </h3>
                            </div>
                            <p className="evt-path-copy">Get introduced to U.S. estimating, the EVT program, and how to get started.</p>
-                           <a className="evt-btn" href="/register">
-                              JOIN THE FREE WEBINAR →
-                           </a>
+                           <EnrollButton>ENROLL IN EVT →</EnrollButton>
                            <div className="evt-qualify" aria-hidden="true" />
                         </article>
                         <article className="evt-path" id="evt-estimator">
@@ -511,7 +474,7 @@ export default function EvtLanding() {
                               <strong>Who qualifies:</strong>
                               <p>
                                  <Icon name="check" />
-                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 50 U.S. projects.</span>
+                                 <span>At least 1 year of U.S. estimating experience in Roofing, Siding, or Drywall or 50 U.S. estimates.</span>
                               </p>
                            </div>
                         </article>
@@ -523,7 +486,10 @@ export default function EvtLanding() {
                   <h2>
                      READY TO TAKE <span>THE NEXT STEP?</span>
                   </h2>
-                  <p>Join the FREE webinar and discover how EVT can help you build practical skills, real experience, and future opportunities.</p>
+                  <p>
+                     Enroll in EVT and explore U.S. construction opportunities, get the right training, and build the experience you need for your
+                     career goals.
+                  </p>
                </footer>
             </div>
          </div>
