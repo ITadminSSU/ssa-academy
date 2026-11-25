@@ -48,6 +48,7 @@ Route::prefix('dashboard/admin')->group(function () {
     Route::post('enrollments/student-labels', [StudentLabelController::class, 'store'])->name('student-labels.store');
     Route::put('enrollments/student-labels/{studentLabel}', [StudentLabelController::class, 'update'])->name('student-labels.update');
     Route::delete('enrollments/student-labels/{studentLabel}', [StudentLabelController::class, 'destroy'])->name('student-labels.destroy');
+    Route::put('enrollments/students/{user}/labels', [StudentLabelController::class, 'syncStudent'])->name('enrollments.student-labels.sync');
     Route::get('enrollments/pef-package', [EnrollmentPackageController::class, 'pef'])->name('enrollment-packages.pef');
     Route::put('enrollments/pef-package', [EnrollmentPackageController::class, 'updatePef'])->name('enrollment-packages.pef.update');
     Route::get('enrollments/companion-course', [EnrollmentPackageController::class, 'companion'])->name('enrollment-packages.companion');
