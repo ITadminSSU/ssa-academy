@@ -17,6 +17,10 @@ use App\Services\Payment\SubscriptionService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\PaymentGateways\Services\PaymentService;
+use Stripe\ApiRequestor;
+use Stripe\HttpClient\ClientInterface;
+use Stripe\HttpClient\CurlClient;
+use Stripe\Stripe;
 
 beforeEach(function () {
     Schema::dropIfExists('course_enrollments');
@@ -72,6 +76,11 @@ beforeEach(function () {
         $table->unsignedBigInteger('subscription_id')->nullable();
         $table->timestamps();
     });
+});
+
+afterEach(function () {
+    ApiRequestor::setHttpClient(new CurlClient);
+    Mockery::close();
 });
 
 it('keeps full course access after a canceled stripe subscription', function () {
@@ -233,6 +242,120 @@ it('still sends a canceled student who was not kept to the open installment', fu
     expect($subscription->fresh()->grantsFullAccess())->toBeFalse()
         ->and(app(LaunchOfferEnrollmentService::class)->resolveCheckoutMode($user, $course->fresh()))->toBe('choice_installment_past_due');
 });
+
+it('keeps course access when stripe no longer has the subscription', function () {
+    [$user, $course, $subscription, $enrollment] = retainedEnrollment(SubscriptionStatus::ACTIVE, 'sub_missing');
+    $log = bindKeepStripe(status: 404);
+
+    $kept = app(RetainedAccessService::class)->keepCourse($enrollment);
+
+    expect($log->calls)->toHaveCount(1)
+        ->and($log->calls[0]['method'])->toBe('get')
+        ->and($kept->access_status)->toBe(EnrollmentAccessStatus::ACTIVE)
+        ->and($kept->subscription->accessRetained())->toBeTrue()
+        ->and($kept->subscription->status)->toBe(SubscriptionStatus::CANCELED)
+        ->and($kept->subscription->stripe_subscription_id)->toBe('sub_missing')
+        ->and(app(SubscriptionAccessService::class)->getAccessMode($user, $course->fresh(), $kept->fresh('subscription')))->toBe('full');
+});
+
+it('keeps a student whose subscription was already cancelled in stripe', function () {
+    [$user, $course, $subscription, $enrollment] = retainedEnrollment(SubscriptionStatus::ACTIVE, 'sub_already');
+    $log = bindKeepStripe(stripeStatus: 'canceled');
+
+    $kept = app(RetainedAccessService::class)->keepCourse($enrollment);
+
+    expect(collect($log->calls)->pluck('method')->all())->toBe(['get'])
+        ->and($kept->access_status)->toBe(EnrollmentAccessStatus::ACTIVE)
+        ->and($kept->subscription->accessRetained())->toBeTrue()
+        ->and($kept->subscription->status)->toBe(SubscriptionStatus::CANCELED)
+        ->and(app(SubscriptionAccessService::class)->getAccessMode($user, $course->fresh(), $kept))->toBe('full');
+});
+
+it('does not mark a course kept when stripe fails for another reason', function () {
+    [, , $subscription, $enrollment] = retainedEnrollment(SubscriptionStatus::ACTIVE, 'sub_down');
+    bindKeepStripe(status: 401);
+
+    expect(fn () => app(RetainedAccessService::class)->keepCourse($enrollment))->toThrow(Exception::class);
+
+    expect($subscription->fresh()->access_retained_at)->toBeNull()
+        ->and($subscription->fresh()->status)->toBe(SubscriptionStatus::ACTIVE)
+        ->and($enrollment->fresh()->access_status)->toBe(EnrollmentAccessStatus::SUSPENDED);
+});
+
+function retainedEnrollment(SubscriptionStatus $status, string $stripeId): array
+{
+    $user = User::query()->create([
+        'name' => 'Kept Student',
+        'email' => $stripeId.'@example.com',
+        'role' => 'student',
+    ]);
+    $course = Course::query()->create([
+        'title' => 'Lumber',
+        'slug' => $stripeId,
+        'pricing_type' => 'paid',
+        'billing_model' => CourseBillingModel::SUBSCRIPTION->value,
+    ]);
+    $subscription = Subscription::query()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'stripe_customer_id' => 'cus_keep',
+        'stripe_subscription_id' => $stripeId,
+        'stripe_price_id' => 'price_keep',
+        'status' => $status,
+    ]);
+    $enrollment = CourseEnrollment::query()->create([
+        'user_id' => $user->id,
+        'course_id' => $course->id,
+        'enrollment_type' => 'subscription',
+        'access_status' => EnrollmentAccessStatus::SUSPENDED,
+        'suspended_at' => now(),
+        'subscription_id' => $subscription->id,
+    ]);
+
+    return [$user, $course, $subscription, $enrollment];
+}
+
+function bindKeepStripe(int $status = 200, string $stripeStatus = 'active'): object
+{
+    $log = new stdClass;
+    $log->calls = [];
+
+    $client = new class($log, $status, $stripeStatus) implements ClientInterface
+    {
+        public function __construct(private object $log, private int $status, private string $stripeStatus) {}
+
+        public function request($method, $absUrl, $headers, $params, $hasFile, $apiMode = 'v1')
+        {
+            $this->log->calls[] = compact('method', 'absUrl', 'params');
+
+            if ($this->status >= 400) {
+                return [json_encode([
+                    'error' => [
+                        'code' => 'resource_missing',
+                        'message' => 'No such subscription',
+                        'type' => 'invalid_request_error',
+                    ],
+                ]), $this->status, []];
+            }
+
+            return [json_encode([
+                'id' => 'sub_keep',
+                'object' => 'subscription',
+                'status' => $method === 'delete' ? 'canceled' : $this->stripeStatus,
+                'customer' => 'cus_keep',
+                'items' => ['object' => 'list', 'data' => []],
+            ]), 200, []];
+        }
+    };
+
+    ApiRequestor::setHttpClient($client);
+
+    $stripe = Mockery::mock(StripeCustomerService::class);
+    $stripe->shouldReceive('configureStripe')->andReturnUsing(fn () => Stripe::setApiKey('sk_test_keep'));
+    app()->instance(StripeCustomerService::class, $stripe);
+
+    return $log;
+}
 
 function retainedSubscriptionUpdated(User $user, Course $course, string $status): void
 {

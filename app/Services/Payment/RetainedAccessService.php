@@ -7,6 +7,7 @@ use App\Enums\SubscriptionStatus;
 use App\Models\Course\CourseEnrollment;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\DB;
+use Stripe\Exception\InvalidRequestException;
 use Stripe\Subscription as StripeSubscription;
 
 class RetainedAccessService
@@ -22,6 +23,8 @@ class RetainedAccessService
             throw new \RuntimeException('This enrollment has no Stripe subscription to stop.');
         }
 
+        $this->stopStripeBilling($subscription);
+
         DB::transaction(function () use ($subscription, $enrollment) {
             if ($subscription->access_retained_at === null) {
                 $subscription->update(['access_retained_at' => now()]);
@@ -32,16 +35,14 @@ class RetainedAccessService
                 'access_status' => EnrollmentAccessStatus::ACTIVE,
                 'suspended_at' => null,
             ]);
+
+            $subscription->update([
+                'status' => SubscriptionStatus::CANCELED,
+                'canceled_at' => $subscription->canceled_at ?? now(),
+                'cancel_at_period_end' => false,
+                'grace_ends_at' => null,
+            ]);
         });
-
-        $this->stopStripeBilling($subscription->fresh());
-
-        $subscription->update([
-            'status' => SubscriptionStatus::CANCELED,
-            'canceled_at' => $subscription->canceled_at ?? now(),
-            'cancel_at_period_end' => false,
-            'grace_ends_at' => null,
-        ]);
 
         return $enrollment->fresh(['subscription']);
     }
@@ -57,10 +58,28 @@ class RetainedAccessService
         }
 
         $this->stripeCustomer->configureStripe();
-        $stripeSubscription = StripeSubscription::retrieve($subscription->stripe_subscription_id);
 
-        if (($stripeSubscription->status ?? '') !== 'canceled') {
-            $stripeSubscription->cancel();
+        try {
+            $stripeSubscription = StripeSubscription::retrieve($subscription->stripe_subscription_id);
+
+            if (($stripeSubscription->status ?? '') !== 'canceled') {
+                $stripeSubscription->cancel();
+            }
+        } catch (InvalidRequestException $exception) {
+            if ($this->subscriptionIsGone($exception)) {
+                return;
+            }
+
+            throw $exception;
         }
+    }
+
+    private function subscriptionIsGone(InvalidRequestException $exception): bool
+    {
+        if ($exception->getStripeCode() === 'resource_missing' || $exception->getHttpStatus() === 404) {
+            return true;
+        }
+
+        return str_contains(strtolower($exception->getMessage()), 'no such subscription');
     }
 }
