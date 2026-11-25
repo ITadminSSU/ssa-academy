@@ -3,6 +3,7 @@
 namespace App\Models\Course;
 
 use App\Models\User;
+use App\Support\UsExperienceFastResubmit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -55,6 +56,32 @@ class UsExperienceAttempt extends Model
     public function isPassed(): bool
     {
         return $this->status === self::STATUS_PASSED;
+    }
+
+    /**
+     * The attempt immediately before this one for the same student and plan.
+     */
+    public function earlierAttempt(): ?self
+    {
+        if ((int) $this->attempt_number <= 1) {
+            return null;
+        }
+
+        if ($this->relationLoaded('earlierAttempt')) {
+            $previous = $this->getRelation('earlierAttempt');
+
+            return $previous instanceof self ? $previous : null;
+        }
+
+        if (! $this->exists || ! $this->user_id || ! $this->us_experience_plan_id) {
+            return null;
+        }
+
+        return self::query()
+            ->where('us_experience_plan_id', $this->us_experience_plan_id)
+            ->where('user_id', $this->user_id)
+            ->where('attempt_number', (int) $this->attempt_number - 1)
+            ->first();
     }
 
     public function toStudentArray(bool $includeBreakdown = true, bool $showVariance = true): array
@@ -133,6 +160,7 @@ class UsExperienceAttempt extends Model
                 'title' => $this->plan->title,
                 'group_name' => $this->plan->group_name,
             ] : null,
+            'fast_resubmit' => $this->fastResubmitPayload(),
         ];
 
         if ($includeBreakdown) {
@@ -140,5 +168,23 @@ class UsExperienceAttempt extends Model
         }
 
         return $payload;
+    }
+
+    /**
+     * @return array{gap_seconds: int, previous_attempt_number: int, gap_label: string}|null
+     */
+    private function fastResubmitPayload(): ?array
+    {
+        $review = UsExperienceFastResubmit::describe($this, $this->earlierAttempt());
+
+        if ($review === null) {
+            return null;
+        }
+
+        return [
+            'gap_seconds' => $review['gap_seconds'],
+            'previous_attempt_number' => $review['previous_attempt_number'],
+            'gap_label' => $review['gap_label'],
+        ];
     }
 }

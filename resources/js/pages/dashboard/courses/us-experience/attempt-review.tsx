@@ -27,6 +27,7 @@ interface TrainerAttemptDetail {
    boq_xlsx_name?: string | null;
    has_pdf: boolean;
    has_excel: boolean;
+   fast_resubmit?: { gap_seconds: number; previous_attempt_number: number; gap_label: string } | null;
    grading_breakdown?: QuantityTakeoffBreakdownLine[] | null;
    user?: { id: number; name: string; email: string } | null;
 }
@@ -86,6 +87,12 @@ const AttemptReview = ({ course, plan, attempt }: Props) => {
                </h1>
                <p className="text-muted-foreground text-sm">{attempt.user?.email}</p>
                <p className="text-muted-foreground mt-1 text-sm">Submitted {formatWhen(attempt.submitted_at)}</p>
+               {attempt.fast_resubmit ? (
+                  <p className="mt-2">
+                     <Badge variant="outline">Review</Badge>
+                     <span className="text-muted-foreground ml-2 text-sm">{attempt.fast_resubmit.gap_label}</span>
+                  </p>
+               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
                <Badge variant={attempt.status === 'passed' ? 'default' : 'destructive'}>

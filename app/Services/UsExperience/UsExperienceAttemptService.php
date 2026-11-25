@@ -8,6 +8,7 @@ use App\Models\Course\UsExperiencePlan;
 use App\Models\User;
 use App\Services\AttemptHalfwayAlertService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use Modules\Exam\Services\QuantityTakeoffGradingService;
@@ -20,6 +21,7 @@ class UsExperienceAttemptService
         private QuantityTakeoffGradingService $grader,
         private UsExperienceFileService $files,
         private AttemptHalfwayAlertService $halfwayAlerts,
+        private UsExperienceFastResubmitAlertService $fastResubmits,
     ) {}
 
     public function submit(
@@ -85,6 +87,7 @@ class UsExperienceAttemptService
         ]);
 
         $this->halfwayAlerts->afterUsExperienceAttempt($attempt);
+        $this->fastResubmits->afterAttempt($attempt);
 
         if ($passed && Schema::hasTable('us_experience_certificates')) {
             $course = Course::query()->find($plan->course_id);
@@ -108,7 +111,7 @@ class UsExperienceAttemptService
         $perPage = $perPage > 0 ? min($perPage, 50) : 20;
         $planId = $plan?->id ?: (int) ($filters['plan_id'] ?? 0);
 
-        return UsExperienceAttempt::query()
+        $paginator = UsExperienceAttempt::query()
             ->with(['user:id,name,email', 'plan:id,course_id,title,group_name'])
             ->whereHas('plan', fn ($query) => $query->where('course_id', $course->id))
             ->when($planId > 0, fn ($query) => $query->where('us_experience_plan_id', $planId))
@@ -123,8 +126,41 @@ class UsExperienceAttemptService
             ->orderByDesc('submitted_at')
             ->orderByDesc('id')
             ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn (UsExperienceAttempt $attempt) => $attempt->toTrainerArray());
+            ->withQueryString();
+
+        $this->attachEarlierAttempts($paginator->getCollection());
+
+        return $paginator->through(fn (UsExperienceAttempt $attempt) => $attempt->toTrainerArray());
+    }
+
+    /**
+     * @param  Collection<int, UsExperienceAttempt>  $attempts
+     */
+    private function attachEarlierAttempts(Collection $attempts): void
+    {
+        $needsEarlier = $attempts->filter(fn (UsExperienceAttempt $attempt) => (int) $attempt->attempt_number > 1);
+
+        $indexed = collect();
+
+        if ($needsEarlier->isNotEmpty()) {
+            $indexed = UsExperienceAttempt::query()
+                ->where(function ($query) use ($needsEarlier) {
+                    foreach ($needsEarlier as $attempt) {
+                        $query->orWhere(function ($inner) use ($attempt) {
+                            $inner->where('us_experience_plan_id', $attempt->us_experience_plan_id)
+                                ->where('user_id', $attempt->user_id)
+                                ->where('attempt_number', (int) $attempt->attempt_number - 1);
+                        });
+                    }
+                })
+                ->get()
+                ->keyBy(fn (UsExperienceAttempt $attempt) => $attempt->us_experience_plan_id.'-'.$attempt->user_id.'-'.$attempt->attempt_number);
+        }
+
+        foreach ($attempts as $attempt) {
+            $key = $attempt->us_experience_plan_id.'-'.$attempt->user_id.'-'.((int) $attempt->attempt_number - 1);
+            $attempt->setRelation('earlierAttempt', $indexed->get($key));
+        }
     }
 
     public function saveTrainerFeedback(UsExperienceAttempt $attempt, ?string $feedback): UsExperienceAttempt

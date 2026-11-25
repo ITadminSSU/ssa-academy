@@ -11,13 +11,17 @@ use App\Models\Course\UsExperiencePlan;
 use App\Models\Instructor;
 use App\Models\User;
 use App\Notifications\AttemptHalfwayAlertNotification;
+use App\Notifications\UsExperienceFastResubmitNotification;
 use App\Services\AttemptHalfwayAlertService;
 use App\Services\Course\QuizTakeoffService;
 use App\Services\Course\SectionQuizService;
 use App\Services\UsExperience\UsExperienceAttemptService;
+use App\Services\UsExperience\UsExperienceFastResubmitAlertService;
 use App\Services\UsExperience\UsExperienceFileService;
+use App\Support\UsExperienceFastResubmit;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schema;
@@ -747,7 +751,13 @@ it('notifies the instructor after a US Experience fail at the halfway attempt', 
         'grading_breakdown' => [],
     ]);
 
-    $service = new UsExperienceAttemptService($parser, $grader, $files, app(AttemptHalfwayAlertService::class));
+    $service = new UsExperienceAttemptService(
+        $parser,
+        $grader,
+        $files,
+        app(AttemptHalfwayAlertService::class),
+        app(\App\Services\UsExperience\UsExperienceFastResubmitAlertService::class),
+    );
 
     for ($i = 0; $i < 5; $i++) {
         $attempt = $service->submit(
@@ -795,3 +805,243 @@ it('stores the unread bell payload for the instructor', function () {
         ->and($notification->data['url'])->not->toBeEmpty()
         ->and($notification->data['dedup_key'])->toContain('quiz');
 });
+
+it('flags a failed US Experience resubmit under 3 minutes and notifies only the instructor', function () {
+    Notification::fake();
+    Carbon::setTestNow('2026-11-26 12:00:00');
+
+    $graph = halfwayCourseGraph();
+    $plan = fastResubmitPlan($graph);
+    $service = fastResubmitAttemptService(fastResubmitGrade(false));
+
+    $first = submitFastResubmit($service, $plan, $graph['student']);
+
+    expect($first->attempt_number)->toBe(1)
+        ->and($first->toTrainerArray()['fast_resubmit'])->toBeNull();
+    Notification::assertNotSentTo($graph['instructorUser'], UsExperienceFastResubmitNotification::class);
+
+    Carbon::setTestNow('2026-11-26 12:01:20');
+    $second = submitFastResubmit($service, $plan, $graph['student']);
+
+    expect($second->status)->toBe(UsExperienceAttempt::STATUS_FAILED)
+        ->and($second->toTrainerArray()['fast_resubmit'])->toMatchArray([
+            'gap_seconds' => 80,
+            'previous_attempt_number' => 1,
+            'gap_label' => '1 min 20 sec after the previous attempt',
+        ]);
+
+    Notification::assertSentToTimes($graph['instructorUser'], UsExperienceFastResubmitNotification::class, 1);
+    Notification::assertNotSentTo($graph['student'], UsExperienceFastResubmitNotification::class);
+    Notification::assertNotSentTo($graph['instructorUser'], AttemptHalfwayAlertNotification::class);
+    Notification::assertSentTo($graph['instructorUser'], UsExperienceFastResubmitNotification::class, function (UsExperienceFastResubmitNotification $notification, array $channels) use ($graph, $second) {
+        expect($channels)->toContain('mail')
+            ->and($channels)->toContain('database');
+
+        $mail = $notification->toMail($graph['instructorUser']);
+        $data = $notification->toArray($graph['instructorUser']);
+        $copy = implode(' ', [...$mail->introLines, ...$mail->outroLines]);
+
+        expect($mail->subject)->toBe('Review a quick resubmit from '.$graph['student']->name)
+            ->and($copy)->toContain($graph['student']->name)
+            ->and($copy)->toContain('Skill Level 1')
+            ->and($copy)->toContain('1 min 20 sec after attempt 1')
+            ->and($copy)->toContain('40% (pass mark 85%)')
+            ->and($copy)->toContain('needs a review')
+            ->and($data['title'])->toBe('Review resubmit: '.$graph['student']->name)
+            ->and($data['body'])->toContain('1 min 20 sec after attempt 1')
+            ->and($data['dedup_key'])->toBe('attempt:'.$second->id)
+            ->and($data['url'])->not->toBeEmpty();
+
+        return true;
+    });
+
+    $listed = collect($service->paginateForTrainer($graph['course'])->items())->firstWhere('id', $second->id);
+
+    expect($listed['fast_resubmit']['gap_label'])->toBe('1 min 20 sec after the previous attempt');
+
+    app(UsExperienceFastResubmitAlertService::class)->afterAttempt($second->fresh());
+    Notification::assertSentToTimes($graph['instructorUser'], UsExperienceFastResubmitNotification::class, 1);
+
+    Carbon::setTestNow();
+});
+
+it('flags a passing US Experience resubmit under 3 minutes', function () {
+    Notification::fake();
+    Carbon::setTestNow('2026-11-26 12:00:00');
+
+    $graph = halfwayCourseGraph();
+    $plan = fastResubmitPlan($graph);
+    $service = fastResubmitAttemptService(fastResubmitGrade(false), fastResubmitGrade(true));
+
+    submitFastResubmit($service, $plan, $graph['student']);
+    Carbon::setTestNow('2026-11-26 12:02:00');
+    $passed = submitFastResubmit($service, $plan, $graph['student']);
+
+    expect($passed->status)->toBe(UsExperienceAttempt::STATUS_PASSED)
+        ->and($passed->toTrainerArray()['fast_resubmit']['gap_label'])->toBe('2 min after the previous attempt');
+
+    Notification::assertSentToTimes($graph['instructorUser'], UsExperienceFastResubmitNotification::class, 1);
+    Notification::assertNotSentTo($graph['student'], UsExperienceFastResubmitNotification::class);
+    Notification::assertSentTo($graph['instructorUser'], UsExperienceFastResubmitNotification::class, function (UsExperienceFastResubmitNotification $notification) use ($graph) {
+        expect($notification->toArray($graph['instructorUser'])['body'])->toContain('100% (pass mark 85%)');
+
+        return true;
+    });
+
+    Carbon::setTestNow();
+});
+
+it('does not flag a US Experience resubmit at exactly 3 minutes or later', function () {
+    Notification::fake();
+    Carbon::setTestNow('2026-11-26 12:00:00');
+
+    $graph = halfwayCourseGraph();
+    $plan = fastResubmitPlan($graph);
+    $service = fastResubmitAttemptService(fastResubmitGrade(false));
+
+    submitFastResubmit($service, $plan, $graph['student']);
+    Carbon::setTestNow('2026-11-26 12:03:00');
+    $exact = submitFastResubmit($service, $plan, $graph['student']);
+
+    expect($exact->toTrainerArray()['fast_resubmit'])->toBeNull();
+    Notification::assertNotSentTo($graph['instructorUser'], UsExperienceFastResubmitNotification::class);
+
+    Carbon::setTestNow('2026-11-26 12:10:00');
+    $later = submitFastResubmit($service, $plan, $graph['student']);
+
+    expect($later->toTrainerArray()['fast_resubmit'])->toBeNull();
+    Notification::assertNotSentTo($graph['instructorUser'], UsExperienceFastResubmitNotification::class);
+
+    Carbon::setTestNow();
+});
+
+it('still sends the halfway alert only when a slow US Experience fail reaches the halfway attempt', function () {
+    Notification::fake();
+    Carbon::setTestNow('2026-11-26 12:00:00');
+
+    $graph = halfwayCourseGraph();
+    $plan = fastResubmitPlan($graph, 10);
+    $service = fastResubmitAttemptService(fastResubmitGrade(false));
+
+    for ($i = 0; $i < 5; $i++) {
+        if ($i > 0) {
+            Carbon::setTestNow(now()->addSeconds(UsExperienceFastResubmit::THRESHOLD_SECONDS));
+        }
+
+        submitFastResubmit($service, $plan, $graph['student']);
+    }
+
+    Notification::assertNotSentTo($graph['instructorUser'], UsExperienceFastResubmitNotification::class);
+    assertHalfwaySentToInstructor($graph['instructorUser'], $graph['student']);
+
+    Carbon::setTestNow();
+});
+
+it('does not email a quick US Experience resubmit when the instructor account is inactive', function () {
+    Notification::fake();
+    Carbon::setTestNow('2026-11-26 12:00:00');
+
+    $graph = halfwayCourseGraph();
+    $graph['instructorUser']->update(['status' => 0]);
+    $plan = fastResubmitPlan($graph);
+    $service = fastResubmitAttemptService(fastResubmitGrade(false));
+
+    submitFastResubmit($service, $plan, $graph['student']);
+    Carbon::setTestNow('2026-11-26 12:01:00');
+    $second = submitFastResubmit($service, $plan, $graph['student']);
+
+    expect($second->toTrainerArray()['fast_resubmit']['gap_label'])->toBe('1 min after the previous attempt');
+    Notification::assertNothingSent();
+
+    Carbon::setTestNow();
+});
+
+it('queues the quick resubmit review as mail and database', function () {
+    expect((new ReflectionClass(UsExperienceFastResubmitNotification::class))->implementsInterface(ShouldQueue::class))->toBeTrue();
+});
+
+it('sends the quick resubmit notice once when the queued delivery is retried', function () {
+    $graph = halfwayCourseGraph();
+    $notification = new UsExperienceFastResubmitNotification(
+        student: $graph['student'],
+        planTitle: 'Skill Level 1',
+        planId: 1,
+        attemptId: 9,
+        attemptNumber: 2,
+        gapAfterAttempt: '1 min 20 sec after attempt 1',
+        scoreSummary: '40% (pass mark 85%)',
+        url: 'https://example.test/review',
+        dedupKey: 'attempt:9',
+    );
+
+    expect($notification->via($graph['instructorUser']))->toBe(['mail', 'database'])
+        ->and($notification->via($graph['instructorUser']))->toBe([]);
+});
+
+/**
+ * @return array<string, mixed>
+ */
+function fastResubmitGrade(bool $passed): array
+{
+    return [
+        'marks_obtained' => $passed ? 100 : 40,
+        'is_correct' => $passed,
+        'lines_correct' => $passed ? 1 : 0,
+        'lines_total' => 1,
+        'lines_percent' => $passed ? 100 : 40,
+        'grading_breakdown' => [],
+    ];
+}
+
+function fastResubmitPlan(array $graph, int $maxAttempts = 10): UsExperiencePlan
+{
+    return UsExperiencePlan::create([
+        'course_id' => $graph['course']->id,
+        'group_name' => 'Skills',
+        'title' => 'Skill Level 1',
+        'sort_order' => 1,
+        'pass_mark' => 85,
+        'max_attempts' => $maxAttempts,
+        'published' => true,
+        'line_items' => [[
+            'key' => 'item-a',
+            'item' => 'Drywall',
+            'unit' => 'SF',
+            'expected_qty' => 100,
+        ]],
+    ]);
+}
+
+function fastResubmitAttemptService(array ...$grades): UsExperienceAttemptService
+{
+    $parser = Mockery::mock(QuantityTakeoffXlsxParser::class);
+    $grader = Mockery::mock(QuantityTakeoffGradingService::class);
+    $files = Mockery::mock(UsExperienceFileService::class);
+
+    $files->shouldReceive('resolveLocalPath')->andReturn(['path' => '/tmp/boq.xlsx', 'temporary' => false]);
+    $files->shouldReceive('forgetTemporary');
+    $parser->shouldReceive('parse')->andReturn([
+        ['key' => 'item-a', 'item' => 'Drywall', 'unit' => 'SF', 'expected_qty' => 1],
+    ]);
+    $grader->shouldReceive('grade')->andReturn(...$grades);
+
+    return new UsExperienceAttemptService(
+        $parser,
+        $grader,
+        $files,
+        app(AttemptHalfwayAlertService::class),
+        app(UsExperienceFastResubmitAlertService::class),
+    );
+}
+
+function submitFastResubmit(UsExperienceAttemptService $service, UsExperiencePlan $plan, User $student): UsExperienceAttempt
+{
+    return $service->submit(
+        $plan,
+        $student,
+        'https://example.test/plans.pdf',
+        'plans.pdf',
+        'https://example.test/boq.xlsx',
+        'boq.xlsx',
+    );
+}
