@@ -122,6 +122,8 @@ Route::prefix('dashboard/trainer')->group(function () {
 
    Route::get('courses/{course}/us-experience/attempts', [UsExperienceAttemptReviewController::class, 'courseIndex'])
       ->name('courses.us-experience.attempts.course');
+   Route::put('courses/{course}/us-experience/variance', [UsExperiencePlanController::class, 'updateVariance'])
+      ->name('courses.us-experience.variance');
 
    Route::prefix('courses/{course}/us-experience/plans')->name('courses.us-experience.')->group(function () {
       Route::post('/', [UsExperiencePlanController::class, 'store'])->name('store');
