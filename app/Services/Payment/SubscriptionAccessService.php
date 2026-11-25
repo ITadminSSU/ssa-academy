@@ -37,7 +37,7 @@ class SubscriptionAccessService
             return 'none';
         }
 
-        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled() || $enrollment->isTransferred()) {
             return 'none';
         }
 
@@ -161,7 +161,7 @@ class SubscriptionAccessService
             return false;
         }
 
-        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled() || $enrollment->isTransferred()) {
             return false;
         }
 

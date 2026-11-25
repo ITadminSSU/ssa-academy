@@ -116,8 +116,11 @@ class SubscriptionService
                 'grace_ends_at' => null,
             ]);
 
+            $this->lockEnrollmentsMovedOff($subscription);
+
             CourseEnrollment::query()
                 ->where('subscription_id', $subscription->id)
+                ->where('course_id', $subscription->course_id)
                 ->update([
                     'enrollment_type' => 'paid',
                     'access_status' => EnrollmentAccessStatus::ACTIVE,
@@ -221,6 +224,8 @@ class SubscriptionService
 
     protected function syncEnrollment(Subscription $subscription): CourseEnrollment
     {
+        $this->lockEnrollmentsMovedOff($subscription);
+
         if ($subscription->accessRetained()) {
             return $this->keepRetainedEnrollment($subscription);
         }
@@ -229,6 +234,7 @@ class SubscriptionService
             $this->setEnrollmentAccess($subscription, EnrollmentAccessStatus::ACTIVE);
             $existing = CourseEnrollment::query()
                 ->where('subscription_id', $subscription->id)
+                ->where('course_id', $subscription->course_id)
                 ->first();
 
             if ($existing) {
@@ -244,6 +250,14 @@ class SubscriptionService
             ->where('user_id', $subscription->user_id)
             ->where('course_id', $subscription->course_id)
             ->first();
+
+        if ($enrollment?->isReservedSeat()) {
+            $enrollment->update([
+                'subscription_id' => $subscription->id,
+            ]);
+
+            return $enrollment->fresh();
+        }
 
         if ($enrollment) {
             $deferWelcome = $this->shouldDeferWelcomeForLaunchBalance($enrollment);
@@ -275,6 +289,8 @@ class SubscriptionService
 
     protected function keepRetainedEnrollment(Subscription $subscription): CourseEnrollment
     {
+        $this->lockEnrollmentsMovedOff($subscription);
+
         $enrollment = CourseEnrollment::query()
             ->where('user_id', $subscription->user_id)
             ->where('course_id', $subscription->course_id)
@@ -302,25 +318,47 @@ class SubscriptionService
 
     protected function setEnrollmentAccess(Subscription $subscription, EnrollmentAccessStatus $status): void
     {
-        CourseEnrollment::query()
-            ->where('subscription_id', $subscription->id)
-            ->update([
-                'access_status' => $status,
-                'suspended_at' => $status === EnrollmentAccessStatus::SUSPENDED ? now() : null,
-            ]);
+        $this->lockEnrollmentsMovedOff($subscription);
+
+        $enrollment = CourseEnrollment::query()
+            ->where('user_id', $subscription->user_id)
+            ->where('course_id', $subscription->course_id)
+            ->first();
+
+        if (! $enrollment || $enrollment->isReservedSeat()) {
+            return;
+        }
+
+        $enrollment->update([
+            'access_status' => $status,
+            'subscription_id' => $subscription->id,
+            'suspended_at' => $status === EnrollmentAccessStatus::SUSPENDED ? now() : null,
+        ]);
 
         if ($status !== EnrollmentAccessStatus::ACTIVE) {
             return;
         }
 
-        $enrollment = CourseEnrollment::query()
-            ->with(['user', 'course.instructor.user', 'course.course_category'])
-            ->where('subscription_id', $subscription->id)
-            ->first();
+        $enrollment = $enrollment->fresh(['user', 'course.instructor.user', 'course.course_category']);
 
         if ($enrollment && ! $this->shouldDeferWelcomeForLaunchBalance($enrollment)) {
             app(CourseEnrollmentWelcomeMailService::class)->sendForEnrollment($enrollment);
         }
+    }
+
+    /**
+     * A subscription opens one course. Any other enrollment still holding it is locked.
+     */
+    protected function lockEnrollmentsMovedOff(Subscription $subscription): void
+    {
+        CourseEnrollment::query()
+            ->where('subscription_id', $subscription->id)
+            ->where('course_id', '!=', $subscription->course_id)
+            ->update([
+                'access_status' => EnrollmentAccessStatus::TRANSFERRED->value,
+                'subscription_id' => null,
+                'suspended_at' => null,
+            ]);
     }
 
     protected function shouldDeferWelcomeForLaunchBalance(CourseEnrollment $enrollment): bool

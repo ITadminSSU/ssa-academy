@@ -108,6 +108,11 @@ class CourseEnrollment extends Model
         return $this->access_status === EnrollmentAccessStatus::CANCELED;
     }
 
+    public function isTransferred(): bool
+    {
+        return $this->access_status === EnrollmentAccessStatus::TRANSFERRED;
+    }
+
     public function isSuspended(): bool
     {
         return $this->access_status === EnrollmentAccessStatus::SUSPENDED;

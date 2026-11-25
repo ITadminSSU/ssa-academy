@@ -91,6 +91,8 @@ Route::prefix('dashboard/admin')->group(function () {
     // course enrolment
     Route::resource('enrollments', CourseEnrollmentController::class)->only(['create', 'destroy']);
     Route::post('enrollments/{enrollment}/keep-course', [CourseEnrollmentController::class, 'keepCourse'])->name('enrollments.keep-course');
+    Route::get('enrollments/{enrollment}/move-destinations', [CourseEnrollmentController::class, 'moveDestinations'])->name('enrollments.move-destinations');
+    Route::post('enrollments/{enrollment}/move', [CourseEnrollmentController::class, 'moveCourse'])->name('enrollments.move');
 
     // notification
     Route::resource('newsletters', NewsletterController::class)->only(['index', 'store', 'update', 'destroy']);

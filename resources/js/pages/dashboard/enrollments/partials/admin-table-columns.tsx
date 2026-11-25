@@ -5,6 +5,7 @@ import EnrollmentStudentTagEditor from './enrollment-student-tag-editor';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
 import { enrollmentBillingColumns } from './enrollment-billing-columns';
+import MoveCourseButton from './move-course-button';
 import { EnrollmentListControls, EnrollmentSelectCell, EnrollmentSelectHeader, EnrollmentSortHeader } from './enrollment-list-controls';
 
 const AdminTableColumn = (
@@ -91,6 +92,7 @@ const AdminTableColumn = (
 
             return (
                <div className="flex items-center justify-end gap-2 pr-4">
+                  {courseEnrollment ? <MoveCourseButton enrollment={courseEnrollment} /> : null}
                   {courseEnrollment?.can_keep_course ? (
                      <Button
                         type="button"

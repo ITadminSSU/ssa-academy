@@ -77,6 +77,10 @@ class ExternalCheckoutService
             return false;
         }
 
+        if ($enrollment->isTransferred()) {
+            return true;
+        }
+
         $enrollment->loadMissing('subscription');
 
         if ($this->subscriptionAccess->toFrontendPayload($user, $course, $enrollment)['can_resubscribe'] ?? false) {
@@ -98,7 +102,7 @@ class ExternalCheckoutService
             return false;
         }
 
-        if ($enrollment->isReservedSeat() || $enrollment->isCanceled()) {
+        if ($enrollment->isReservedSeat() || $enrollment->isCanceled() || $enrollment->isTransferred()) {
             return false;
         }
 
@@ -121,6 +125,10 @@ class ExternalCheckoutService
     public function canPurchaseCourse(User $user, Course $course): bool
     {
         if (! $this->requiresPaidCheckout($user, $course)) {
+            return false;
+        }
+
+        if ($this->isAlreadyEnrolled($user, $course)) {
             return false;
         }
 
