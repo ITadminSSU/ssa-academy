@@ -102,6 +102,65 @@ function layoutStudent(): User
     ]);
 }
 
+test('a profile save can add a referrer and the academy list shows that name', function () {
+    Schema::create('professional_types', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->timestamps();
+    });
+    Schema::create('instructors', function (Blueprint $table) {
+        $table->id();
+        $table->unsignedBigInteger('user_id')->nullable();
+        $table->timestamps();
+    });
+    Schema::create('student_labels', function (Blueprint $table) {
+        $table->id();
+        $table->string('name');
+        $table->timestamps();
+    });
+    Schema::create('student_label_user', function (Blueprint $table) {
+        $table->unsignedBigInteger('user_id');
+        $table->unsignedBigInteger('student_label_id');
+    });
+
+    $user = layoutStudent();
+    $user->forceFill([
+        'referred_by' => null,
+        'referrer_is_employee' => null,
+    ])->save();
+
+    $saved = app(StudentService::class)->updateProfile([
+        'given_name' => 'Raiza',
+        'last_name' => 'Limpiada',
+        'referred_by' => 'Jordan',
+        'referrer_is_employee' => true,
+    ], (string) $user->id);
+
+    $saved->setRelation('professionalType', new \App\Models\ProfessionalType(['name' => 'Architect']));
+
+    $listed = app(\App\Services\UserService::class)->getUsers(['paginate' => false]);
+
+    expect($saved->referred_by)->toBe('Jordan')
+        ->and($saved->referrer_is_employee)->toBeTrue()
+        ->and($saved->hasCompletedProfileSetup())->toBeTrue()
+        ->and($listed->firstWhere('id', $saved->id)->referred_by)->toBe('Jordan');
+});
+
+test('a referrer name without the employee answer is not a complete profile', function () {
+    $user = layoutStudent();
+
+    $saved = app(StudentService::class)->updateProfile([
+        'referred_by' => 'Jordan',
+        'referrer_is_employee' => null,
+    ], (string) $user->id);
+
+    $saved->setRelation('professionalType', new \App\Models\ProfessionalType(['name' => 'Architect']));
+
+    expect($saved->referred_by)->toBe('Jordan')
+        ->and($saved->referrer_is_employee)->toBeNull()
+        ->and($saved->hasCompletedProfileSetup())->toBeFalse();
+});
+
 test('saving the new profile keeps stored background answers and other social links', function () {
     $user = layoutStudent();
 

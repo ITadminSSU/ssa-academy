@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -69,6 +70,8 @@ class RegisteredUserController extends Controller
             'accept_terms' => 'accepted',
             'accept_legal_age' => 'accepted',
             'source_course_id' => ['nullable', 'integer'],
+            'referred_by' => ['nullable', 'string', 'max:255'],
+            'referrer_is_employee' => ['nullable', 'boolean'],
         ], [
             'given_name.required' => 'Please enter your given name.',
             'accept_terms.accepted' => 'You must agree to the website Terms and Conditions.',
@@ -76,10 +79,12 @@ class RegisteredUserController extends Controller
         ]);
 
         if (! PersonName::fits($validated['given_name'], $validated['last_name'] ?? null)) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'last_name' => 'The given name and last name together must be 255 characters or fewer.',
             ]);
         }
+
+        [$referredBy, $referrerIsEmployee] = $this->referral($validated);
 
         // Profile answers, CV, ID, and the student agreement are collected later.
         // Do not record a legal acceptance at account creation.
@@ -90,6 +95,8 @@ class RegisteredUserController extends Controller
             'user_type' => $this->learnerTypeResolver->resolveFromEmail($validated['email'])->value,
             'status' => 1,
             'password' => Hash::make($validated['password']),
+            'referred_by' => $referredBy,
+            'referrer_is_employee' => $referrerIsEmployee,
         ]);
 
         app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration(
@@ -122,6 +129,27 @@ class RegisteredUserController extends Controller
         }
 
         return $redirect->with('status', 'verification-code-sent');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array{0: ?string, 1: ?bool}
+     */
+    private function referral(array $validated): array
+    {
+        $referredBy = trim((string) ($validated['referred_by'] ?? ''));
+
+        if ($referredBy === '') {
+            return [null, null];
+        }
+
+        if (! array_key_exists('referrer_is_employee', $validated) || $validated['referrer_is_employee'] === null) {
+            throw ValidationException::withMessages([
+                'referrer_is_employee' => 'Say whether this person is a Smart Sourcing employee.',
+            ]);
+        }
+
+        return [$referredBy, (bool) $validated['referrer_is_employee']];
     }
 
     private function sourceCourse(mixed $courseId): ?Course
