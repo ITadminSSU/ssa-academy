@@ -24,6 +24,7 @@ interface TrainerAttemptRow {
    has_pdf: boolean;
    has_excel: boolean;
    trainer_feedback?: string | null;
+   fast_resubmit?: { gap_seconds: number; previous_attempt_number: number; gap_label: string } | null;
    user?: { id: number; name: string; email: string } | null;
    plan?: { id: number; title: string; group_name?: string | null } | null;
 }
@@ -166,7 +167,15 @@ const Attempts = ({ course, plan, plans = [], attempts, filters }: Props) => {
                                  </TableCell>
                               ) : null}
                               <TableCell>#{attempt.attempt_number}</TableCell>
-                              <TableCell className="text-sm">{formatWhen(attempt.submitted_at)}</TableCell>
+                              <TableCell className="text-sm">
+                                 {formatWhen(attempt.submitted_at)}
+                                 {attempt.fast_resubmit ? (
+                                    <div className="mt-1">
+                                       <Badge variant="outline">Review</Badge>
+                                       <p className="text-muted-foreground mt-1 text-xs">{attempt.fast_resubmit.gap_label}</p>
+                                    </div>
+                                 ) : null}
+                              </TableCell>
                               <TableCell>
                                  {attempt.lines_correct ?? 0}/{attempt.lines_total ?? 0}
                                  {attempt.lines_percent != null ? ` · ${attempt.lines_percent}%` : ''}
