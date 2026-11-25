@@ -53,7 +53,13 @@ class UsExperienceUnlockService
         $canUseFiles = $mode === 'full';
 
         return [
-            'plans' => $this->studentPlanPayloads($ordered, $attempts, $canUseFiles, $canSeeScores),
+            'plans' => $this->studentPlanPayloads(
+                $ordered,
+                $attempts,
+                $canUseFiles,
+                $canSeeScores,
+                $course->show_us_experience_variance !== false,
+            ),
             'can_use_files' => $canUseFiles,
             'can_see_scores' => $canSeeScores,
             ...$defaults,
@@ -86,6 +92,7 @@ class UsExperienceUnlockService
         Collection $attemptsByPlanId,
         bool $canUseFiles,
         bool $canSeeScores,
+        bool $showVariance = true,
     ): array {
         $previousPassed = true;
         $payloads = [];
@@ -128,10 +135,10 @@ class UsExperienceUnlockService
                 'can_submit' => $canUseFiles && $unlocked && ! $passed && ! $attemptsExhausted,
                 'accuracy' => $canSeeScores ? ($bestAttempt?->lines_percent) : null,
                 'latest_attempt' => ($canSeeScores && $latestAttempt)
-                    ? $latestAttempt->toStudentArray()
+                    ? $latestAttempt->toStudentArray(true, $showVariance)
                     : null,
                 'attempts' => $canSeeScores
-                    ? $attempts->map(fn (UsExperienceAttempt $attempt) => $attempt->toStudentArray())->values()->all()
+                    ? $attempts->map(fn (UsExperienceAttempt $attempt) => $attempt->toStudentArray(true, $showVariance))->values()->all()
                     : [],
                 'tutorial_video' => ($canSeeScores && $latestAttempt && $plan->tutorial_video_url)
                     ? [

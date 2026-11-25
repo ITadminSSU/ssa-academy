@@ -57,7 +57,7 @@ class UsExperienceAttempt extends Model
         return $this->status === self::STATUS_PASSED;
     }
 
-    public function toStudentArray(bool $includeBreakdown = true): array
+    public function toStudentArray(bool $includeBreakdown = true, bool $showVariance = true): array
     {
         $payload = [
             'id' => $this->id,
@@ -74,10 +74,32 @@ class UsExperienceAttempt extends Model
         ];
 
         if ($includeBreakdown) {
-            $payload['grading_breakdown'] = $this->grading_breakdown;
+            $payload['grading_breakdown'] = $showVariance
+                ? $this->grading_breakdown
+                : $this->breakdownWithoutAnswerKey($this->grading_breakdown);
         }
 
         return $payload;
+    }
+
+    /**
+     * Student results can hide how far a quantity was from the answer.
+     * The stored grading row is left unchanged.
+     *
+     * @param  array<int, mixed>|null  $breakdown
+     * @return array<int, mixed>
+     */
+    private function breakdownWithoutAnswerKey(?array $breakdown): array
+    {
+        return array_map(function ($line) {
+            if (! is_array($line)) {
+                return $line;
+            }
+
+            unset($line['expected_qty'], $line['tolerance'], $line['tolerance_percent']);
+
+            return $line;
+        }, $breakdown ?? []);
     }
 
     /**

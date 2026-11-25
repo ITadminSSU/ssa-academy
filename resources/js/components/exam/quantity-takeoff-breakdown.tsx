@@ -21,6 +21,7 @@ interface Props {
    linesCorrect?: number;
    linesTotal?: number;
    showTolerance?: boolean;
+   showVariance?: boolean;
    viewer?: 'student' | 'trainer';
    className?: string;
 }
@@ -58,6 +59,7 @@ const QuantityTakeoffBreakdown = ({
    linesCorrect,
    linesTotal,
    showTolerance = true,
+   showVariance = true,
    viewer = 'student',
    className,
 }: Props) => {
@@ -96,7 +98,7 @@ const QuantityTakeoffBreakdown = ({
                   <col className="w-32" />
                   <col className="w-20" />
                   {showAllowedBand && <col className="w-32" />}
-                  <col className="w-24" />
+                  {showVariance && <col className="w-24" />}
                   <col className="w-36" />
                </colgroup>
                <thead className="bg-muted/60">
@@ -107,7 +109,7 @@ const QuantityTakeoffBreakdown = ({
                      <th className="p-3 text-right whitespace-nowrap">Submitted</th>
                      <th className="p-3 text-center whitespace-nowrap">Unit</th>
                      {showAllowedBand && <th className="p-3 text-right whitespace-nowrap">± Tolerance</th>}
-                     <th className="p-3 text-right whitespace-nowrap">Variance</th>
+                     {showVariance && <th className="p-3 text-right whitespace-nowrap">Variance</th>}
                      <th className="p-3 text-center whitespace-nowrap">Result</th>
                   </tr>
                </thead>
@@ -148,9 +150,11 @@ const QuantityTakeoffBreakdown = ({
                                  {line.tolerance_percent != null ? ` (${line.tolerance_percent}%)` : ''}
                               </td>
                            )}
-                           <td className={cn('p-3 text-right font-medium tabular-nums whitespace-nowrap', !lineCorrect && 'text-red-600')}>
-                              {formatVariance(line.submitted_qty, line.expected_qty)}
-                           </td>
+                           {showVariance && (
+                              <td className={cn('p-3 text-right font-medium tabular-nums whitespace-nowrap', !lineCorrect && 'text-red-600')}>
+                                 {formatVariance(line.submitted_qty, line.expected_qty)}
+                              </td>
+                           )}
                            <td className="p-3 text-center whitespace-nowrap">
                               {lineCorrect ? (
                                  <span className="inline-flex items-center justify-center gap-1 font-medium text-green-600">

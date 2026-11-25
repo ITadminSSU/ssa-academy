@@ -96,6 +96,7 @@ class Course extends Model implements HasMedia
         'course_category_id',
         'course_category_child_id',
         'final_exam_id',
+        'show_us_experience_variance',
     ];
 
     protected $casts = [
@@ -120,6 +121,7 @@ class Course extends Model implements HasMedia
         'launch_at' => 'datetime',
         'allow_staff_preview' => 'boolean',
         'allow_internal_preview' => 'boolean',
+        'show_us_experience_variance' => 'boolean',
         'hero_highlights' => 'array',
     ];
 

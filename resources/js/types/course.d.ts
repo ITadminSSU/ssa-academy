@@ -65,6 +65,7 @@ interface Course extends TableCommon {
    is_enrollment_open?: boolean;
    allow_staff_preview?: boolean;
    allow_internal_preview?: boolean;
+   show_us_experience_variance?: boolean;
    can_preview_before_launch?: boolean;
    level: string;
    language?: string;

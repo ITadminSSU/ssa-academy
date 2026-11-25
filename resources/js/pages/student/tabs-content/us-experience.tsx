@@ -158,6 +158,7 @@ const UsExperience = () => {
                                     breakdown={plan.latest_attempt.grading_breakdown}
                                     linesCorrect={plan.latest_attempt.lines_correct ?? undefined}
                                     linesTotal={plan.latest_attempt.lines_total ?? undefined}
+                                    showVariance={course.show_us_experience_variance !== false}
                                     viewer="student"
                                  />
                               </div>

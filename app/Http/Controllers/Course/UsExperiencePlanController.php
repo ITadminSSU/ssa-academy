@@ -49,6 +49,22 @@ class UsExperiencePlanController extends Controller
             ->with('success', 'Plan deleted.');
     }
 
+    public function updateVariance(Request $request, Course $course): RedirectResponse
+    {
+        $this->plans->authorizeCourseAccess($course, Auth::user());
+        $this->plans->assertFeatureEnabled($course);
+
+        $showVariance = $request->validate([
+            'show_us_experience_variance' => ['required', 'boolean'],
+        ])['show_us_experience_variance'];
+
+        $course->update([
+            'show_us_experience_variance' => $showVariance,
+        ]);
+
+        return back();
+    }
+
     public function move(Request $request, Course $course, UsExperiencePlan $plan): RedirectResponse
     {
         $this->assertPlan($course, $plan);

@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CourseUpdateProps } from '../update';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -38,6 +40,22 @@ const UsExperiencePlans = () => {
                   Practice takeoff plans. Students finish Plan 1 (Passed) before Plan 2 unlocks, same idea as lessons. This is not a timed exam
                   and does not block the certificate.
                </p>
+               <div className="mt-4 flex items-center gap-3">
+                  <Switch
+                     id="show-us-experience-variance"
+                     checked={course.show_us_experience_variance !== false}
+                     onCheckedChange={(checked) => {
+                        router.put(
+                           route('courses.us-experience.variance', course.id),
+                           { show_us_experience_variance: checked },
+                           { preserveScroll: true },
+                        );
+                     }}
+                  />
+                  <Label htmlFor="show-us-experience-variance" className="text-sm font-medium">
+                     Show variance to students
+                  </Label>
+               </div>
             </div>
             <UsExperiencePlanForm
                handler={
