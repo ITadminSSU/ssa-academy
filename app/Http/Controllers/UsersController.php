@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\ExportUsersRequest;
 use App\Http\Requests\StoreAdminUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Models\StudentLabel;
 use App\Models\User;
 use App\Services\Admin\AdminUserProvisioningService;
+use App\Services\UserService;
 use App\Support\MasterAdmin;
 use App\Support\S3CompatibleStorage;
-use App\Services\UserService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,7 +49,6 @@ class UsersController extends Controller
                 'registered_to' => $request->string('registered_to')->toString(),
             ],
             'protectedUserId' => MasterAdmin::userId(),
-            'studentLabels' => StudentLabel::query()->orderBy('name')->get(['id', 'name', 'color']),
         ]);
     }
 

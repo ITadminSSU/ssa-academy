@@ -1,7 +1,7 @@
 import DeleteModal from '@/components/inertia/delete-modal';
-import StudentTagPills from '@/components/student-tag-pills';
 import { Button } from '@/components/ui/button';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
+import EnrollmentStudentTagEditor from './enrollment-student-tag-editor';
 import { ColumnDef } from '@tanstack/react-table';
 import { Trash2 } from 'lucide-react';
 import { enrollmentBillingColumns } from './enrollment-billing-columns';
@@ -79,7 +79,7 @@ const AdminTableColumn = (
               {
                  id: 'student_tags',
                  header: () => <EnrollmentSortHeader label="Student Tags" column="tags" sort={controls?.sort} onSort={controls?.onSort} />,
-                 cell: ({ row }) => <StudentTagPills user={(row.original as CourseEnrollment).user} />,
+                 cell: ({ row }) => <AdminStudentTags user={(row.original as CourseEnrollment).user} />,
               } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
            ]
          : []),
@@ -126,6 +126,16 @@ const AdminTableColumn = (
          },
       },
    ];
+};
+
+const AdminStudentTags = ({
+   user,
+}: {
+   user: CourseEnrollment['user'];
+}) => {
+   const { studentLabels = [] } = usePage<{ studentLabels?: { id: number; name: string; color: string }[] }>().props;
+
+   return <EnrollmentStudentTagEditor userId={user.id} user={user} labels={studentLabels} />;
 };
 
 export default AdminTableColumn;

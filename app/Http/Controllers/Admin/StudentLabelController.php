@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreStudentLabelRequest;
+use App\Http\Requests\SyncStudentLabelsRequest;
 use App\Http\Requests\UpdateStudentLabelRequest;
 use App\Models\StudentLabel;
+use App\Models\User;
+use App\Services\StudentLabelService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,5 +41,12 @@ class StudentLabelController extends Controller
         $studentLabel->delete();
 
         return back()->with('success', 'Student label deleted. Students who had it no longer show that pill.');
+    }
+
+    public function syncStudent(SyncStudentLabelsRequest $request, User $user, StudentLabelService $labels): RedirectResponse
+    {
+        $labels->syncForUser($user, $request->validated('student_label_ids'));
+
+        return back();
     }
 }
