@@ -9,6 +9,7 @@ enum EnrollmentAccessStatus: string
     case CANCELED = 'canceled';
     case SUSPENDED = 'suspended';
     case EXPIRED = 'expired';
+    case TRANSFERRED = 'transferred';
 
     public function getLabel(): string
     {
@@ -18,6 +19,7 @@ enum EnrollmentAccessStatus: string
             self::CANCELED => 'Canceled',
             self::SUSPENDED => 'Suspended',
             self::EXPIRED => 'Expired',
+            self::TRANSFERRED => 'Transferred',
         };
     }
 
@@ -26,6 +28,7 @@ enum EnrollmentAccessStatus: string
         return match ($this) {
             self::ACTIVE => true,
             self::SUSPENDED => true, // may still grant via active subscription grace
+            self::TRANSFERRED => false,
             default => false,
         };
     }

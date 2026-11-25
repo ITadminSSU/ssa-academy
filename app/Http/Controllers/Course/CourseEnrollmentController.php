@@ -10,8 +10,10 @@ use App\Models\Course\CourseEnrollment;
 use App\Models\StudentLabel;
 use App\Services\Course\CourseEnrollmentService;
 use App\Services\Course\CourseService;
+use App\Services\Payment\CourseAccessMoveService;
 use App\Services\Payment\RetainedAccessService;
 use App\Services\UserService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -126,6 +128,30 @@ class CourseEnrollmentController extends Controller
         }
 
         return back()->with('success', 'Billing is stopped and this student keeps full access to the course.');
+    }
+
+    public function moveDestinations(CourseEnrollment $enrollment, CourseAccessMoveService $moves): JsonResponse
+    {
+        abort_unless(isAdmin(), 403);
+
+        return response()->json($moves->destinationOptions($enrollment));
+    }
+
+    public function moveCourse(Request $request, CourseEnrollment $enrollment, CourseAccessMoveService $moves)
+    {
+        abort_unless(isAdmin(), 403);
+
+        $courseId = (int) $request->validate([
+            'course_id' => ['required', 'integer'],
+        ])['course_id'];
+
+        try {
+            $moves->move($enrollment, $courseId);
+        } catch (\Throwable $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', 'Course access moved. The previous course stays locked until this student is moved back.');
     }
 
     /**
