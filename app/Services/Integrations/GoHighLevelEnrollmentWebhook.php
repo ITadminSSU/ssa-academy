@@ -242,14 +242,20 @@ class GoHighLevelEnrollmentWebhook
             return;
         }
 
+        $courseTitle = trim((string) ($enrollment->course?->title ?? ''));
+        $courseId = (string) $enrollment->course_id;
+
         $payload = [
             'first_name' => $firstName,
             'last_name' => $lastName,
             'email' => $email,
-            'course' => trim((string) ($enrollment->course?->title ?? '')),
+            'source_course' => $courseTitle,
+            'source_course_id' => $courseId,
+            'payment_status' => 'paid',
+            'course' => $courseTitle,
             'courses' => $this->activeCourseTitles((int) $enrollment->user_id),
             'enrolled_at' => $enrolledAt?->toIso8601String() ?? '',
-            'course_id' => (string) $enrollment->course_id,
+            'course_id' => $courseId,
             'payment_plan' => $this->paymentPlan($enrollment->course, $payment),
             'coupon' => EnrollmentListBilling::couponCodeFromPayment($payment),
             'amount' => $this->paidAmount($payment),
