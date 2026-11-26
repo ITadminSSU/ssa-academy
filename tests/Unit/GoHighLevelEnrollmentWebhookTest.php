@@ -542,6 +542,16 @@ test('a course page redirect is kept on the sign up link', function () {
     expect($props['sourceCourseId'])->toBe($course->id);
 });
 
+test('the settings page names the roofing registration webhook apart from the payment webhook', function () {
+    $page = file_get_contents(base_path('resources/js/pages/dashboard/settings/go-high-level.tsx'));
+
+    expect($page)->toContain('Roofing registration webhook URL')
+        ->and($page)->toContain('/register?source_course_id=7')
+        ->and($page)->toContain('Payment webhook URL')
+        ->and($page)->toContain('Remove payment URL')
+        ->and($page)->toContain('Remove Roofing registration URL');
+});
+
 test('urls with credentials or the wrong scheme are rejected', function () {
     $webhook = app(GoHighLevelEnrollmentWebhook::class);
 
