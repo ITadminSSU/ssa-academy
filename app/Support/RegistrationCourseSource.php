@@ -16,12 +16,21 @@ class RegistrationCourseSource
             $path = $url;
         }
 
-        if (preg_match('#/courses/details/[^/]+/(\d+)/?$#', $path, $matches) !== 1) {
-            return null;
+        $patterns = [
+            '#/courses/details/[^/]+/(\d+)/?$#',
+            '#/payments/[^/]+/course/(\d+)/?$#',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $path, $matches) !== 1) {
+                continue;
+            }
+
+            $id = (int) $matches[1];
+
+            return $id > 0 ? $id : null;
         }
 
-        $id = (int) $matches[1];
-
-        return $id > 0 ? $id : null;
+        return null;
     }
 }
