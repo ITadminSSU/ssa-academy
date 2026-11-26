@@ -600,6 +600,25 @@ test('a course page redirect is kept on the sign up link', function () {
     expect($props['sourceCourseId'])->toBe($course->id);
 });
 
+test('a checkout redirect is kept on the sign up link', function () {
+    $course = course('Siding Estimating');
+    $checkout = '/payments/web/course/'.$course->id;
+
+    expect(\App\Support\RegistrationCourseSource::idFromUrl('/payments/web/course/7'))->toBe(7)
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl('https://smartsourcingacademy.com/payments/web/course/9'))->toBe(9)
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl('/payments/web/course/13'))->toBe(13)
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl($checkout))->toBe($course->id)
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl('/payments/web/exam/2'))->toBeNull()
+        ->and(\App\Support\RegistrationCourseSource::idFromUrl('/payments/web/course'))->toBeNull();
+
+    $request = \Illuminate\Http\Request::create('/login', 'GET', ['redirect' => $checkout]);
+    $request->setLaravelSession(app('session.store'));
+    $response = app(\App\Http\Controllers\Auth\AuthenticatedSessionController::class)->create($request);
+    $props = (new ReflectionClass($response))->getProperty('props')->getValue($response);
+
+    expect($props['sourceCourseId'])->toBe($course->id);
+});
+
 test('the evt page links signup to the evt source', function () {
     $page = file_get_contents(base_path('resources/js/pages/evt/index.tsx'));
 
