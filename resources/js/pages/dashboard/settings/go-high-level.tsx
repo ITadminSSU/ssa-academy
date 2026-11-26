@@ -57,8 +57,8 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
          <div className="mb-6">
             <h1 className="text-2xl font-bold">Go High Level</h1>
             <p className="text-muted-foreground">
-               Send a new account to Go High Level when someone registers, and send the enrollment when a learner pays. The
-               payment webhook is unchanged. The registration webhook is a second URL.
+               The Roofing registration webhook sends a new account to Go High Level. The payment webhook is separate and
+               unchanged.
             </p>
          </div>
 
@@ -97,7 +97,7 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
                </div>
 
                <div>
-                  <Label htmlFor="registration_webhook_url">Registration webhook URL</Label>
+                  <Label htmlFor="registration_webhook_url">Roofing registration webhook URL</Label>
                   <Input
                      id="registration_webhook_url"
                      name="registration_webhook_url"
@@ -105,12 +105,15 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
                      autoComplete="off"
                      value={data.registration_webhook_url}
                      onChange={(e) => setData('registration_webhook_url', e.target.value)}
-                     placeholder="Paste a Go High Level inbound webhook URL for new accounts"
+                     placeholder="Paste the Go High Level URL for new Roofing accounts"
                   />
                   {goHighLevel.registration_webhook_configured && (
                      <p className="text-muted-foreground mt-1 text-sm">Saved URL: {goHighLevel.registration_webhook_masked}</p>
                   )}
-                  <p className="text-muted-foreground mt-1 text-sm">Leave this blank to keep the saved registration URL. It does not replace the payment URL.</p>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                     New accounts from /register?source_course_id=7 are sent here. Course id 7 is Roofing Estimating. Leave this
+                     blank to keep the saved URL. This does not replace the payment URL.
+                  </p>
                   <InputError message={errors.registration_webhook_url} />
                </div>
 
@@ -122,7 +125,7 @@ const GoHighLevel = ({ goHighLevel }: Props) => {
                   )}
                   {goHighLevel.registration_webhook_configured && (
                      <Button type="button" variant="outline" onClick={clearRegistrationWebhook} disabled={processing}>
-                        Remove registration URL
+                        Remove Roofing registration URL
                      </Button>
                   )}
                   <LoadingButton loading={processing}>{button.save_changes}</LoadingButton>
