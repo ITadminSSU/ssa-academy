@@ -169,6 +169,15 @@ test('an instructor cannot save tags', function () {
         ->toContain('role:admin');
 });
 
+test('the enrollment tag control confirms before it saves', function () {
+    $page = file_get_contents(base_path('resources/js/pages/dashboard/enrollments/partials/enrollment-student-tag-editor.tsx'));
+
+    expect($page)->toContain('Save this tag change for this student?')
+        ->and($page)->toContain('Choose tags')
+        ->and($page)->toContain('enrollments.student-labels.sync')
+        ->and($page)->not->toContain('>Save<');
+});
+
 function tagUser(string $name, string $email, string $role, array $extra = []): User
 {
     return User::query()->create(array_merge([
