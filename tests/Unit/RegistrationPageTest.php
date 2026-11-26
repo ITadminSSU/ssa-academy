@@ -9,6 +9,35 @@ use Illuminate\Http\Request;
 use Inertia\Response;
 
 test('the signup page opens without a course', function () {
+    $props = registrationPageProps('/register');
+
+    expect($props['sourceCourse'])->toBeNull()
+        ->and($props['registrationSource'])->toBeNull();
+});
+
+test('an evt link exposes the evt source', function () {
+    $props = registrationPageProps('/register?source=evt');
+
+    expect($props['sourceCourse'])->toBeNull()
+        ->and($props['registrationSource'])->toBe('evt');
+});
+
+test('another source exposes no source', function () {
+    $props = registrationPageProps('/register?source=other');
+
+    expect($props['sourceCourse'])->toBeNull()
+        ->and($props['registrationSource'])->toBeNull();
+});
+
+test('a course id of evt exposes no source', function () {
+    $props = registrationPageProps('/register?source_course_id=evt');
+
+    expect($props['sourceCourse'])->toBeNull()
+        ->and($props['registrationSource'])->toBeNull();
+});
+
+function registrationPageProps(string $url): array
+{
     $auth = Mockery::mock(AuthService::class);
     $auth->shouldReceive('googleAuthStatus')->once()->andReturn(['authStatus' => false]);
     $auth->shouldReceive('recaptchaStatus')->once()->andReturn([
@@ -27,11 +56,9 @@ test('the signup page opens without a course', function () {
         Mockery::mock(SingleSessionService::class),
     );
 
-    $response = $controller->create(Request::create('/register', 'GET'));
+    $response = $controller->create(Request::create($url, 'GET'));
 
     expect($response)->toBeInstanceOf(Response::class);
 
-    $props = (new ReflectionClass($response))->getProperty('props')->getValue($response);
-
-    expect($props['sourceCourse'])->toBeNull();
-});
+    return (new ReflectionClass($response))->getProperty('props')->getValue($response);
+}

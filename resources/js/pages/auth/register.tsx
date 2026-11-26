@@ -27,9 +27,10 @@ interface RegisterProps {
    };
    legalDocument: LegalDocumentPayload;
    sourceCourse?: { id: number; title: string } | null;
+   registrationSource?: string | null;
 }
 
-const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null }: RegisterProps) => {
+const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null, registrationSource = null }: RegisterProps) => {
    const { props } = usePage<SharedData>();
    const { branding } = props;
    const { auth: authCopy, input: inputCopy, button: buttonCopy } = props.translate;
@@ -49,6 +50,7 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null }
       recaptcha: '',
       recaptcha_status: recaptcha.status,
       source_course_id: sourceCourse?.id ?? null,
+      source: sourceCourse ? '' : (registrationSource ?? ''),
       referred_by: '',
       referrer_is_employee: null as boolean | null,
       ...emptyLegalAcknowledgements(),

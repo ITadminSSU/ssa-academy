@@ -481,6 +481,55 @@ test('a homepage signup leaves the course fields empty', function () {
     Http::assertNotSent(fn ($request) => $request->url() === GHL_WEBHOOK_URL);
 });
 
+test('an evt registration posts evt as the source', function () {
+    Carbon\Carbon::setTestNow('2026-11-24 01:22:00');
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, $registrationUrl);
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $user = learner('Evt Test', 'evt@example.com');
+    app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration($user, null, ' EVT ');
+    app()->terminate();
+
+    Http::assertSentCount(1);
+    Http::assertSent(function ($request) use ($user, $registrationUrl) {
+        expect($request->url())->toBe($registrationUrl)
+            ->and($request->data())->toBe([
+                'first_name' => 'Evt',
+                'last_name' => 'Test',
+                'email' => 'evt@example.com',
+                'registered_at' => $user->fresh()->created_at->toIso8601String(),
+                'source_course' => 'EVT',
+                'source_course_id' => 'evt',
+            ]);
+
+        return true;
+    });
+    Http::assertNotSent(fn ($request) => $request->url() === GHL_WEBHOOK_URL);
+});
+
+test('a course registration ignores an evt source', function () {
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, $registrationUrl);
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $user = learner('Alexis Pacapac', 'roofing-evt@example.com');
+    $course = course('Roofing Estimating');
+    app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration($user, $course, 'evt');
+    app()->terminate();
+
+    Http::assertSent(function ($request) use ($course) {
+        expect($request->data()['source_course'])->toBe('Roofing Estimating')
+            ->and($request->data()['source_course_id'])->toBe((string) $course->id);
+
+        return true;
+    });
+});
+
 test('a siding installment enrollment sends the plan coupon and amount to the payment url', function () {
     saveGoHighLevel(true, GHL_WEBHOOK_URL, 'https://services.leadconnectorhq.com/hooks/register-token-cd34');
     Http::fake([
@@ -549,6 +598,13 @@ test('a course page redirect is kept on the sign up link', function () {
     $props = (new ReflectionClass($response))->getProperty('props')->getValue($response);
 
     expect($props['sourceCourseId'])->toBe($course->id);
+});
+
+test('the evt page links signup to the evt source', function () {
+    $page = file_get_contents(base_path('resources/js/pages/evt/index.tsx'));
+
+    expect(substr_count($page, 'href="/register?source=evt"'))->toBe(2)
+        ->and(preg_match('#href="/register"(?!\?)#', $page))->toBe(0);
 });
 
 test('the settings page names the roofing registration webhook apart from the payment webhook', function () {
