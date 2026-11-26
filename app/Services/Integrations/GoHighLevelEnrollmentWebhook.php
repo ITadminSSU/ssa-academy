@@ -99,7 +99,7 @@ class GoHighLevelEnrollmentWebhook
         $setting->save();
     }
 
-    public function queueForRegistration(User $user, ?Course $course = null): void
+    public function queueForRegistration(User $user, ?Course $course = null, ?string $source = null): void
     {
         $userId = (int) $user->getKey();
 
@@ -108,18 +108,19 @@ class GoHighLevelEnrollmentWebhook
         }
 
         $courseId = $course ? (int) $course->getKey() : null;
+        $source = $courseId ? null : $this->registrationSource($source);
 
-        DB::afterCommit(function () use ($userId, $courseId): void {
-            dispatch(function () use ($userId, $courseId): void {
-                app(self::class)->sendRegistration($userId, $courseId);
+        DB::afterCommit(function () use ($userId, $courseId, $source): void {
+            dispatch(function () use ($userId, $courseId, $source): void {
+                app(self::class)->sendRegistration($userId, $courseId, $source);
             })->afterResponse();
         });
     }
 
-    public function sendRegistration(int $userId, ?int $courseId = null): void
+    public function sendRegistration(int $userId, ?int $courseId = null, ?string $source = null): void
     {
         try {
-            $this->deliverRegistration($userId, $courseId);
+            $this->deliverRegistration($userId, $courseId, $source);
         } catch (\Throwable) {
             $this->logRegistrationFailure($userId, null);
         }
@@ -336,7 +337,12 @@ class GoHighLevelEnrollmentWebhook
         return filter_var($this->fields($setting)['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
     }
 
-    private function deliverRegistration(int $userId, ?int $courseId): void
+    private function registrationSource(?string $source): ?string
+    {
+        return strtolower(trim((string) $source)) === 'evt' ? 'evt' : null;
+    }
+
+    private function deliverRegistration(int $userId, ?int $courseId, ?string $source = null): void
     {
         $config = $this->registrationConfiguration();
 
@@ -362,14 +368,15 @@ class GoHighLevelEnrollmentWebhook
             $user->name,
         );
         $course = $courseId ? Course::query()->find($courseId) : null;
+        $evt = ! $course && ! $courseId && $this->registrationSource($source) === 'evt';
 
         $payload = [
             'first_name' => $firstName,
             'last_name' => $lastName,
             'email' => $email,
             'registered_at' => $user->created_at?->toIso8601String() ?? '',
-            'source_course' => trim((string) ($course?->title ?? '')),
-            'source_course_id' => $course ? (string) $course->id : '',
+            'source_course' => $course ? trim((string) $course->title) : ($evt ? 'EVT' : ''),
+            'source_course_id' => $course ? (string) $course->id : ($evt ? 'evt' : ''),
         ];
 
         $response = Http::timeout(5)

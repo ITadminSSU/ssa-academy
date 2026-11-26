@@ -180,7 +180,7 @@ const Icon = ({ name }: { name: string }) => {
 };
 
 const EnrollButton = ({ children }: { children: ReactNode }) => (
-   <a className="evt-btn" href="/register">
+   <a className="evt-btn" href="/register?source=evt">
       {children}
    </a>
 );
@@ -467,7 +467,7 @@ export default function EvtLanding() {
                            <p className="evt-path-copy">
                               Submit your profile for consideration for direct employment opportunities with our U.S. construction clients.
                            </p>
-                           <a className="evt-btn" href="/register">
+                           <a className="evt-btn" href="/register?source=evt">
                               APPLY AS AN ESTIMATOR →
                            </a>
                            <div className="evt-qualify">

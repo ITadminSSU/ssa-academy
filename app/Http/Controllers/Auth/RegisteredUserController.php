@@ -50,6 +50,7 @@ class RegisteredUserController extends Controller
                 'id' => $sourceCourse->id,
                 'title' => $sourceCourse->title,
             ] : null,
+            'registrationSource' => $sourceCourse ? null : $this->registrationSource($request->query('source')),
         ]);
     }
 
@@ -99,9 +100,12 @@ class RegisteredUserController extends Controller
             'referrer_is_employee' => $referrerIsEmployee,
         ]);
 
+        $sourceCourse = $this->sourceCourse($validated['source_course_id'] ?? null);
+
         app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration(
             $user,
-            $this->sourceCourse($validated['source_course_id'] ?? null),
+            $sourceCourse,
+            $sourceCourse ? null : $this->registrationSource($request->input('source')),
         );
 
         $verificationError = null;
@@ -161,5 +165,14 @@ class RegisteredUserController extends Controller
         }
 
         return Course::query()->find($id);
+    }
+
+    private function registrationSource(mixed $source): ?string
+    {
+        if (! is_string($source)) {
+            return null;
+        }
+
+        return strtolower(trim($source)) === 'evt' ? 'evt' : null;
     }
 }
