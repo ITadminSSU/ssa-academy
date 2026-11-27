@@ -1,6 +1,6 @@
 import TableFilter from '@/components/table/table-filter';
 import TableFooter from '@/components/table/table-footer';
-import TableHeader from '@/components/table/table-header';
+import TableHeader, { columnClassName } from '@/components/table/table-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -104,7 +104,9 @@ const Courses = (props: Props) => {
                         table.getRowModel().rows.map((row) => (
                            <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
                               {row.getVisibleCells().map((cell) => (
-                                 <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                                 <TableCell key={cell.id} className={columnClassName(cell.column.columnDef.meta)}>
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                 </TableCell>
                               ))}
                            </TableRow>
                         ))

@@ -82,50 +82,69 @@ const AdminTableColumn = (
                  header: () => <EnrollmentSortHeader label="Student Tags" column="tags" sort={controls?.sort} onSort={controls?.onSort} />,
                  cell: ({ row }) => <AdminStudentTags user={(row.original as CourseEnrollment).user} />,
               } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
+              {
+                 id: 'move_course',
+                 header: () => <div className="text-center">Move course</div>,
+                 meta: { className: 'w-36 whitespace-nowrap px-2 text-center' },
+                 cell: ({ row }) => (
+                    <div className="flex justify-center">
+                       <MoveCourseButton enrollment={row.original as CourseEnrollment} />
+                    </div>
+                 ),
+              } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
+              {
+                 id: 'access',
+                 header: () => <div className="text-center">Access</div>,
+                 meta: { className: 'w-32 whitespace-nowrap px-2 text-center' },
+                 cell: ({ row }) => {
+                    const courseEnrollment = row.original as CourseEnrollment;
+
+                    return (
+                       <div className="flex justify-center">
+                          {courseEnrollment.can_keep_course ? (
+                             <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                   if (
+                                      !window.confirm(
+                                         'Stop Stripe billing for this student and keep their full access to the course?',
+                                      )
+                                   ) {
+                                      return;
+                                   }
+
+                                   router.post(route('enrollments.keep-course', courseEnrollment.id), {}, { preserveScroll: true });
+                                }}
+                             >
+                                Keep course
+                             </Button>
+                          ) : courseEnrollment.access_retained ? (
+                             <span className="text-muted-foreground text-xs">Access kept</span>
+                          ) : null}
+                       </div>
+                    );
+                 },
+              } satisfies ColumnDef<CourseEnrollment | ExamEnrollment>,
            ]
          : []),
       {
          id: 'actions',
-         header: () => <div className="pr-4 text-end">{table.action}</div>,
-         cell: ({ row }) => {
-            const courseEnrollment = enrollmentType === 'course' ? (row.original as CourseEnrollment) : null;
-
-            return (
-               <div className="flex items-center justify-end gap-2 pr-4">
-                  {courseEnrollment ? <MoveCourseButton enrollment={courseEnrollment} /> : null}
-                  {courseEnrollment?.can_keep_course ? (
-                     <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                           if (
-                              !window.confirm(
-                                 'Stop Stripe billing for this student and keep their full access to the course?',
-                              )
-                           ) {
-                              return;
-                           }
-
-                           router.post(route('enrollments.keep-course', courseEnrollment.id), {}, { preserveScroll: true });
-                        }}
-                     >
-                        Keep course
+         header: () => <div className="text-center">{table.action}</div>,
+         meta: { className: 'w-20 whitespace-nowrap px-2 text-center' },
+         cell: ({ row }) => (
+            <div className="flex items-center justify-center">
+               <DeleteModal
+                  routePath={route(deleteRoute, row.original.id)}
+                  actionComponent={
+                     <Button size="icon" variant="ghost" className="h-8 w-8 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-500">
+                        <Trash2 className="h-5 w-5" />
                      </Button>
-                  ) : courseEnrollment?.access_retained ? (
-                     <span className="text-muted-foreground text-xs">Access kept</span>
-                  ) : null}
-                  <DeleteModal
-                     routePath={route(deleteRoute, row.original.id)}
-                     actionComponent={
-                        <Button size="icon" variant="ghost" className="h-8 w-8 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-500">
-                           <Trash2 className="h-5 w-5" />
-                        </Button>
-                     }
-                  />
-               </div>
-            );
-         },
+                  }
+               />
+            </div>
+         ),
       },
    ];
 };

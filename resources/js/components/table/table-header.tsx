@@ -1,5 +1,9 @@
+import { cn } from '@/lib/utils';
 import { TableHeader as DataTableHeader, TableHead, TableRow } from '@/components/ui/table';
 import { Table as ReactTable, flexRender } from '@tanstack/react-table';
+
+export const columnClassName = (meta: unknown) =>
+   meta && typeof meta === 'object' && 'className' in meta && typeof meta.className === 'string' ? meta.className : undefined;
 
 interface Props {
    table: ReactTable<any>;
@@ -16,7 +20,7 @@ const TableHeader = (props: Props) => {
             <TableRow key={headerGroup.id}>
                {headerGroup.headers.map((header) => {
                   return (
-                     <TableHead key={header.id} className={tableHeadClass}>
+                     <TableHead key={header.id} className={cn(tableHeadClass, columnClassName(header.column.columnDef.meta))}>
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                      </TableHead>
                   );
