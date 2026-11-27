@@ -481,6 +481,65 @@ test('a homepage signup leaves the course fields empty', function () {
     Http::assertNotSent(fn ($request) => $request->url() === GHL_WEBHOOK_URL);
 });
 
+test('a signup link keeps the course when the form source is empty', function () {
+    prepareRegistrationColumns();
+    config(['account.single_session.enabled' => false]);
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, $registrationUrl);
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $course = course('Siding Estimating');
+    $course->forceFill(['id' => 9])->save();
+    $request = registrationRequest('/register?source_course_id=9', [
+        'email' => 'siding@example.com',
+        'source' => '',
+        'source_course_id' => null,
+    ]);
+
+    app(\App\Http\Controllers\Auth\RegisteredUserController::class)->store($request);
+    app()->terminate();
+
+    Http::assertSent(function ($sent) use ($course) {
+        expect($sent->url())->toBe('https://services.leadconnectorhq.com/hooks/register-token-cd34')
+            ->and($sent->data()['source_course'])->toBe('Siding Estimating')
+            ->and($sent->data()['source_course_id'])->toBe((string) $course->id);
+
+        return true;
+    });
+
+    \Illuminate\Support\Facades\Auth::logout();
+});
+
+test('a signup link keeps evt when the form source is empty', function () {
+    prepareRegistrationColumns();
+    config(['account.single_session.enabled' => false]);
+    $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
+    saveGoHighLevel(true, GHL_WEBHOOK_URL, $registrationUrl);
+    Http::fake([
+        'https://services.leadconnectorhq.com/*' => Http::response(['ok' => true], 200),
+    ]);
+
+    $request = registrationRequest('/register?source=evt', [
+        'email' => 'evt-link@example.com',
+        'source' => '',
+        'source_course_id' => null,
+    ]);
+
+    app(\App\Http\Controllers\Auth\RegisteredUserController::class)->store($request);
+    app()->terminate();
+
+    Http::assertSent(function ($sent) {
+        expect($sent->data()['source_course'])->toBe('EVT')
+            ->and($sent->data()['source_course_id'])->toBe('evt');
+
+        return true;
+    });
+
+    \Illuminate\Support\Facades\Auth::logout();
+});
+
 test('an evt registration posts evt as the source', function () {
     Carbon\Carbon::setTestNow('2026-11-24 01:22:00');
     $registrationUrl = 'https://services.leadconnectorhq.com/hooks/register-token-cd34';
@@ -686,6 +745,50 @@ function saveGoHighLevel(bool $enabled, string $url, string $registrationUrl = '
             ],
         ],
     );
+}
+
+function prepareRegistrationColumns(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        $table->string('given_name')->nullable();
+        $table->string('last_name')->nullable();
+        $table->string('user_type')->nullable();
+        $table->unsignedTinyInteger('status')->nullable();
+        $table->string('candidate_status')->nullable();
+        $table->string('referred_by')->nullable();
+        $table->boolean('referrer_is_employee')->nullable();
+        $table->rememberToken();
+    });
+}
+
+function registrationRequest(string $uri, array $overrides = []): \Illuminate\Http\Request
+{
+    $payload = array_merge([
+        'given_name' => 'Siding',
+        'last_name' => 'Test',
+        'email' => 'student@example.com',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'recaptcha_status' => false,
+        'accept_terms' => 'yes',
+        'accept_legal_age' => 'yes',
+        'referred_by' => '',
+        'source' => '',
+        'source_course_id' => null,
+    ], $overrides);
+
+    $request = \Illuminate\Http\Request::create(
+        $uri,
+        'POST',
+        [],
+        [],
+        [],
+        ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'],
+        json_encode($payload),
+    );
+    $request->setLaravelSession(app('session.store'));
+
+    return $request;
 }
 
 function learner(string $name, string $email): User
