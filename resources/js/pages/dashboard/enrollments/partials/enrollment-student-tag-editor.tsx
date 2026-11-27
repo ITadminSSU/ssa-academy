@@ -68,24 +68,39 @@ const EnrollmentStudentTagEditor = ({ userId, user, labels }: Props) => {
 
    const selectedLabels = labels.filter((label) => selected.includes(label.id));
 
+   const lastLabel = selectedLabels[selectedLabels.length - 1];
+
    return (
-      <div className="flex w-full max-w-[16rem] flex-col items-start gap-1">
+      <div className="inline-flex flex-col items-start gap-1">
          <Popover>
             <PopoverTrigger asChild>
-               <button
-                  type="button"
-                  disabled={processing}
-                  className="border-input bg-background flex min-h-10 w-full items-center justify-between gap-2 rounded-md border px-3 py-1.5 text-left text-sm font-normal disabled:opacity-50"
-               >
-                  <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
-                     {selectedLabels.length > 0 ? (
-                        selectedLabels.map((label) => <TagPill key={label.id} label={label} />)
-                     ) : (
-                        <span className="text-muted-foreground">Choose tags</span>
-                     )}
-                  </span>
-                  <ChevronDown className="text-muted-foreground h-4 w-4 shrink-0" />
-               </button>
+               {selectedLabels.length === 0 ? (
+                  <button
+                     type="button"
+                     disabled={processing}
+                     className="border-input bg-background text-muted-foreground inline-flex h-8 items-center gap-1.5 rounded-full border px-4 text-sm font-normal whitespace-nowrap disabled:opacity-50"
+                  >
+                     Choose tags
+                     <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                  </button>
+               ) : (
+                  <button
+                     type="button"
+                     disabled={processing}
+                     className="inline-flex flex-wrap items-center gap-1 border-0 bg-transparent p-0 text-left disabled:opacity-50"
+                  >
+                     {selectedLabels.map((label) => (
+                        <span
+                           key={label.id}
+                           className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap"
+                           style={{ backgroundColor: label.color, color: textOn(label.color) }}
+                        >
+                           {label.name}
+                           {label.id === lastLabel.id ? <ChevronDown className="h-3 w-3 shrink-0" /> : null}
+                        </span>
+                     ))}
+                  </button>
+               )}
             </PopoverTrigger>
             <PopoverContent align="start" className="w-56 p-2">
                {labels.length === 0 ? (
