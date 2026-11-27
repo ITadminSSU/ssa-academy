@@ -20,6 +20,7 @@ class StoreUsExperiencePlanRequest extends FormRequest
             'pass_mark' => 'nullable|integer|min:1|max:100',
             'max_attempts' => 'nullable|integer|min:1|max:100',
             'published' => 'nullable|boolean',
+            'show_variance' => 'nullable|boolean',
         ];
     }
 }

@@ -20,6 +20,7 @@ class UpdateUsExperiencePlanRequest extends FormRequest
             'pass_mark' => 'required|integer|min:1|max:100',
             'max_attempts' => 'required|integer|min:1|max:100',
             'published' => 'required|boolean',
+            'show_variance' => 'required|boolean',
         ];
     }
 }

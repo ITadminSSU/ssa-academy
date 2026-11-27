@@ -58,10 +58,12 @@ const UsExperiencePlanEditor = () => {
       pass_mark: plan?.pass_mark ?? 85,
       max_attempts: plan?.max_attempts ?? 10,
       published: plan?.published ?? false,
+      show_variance: plan?.show_variance !== false,
    });
    settings.transform((form) => ({
       ...form,
       published: form.published ? 1 : 0,
+      show_variance: form.show_variance ? 1 : 0,
    }));
 
    const [pendingDrawing, setPendingDrawing] = useState<UploadedFile | null>(null);
@@ -83,6 +85,7 @@ const UsExperiencePlanEditor = () => {
          pass_mark: plan.pass_mark,
          max_attempts: plan.max_attempts,
          published: plan.published,
+         show_variance: plan.show_variance !== false,
       });
       const draft: Record<string, string> = {};
       (plan.line_items || []).forEach((line) => {
@@ -178,6 +181,17 @@ const UsExperiencePlanEditor = () => {
                      </div>
                      <Switch checked={settings.data.published} onCheckedChange={(checked) => settings.setData('published', checked)} />
                   </div>
+               </div>
+               <div className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                     <Label htmlFor="show-plan-variance">Show variance to students</Label>
+                     <p className="text-muted-foreground text-xs">Students see the variance column on this plan</p>
+                  </div>
+                  <Switch
+                     id="show-plan-variance"
+                     checked={settings.data.show_variance}
+                     onCheckedChange={(checked) => settings.setData('show_variance', checked)}
+                  />
                </div>
                <LoadingButton
                   type="button"
