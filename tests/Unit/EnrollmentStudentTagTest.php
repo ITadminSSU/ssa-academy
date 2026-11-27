@@ -174,7 +174,10 @@ test('the enrollment tag control confirms before it saves', function () {
 
     expect($page)->toContain('Save this tag change for this student?')
         ->and($page)->toContain('Choose tags')
+        ->and($page)->toContain('rounded-full')
         ->and($page)->toContain('enrollments.student-labels.sync')
+        ->and($page)->not->toContain('min-h-10')
+        ->and($page)->not->toContain('w-full')
         ->and($page)->not->toContain('>Save<');
 });
 
