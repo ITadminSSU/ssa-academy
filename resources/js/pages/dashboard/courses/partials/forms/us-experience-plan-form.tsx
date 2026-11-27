@@ -24,11 +24,13 @@ const UsExperiencePlanForm = ({ plan, handler }: Props) => {
       pass_mark: plan?.pass_mark ?? 85,
       max_attempts: plan?.max_attempts ?? 10,
       published: plan?.published ?? false,
+      show_variance: plan?.show_variance !== false,
    });
 
    transform((form) => ({
       ...form,
       published: form.published ? 1 : 0,
+      show_variance: form.show_variance ? 1 : 0,
    }));
 
    const submit = (event: React.FormEvent) => {
@@ -111,6 +113,17 @@ const UsExperiencePlanForm = ({ plan, handler }: Props) => {
                      />
                      <InputError message={errors.max_attempts} />
                   </div>
+               </div>
+               <div className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                     <Label htmlFor="show_variance">Show variance to students</Label>
+                     <p className="text-muted-foreground text-xs">Students see the variance column on this plan</p>
+                  </div>
+                  <Switch
+                     id="show_variance"
+                     checked={data.show_variance}
+                     onCheckedChange={(checked) => setData('show_variance', checked)}
+                  />
                </div>
                <div className="flex items-center justify-between rounded-md border p-3">
                   <div>

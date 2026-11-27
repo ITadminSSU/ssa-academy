@@ -18,6 +18,7 @@ class UsExperiencePlan extends Model
         'pass_mark',
         'max_attempts',
         'published',
+        'show_variance',
         'drawings',
         'blank_template_file_url',
         'blank_template_file_name',
@@ -33,6 +34,7 @@ class UsExperiencePlan extends Model
         'drawings' => 'array',
         'line_items' => 'array',
         'published' => 'boolean',
+        'show_variance' => 'boolean',
         'parsed_at' => 'datetime',
         'pass_mark' => 'integer',
         'max_attempts' => 'integer',
@@ -52,16 +54,16 @@ class UsExperiencePlan extends Model
     public function isReady(): bool
     {
         return $this->published
-            && !empty($this->line_items)
+            && ! empty($this->line_items)
             && filled($this->blank_template_file_url)
-            && !empty($this->drawings);
+            && ! empty($this->drawings);
     }
 
     public function drawingsList(): array
     {
         return array_values(array_filter(
             $this->drawings ?? [],
-            fn ($drawing) => is_array($drawing) && !empty($drawing['file_url'])
+            fn ($drawing) => is_array($drawing) && ! empty($drawing['file_url'])
         ));
     }
 

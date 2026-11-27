@@ -58,7 +58,6 @@ class UsExperienceUnlockService
                 $attempts,
                 $canUseFiles,
                 $canSeeScores,
-                $course->show_us_experience_variance !== false,
             ),
             'can_use_files' => $canUseFiles,
             'can_see_scores' => $canSeeScores,
@@ -92,7 +91,6 @@ class UsExperienceUnlockService
         Collection $attemptsByPlanId,
         bool $canUseFiles,
         bool $canSeeScores,
-        bool $showVariance = true,
     ): array {
         $previousPassed = true;
         $payloads = [];
@@ -119,6 +117,7 @@ class UsExperienceUnlockService
 
             $bestAttempt = $attempts->sortByDesc('lines_percent')->first();
             $latestAttempt = $attempts->first();
+            $showVariance = $plan->show_variance !== false;
 
             $payloads[] = [
                 'id' => $plan->id,
@@ -128,6 +127,7 @@ class UsExperienceUnlockService
                 'sort_order' => $plan->sort_order,
                 'pass_mark' => $plan->pass_mark,
                 'max_attempts' => $plan->max_attempts,
+                'show_variance' => $showVariance,
                 'attempts_used' => $attemptsUsed,
                 'status' => $status,
                 'unlocked' => $unlocked,

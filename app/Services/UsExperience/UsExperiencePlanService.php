@@ -66,7 +66,7 @@ class UsExperiencePlanService
 
         foreach ($plans as $plan) {
             $key = mb_strtolower(trim($plan->group_name));
-            if (!isset($groups[$key])) {
+            if (! isset($groups[$key])) {
                 $groups[$key] = [
                     'group_name' => $plan->group_name,
                     'group_description' => $plan->group_description,
@@ -93,6 +93,7 @@ class UsExperiencePlanService
             'pass_mark' => $data['pass_mark'] ?? config('us_experience.default_pass_mark', 85),
             'max_attempts' => $data['max_attempts'] ?? config('us_experience.default_max_attempts', 10),
             'published' => (bool) ($data['published'] ?? false),
+            'show_variance' => array_key_exists('show_variance', $data) ? (bool) $data['show_variance'] : true,
         ]);
     }
 
@@ -105,6 +106,7 @@ class UsExperiencePlanService
             'pass_mark' => $data['pass_mark'] ?? $plan->pass_mark,
             'max_attempts' => $data['max_attempts'] ?? $plan->max_attempts,
             'published' => array_key_exists('published', $data) ? (bool) $data['published'] : $plan->published,
+            'show_variance' => array_key_exists('show_variance', $data) ? (bool) $data['show_variance'] : $plan->show_variance,
         ]);
 
         return $plan->fresh();
@@ -132,7 +134,7 @@ class UsExperiencePlanService
 
         $swapWith = $direction === 'up' ? $index - 1 : $index + 1;
 
-        if (!isset($siblings[$swapWith])) {
+        if (! isset($siblings[$swapWith])) {
             return;
         }
 
@@ -239,7 +241,7 @@ class UsExperiencePlanService
     }
 
     /**
-     * @param array<int, array{key: string, tolerance_override?: float|null, tolerance_override_mode?: string|null}> $tolerances
+     * @param  array<int, array{key: string, tolerance_override?: float|null, tolerance_override_mode?: string|null}>  $tolerances
      */
     public function saveLineTolerances(UsExperiencePlan $plan, array $tolerances): UsExperiencePlan
     {
@@ -247,7 +249,7 @@ class UsExperiencePlanService
         $toleranceMap = collect($tolerances)->keyBy('key');
 
         foreach ($lineItems as &$line) {
-            if (!$toleranceMap->has($line['key'])) {
+            if (! $toleranceMap->has($line['key'])) {
                 continue;
             }
 
@@ -265,12 +267,12 @@ class UsExperiencePlanService
      */
     public function buildStudentPack(UsExperiencePlan $plan): array
     {
-        if (!$plan->isReady()) {
+        if (! $plan->isReady()) {
             throw new InvalidArgumentException('This plan is not ready to download.');
         }
 
         $zipPath = $this->files->makeTempFile('zip');
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
 
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             throw new InvalidArgumentException('Unable to build the download pack.');
@@ -327,7 +329,7 @@ class UsExperiencePlanService
     }
 
     /**
-     * @param array<string, bool> $usedNames
+     * @param  array<string, bool>  $usedNames
      */
     private function uniqueZipName(array &$usedNames, string $original, string $folder): string
     {
@@ -346,8 +348,8 @@ class UsExperiencePlanService
     }
 
     /**
-     * @param array<string, mixed> $line
-     * @param array{tolerance_override?: float|null, tolerance_override_mode?: string|null} $incoming
+     * @param  array<string, mixed>  $line
+     * @param  array{tolerance_override?: float|null, tolerance_override_mode?: string|null}  $incoming
      */
     private function applyLineTolerance(array &$line, array $incoming): void
     {

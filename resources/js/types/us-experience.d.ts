@@ -22,6 +22,7 @@ interface UsExperiencePlan {
    pass_mark: number;
    max_attempts: number;
    published: boolean;
+   show_variance?: boolean;
    drawings?: UsExperienceFileRef[] | null;
    blank_template_file_url?: string | null;
    blank_template_file_name?: string | null;
@@ -77,6 +78,7 @@ interface UsExperienceStudentPlan {
    unlocked: boolean;
    can_download: boolean;
    can_submit: boolean;
+   show_variance?: boolean;
    accuracy?: number | null;
    latest_attempt?: UsExperienceAttemptSummary | null;
    attempts: UsExperienceAttemptSummary[];
