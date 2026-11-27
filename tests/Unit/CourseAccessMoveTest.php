@@ -269,6 +269,8 @@ test('a retained subscription moves without a new stripe subscription', function
         ->and($subscription->access_retained_at)->not->toBeNull()
         ->and($subscription->course_id)->toBe($world['drywall']->id)
         ->and(file_get_contents(base_path('resources/js/pages/dashboard/enrollments/partials/admin-table-columns.tsx')))->toContain('Keep course')
+        ->and(file_get_contents(base_path('resources/js/pages/dashboard/enrollments/partials/admin-table-columns.tsx')))->toContain('Move course')
+        ->and(file_get_contents(base_path('resources/js/pages/dashboard/enrollments/partials/admin-table-columns.tsx')))->toContain('>Access<')
         ->and(file_get_contents(base_path('resources/js/pages/dashboard/enrollments/exams.tsx')))->not->toContain('Move course');
 });
 
