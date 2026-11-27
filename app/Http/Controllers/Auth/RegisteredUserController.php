@@ -100,12 +100,12 @@ class RegisteredUserController extends Controller
             'referrer_is_employee' => $referrerIsEmployee,
         ]);
 
-        $sourceCourse = $this->sourceCourse($validated['source_course_id'] ?? null);
+        $sourceCourse = $this->sourceCourse($this->registrationCourseId($request));
 
         app(GoHighLevelEnrollmentWebhook::class)->queueForRegistration(
             $user,
             $sourceCourse,
-            $sourceCourse ? null : $this->registrationSource($request->input('source')),
+            $sourceCourse ? null : $this->registrationSource($this->registrationTextSource($request)),
         );
 
         $verificationError = null;
@@ -154,6 +154,44 @@ class RegisteredUserController extends Controller
         }
 
         return [$referredBy, (bool) $validated['referrer_is_employee']];
+    }
+
+    private function registrationCourseId(Request $request): mixed
+    {
+        $body = $this->bodyValue($request, 'source_course_id');
+
+        if ($this->filledCourseId($body)) {
+            return $body;
+        }
+
+        return $request->query('source_course_id');
+    }
+
+    private function registrationTextSource(Request $request): mixed
+    {
+        $body = $this->bodyValue($request, 'source');
+
+        if (is_string($body) && trim($body) !== '') {
+            return $body;
+        }
+
+        return $request->query('source');
+    }
+
+    private function bodyValue(Request $request, string $key): mixed
+    {
+        $body = $request->isJson() ? $request->json()->all() : $request->request->all();
+
+        return $body[$key] ?? null;
+    }
+
+    private function filledCourseId(mixed $value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+
+        return (int) $value > 0;
     }
 
     private function sourceCourse(mixed $courseId): ?Course

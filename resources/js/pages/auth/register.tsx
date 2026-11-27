@@ -41,6 +41,9 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null, 
       return () => document.documentElement.classList.remove('ssu-public-root');
    }, []);
 
+   const sourceCourseId = sourceCourse?.id ?? null;
+   const sourceValue = sourceCourse ? '' : (registrationSource ?? '');
+
    const { data, setData, post, processing, errors, reset } = useForm({
       given_name: '',
       last_name: '',
@@ -49,12 +52,20 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null, 
       password_confirmation: '',
       recaptcha: '',
       recaptcha_status: recaptcha.status,
-      source_course_id: sourceCourse?.id ?? null,
-      source: sourceCourse ? '' : (registrationSource ?? ''),
+      source_course_id: sourceCourseId,
+      source: sourceValue,
       referred_by: '',
       referrer_is_employee: null as boolean | null,
       ...emptyLegalAcknowledgements(),
    });
+
+   useEffect(() => {
+      setData((current) => ({
+         ...current,
+         source_course_id: sourceCourseId,
+         source: sourceValue,
+      }));
+   }, [sourceCourseId, sourceValue]);
 
    const legalValues = {
       accept_terms: data.accept_terms,
@@ -79,7 +90,9 @@ const Register = ({ googleLogIn, recaptcha, legalDocument, sourceCourse = null, 
    const submit: FormEventHandler = (e) => {
       e.preventDefault();
 
-      post(route('register'), {
+      const query = typeof window === 'undefined' ? '' : window.location.search;
+
+      post(`${route('register')}${query}`, {
          onSuccess: () => reset('password', 'password_confirmation'),
          onError: () => {
             if (recaptchaRef.current) {
